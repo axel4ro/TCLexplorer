@@ -45,15 +45,23 @@
         .hidden {
             display: none;
         }
+        .clickable {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #22f7de;
+        }
     </style>
     <script>
-        // Function to toggle visibility of element by ID
-        function toggleVisibility(id) {
-            var element = document.getElementById(id);
-            if (element.classList.contains('hidden')) {
-                element.classList.remove('hidden');
-            } else {
-                element.classList.add('hidden');
+        // Function to toggle visibility of element by class name
+        function toggleVisibility(className) {
+            var elements = document.getElementsByClassName(className);
+            for (var i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                if (element.classList.contains('hidden')) {
+                    element.classList.remove('hidden');
+                } else {
+                    element.classList.add('hidden');
+                }
             }
         }
     </script>
@@ -79,69 +87,69 @@
     <main>
         <div class="content">
             <h2>Bonuses</h2>
-            <!-- Weapons Section -->
             <table>
                 <tr>
                     <th>Possible Bonuses</th>
                     <th>Min / Max Values</th>
                 </tr>
-                <tr class="gradient-row" onclick="toggleVisibility('weaponBonuses')">
+                <tr class="gradient-row clickable" onclick="toggleVisibility('weaponBonuses')">
                     <td>Weapons</td>
                     <td style="color: #22f7de;">Click to toggle</td>
                 </tr>
-                <tr id="weaponBonuses" class="hidden gradient-row">
+                <!-- Specific bonuses for Weapons -->
+                <tr class="weaponBonuses hidden">
                     <td>Average Damage</td>
                     <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Spell Damage</td>
                     <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Vitality</td>
                     <td>2, 4, 6, 8, 12</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Intelligence</td>
                     <td>2, 4, 6, 8, 12</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Strength</td>
                     <td>2, 4, 6, 8, 12</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Dexterity</td>
                     <td>2, 4, 6, 8, 12</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Spell Speed</td>
                     <td>2%, 4%, 6%, 10%, 20%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Poisoning Chance</td>
                     <td>1%, 2%, 3%, 5%, 8%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Blocking Chance</td>
                     <td>1%, 2%, 3%, 5%, 8%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Slowing Chance</td>
                     <td>1%, 2%, 3%, 5%, 8%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Critical Hit</td>
                     <td>1%, 2%, 3%, 5%, 10%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Piercing Hit</td>
                     <td>1%, 2%, 3%, 5%, 10%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Anti Half Humans</td>
                     <td>1%, 2%, 3%, 5%, 10%</td>
                 </tr>
-                <tr class="gradient-row">
+                <tr class="weaponBonuses hidden">
                     <td>Anti Monsters</td>
                     <td>2%, 4%, 6%, 10%, 20%</td>
                 </tr>
