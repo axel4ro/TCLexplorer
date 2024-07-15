@@ -46,7 +46,7 @@ button{
    justify-content: center;
    border-width:22px; /* Kenarlık kalınlığı */
    border-style: solid; /* Kenarlık tipi */
-   border-image-source:  url("/static/img/pngegg (6).png");
+   border-image-source:url(../img/pngegg\ \(6\).png);
    border-image-slice: 85; /* Resmin dilimleme noktaları */
    border-image-width: 13px; /* Kenarlığın genişliği */
    box-sizing: border-box; /* Padding'i kenarlık içine dahil et */
