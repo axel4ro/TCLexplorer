@@ -1,0 +1,554 @@
+body{
+    background-color: rgb(12,10,20) !important;
+    background-position: top;
+  }
+.navbar-expand{
+   background-color: rgb(12,10,20);
+}
+.logo{
+   display: flex;
+   padding-left: 1%;
+   margin-left: 0%;
+}
+
+/* NAVİGATİON CSS */
+li{
+    font-family: "Rye", serif;
+   font-weight: 400;
+   font-style: normal;
+   display: flex;
+   justify-content: flex-start;
+   padding: 10px;
+   list-style-type:none;
+}
+
+/* NAVİGATİON CSS END */
+
+button{
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+}
+.navigationDiv ul li a {
+   
+   color: white;
+   text-decoration: none;
+   background: none;
+   justify-content: flex-start;
+   align-items: center;
+}
+
+/* navigation Border css */
+.navigationBorder{
+   box-shadow: rgba(233, 223, 223, 0.19) 0px 10px 20px, rgba(246, 235, 235, 0.23) 0px 6px 6px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border-width:22px; /* Kenarlık kalınlığı */
+   border-style: solid; /* Kenarlık tipi */
+   border-image-source:  url("/static/img/pngegg (6).png");
+   border-image-slice: 85; /* Resmin dilimleme noktaları */
+   border-image-width: 13px; /* Kenarlığın genişliği */
+   box-sizing: border-box; /* Padding'i kenarlık içine dahil et */
+
+}
+
+.navigation {
+   color: black;
+   font-weight: 900;
+   border: 30px solid;
+   text-decoration: none;
+   justify-content: center;
+   align-items: center;
+   display: flex;
+   border-width:26px;
+   border-style: solid; 
+   border-image-source:  url("/static/img/borderss.png");
+   border-image-slice: 44%; 
+   border-image-width:100%;
+   border-image-repeat:stretch;
+   box-sizing: border-box; 
+}
+.navbar-toggler-icon {
+   background-color: white;
+}
+/* navigation Border css end */
+
+/* MOBİLE NAVİGATİON CSS display */
+.header{
+   display: none;
+}
+/* right Navigation image */
+.imgMain{
+   display: flex;
+ 
+
+}
+/* CHARACTER DETAİL CSS*/
+
+.human{
+   box-sizing: border-box;
+   background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 2, 0.6)), url("/static/img/human.img.png");
+   background-size: cover;
+   background-repeat: no-repeat;
+   background-position: center -6;
+   border: 4px solid rgb(16, 12, 12);
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+}
+
+.beast{
+
+   box-sizing: border-box;
+   background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 2, 0.6)), url("/static/img/beast.png");
+   background-size: cover;
+   background-repeat: no-repeat;
+   background-position: center;
+   border: 4px solid rgb(16, 12, 12);
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+}
+.elf{
+   box-sizing: border-box;
+   background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 2, 0.6)), url("/static/img/elf.img.png");
+   background-size: cover;
+   background-repeat: no-repeat;
+   background-position: center -5;
+   border: 4px solid rgb(16, 12, 12);
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+}
+.undead{
+   box-sizing: border-box;
+   background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 2, 0.6)), url("/static/img/undead.img.png");
+   background-size: cover;
+   background-repeat: no-repeat;
+   background-position: center -10;
+   border: 4px solid rgb(16, 12, 12);
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+}
+
+.mainPageasaboutus .carousel-inner{
+   width: 100%;
+   border-radius: 26px /26px;
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+
+  
+}
+.paragrafAbutUs{
+   margin-top: 5px;
+   padding: 20px;
+   box-sizing: border-box;
+   width: 100%;
+   border-radius: 16px /16px;
+   box-shadow: rgba(158, 233, 9, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+
+}
+
+
+/* CHARACTER DETAİL CSS END */
+.h6{
+   position: relative;
+   justify-content: center;
+   align-self: center;
+   text-wrap:pretty;
+
+}
+
+
+
+
+
+
+
+
+/* CHARACTER DETAİL CSS */
+
+
+
+
+.accordion-button{
+   height: 60px;
+   border-width:2px; /* Kenarlık kalınlığı */
+   border-style: solid; /* Kenarlık tipi */
+   border-image-source: url('/static/img/pngegg (6).png');
+   border-image-slice: 95; /* Resmin dilimleme noktaları */
+   border-image-width: 10px; /* Kenarlığın genişliği */
+   box-sizing: border-box; /* Padding'i kenarlık içine dahil et */
+   background-color: rgb(12,10,20) !important;
+   margin-top: 1rem;
+   color: white;
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+
+}
+.accordion-item{
+   border: none;
+   background-color: rgb(12,10,20) !important;
+   color: white;
+}
+.accordion-button:not(.collapsed){
+   background-color: rgb(12,10,20) !important;
+   box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+
+   color: white;
+}
+.accordion-button:focus{
+   box-shadow: none;
+}
+
+
+/* CGARACTER DETAL CC END */
+
+/* BONUSES PAGE CSS */
+table {
+   
+   border-spacing: 1px;
+}
+th, td {
+   padding: 5px;
+}
+
+
+/* BONUSES PAGE CSS END */
+.thTitle{
+   background-color: green !important;
+ 
+   }
+
+   th{
+      border: 2px solid white;
+   }
+   td{
+      font-family: "Noto Sans", sans-serif;
+      font-optical-sizing: auto;
+      font-weight:400;
+      font-style: normal;
+   }
+
+
+   table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+  
+    @media only screen and (max-width: 600px) {
+      table, th, td {
+        font-size: 12px;
+      }
+      table, th, td {
+         border: 1px solid #ddd; /* Cell borders */
+         text-align: center;
+         padding: 8px;
+       }
+       
+       table caption {
+         caption-side: top; /* Optional: Caption position */
+         font-weight: bold;
+         padding: 8px;
+         background-color: #f2f2f2; /* Optional: Caption background color */
+         border-bottom: 1px solid #ddd; /* Optional: Separator between caption and table */
+       }
+       
+    }
+/* MOBİLE NAVİGATİON SCC ABOUT GAME  */
+
+
+@media (max-width: 568px) {
+   .navigationBorder {
+       display: none;
+       justify-content: center;
+       align-items: center;
+   }
+
+   .AboutGame {
+      width: 100% !important;
+   }
+   .header {
+       display: block;
+   }
+   .mobileNavigation {
+       justify-content: center;
+       align-items: center;
+   }
+   .mainMenu {
+       border-radius: 16px / 16px!important;
+       border: 3px solid rgb(214, 60, 60) !important;
+       color: white !important;
+       background-color: rgb(12,10,20);
+   }
+   a {
+       text-decoration: none !important;
+       color: aliceblue !important;
+   }
+   .card {
+       font-family: 'Times New Roman', Times, serif;
+       font-weight: 700;
+       font-size: larger;
+       background-color: rgb(12,10,20) !important;
+   }
+   .elf {
+       box-sizing: border-box;
+       background: linear-gradient(rgba(0,0,0,.9),rgba(0, 0, 2, 0.6)), url(./img/elf.img.png);
+       background-size: cover;
+       background-repeat: no-repeat;
+       border: 4px solid rgb(16, 12, 12);
+       box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+   }
+   .undead {
+       box-sizing: border-box;
+       background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 2, 0.6)), url("/static/img/undead.img.png");
+       background-size: cover;
+       background-repeat: no-repeat;
+       border: 4px solid rgb(16, 12, 12);
+       box-shadow: rgba(158, 233, 6, 0.25) 0px 4px 18px, #440563 0px 0px 10px;
+   }
+   .accordion{
+      width: 100%;
+   }
+   table, th, td {
+      border: 1px solid #ddd; /* Cell borders */
+      text-align: center;
+      padding: 8px;
+    }
+    
+    table caption {
+      caption-side: top; /* Optional: Caption position */
+      font-weight: bold;
+      padding: 8px;
+      background-color: #f2f2f2; /* Optional: Caption background color */
+      border-bottom: 1px solid #ddd; /* Optional: Separator between caption and table */
+    }
+    
+ 
+      
+   /* ABOUT GAME CSS ACCORDION CSS MOBILE */
+   .AboutGame {
+       width: 100%;
+   }
+   /* ABOUT GAME CSS ACCORDION CSS MOBILE END */
+   .iframe {
+       width: 100%;
+       height: 175px;
+   }
+   .TableDesktop{
+      display: none;
+   }
+
+   .accordionMobile{
+      display: block;
+     }
+}
+
+/* ARMOR PAGE CSS  START*/
+
+.ArmornavigationBorder{
+   box-shadow: rgba(233, 223, 223, 0.19) 0px 10px 20px, rgba(246, 235, 235, 0.23) 0px 6px 6px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border-width:22px; /* Kenarlık kalınlığı */
+   border-style: solid; /* Kenarlık tipi */
+   border-image-source:  url("/static/img/pngegg (6).png");
+   border-image-slice: 85; /* Resmin dilimleme noktaları */
+   border-image-width: 13px; /* Kenarlığın genişliği */
+   box-sizing: border-box; /* Padding'i kenarlık içine dahil et */
+
+
+}
+
+/* BONUSES PAGE */
+.accordionMobile{
+   display: none;
+}
+
+/* ARMOR PAGE CSS AND */
+@media (max-width: 768px) {
+   /* ABOUT GAME CSS ACCORDION CSS MOBILE END */
+   .iframe {
+       width: 100%;
+       height: 175px;
+   }
+   .accordion{
+      width: 100%;
+   }
+   .accordion{
+      width: 100%;
+   }
+   .TableDesktop{
+      display: none;
+   }
+
+   .accordionMobile{
+      display: block;
+     }
+     table{
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+   }
+   table, th, td {
+      border: 1px solid #ddd; /* Cell borders */
+      text-align: center;
+      padding: 8px;
+    }
+    
+    table caption {
+      caption-side: top; /* Optional: Caption position */
+      font-weight: bold;
+      padding: 8px;
+      background-color: #f2f2f2; /* Optional: Caption background color */
+      border-bottom: 1px solid #ddd; /* Optional: Separator between caption and table */
+    }
+    
+
+}
+@media (max-width: 976px) {
+   /* ABOUT GAME CSS ACCORDION CSS MOBILE END */
+   .iframe {
+       width: 100%;
+       height: 235px;
+   }
+   .accordion{
+      width: 100%;
+   }
+   .accordion{
+      width: 100%;
+   }
+ 
+   .TableDesktop{
+      display: none;
+   }
+
+   .accordionMobile{
+      display: block;
+     }
+     table{
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+   }
+   table, th, td {
+      border: 1px solid #ddd; /* Cell borders */
+      text-align: center;
+      padding: 8px;
+    }
+    
+    table caption {
+      caption-side: top; /* Optional: Caption position */
+      font-weight: bold;
+      padding: 8px;
+      background-color: #f2f2f2; /* Optional: Caption background color */
+      border-bottom: 1px solid #ddd; /* Optional: Separator between caption and table */
+    }
+    
+
+}
+
+
+@media (max-width: 968px) {
+   /* ABOUT GAME CSS ACCORDION CSS MOBILE */
+   .AboutGame {
+      width: 100%;
+      
+   }
+   /* ABOUT GAME CSS ACCORDION CSS MOBILE END */
+   .iframe {
+      width: 100%;
+      height: 255px;
+   }
+   .accordion{
+      width: 100%;
+   }
+   .TableDesktop{
+      display: none;
+   }
+
+   .accordionMobile{
+      display: block;
+     }
+ 
+     table{
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+   }
+   table, th, td {
+      border: 1px solid #ddd; /* Cell borders */
+      text-align: center;
+      padding: 8px;
+    }
+    
+    table caption {
+      caption-side: top; /* Optional: Caption position */
+      font-weight: bold;
+      padding: 8px;
+      background-color: #f2f2f2; /* Optional: Caption background color */
+      border-bottom: 1px solid #ddd; /* Optional: Separator between caption and table */
+    }
+    
+}
+
+/* BONUSES PAGE TABLE MOBİLE CSS */
+@media (max-width: 600px) {
+   .TableDesktop{
+      display: none;
+   }
+
+   .accordionMobile{
+      display: block;
+     }
+
+  .tableRow{
+   width: 100% !important;
+  }
+  .border{
+   width: 100% !important;
+  }
+  table{
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+}
+ 
+}
+@media (max-width: 660px) {
+   .TableDesktop{
+      display: none;
+   }
+
+   .accordionMobile{
+      display: block;
+     }
+
+  .tableRow{
+   width: 100% !important;
+  }
+  .border{
+   width: 100% !important;
+  }
+  .accordion{
+   width: 100%;
+}
+td{
+   padding: 5px;
+   margin: 100px;
+}
+table{
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+}
+table, th, td {
+   border: 1px solid #ddd; /* Cell borders */
+   text-align: center;
+   padding: 8px;
+ }
+ 
+ table caption {
+   caption-side: top; /* Optional: Caption position */
+   font-weight: bold;
+   padding: 8px;
+   background-color: #f2f2f2; /* Optional: Caption background color */
+   border-bottom: 1px solid #ddd; /* Optional: Separator between caption and table */
+ }
+ 
+ 
+}
