@@ -76,12 +76,20 @@
     <main>
         <div class="content">
             <h2>Bonuses</h2>
-            <h3><a href="javascript:void(0)" onclick="toggleVisibility('weaponBonuses')">Weapon:</a></h3>
+            <h3><a href="javascript:void(0)" onclick="toggleVisibility('weaponBonuses')">Weapons</a></h3>
             <div id="weaponBonuses" class="hidden">
                 <table>
                     <tr>
-                        <th>Bonus</th>
-                        <th>Values</th>
+                        <th> Possible Bonuses </th>
+                        <th> Min / Max Values </th>
+                    </tr>
+                    <tr>
+                        <td>Average Damage</td>
+                        <td>-60, -1, ..., 1, 60</td>
+                    </tr>
+                    <tr>
+                        <td>Spell Damage</td>
+                        <td>-30, -1, ..., 1, 30</td>
                     </tr>
                     <tr>
                         <td>Vitality</td>
@@ -132,13 +140,6 @@
                         <td>2%, 4%, 6%, 10%, 20%</td>
                     </tr>
                     <tr>
-                        <td>Average Damage</td>
-                        <td>-60, -1, ..., 1, 60</td>
-                    </tr>
-                    <tr>
-                        <td>Spell Damage</td>
-                        <td>-30, -1, ..., 1, 30</td>
-                    </tr>
                 </table>
             </div>
             <!-- Additional sections for Armor, Shoes, Helmet can be added here. -->
