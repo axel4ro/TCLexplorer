@@ -72,6 +72,32 @@ footer {
     background: linear-gradient(to right, #ff8a00, #da1b60); /* Gradient background */
     color: white; /* Text color */
     width: 100%;
+    position: fixed; /* Fixed position */
     bottom: 0;
     z-index: 9999; /* Ensure footer is above other content */
+}
+
+/* Mobile-specific styles */
+@media only screen and (max-width: 768px) {
+    nav {
+        width: 100%; /* Full width for mobile */
+        position: static; /* Static position for mobile */
+        overflow-y: visible; /* Visible overflow for mobile */
+        padding-top: 0; /* No padding top for mobile */
+    }
+
+    main {
+        margin-left: 0; /* No margin for main content in mobile */
+    }
+
+    .content {
+        background: none; /* No background for content in mobile */
+        padding: 10px; /* Adjust padding for mobile */
+        box-shadow: none; /* No box shadow for content in mobile */
+        margin-top: 20px; /* Adjust margin top for content in mobile */
+    }
+
+    footer {
+        position: relative; /* Adjust position for mobile */
+    }
 }
