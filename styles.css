@@ -1,14 +1,16 @@
 /* styles.css */
 
-body {
-    font-family: Arial, sans-serif;
+/* Resetting default margin and padding for all elements */
+* {
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh; /* Ensures footer stays at bottom */
-    background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for the entire body */
-    color: #ffffff; /* Default text color */
+    box-sizing: border-box;
+}
+
+.gradient-theme {
+    background: linear-gradient(to bottom, #2C1A45, #1D0F2E);
+    color: #ffffff; /* Text color for contrast */
+    padding: 20px; /* Adjust padding as needed */
 }
 
 header {
@@ -55,8 +57,6 @@ nav ul li:hover {
 main {
     margin-left: 200px; /* Ensure main content area avoids navigation */
     padding: 20px;
-    flex: 1; /* Takes remaining height */
-    overflow-y: auto; /* Allow main content to scroll if needed */
     z-index: 0; /* Ensure main content is below header and navigation */
 }
 
@@ -75,11 +75,4 @@ footer {
     color: #fff;
     width: 100%;
     z-index: 1; /* Ensure footer is above other content */
-}
-
-/* Resetting default margin and padding for all elements */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
 }
