@@ -11,19 +11,46 @@
             color: #333;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            display: flex;
         }
         header {
             background: #333;
             color: #fff;
             padding: 10px 0;
             text-align: center;
+            width: 100%;
+        }
+        nav {
+            background: #333;
+            color: #fff;
+            width: 200px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            padding: 10px;
+            text-align: center;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+        }
+        nav ul li:hover {
+            background: #575757;
         }
         main {
-            margin: 20px 0;
-        }
-        h1 {
-            text-align: center;
+            margin-left: 200px;
+            padding: 20px;
+            width: 100%;
         }
         .content {
             max-width: 800px;
@@ -47,23 +74,27 @@
     <header>
         <h1>The Cursed Land - Wiki</h1>
     </header>
+    <nav>
+        <ul>
+            <li><a href="#about-game">About Game</a></li>
+            <li><a href="#kingdoms">Kingdoms</a></li>
+            <li><a href="#characters">Characters</a></li>
+            <li><a href="#items">Items</a></li>
+            <li><a href="#bonuses">Bonuses</a></li>
+            <li><a href="#maps">Maps</a></li>
+            <li><a href="#npc">NPC</a></li>
+            <li><a href="#mobs">Mobs</a></li>
+            <li><a href="#tokens">Tokens</a></li>
+            <li><a href="#nft">NFT</a></li>
+        </ul>
+    </nav>
     <main>
         <div class="content">
-            <h2>About The Cursed Land</h2>
-            <p><strong>Developer:</strong> PopuGames</p>
-            <p><strong>Genre:</strong> Role-Playing Game (RPG), Adventure</p>
-            <p><strong>Platforms:</strong> PC (Windows)</p>
-            <p><strong>Release Date:</strong> July 20, 2019</p>
-            <h2>Game Description</h2>
-            <p>The Cursed Land is an immersive RPG adventure developed by PopuGames. Set in a mysterious and dangerous land, players must navigate through various challenges, fight monsters, and uncover the secrets of the cursed territory. The game features an engaging storyline, strategic combat, and a rich world filled with hidden treasures and formidable enemies.</p>
-            <h2>Gameplay Features</h2>
-            <ul>
-                <li>Rich narrative and engaging storyline.</li>
-                <li>Strategic turn-based combat system.</li>
-                <li>Diverse environments to explore.</li>
-                <li>Customizable character abilities and equipment.</li>
-                <li>Numerous side quests and hidden treasures.</li>
-            </ul>
+            <section id="about-game">
+                <h2>About The Cursed Land</h2>
+                <p>The Cursed Land is a cross-platform Massively Multiplayer Online Role-Playing Game (MMORPG) developed by PopuGames for mobile devices and PC. The game brings together the best of Web 2.0, Web 3.0, and AI gaming, built on MultiversX. As a free-to-play and play-to-earn game with microtransactions, it includes on-chain token utility and NFT integration.</p>
+            </section>
+            <!-- Additional sections for Kingdoms, Characters, Items, Bonuses, Maps, NPC, Mobs, Tokens, NFT can be added here. -->
         </div>
     </main>
     <footer>
