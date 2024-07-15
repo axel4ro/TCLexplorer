@@ -23,8 +23,6 @@ header {
 }
 
 nav {
-    background: #333;
-    color: #fff;
     width: 200px;
     position: fixed;
     top: 0;
@@ -71,8 +69,10 @@ main {
 footer {
     text-align: center;
     padding: 10px 0;
-    background: #333;
+    background: none; /* No background */
     color: #fff;
     width: 100%;
+    position: fixed;
+    bottom: 0;
     z-index: 1; /* Ensure footer is above other content */
 }
