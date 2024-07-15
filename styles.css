@@ -14,12 +14,13 @@
 }
 
 header {
-    background: linear-gradient(to top, #2C1A45, #1D0F2E);
+    background: linear-gradient(to bottom, #1D0F2E 0%, #1D0F2E 30%, #1D0F25 70%, #1D0F25 100%); /* Gradient background */
     color: #fff;
     padding: 10px 20px; /* Example padding */
     margin-top: 0; /* Ensure there's no top margin */
     text-align: center;
     width: 100%;
+    box-sizing: border-box; /* Include padding and border in width */
     z-index: 1; /* Ensure header is above other content */
 }
 
