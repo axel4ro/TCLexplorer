@@ -35,13 +35,23 @@
         th {
             background-color: #f2f2f2;
         }
+        .gradient-row {
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background */
+            color: #ffffff; /* Text color for contrast */
+        }
+        .gradient-row td {
+            padding: 8px; /* Adjust padding as needed */
+        }
+        .hidden {
+            display: none;
+        }
     </style>
     <script>
         // Function to toggle visibility of element by ID
         function toggleVisibility(id) {
             var element = document.getElementById(id);
             if (element.style.display === 'none' || element.classList.contains('hidden')) {
-                element.style.display = 'block';
+                element.style.display = 'table-row';
                 element.classList.remove('hidden');
             } else {
                 element.style.display = 'none';
@@ -59,65 +69,70 @@
         <div class="content">
             <h2>Bonuses</h2>
             <table>
-                <th>Possible Bonuses</th>
-                        <th>Min / Max Values</th>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Average Damage</td>
-                        <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Spell Damage</td>
-                        <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Vitality</td>
-                        <td>2, 4, 6, 8, 12</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Intelligence</td>
-                        <td>2, 4, 6, 8, 12</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Strength</td>
-                        <td>2, 4, 6, 8, 12</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Dexterity</td>
-                        <td>2, 4, 6, 8, 12</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Spell Speed</td>
-                        <td>2%, 4%, 6%, 10%, 20%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Poisoning Chance</td>
-                        <td>1%, 2%, 3%, 5%, 8%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Blocking Chance</td>
-                        <td>1%, 2%, 3%, 5%, 8%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Slowing Chance</td>
-                        <td>1%, 2%, 3%, 5%, 8%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Critical Hit</td>
-                        <td>1%, 2%, 3%, 5%, 10%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Piercing Hit</td>
-                        <td>1%, 2%, 3%, 5%, 10%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Anti Half Humans</td>
-                        <td>1%, 2%, 3%, 5%, 10%</td>
-                    </tr>
-                    <tr class="gradient-row">>
-                        <td>Anti Monsters</td>
-                        <td>2%, 4%, 6%, 10%, 20%</td>
-                    </tr>
+                <tr>
+                    <th>Possible Bonuses</th>
+                    <th>Min / Max Values</th>
+                </tr>
+                <tr class="gradient-row">
+                    <td><a href="javascript:void(0)" onclick="toggleVisibility('weaponBonuses')">Weapons</a></td>
+                    <td style="color: #22f7de;">Click to toggle</td>
+                </tr>
+                <tr id="weaponBonuses" class="hidden gradient-row">
+                    <td>Average Damage</td>
+                    <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Spell Damage</td>
+                    <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Vitality</td>
+                    <td>2, 4, 6, 8, 12</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Intelligence</td>
+                    <td>2, 4, 6, 8, 12</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Strength</td>
+                    <td>2, 4, 6, 8, 12</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Dexterity</td>
+                    <td>2, 4, 6, 8, 12</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Spell Speed</td>
+                    <td>2%, 4%, 6%, 10%, 20%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Poisoning Chance</td>
+                    <td>1%, 2%, 3%, 5%, 8%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Blocking Chance</td>
+                    <td>1%, 2%, 3%, 5%, 8%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Slowing Chance</td>
+                    <td>1%, 2%, 3%, 5%, 8%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Critical Hit</td>
+                    <td>1%, 2%, 3%, 5%, 10%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Piercing Hit</td>
+                    <td>1%, 2%, 3%, 5%, 10%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Anti Half Humans</td>
+                    <td>1%, 2%, 3%, 5%, 10%</td>
+                </tr>
+                <tr class="gradient-row">
+                    <td>Anti Monsters</td>
+                    <td>2%, 4%, 6%, 10%, 20%</td>
+                </tr>
             </table>
         </div>
     </main>
