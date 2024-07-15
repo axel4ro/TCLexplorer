@@ -71,7 +71,7 @@ main {
 footer {
     text-align: center;
     padding: 10px 0;
-    background: linear-gradient(to bottom, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
+    background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
     color: white; /* Text color */
     width: 100%;
     position: fixed; /* Fixed position */
