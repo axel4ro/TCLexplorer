@@ -9,6 +9,8 @@
         /* Additional styles specific to this page if needed */
         body {
             background-color: #1D0F2E; /* Dark background color for the body */
+            color: #ffffff; /* Default text color */
+            font-family: Arial, sans-serif; /* Example font */
         }
         main {
             margin: 20px 0;
@@ -19,7 +21,7 @@
         .content {
             max-width: 800px;
             margin: auto;
-            background: #fff;
+            background: transparent; /* Transparent background for the content area */
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
@@ -27,11 +29,11 @@
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for the table */
+            color: #ffffff; /* Text color for contrast */
         }
-        table, th, td {
+        table th, table td {
             border: 1px solid #ddd;
-        }
-        th, td {
             padding: 8px;
             text-align: left;
         }
@@ -39,14 +41,21 @@
             background-color: #f2f2f2;
         }
         .gradient-row {
-            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background */
-            color: #ffffff; /* Text color for contrast */
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for rows */
+            color: #ffffff; /* Text color for rows */
         }
         .gradient-row td {
             padding: 8px; /* Adjust padding as needed */
         }
         .hidden {
             display: none;
+        }
+        /* Styling for the specific th with colspan */
+        th[colspan="2"] {
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for colspan th */
+            color: #22f7de; /* Color for the specific th */
+            text-align: center; /* Center text */
+            padding: 12px; /* Adjust padding */
         }
     </style>
     <script>
@@ -86,72 +95,73 @@
         <div class="content">
             <h2>Bonuses</h2>
             <table>
+                <thead>
+                    <tr class="gradient-row" onclick="toggleVisibility('weaponBonuses')">
+                        <th colspan="2">Weapons</th>
+                    </tr>
+                </thead>
                 <tbody class="gradient-row">
-                <tr class="gradient-row" onclick="toggleVisibility('weaponBonuses')">
-                    <td colspan="2">Weapons</td>
-                <!-- Specific bonuses for Weapons -->
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <th>Possible Bonuses</th>
-                    <th>Min / Max Values</th>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Average Damage</td>
-                    <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Spell Damage</td>
-                    <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Vitality</td>
-                    <td>2, 4, 6, 8, 12</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Intelligence</td>
-                    <td>2, 4, 6, 8, 12</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Strength</td>
-                    <td>2, 4, 6, 8, 12</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Dexterity</td>
-                    <td>2, 4, 6, 8, 12</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Spell Speed</td>
-                    <td>2%, 4%, 6%, 10%, 20%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Poisoning Chance</td>
-                    <td>1%, 2%, 3%, 5%, 8%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Blocking Chance</td>
-                    <td>1%, 2%, 3%, 5%, 8%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Slowing Chance</td>
-                    <td>1%, 2%, 3%, 5%, 8%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Critical Hit</td>
-                    <td>1%, 2%, 3%, 5%, 10%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Piercing Hit</td>
-                    <td>1%, 2%, 3%, 5%, 10%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Anti Half Humans</td>
-                    <td>1%, 2%, 3%, 5%, 10%</td>
-                </tr>
-                <tr class="weaponBonuses hidden">
-                    <td>Anti Monsters</td>
-                    <td>2%, 4%, 6%, 10%, 20%</td>
-                </tr>
-                 </tbody>
+                    <tr class="weaponBonuses hidden">
+                        <td>Possible Bonuses</td>
+                        <td>Min / Max Values</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Average Damage</td>
+                        <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Spell Damage</td>
+                        <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Vitality</td>
+                        <td>2, 4, 6, 8, 12</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Intelligence</td>
+                        <td>2, 4, 6, 8, 12</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Strength</td>
+                        <td>2, 4, 6, 8, 12</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Dexterity</td>
+                        <td>2, 4, 6, 8, 12</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Spell Speed</td>
+                        <td>2%, 4%, 6%, 10%, 20%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Poisoning Chance</td>
+                        <td>1%, 2%, 3%, 5%, 8%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Blocking Chance</td>
+                        <td>1%, 2%, 3%, 5%, 8%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Slowing Chance</td>
+                        <td>1%, 2%, 3%, 5%, 8%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Critical Hit</td>
+                        <td>1%, 2%, 3%, 5%, 10%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Piercing Hit</td>
+                        <td>1%, 2%, 3%, 5%, 10%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Anti Half Humans</td>
+                        <td>1%, 2%, 3%, 5%, 10%</td>
+                    </tr>
+                    <tr class="weaponBonuses hidden">
+                        <td>Anti Monsters</td>
+                        <td>2%, 4%, 6%, 10%, 20%</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </main>
