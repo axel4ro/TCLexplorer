@@ -2,9 +2,7 @@
 
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    line-height: 1.6;
+    background-color: #f4f4f4; /* Fallback background */
     margin: 0;
     padding: 0;
     display: flex;
@@ -18,18 +16,20 @@ header {
     padding: 10px 0;
     text-align: center;
     width: 100%;
+    z-index: 1; /* Ensure header is above other content */
 }
 
 nav {
     background: #333;
     color: #fff;
     width: 200px;
-    min-height: 100vh; /* Adjust height as needed */
     position: fixed;
     top: 0;
     left: 0;
+    bottom: 0;
     overflow-y: auto;
     padding-top: 20px;
+    z-index: 1; /* Ensure navigation is above other content */
 }
 
 nav ul {
@@ -55,12 +55,15 @@ main {
     margin-left: 200px; /* Ensure main content area avoids navigation */
     padding: 20px;
     flex: 1; /* Takes remaining height */
+    background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Apply gradient to main content */
+    color: #ffffff; /* Text color for contrast */
+    overflow-y: auto; /* Allow main content to scroll if needed */
+    z-index: 0; /* Ensure main content is below header and navigation */
 }
 
 .content {
     max-width: 800px;
     margin: auto;
-    background: #fff;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -71,11 +74,12 @@ footer {
     background: #333;
     color: #fff;
     width: 100%;
+    z-index: 1; /* Ensure footer is above other content */
 }
 
-/* Gradient theme styles */
-.gradient-theme {
-    background: linear-gradient(to bottom, #2C1A45, #1D0F2E);
-    color: #ffffff; /* Text color for contrast */
-    padding: 20px; /* Adjust padding as needed */
+/* Resetting default margin and padding for all elements */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
