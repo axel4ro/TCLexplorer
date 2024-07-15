@@ -16,7 +16,8 @@
 header {
     background: linear-gradient(to top, #2C1A45, #1D0F2E);
     color: #fff;
-    padding: 10px 0;
+    padding: 0px 0;
+    margin: 0;
     text-align: center;
     width: 100%;
     z-index: 1; /* Ensure header is above other content */
