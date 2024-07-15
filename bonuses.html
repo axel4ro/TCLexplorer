@@ -50,11 +50,9 @@
         // Function to toggle visibility of element by ID
         function toggleVisibility(id) {
             var element = document.getElementById(id);
-            if (element.style.display === 'none' || element.classList.contains('hidden')) {
-                element.style.display = 'table-row';
+            if (element.classList.contains('hidden')) {
                 element.classList.remove('hidden');
             } else {
-                element.style.display = 'none';
                 element.classList.add('hidden');
             }
         }
@@ -64,17 +62,31 @@
     <header>
         <h1>Bonuses - The Cursed Land Wiki</h1>
     </header>
-    <nav></nav> <!-- Placeholder for the navigation -->
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="kingdoms.html">Kingdoms</a></li>
+            <li><a href="characters.html">Characters</a></li>
+            <li><a href="items.html">Items</a></li>
+            <li><a href="bonuses.html">Bonuses</a></li>
+            <li><a href="maps.html">Maps</a></li>
+            <li><a href="npc.html">NPC</a></li>
+            <li><a href="mobs.html">Mobs</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="nfts.html">NFT</a></li>
+        </ul>
+    </nav>
     <main>
         <div class="content">
             <h2>Bonuses</h2>
+            <!-- Weapons Section -->
             <table>
                 <tr>
                     <th>Possible Bonuses</th>
                     <th>Min / Max Values</th>
                 </tr>
-                <tr class="gradient-row">
-                    <td><a href="javascript:void(0)" onclick="toggleVisibility('weaponBonuses')">Weapons</a></td>
+                <tr class="gradient-row" onclick="toggleVisibility('weaponBonuses')">
+                    <td>Weapons</td>
                     <td style="color: #22f7de;">Click to toggle</td>
                 </tr>
                 <tr id="weaponBonuses" class="hidden gradient-row">
