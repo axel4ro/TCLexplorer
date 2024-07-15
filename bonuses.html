@@ -45,11 +45,6 @@
         .hidden {
             display: none;
         }
-        .clickable {
-            cursor: pointer;
-            text-decoration: underline;
-            color: #22f7de;
-        }
     </style>
     <script>
         // Function to toggle visibility of element by class name
@@ -88,13 +83,12 @@
         <div class="content">
             <h2>Bonuses</h2>
             <table>
-                <tr>
+                <tr class="gradient-row" onclick="toggleVisibility('weaponBonuses')">
+                    <td colspan="2">Weapons</td>
+                </tr>
+                <tr class="gradient-row">
                     <th>Possible Bonuses</th>
                     <th>Min / Max Values</th>
-                </tr>
-                <tr class="gradient-row clickable" onclick="toggleVisibility('weaponBonuses')">
-                    <td>Weapons</td>
-                    <td style="color: #22f7de;">Click to toggle</td>
                 </tr>
                 <!-- Specific bonuses for Weapons -->
                 <tr class="weaponBonuses hidden">
