@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Alternative: Include using JavaScript (if SSI is not available) -->
-    <script src="navigation.html"></script>
     <title>Bonuses - The Cursed Land Wiki</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -61,20 +60,24 @@
         }
     </style>
     <script>
-        function toggleVisibility(id) {
-            var element = document.getElementById(id);
-            if (element.classList.contains('hidden')) {
-                element.classList.remove('hidden');
-            } else {
-                element.classList.add('hidden');
-            }
+        // Function to fetch and include navigation from navigation.html
+        function includeNavigation() {
+            fetch('navigation.html')
+                .then(response => response.text())
+                .then(data => {
+                    document.querySelector('nav').innerHTML = data;
+                });
         }
+
+        // Run the function on page load
+        window.addEventListener('DOMContentLoaded', includeNavigation);
     </script>
 </head>
-<body>
+<body class="gradient-theme">
     <header>
         <h1>Bonuses - The Cursed Land Wiki</h1>
     </header>
+    <nav></nav> <!-- Placeholder for the navigation -->
     <main>
         <div class="content">
             <h2>Bonuses</h2>
@@ -82,15 +85,15 @@
             <div id="weaponBonuses" class="hidden">
                 <table>
                     <tr>
-                        <th> Possible Bonuses </th>
-                        <th> Min / Max Values </th>
+                        <th>Possible Bonuses</th>
+                        <th>Min / Max Values</th>
                     </tr>
                     <tr>
-                       <td>Average Damage</td>
-                <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
+                        <td>Average Damage</td>
+                        <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
                     </tr>
                     <tr>
-                <td>Spell Damage</td>
+                        <td>Spell Damage</td>
                         <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
                     </tr>
                     <tr>
@@ -141,7 +144,6 @@
                         <td>Anti Monsters</td>
                         <td>2%, 4%, 6%, 10%, 20%</td>
                     </tr>
-                    <tr>
                 </table>
             </div>
             <!-- Additional sections for Armor, Shoes, Helmet can be added here. -->
