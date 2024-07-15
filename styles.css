@@ -53,13 +53,13 @@ nav ul li:hover {
 }
 
 main {
-    margin-left: 200px; /* Ensure main content area avoids navigation */
+    margin-left: 220px; /* Ensure main content area avoids navigation */
     padding: 20px;
     z-index: 0; /* Ensure main content is below header and navigation */
 }
 
 .content {
-    max-width: 800px;
+    max-width: calc(100% - 240px); /* Adjust maximum width for content */
     margin: auto;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -95,6 +95,7 @@ footer {
         padding: 10px; /* Adjust padding for mobile */
         box-shadow: none; /* No box shadow for content in mobile */
         margin-top: 20px; /* Adjust margin top for content in mobile */
+        max-width: 100%; /* Full width for content in mobile */
     }
 
     footer {
