@@ -1,5 +1,3 @@
-/* styles.css */
-
 /* Resetting default margin and padding for all elements */
 * {
     margin: 0;
@@ -7,10 +5,12 @@
     box-sizing: border-box;
 }
 
+/* Adjusted gradient theme */
 .gradient-theme {
     background: linear-gradient(to bottom, #2C1A45, #1D0F2E);
     color: #ffffff; /* Text color for contrast */
     padding: 20px; /* Adjust padding as needed */
+    min-height: 100vh; /* Ensure gradient covers the entire viewport height */
 }
 
 header {
