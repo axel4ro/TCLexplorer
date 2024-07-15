@@ -99,5 +99,8 @@ footer {
 
     footer {
         position: relative; /* Adjust position for mobile */
+        width: 100%; /* Full width for mobile */
+        z-index: 1; /* Ensure footer is above other content */
+        bottom: auto; /* Reset bottom position */
     }
 }
