@@ -60,17 +60,17 @@
         }
     </style>
     <script>
-        // Function to fetch and include navigation from navigation.html
-        function includeNavigation() {
-            fetch('navigation.html')
-                .then(response => response.text())
-                .then(data => {
-                    document.querySelector('nav').innerHTML = data;
-                });
+        // Function to toggle visibility of element by ID
+        function toggleVisibility(id) {
+            var element = document.getElementById(id);
+            if (element.style.display === 'none' || element.classList.contains('hidden')) {
+                element.style.display = 'block';
+                element.classList.remove('hidden');
+            } else {
+                element.style.display = 'none';
+                element.classList.add('hidden');
+            }
         }
-
-        // Run the function on page load
-        window.addEventListener('DOMContentLoaded', includeNavigation);
     </script>
 </head>
 <body class="gradient-theme">
