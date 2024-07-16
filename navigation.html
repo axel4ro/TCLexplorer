@@ -63,12 +63,16 @@
         .navigationMenu a:visited {
             color: purple; /* Change link color to blue after being visited */
         }
-        /* Style for the Menu button text color */
+        /* Style for the Menu button image */
         .gradient-row th {
             background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Background gradient */
-            color: red; /* Red text color */
             padding: 12px;
             text-align: center;
+        }
+        .gradient-row th img {
+            width: 30px; /* Adjust the width of the image */
+            height: 30px; /* Adjust the height of the image */
+            vertical-align: middle; /* Align the image vertically */
         }
     </style>
 </head>
@@ -84,7 +88,7 @@
             <table>
                 <thead>
                     <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
-                        <th colspan="2">Menu</th>
+                        <th colspan="2"><a href="https://ibb.co/4SkQYyk"><img src="https://i.ibb.co/4SkQYyk/menu.png" alt="Menu"></th>
                     </tr>
                 </thead>
                 <tbody class="gradient-row navigationMenu hidden">
