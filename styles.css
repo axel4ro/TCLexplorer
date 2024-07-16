@@ -7,21 +7,21 @@
 
 /* Adjusted gradient theme */
 .gradient-theme {
-    background: linear-gradient(to bottom, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
-    color: #ffffff; /* Text color for contrast */
-    padding: 20px; /* Adjust padding as needed */
-    min-height: 100vh; /* Ensure gradient covers the entire viewport height */
+    background: linear-gradient(to bottom, #1D0F2E 0%, #1D0F25 100%);
+    color: #ffffff;
+    padding: 20px;
+    min-height: 100vh;
 }
 
 header {
-    background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
+    background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%);
     color: #fff;
-    padding: 10px 20px; /* Example padding */
-    margin-top: 0; /* Ensure there's no top margin */
+    padding: 10px 20px;
+    margin-top: 0;
     text-align: center;
     width: 100%;
-    box-sizing: border-box; /* Include padding and border in width */
-    z-index: 1; /* Ensure header is above other content */
+    box-sizing: border-box;
+    z-index: 1;
 }
 
 nav {
@@ -32,7 +32,7 @@ nav {
     bottom: 0;
     overflow-y: auto;
     padding-top: 20px;
-    z-index: 1; /* Ensure navigation is above other content */
+    z-index: 1;
 }
 
 nav ul {
@@ -55,55 +55,82 @@ nav ul li:hover {
 }
 
 main {
-    margin-left: 220px; /* Ensure main content area avoids navigation */
+    margin-left: 220px;
     padding: 20px;
-    z-index: 0; /* Ensure main content is below header and navigation */
+    z-index: 0;
 }
 
 .content {
-    max-width: calc(100% - 240px); /* Adjust maximum width for content */
+    max-width: calc(100% - 240px);
     margin: auto;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background for content */
+    background: rgba(0, 0, 0, 0.5);
 }
 
 footer {
     text-align: center;
     padding: 10px 0;
-    background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
-    color: white; /* Text color */
+    background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%);
+    color: white;
     width: 100%;
-    position: fixed; /* Fixed position */
+    position: fixed;
     bottom: 0;
-    z-index: 9999; /* Ensure footer is above other content */
+    z-index: 9999;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background: linear-gradient(to bottom, #0D0D0D 0%, #1D1D1D 100%);
+    color: #ddd;
+}
+
+body.dark-mode .gradient-theme {
+    background: linear-gradient(to bottom, #0D0D0D 0%, #1D1D1D 100%);
+    color: #ddd;
+}
+
+body.dark-mode header {
+    background: linear-gradient(to top, #0D0D0D 0%, #1D1D1D 100%);
+}
+
+body.dark-mode nav ul li:hover {
+    background: #333;
+}
+
+body.dark-mode .content {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+body.dark-mode footer {
+    background: linear-gradient(to top, #0D0D0D 0%, #1D1D1D 100%);
 }
 
 /* Mobile-specific styles */
 @media only screen and (max-width: 768px) {
     nav {
-        width: 100%; /* Full width for mobile */
-        position: static; /* Static position for mobile */
-        overflow-y: visible; /* Visible overflow for mobile */
-        padding-top: 0; /* No padding top for mobile */
+        width: 100%;
+        position: static;
+        overflow-y: visible;
+        padding-top: 0;
     }
 
     main {
-        margin-left: 0; /* No margin for main content in mobile */
+        margin-left: 0;
     }
 
     .content {
-        background: none; /* No background for content in mobile */
-        padding: 10px; /* Adjust padding for mobile */
-        box-shadow: none; /* No box shadow for content in mobile */
-        margin-top: 20px; /* Adjust margin top for content in mobile */
-        max-width: 100%; /* Full width for content in mobile */
+        background: none;
+        padding: 10px;
+        box-shadow: none;
+        margin-top: 20px;
+        max-width: 100%;
     }
 
     footer {
-        position: relative; /* Adjust position for mobile */
-        width: 100%; /* Full width for mobile */
-        z-index: 1; /* Ensure footer is above other content */
-        bottom: auto; /* Reset bottom position */
+        position: relative;
+        width: 100%;
+        z-index: 1;
+        bottom: auto;
     }
 }
