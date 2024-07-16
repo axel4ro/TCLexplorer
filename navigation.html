@@ -3,35 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigation Menu</title>
+    <title>The Cursed Land - Wiki</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Additional styles specific to this page if needed */
         body {
-            background-color: #1D0F2E;
-            color: #ffffff;
-            line-height: 1.6;
+            background-color: #1D0F2E; /* Dark background color for the body */
+            color: #ffffff; /* Default text color */
+            font-family: Arial, sans-serif; /* Example font */
             margin: 0;
-            padding: 12px;
-            font-family: Arial, sans-serif;
-        }
-        header {
-            background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%);
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-            z-index: 1;
+            padding: 0;
         }
         main {
-            margin: 12px 0;
+            margin: 20px 0;
         }
         .content {
             max-width: 800px;
             margin: auto;
-            background: transparent;
-            padding: 12px;
+            background: transparent; /* Transparent background for the content area */
+            padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         table {
@@ -73,46 +63,50 @@
 <body>
     <main>
         <div class="content">
-            <table>
-                <thead>
-                    <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
-                        <th colspan="2">Menu</th>
-                    </tr>
-                </thead>
-                <tbody class="gradient-row navigationMenu hidden">
-                    <tr>
-                        <td><a href="index.html">Home</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="kingdoms.html">Kingdoms</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="characters.html">Characters</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="items.html">Items</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="bonuses.html">Bonuses</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="maps.html">Maps</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="npc.html">NPC</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="mobs.html">Mobs</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="tokens.html">Tokens</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="nfts.html">NFT</a></td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Your main content here -->
+            <p>This wiki provides detailed information about The Cursed Land game.</p>
         </div>
+
+        <!-- Navigation Menu -->
+        <table>
+            <thead>
+                <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
+                    <th colspan="2">Menu</th>
+                </tr>
+            </thead>
+            <tbody class="gradient-row navigationMenu hidden">
+                <tr>
+                    <td><a href="index.html" target="_self">Home</a></td>
+                </tr>
+                <tr>
+                    <td><a href="kingdoms.html" target="_self">Kingdoms</a></td>
+                </tr>
+                <tr>
+                    <td><a href="characters.html" target="_self">Characters</a></td>
+                </tr>
+                <tr>
+                    <td><a href="items.html" target="_self">Items</a></td>
+                </tr>
+                <tr>
+                    <td><a href="bonuses.html" target="_self">Bonuses</a></td>
+                </tr>
+                <tr>
+                    <td><a href="maps.html" target="_self">Maps</a></td>
+                </tr>
+                <tr>
+                    <td><a href="npc.html" target="_self">NPC</a></td>
+                </tr>
+                <tr>
+                    <td><a href="mobs.html" target="_self">Mobs</a></td>
+                </tr>
+                <tr>
+                    <td><a href="tokens.html" target="_self">Tokens</a></td>
+                </tr>
+                <tr>
+                    <td><a href="nfts.html" target="_self">NFT</a></td>
+                </tr>
+            </tbody>
+        </table>
     </main>
 
     <script>
