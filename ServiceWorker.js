@@ -1,9 +1,9 @@
 const cacheName = "DefaultCompany-TCL Wiki-1.0";
 const contentToCache = [
     "Build/The Cursed Land - Wiki (webGL).loader.js",
-    "Build/The Cursed Land - Wiki (webGL).framework.js",
-    "Build/The Cursed Land - Wiki (webGL).data",
-    "Build/The Cursed Land - Wiki (webGL).wasm",
+    "Build/The Cursed Land - Wiki (webGL).framework.js.br",
+    "Build/The Cursed Land - Wiki (webGL).data.br",
+    "Build/The Cursed Land - Wiki (webGL).wasm.br",
     "TemplateData/style.css"
 
 ];
