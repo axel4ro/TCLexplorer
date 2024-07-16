@@ -1,13 +1,58 @@
-<nav>
-    <ul>
-        <li><a href="kingdoms.html">Kingdoms</a></li>
-        <li><a href="characters.html">Characters</a></li>
-        <li><a href="items">Items</a></li>
-        <li><a href="bonuses.html">Bonuses</a></li>
-        <li><a href="maps.html">Maps</a></li>
-        <li><a href="npc.html">NPC</a></li>
-        <li><a href="mobs.html">Mobs</a></li>
-        <li><a href="tokens.html">Tokens</a></li>
-        <li><a href="nfts.html">NFT</a></li>
-    </ul>
-</nav>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Menu</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1D0F2E; /* Dark background color for the body */
+            color: #ffffff; /* Default text color */
+        }
+        nav.pinned-menu {
+            width: 200px;
+            position: fixed;
+            top: 20px; /* Space from the top */
+            right: 20px; /* Space from the right */
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background */
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add a shadow for better visibility */
+            z-index: 1; /* Ensure navigation is above other content */
+            border-radius: 8px; /* Rounded corners for the menu */
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            padding: 10px;
+            text-align: left; /* Left align the text */
+        }
+        nav ul li a {
+            color: #ffd700; /* Gold color for the text */
+            text-decoration: none;
+        }
+        nav ul li:hover {
+            background: #575757;
+        }
+    </style>
+</head>
+<body>
+    <nav class="pinned-menu">
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="kingdoms.html">Kingdoms</a></li>
+            <li><a href="characters.html">Characters</a></li>
+            <li><a href="items.html">Items</a></li>
+            <li><a href="bonuses.html">Bonuses</a></li>
+            <li><a href="maps.html">Maps</a></li>
+            <li><a href="npc.html">NPC</a></li>
+            <li><a href="mobs.html">Mobs</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="nfts.html">NFT</a></li>
+        </ul>
+    </nav>
+</body>
+</html>
