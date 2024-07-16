@@ -90,6 +90,16 @@
             .then(response => response.text())
             .then(data => {
                 document.getElementById('navigationMenuContainer').innerHTML = data;
+                // Attach the toggleVisibility function to the dynamically loaded menu
+                var menuToggle = document.querySelector('.gradient-row');
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', function() {
+                        var navigationMenu = document.querySelector('.navigationMenu');
+                        if (navigationMenu) {
+                            navigationMenu.classList.toggle('hidden');
+                        }
+                    });
+                }
             })
             .catch(error => console.error('Error fetching navigation menu:', error));
     </script>
