@@ -6,16 +6,16 @@
     <title>The Cursed Land - Wiki</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Stiluri suplimentare specifice acestei pagini */
+        /* Additional styles specific to this page if needed */
         body {
-            background-color: #1D0F2E;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
+            background-color: #1D0F2E; /* Dark background color for the body */
+            color: #ffffff; /* Default text color */
+            font-family: Arial, sans-serif; /* Example font */
             margin: 0;
             padding: 0;
         }
         main {
-            margin: 0;
+            margin: 0px 0;
         }
         h1 {
             text-align: center;
@@ -23,22 +23,23 @@
         .content {
             max-width: 100%;
             margin: auto;
-            background: transparent;
+            background: transparent; /* Transparent background for the content area */
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+        /* Styling for the header */
         header {
-            background: linear-gradient(to bottom, #2C1A45, #1D0F2E);
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for the header */
             text-align: center;
             padding: 20px 0;
         }
         h1 {
-            margin-top: 10px;
-            font-size: 26px;
-            color: #ffffff;
+            margin-top: 10px; /* Adjust top margin as needed */
+            font-size: 26px; /* Example font size */
+            color: #ffffff; /* Default text color */
         }
         h1 span {
-            color: #22f7de;
+            color: #22f7de; /* Color for the specific text within the span */
         }
         table {
             width: 100%;
@@ -68,30 +69,32 @@
 
     <main>
         <div class="content">
-            <!-- Conținutul principal al paginii -->
+            <!-- Your main content here -->
+         
         </div>
 
-        <!-- Placeholder pentru meniul de navigare -->
+        <!-- Navigation Menu placeholder -->
         <div id="navigationMenuContainer"></div>
     </main>
-    <footer>
+<footer>
         <p>&copy; Made with ♥ for TCL </p>
     </footer>
 
     <script>
-        // Funcția pentru a încărca meniul de navigare din navigation.html și a-l injecta în pagină
+        // Fetch navigation menu content from navigation.html and inject it into the page
         fetch('navigation.html')
             .then(response => response.text())
             .then(data => {
                 document.getElementById('navigationMenuContainer').innerHTML = data;
-                // Verifică dacă modul întunecat este activat și actualizează butonul
-                if (localStorage.getItem('dark-mode') === 'enabled') {
-                    document.body.classList.add('dark-mode');
-                    var button = document.getElementById('toggle-button');
-                    if (button) {
-                        button.classList.add('light-mode');
-                        button.innerText = 'Toggle Light Mode';
-                    }
+                // Attach the toggleVisibility function to the dynamically loaded menu
+                var menuToggle = document.querySelector('.gradient-row');
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', function() {
+                        var navigationMenu = document.querySelector('.navigationMenu');
+                        if (navigationMenu) {
+                            navigationMenu.classList.toggle('hidden');
+                        }
+                    });
                 }
             })
             .catch(error => console.error('Error fetching navigation menu:', error));
