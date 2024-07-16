@@ -11,6 +11,8 @@
             background-color: #1D0F2E; /* Dark background color for the body */
             color: #ffffff; /* Default text color */
             font-family: Arial, sans-serif; /* Example font */
+            margin: 0;
+            padding: 0;
         }
         main {
             margin: 20px 0;
@@ -39,6 +41,28 @@
         h1 span {
             color: #22f7de; /* Color for the specific text within the span */
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E);
+            color: #ffffff;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #ff;
+        }
+        .gradient-row {
+            background: linear-gradient(to bottom, #2C1A45, #1D0F2E);
+            color: #ffffff;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="gradient-theme">
@@ -51,13 +75,65 @@
             <!-- Your main content here -->
             <p>This wiki provides detailed information about The Cursed Land game.</p>
         </div>
-    </main>
 
-    <!-- Single line to include navigation -->
-    <object type="text/html" data="navigation.html" id="navigation-container"></object>
+        <!-- Navigation Menu -->
+        <table>
+            <thead>
+                <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
+                    <th colspan="2">Menu</th>
+                </tr>
+            </thead>
+            <tbody class="gradient-row navigationMenu hidden">
+                <tr>
+                    <td><a href="index.html" target="_blank">Home</a></td>
+                </tr>
+                <tr>
+                    <td><a href="kingdoms.html" target="_blank">Kingdoms</a></td>
+                </tr>
+                <tr>
+                    <td><a href="characters.html" target="_blank">Characters</a></td>
+                </tr>
+                <tr>
+                    <td><a href="items.html" target="_blank">Items</a></td>
+                </tr>
+                <tr>
+                    <td><a href="bonuses.html" target="_blank">Bonuses</a></td>
+                </tr>
+                <tr>
+                    <td><a href="maps.html" target="_blank">Maps</a></td>
+                </tr>
+                <tr>
+                    <td><a href="npc.html" target="_blank">NPC</a></td>
+                </tr>
+                <tr>
+                    <td><a href="mobs.html" target="_blank">Mobs</a></td>
+                </tr>
+                <tr>
+                    <td><a href="tokens.html" target="_blank">Tokens</a></td>
+                </tr>
+                <tr>
+                    <td><a href="nfts.html" target="_blank">NFT</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
 
     <footer>
         <p>&copy; Made with ♥ by TCL </p>
     </footer>
+
+    <script>
+        function toggleVisibility(className) {
+            var elements = document.getElementsByClassName(className);
+            for (var i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                if (element.classList.contains('hidden')) {
+                    element.classList.remove('hidden');
+                } else {
+                    element.classList.add('hidden');
+                }
+            }
+        }
+    </script>
 </body>
 </html>
