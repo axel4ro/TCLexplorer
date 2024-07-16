@@ -148,45 +148,8 @@
 
 
             
-            <table>
-                <thead>
-                    <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
-                        <th colspan="2">Menu</th>
-                    </tr>
-                </thead>
-                <tbody class="gradient-row">
-                    <tr class="navigationMenu hidden">
-                        <td><a href="index.html">Home</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="kingdoms.html">Kingdoms</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="characters.html">Characters</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="items.html">Items</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="bonuses.html">Bonuses</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="maps.html">Maps</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="npc.html">NPC</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="mobs.html">Mobs</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="tokens.html">Tokens</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="nfts.html">NFT</a></td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Navigation Menu placeholder -->
+        <div id="navigationMenuContainer"></div>
 
             <h2>Bonuses</h2>
 
@@ -712,5 +675,27 @@
     <footer>
         <p>&copy; Made with ♥ by TCL </p>
     </footer>
+
+        <script>
+        // Fetch navigation menu content from navigation.html and inject it into the page
+        fetch('navigation.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navigationMenuContainer').innerHTML = data;
+                // Attach the toggleVisibility function to the dynamically loaded menu
+                var menuToggle = document.querySelector('.gradient-row');
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', function() {
+                        var navigationMenu = document.querySelector('.navigationMenu');
+                        if (navigationMenu) {
+                            navigationMenu.classList.toggle('hidden');
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Error fetching navigation menu:', error));
+    </script>
+
+    
 </body>
 </html
