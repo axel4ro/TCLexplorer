@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Cursed Land - Wiki</title>
+    <title>Navigation Menu</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Additional styles specific to this page if needed */
         body {
-            background-color: #1D0F2E; /* Dark background color for the body */
-            color: #ffffff; /* Default text color */
-            font-family: Arial, sans-serif; /* Example font */
+            background-color: #1D0F2E;
+            color: #ffffff;
+            line-height: 1.6;
             margin: 0;
-            padding: 0;
+            padding: 12px;
+            font-family: Arial, sans-serif;
         }
         main {
-            margin: 20px 0;
+            margin: 12px 0;
         }
         .content {
             max-width: 800px;
             margin: auto;
-            background: transparent; /* Transparent background for the content area */
-            padding: 20px;
+            background: transparent;
+            padding: 12px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         table {
@@ -61,61 +62,50 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1><span>The Cursed Land - Wiki</span></h1>
-    </header>
-
     <main>
         <div class="content">
-            <!-- Your main content here -->
-            <p>This wiki provides detailed information about The Cursed Land game.</p>
-        </div>
-
-        <!-- Navigation Menu -->
-      <table>
+            <!-- Navigation Menu -->
+            <table>
                 <thead>
                     <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
                         <th colspan="2">Menu</th>
                     </tr>
                 </thead>
-                <tbody class="gradient-row">
-                    <tr class="navigationMenu hidden">
+                <tbody class="gradient-row navigationMenu hidden">
+                    <tr>
                         <td><a href="index.html">Home</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="kingdoms.html">Kingdoms</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="characters.html">Characters</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="items.html">Items</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="bonuses.html">Bonuses</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="maps.html">Maps</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="npc.html">NPC</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="mobs.html">Mobs</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="tokens.html">Tokens</a></td>
                     </tr>
-                    <tr class="navigationMenu hidden">
+                    <tr>
                         <td><a href="nfts.html">NFT</a></td>
                     </tr>
                 </tbody>
             </table>
+        </div>
     </main>
-
-    <footer>
-        <p>&copy; Made with ♥ by TCL </p>
-    </footer>
 
     <script>
         function toggleVisibility(className) {
