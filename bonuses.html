@@ -45,10 +45,19 @@
             background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for the table */
             color: #ffffff; /* Text color for contrast */
         }
-        table th, table td {
+        /*table th, table td {
             border: 1px solid #ddd;
-            padding: 0px;
+            padding: 10px;
             text-align: center; /* Center-align text in table cells */
+            table {
+    width: 100%; /* Ensure table takes full width of its container */
+    border-collapse: collapse; /* Optional: Collapse borders to avoid gaps */
+}
+            th, td {
+    text-align: center; /* Align text in table cells */
+    border: 1px solid black; /* Example border styling */
+    padding: 8px; /* Example padding for cells */
+        }
         th {
             background-color: #f2f2f2;
         }
@@ -74,15 +83,15 @@
     background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
     color: #fff;
     padding: 10px 20px; /* Example padding */
-    margin-top: 10; /* Ensure there's no top margin */
+    margin-top: 0; /* Ensure there's no top margin */
     text-align: center;
     width: 100%;
     box-sizing: border-box; /* Include padding and border in width */
     z-index: 1; /* Ensure header is above other content */
         }
         h1 {
-            margin-top: 10px; /* Adjust top margin as needed */
-            font-size: 26px; /* Example font size */
+            margin-top: 0px; /* Adjust top margin as needed */
+            font-size: 32px; /* Example font size */
             color: #ffffff; /* Default text color */
         }
         h1 span {
@@ -619,7 +628,7 @@
         </div>
     </main>
 <footer>
-        <p>&copy; Made with ♥ for TCL </p>
+        <p>&copy; Made with ♥ by TCL </p>
     </footer>
         <script>
         // Fetch navigation menu content from navigation.html and inject it into the page
