@@ -105,20 +105,20 @@
                 </tbody>
             </table>
         </div>
-    </main>
 
-    <script>
-        function toggleVisibility(className) {
-            var elements = document.getElementsByClassName(className);
-            for (var i = 0; i < elements.length; i++) {
-                var element = elements[i];
-                if (element.classList.contains('hidden')) {
-                    element.classList.remove('hidden');
-                } else {
-                    element.classList.add('hidden');
+        <script>
+            function toggleVisibility(className) {
+                var elements = document.getElementsByClassName(className);
+                for (var i = 0; i < elements.length; i++) {
+                    var element = elements[i];
+                    if (element.classList.contains('hidden')) {
+                        element.classList.remove('hidden');
+                    } else {
+                        element.classList.add('hidden');
+                    }
                 }
             }
-        }
-    </script>
+        </script>
+    </main>
 </body>
 </html>
