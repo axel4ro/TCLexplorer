@@ -1,11 +1,11 @@
-/* Resetting default margin and padding for all elements */
+/* Resetare margini și padding-uri implicite pentru toate elementele */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* Adjusted gradient theme */
+/* Tema gradient */
 .gradient-theme {
     background: linear-gradient(to bottom, #1D0F2E 0%, #1D0F25 100%);
     color: #ffffff;
@@ -13,6 +13,7 @@
     min-height: 100vh;
 }
 
+/* Stiluri pentru header */
 header {
     background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%);
     color: #fff;
@@ -24,6 +25,7 @@ header {
     z-index: 1;
 }
 
+/* Stiluri pentru nav (meniul de navigare) */
 nav {
     width: 200px;
     position: fixed;
@@ -54,12 +56,14 @@ nav ul li:hover {
     background: #575757;
 }
 
+/* Stiluri pentru main */
 main {
     margin-left: 220px;
     padding: 20px;
     z-index: 0;
 }
 
+/* Stiluri pentru conținut */
 .content {
     max-width: calc(100% - 240px);
     margin: auto;
@@ -68,6 +72,7 @@ main {
     background: rgba(0, 0, 0, 0.5);
 }
 
+/* Stiluri pentru footer */
 footer {
     text-align: center;
     padding: 10px 0;
@@ -79,7 +84,7 @@ footer {
     z-index: 9999;
 }
 
-/* Dark Mode Styles */
+/* Stiluri pentru modul întunecat */
 body.dark-mode {
     background: linear-gradient(to bottom, #0D0D0D 0%, #1D1D1D 100%);
     color: #ddd;
@@ -106,7 +111,7 @@ body.dark-mode footer {
     background: linear-gradient(to top, #0D0D0D 0%, #1D1D1D 100%);
 }
 
-/* Mobile-specific styles */
+/* Stiluri specifice pentru mobil */
 @media only screen and (max-width: 768px) {
     nav {
         width: 100%;
@@ -133,4 +138,22 @@ body.dark-mode footer {
         z-index: 1;
         bottom: auto;
     }
+}
+
+/* Stiluri pentru butonul de comutare a temei */
+#toggle-button {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    padding: 5px 10px;
+    background-color: #1D0F2E;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#toggle-button.light-mode {
+    background-color: #ffffff;
+    color: #1D0F2E;
 }
