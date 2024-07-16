@@ -25,38 +25,6 @@
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for the table */
-            color: #ffffff; /* Text color for contrast */
-        }
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center; /* Center-align text in table cells */
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .gradient-row {
-            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for rows */
-            color: #ffffff; /* Text color for rows */
-        }
-        .gradient-row td {
-            padding: 8px; /* Adjust padding as needed */
-        }
-        .hidden {
-            display: none;
-        }
-        /* Styling for the specific th with colspan */
-        th[colspan="2"] {
-            background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for colspan th */
-            color: #22f7de; /* Color for the specific th */
-            text-align: center; /* Center text */
-            padding: 12px; /* Adjust padding */
-        }
         /* Styling for the header */
         header {
             background: linear-gradient(to bottom, #2C1A45, #1D0F2E); /* Gradient background for the header */
@@ -71,56 +39,7 @@
         h1 span {
             color: #22f7de; /* Color for the specific text within the span */
         }
-        /* Pinned navigation menu styles */
-        nav.pinned-menu {
-            width: 200px;
-            position: fixed;
-            top: 20px; /* Space from the top */
-            right: 20px; /* Space from the right */
-            background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add a shadow for better visibility */
-            z-index: 1; /* Ensure navigation is above other content */
-            border-radius: 8px; /* Rounded corners for the menu */
-        }
-        nav ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        nav ul li {
-            padding: 10px;
-            text-align: left; /* Left align the text */
-        }
-        nav ul li a {
-            color: #fff;
-            text-decoration: none;
-        }
-        nav ul li:hover {
-            background: #575757;
-        }
-
-        /* Gold text color for navigation menu items */
-        .navigationMenu a {
-            color: gold;
-        }
-        .navigationMenu a:hover {
-            color: #FFD700; /* Lighter gold color on hover */
-        }
     </style>
-    <script>
-        // Function to toggle visibility of elements by class name
-        function toggleVisibility(className) {
-            var elements = document.getElementsByClassName(className);
-            for (var i = 0; i < elements.length; i++) {
-                var element = elements[i];
-                if (element.classList.contains('hidden')) {
-                    element.classList.remove('hidden');
-                } else {
-                    element.classList.add('hidden');
-                }
-            }
-        }
-    </script>
 </head>
 <body class="gradient-theme">
     <header>
@@ -130,49 +49,13 @@
     <main>
         <div class="content">
             <!-- Your main content here -->
-            <p>This wiki provides detailed informations about The Cursed Land game.</p>
-            
-            <table>
-                <thead>
-                    <tr class="gradient-row" onclick="toggleVisibility('navigationMenu')">
-                        <th colspan="2">Menu</th>
-                    </tr>
-                </thead>
-                <tbody class="gradient-row">
-                    <tr class="navigationMenu hidden">
-                        <td><a href="index.html">Home</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="kingdoms.html">Kingdoms</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="characters.html">Characters</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="items.html">Items</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="bonuses.html">Bonuses</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="maps.html">Maps</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="npc.html">NPC</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="mobs.html">Mobs</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="tokens.html">Tokens</a></td>
-                    </tr>
-                    <tr class="navigationMenu hidden">
-                        <td><a href="nfts.html">NFT</a></td>
-                    </tr>
-                </tbody>
-            </table>
+            <p>This wiki provides detailed information about The Cursed Land game.</p>
         </div>
     </main>
+
+    <!-- Single line to include navigation -->
+    <object type="text/html" data="navigation.html" id="navigation-container"></object>
+
     <footer>
         <p>&copy; Made with ♥ by TCL </p>
     </footer>
