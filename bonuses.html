@@ -32,8 +32,8 @@
             text-align: center;
         }
         .content {
-            max-width: 1000px;
-            margin: 0px;
+            max-width: 100%; /* Change max-width to 100% for full-width */
+            margin: 0 auto; /* Center the content horizontally */
             background: transparent; /* Transparent background for the content area */
             padding: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -105,7 +105,6 @@
             background: #575757;
         }
     </style>
-
     <script>
         // Function to toggle visibility of elements by class name
         function toggleVisibility(className) {
@@ -120,20 +119,12 @@
             }
         }
     </script>
-
-
-
-    
 </head>
 <body class="gradient-theme">
-    <header>
-        <h1><span>The Cursed Land - Wiki</span></h1>
-                      <div class="content">
+    <main>
+                          <div class="content">
             <!-- Navigation Menu placeholder -->
             <div id="navigationMenuContainer"></div>
-    </header>
-    <main>
-    
             <h2>Bonuses</h2>
             <table>
                 <thead>
@@ -142,7 +133,7 @@
                     </tr>
                 </thead>
                 <tbody class="gradient-row">
-                    <tr class="weaponBonuses hidden">
+                        <tr class="weaponBonuses hidden">
                         <td style="color: #FFD700;"><strong>Possible Bonuses</strong></td>
                         <td style="color: #FFD700;"><strong>Min / Max Values</strong></td>
 
@@ -152,7 +143,7 @@
                         <td style="color: #22f7de;">-60, -1, ..., 1, 60</td>
                     </tr>
                     <tr class="weaponBonuses hidden">
-                       <td style="color: #22f7de;">Spell Damage</td>
+                        <td style="color: #22f7de;">Spell Damage</td>
                         <td style="color: #22f7de;">-30, -1, ..., 1, 30</td>
                     </tr>
                     <tr class="weaponBonuses hidden">
@@ -203,8 +194,8 @@
                         <td>Anti Monsters</td>
                         <td>2%, 4%, 6%, 10%, 20%</td>
                     </tr>
-
-            <table>
+</table>                              
+<table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('shieldBonuses')">
             <th colspan="2">Shields</th>
@@ -263,10 +254,7 @@
             <td>-</td>
         </tr>
     </tbody>
-</table>
-
-                    
-                    
+</table>                
 <table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('armorBonuses')">
@@ -330,11 +318,7 @@
             <td>5, 10, 15, 30, 50</td>
         </tr>
     </tbody>
-</table>
-
-
-
-                    
+</table>               
 <table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('braceletBonuses')">
@@ -382,11 +366,7 @@
             <td>2%, 4%, 6%, 8%, 20%</td>
         </tr>
     </tbody>
-</table>
-
-
-
-                    
+</table>            
 <table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('necklacesBonuses')">
@@ -394,7 +374,7 @@
         </tr>
     </thead>
     <tbody class="gradient-row necklacesBonuses hidden">
-                         <tr class="necklacesBonuses hidden">
+                        <tr class="necklacesBonuses hidden">
                         <td style="color: #FFD700;"><strong>Possible Bonuses</strong></td>
                         <td style="color: #FFD700;"><strong>Min / Max Values</strong></td>
         <tr>
@@ -462,11 +442,7 @@
             <td>2%, 4%, 6%, 8%, 20%</td>
         </tr>
     </tbody>
-</table>
-
-
-
-                    
+</table>                
 <table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('shoesBonuses')">
@@ -534,10 +510,7 @@
             <td>2%, 4%, 6%, 8%, 20%</td>
         </tr>
     </tbody>
-</table>
-
-
-                    
+</table>                    
 <table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('helmetBonuses')">
@@ -585,10 +558,7 @@
             <td>2%, 4%, 6%, 10%, 15%</td>
         </tr>
     </tbody>
-</table>
-
-
-                    
+</table>            
 <table>
     <thead>
         <tr class="gradient-row" onclick="toggleVisibility('earringsBonuses')">
@@ -644,15 +614,12 @@
             <td>2%, 4%, 6%, 8%, 20%</td>
         </tr>
     </tbody>
+</table>         
+</tbody>
 </table>
-
-
-                    
-                </tbody>
-            </table>
         </div>
     </main>
-    <footer>
+<footer>
         <p>&copy; Made with ♥ by TCL </p>
     </footer>
         <script>
