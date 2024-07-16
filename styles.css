@@ -17,7 +17,7 @@ header {
     background: linear-gradient(to top, #1D0F2E 0%, #1D0F25 100%); /* Gradient background */
     color: #fff;
     padding: 10px 10px; /* Example padding */
-    margin-top: 0; /* Ensure there's no top margin */
+    margin-top: 10; /* Ensure there's no top margin */
     text-align: center;
     width: 100%;
     box-sizing: border-box; /* Include padding and border in width */
