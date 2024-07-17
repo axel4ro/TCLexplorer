@@ -3,20 +3,14 @@ html, body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-}
-
-body.light-mode {
     background-color: #f4f4f4;
     color: #333;
 }
 
-body.dark-mode {
-    background-color: #333;
-    color: #f4f4f4;
+body {
+    display: flex;
+    flex-direction: column;
 }
-
-/* Restul stilurilor */
-
 
 .header-container {
     display: flex;
@@ -25,11 +19,6 @@ body.dark-mode {
     background-color: #333;
     color: #fff;
     padding: 10px;
-}
-
-.header-container.light-mode {
-    background-color: #f4f4f4;
-    color: #333;
 }
 
 .logo img {
@@ -43,12 +32,10 @@ body.dark-mode {
 }
 
 main {
-    flex: 1;
+    flex: 1 0 auto;
     padding: 20px;
     max-width: 800px;
     margin: auto;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .content {
@@ -86,27 +73,11 @@ footer {
     width: 100%;
 }
 
-footer.light-mode {
-    background-color: #f4f4f4;
-    color: #333;
-}
-
 .footer-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
-}
-
-.theme-toggle button {
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.theme-toggle img {
-    width: 20px;
-    height: 20px;
 }
 
 .home-button {
