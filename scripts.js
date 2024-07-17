@@ -19,3 +19,9 @@ document.getElementById('search-input').addEventListener('input', function() {
         }
     });
 });
+
+// Toggle DexScreener embed visibility
+document.getElementById('toggle-dexscreener').addEventListener('click', function() {
+    const embedContainer = document.getElementById('dexscreener-embed-container');
+    embedContainer.style.display = (embedContainer.style.display === 'none' || embedContainer.style.display === '') ? 'block' : 'none';
+});
