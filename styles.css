@@ -210,3 +210,11 @@ th {
 .button:hover {
     background-color: #d35400;
 }
+
+.dexscreener-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto; /* Center the container */
+    padding: 0 10px; /* Add some padding for mobile view */
+    box-sizing: border-box;
+}
