@@ -1,9 +1,16 @@
-body {
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
-    margin: 0;
-    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .header-container {
@@ -23,33 +30,6 @@ body {
     padding: 5px;
     border-radius: 3px;
     border: none;
-}
-
-nav {
-    background-color: #222;
-}
-
-nav ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-}
-
-nav ul li {
-    margin: 0 15px;
-}
-
-nav ul li a {
-    color: white;
-    text-decoration: none;
-    padding: 14px 20px;
-    display: block;
-}
-
-nav ul li a:hover {
-    background-color: #575757;
 }
 
 main {
@@ -92,8 +72,8 @@ footer {
     color: #fff;
     text-align: center;
     padding: 10px 0;
-    flex-shrink: 0;
     width: 100%;
+    box-sizing: border-box;
 }
 
 .footer-content {
