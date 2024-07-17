@@ -59,6 +59,15 @@ main {
     margin: 0;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add shadow */
+    transition: background-color 0.3s ease; /* Smooth transition for hover */
+}
+
+.toggle-section h2:hover {
+    background-color: #005a99; /* Darker blue on hover */
+}
+
+.toggle-section.open h2 {
+    background-color: #005a99; /* Darker blue for open category */
 }
 
 .toggle-content {
@@ -140,6 +149,7 @@ footer {
     border-radius: 5px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add shadow */
+    transition: background-color 0.3s ease; /* Smooth transition for hover */
 }
 
 .sub-category:hover {
