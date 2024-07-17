@@ -1,15 +1,9 @@
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
+body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     color: #333;
-}
-
-body {
-    display: flex;
-    flex-direction: column;
+    margin: 0;
+    padding: 0;
 }
 
 .header-container {
@@ -31,8 +25,34 @@ body {
     border: none;
 }
 
+nav {
+    background-color: #222;
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+}
+
+nav ul li {
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    padding: 14px 20px;
+    display: block;
+}
+
+nav ul li a:hover {
+    background-color: #575757;
+}
+
 main {
-    flex: 1 0 auto;
     padding: 20px;
     max-width: 800px;
     margin: auto;
@@ -69,15 +89,9 @@ footer {
     color: #fff;
     text-align: center;
     padding: 10px 0;
-    flex-shrink: 0;
+    position: fixed;
+    bottom: 0;
     width: 100%;
-}
-
-.footer-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
 }
 
 .home-button {
@@ -104,22 +118,4 @@ footer {
     height: 20px;
     margin-right: 10px;
     vertical-align: middle;
-}
-
-.social-links ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-}
-
-.social-links li {
-    margin-right: 15px;
-}
-
-.social-links a {
-    color: white;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
 }
