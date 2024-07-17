@@ -6,38 +6,61 @@ body {
     padding: 0;
 }
 
-header {
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background-color: #333;
     color: #fff;
-    padding: 10px 0;
-    text-align: center;
+    padding: 10px;
 }
 
-.header-image img {
-    width: 100%;
-    height: auto;
-}
-
-.search-bar {
-    margin: 10px 0;
+.logo img {
+    height: 50px;
 }
 
 .search-bar input {
-    width: 300px;
     padding: 5px;
-    border: 1px solid #ccc;
     border-radius: 3px;
+    border: none;
+}
+
+nav {
+    background-color: #222;
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+}
+
+nav ul li {
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    padding: 14px 20px;
+    display: block;
+}
+
+nav ul li a:hover {
+    background-color: #575757;
 }
 
 main {
     display: flex;
-    justify-content: space-around;
     flex-wrap: wrap;
+    justify-content: space-between;
     padding: 20px;
 }
 
 .content {
-    width: 80%;
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -62,8 +85,8 @@ main {
 
 .class-section, .equipment, .quests, .others {
     display: flex;
-    justify-content: space-around;
     flex-wrap: wrap;
+    justify-content: space-around;
 }
 
 .class-section .class, .equipment div, .quests div, .others div {
@@ -97,4 +120,20 @@ footer {
     position: fixed;
     bottom: 0;
     width: 100%;
+}
+
+@media (max-width: 768px) {
+    .content {
+        flex-direction: column;
+        align-items: center;
+    }
+    .classes, .world-map, .quick-links, .news, .welcome {
+        width: 90%;
+    }
+    nav ul {
+        flex-direction: column;
+    }
+    nav ul li {
+        width: 100%;
+    }
 }
