@@ -53,63 +53,46 @@ nav ul li a:hover {
 }
 
 main {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
     padding: 20px;
+    max-width: 800px;
+    margin: auto;
 }
 
 .content {
     width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
 }
 
-.classes, .world-map, .quick-links, .news, .welcome {
+.toggle-section h2 {
+    background-color: #e67e22;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    margin: 0;
+    border-radius: 5px;
+}
+
+.toggle-content {
+    display: none;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.news, .welcome {
     background-color: #fff;
     padding: 10px;
     margin: 10px 0;
     border-radius: 5px;
-    width: 48%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.classes h2, .world-map h2, .quick-links h2, .news h2, .welcome h2 {
+.news h2, .welcome h2 {
     background-color: #e67e22;
     color: #fff;
     padding: 10px;
     margin: -10px -10px 10px -10px;
     border-radius: 5px 5px 0 0;
-}
-
-.class-section, .equipment, .quests, .others {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-}
-
-.class-section .class, .equipment div, .quests div, .others div {
-    width: 48%;
-    margin: 10px 0;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li {
-    margin: 5px 0;
-}
-
-a {
-    text-decoration: none;
-    color: #333;
-}
-
-a:hover {
-    text-decoration: underline;
 }
 
 footer {
@@ -120,20 +103,4 @@ footer {
     position: fixed;
     bottom: 0;
     width: 100%;
-}
-
-@media (max-width: 768px) {
-    .content {
-        flex-direction: column;
-        align-items: center;
-    }
-    .classes, .world-map, .quick-links, .news, .welcome {
-        width: 90%;
-    }
-    nav ul {
-        flex-direction: column;
-    }
-    nav ul li {
-        width: 100%;
-    }
 }
