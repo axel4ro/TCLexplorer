@@ -75,6 +75,7 @@ footer {
     width: 100%;
     box-sizing: border-box;
     flex-shrink: 0;
+    margin-top: auto; /* Ensures footer is pushed to bottom */
 }
 
 .footer-content {
