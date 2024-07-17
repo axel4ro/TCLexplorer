@@ -34,4 +34,4 @@ document.getElementById('theme-toggle-button').addEventListener('click', functio
         body.classList.add('dark-mode');
         themeIcon.src = 'moon.png';  // Imagine pentru dark mode
     }
-});
+})
