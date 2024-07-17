@@ -94,6 +94,15 @@ footer {
     width: 100%;
 }
 
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+}
+
 .home-button {
     text-align: center;
     margin-top: 10px;
@@ -118,4 +127,22 @@ footer {
     height: 20px;
     margin-right: 10px;
     vertical-align: middle;
+}
+
+.social-links ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+.social-links li {
+    margin-right: 15px;
+}
+
+.social-links a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
 }
