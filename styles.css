@@ -1,0 +1,100 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.header-image img {
+    width: 100%;
+    height: auto;
+}
+
+.search-bar {
+    margin: 10px 0;
+}
+
+.search-bar input {
+    width: 300px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+main {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.content {
+    width: 80%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.classes, .world-map, .quick-links, .news, .welcome {
+    background-color: #fff;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    width: 48%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.classes h2, .world-map h2, .quick-links h2, .news h2, .welcome h2 {
+    background-color: #e67e22;
+    color: #fff;
+    padding: 10px;
+    margin: -10px -10px 10px -10px;
+    border-radius: 5px 5px 0 0;
+}
+
+.class-section, .equipment, .quests, .others {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.class-section .class, .equipment div, .quests div, .others div {
+    width: 48%;
+    margin: 10px 0;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    margin: 5px 0;
+}
+
+a {
+    text-decoration: none;
+    color: #333;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
