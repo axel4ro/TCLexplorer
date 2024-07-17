@@ -20,20 +20,41 @@ document.getElementById('search-input').addEventListener('input', function() {
     });
 });
 
-// Function to reload the iframe with the appropriate tab
-function loadDexScreenerIframe() {
-    const iframe = document.getElementById('dexscreener-iframe');
-    iframe.src = 'https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&theme=dark&tab=chart';
+// Function to simulate a click on the Chart button inside the iframe
+function clickChartButtonInIframe() {
+    const iframe = document.querySelector('#dexscreener-embed iframe');
+    const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+    
+    iframe.onload = function() {
+        setTimeout(() => {
+            const chartButton = iframeDocument.querySelector('button[aria-label="Chart"]');
+            if (chartButton) {
+                chartButton.click();
+            }
+        }, 1000); // Adjust the timeout as necessary
+    };
 }
 
 // Toggle DexScreener embed visibility
 document.getElementById('toggle-dexscreener').addEventListener('click', function() {
     const embedContainer = document.getElementById('dexscreener-embed-container');
+    const iframe = document.getElementById('dexscreener-iframe');
     const isVisible = embedContainer.style.display === 'block';
-    
+
     embedContainer.style.display = isVisible ? 'none' : 'block';
     
     if (!isVisible) {
-        loadDexScreenerIframe();
+        setTimeout(() => {
+            iframe.contentWindow.postMessage('selectChartTab', '*');
+        }, 1000);
+    }
+});
+
+window.addEventListener('message', (event) => {
+    if (event.data === 'selectChartTab') {
+        const chartButton = document.querySelector('button[aria-label="Chart"]');
+        if (chartButton) {
+            chartButton.click();
+        }
     }
 });
