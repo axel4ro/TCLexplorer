@@ -63,7 +63,7 @@ main {
 }
 
 .toggle-section {
-    margin-bottom: 10px; /* Adăugăm spațiu între secțiuni */
+    margin-bottom: 15px; /* Adăugăm mai mult spațiu între secțiuni */
 }
 
 .toggle-section h2 {
@@ -82,24 +82,6 @@ main {
     background-color: #fff;
     border-radius: 0 0 5px 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adăugăm umbră */
-}
-
-}
-
-.news, .welcome {
-    background-color: #fff;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.news h2, .welcome h2 {
-    background-color: #e67e22;
-    color: #fff;
-    padding: 10px;
-    margin: -10px -10px 10px -10px;
-    border-radius: 5px 5px 0 0;
 }
 
 footer {
