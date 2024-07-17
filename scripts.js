@@ -1,24 +1,35 @@
-// Funcția pentru toggle a secțiunilor
+// Function to toggle sections
 function toggleSection(sectionId) {
     const section = document.getElementById(sectionId);
-    section.style.display = (section.style.display === 'none' || section.style.display === '') ? 'block' : 'none';
+    const parent = section.parentElement;
+
+    if (section.style.display === 'none' || section.style.display === '') {
+        section.style.display = 'block';
+        parent.classList.add('open');
+    } else {
+        section.style.display = 'none';
+        parent.classList.remove('open');
+    }
 }
 
-// Funcția pentru căutare
+// Function for search
 document.getElementById('search-input').addEventListener('input', function() {
     const query = this.value.toLowerCase();
     const elements = document.querySelectorAll('.content .toggle-content');
 
     elements.forEach(element => {
         element.style.display = 'none';
+        element.parentElement.classList.remove('open');
     });
 
     elements.forEach(element => {
         if (element.parentElement.textContent.toLowerCase().includes(query)) {
             element.style.display = 'block';
+            element.parentElement.classList.add('open');
         }
     });
 });
+
 
 // Function to simulate a click on the Chart button inside the iframe
 function clickChartButtonInIframe() {
