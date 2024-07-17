@@ -11,10 +11,24 @@ function highlight(text) {
         const elements = document.querySelectorAll('.content .toggle-content, .content .toggle-section');
         const searchRegExp = new RegExp(text, 'gi');
         elements.forEach(element => {
-            if (element.textContent.toLowerCase().includes(text.toLowerCase())) {
-                element.innerHTML = element.innerHTML.replace(searchRegExp, match => `<span class="highlight">${match}</span>`);
-            }
+            highlightElement(element, searchRegExp);
         });
+    }
+}
+
+// Function to highlight text within an element
+function highlightElement(element, searchRegExp) {
+    for (let node of element.childNodes) {
+        if (node.nodeType === 3) { // Text node
+            const match = node.data.match(searchRegExp);
+            if (match) {
+                const span = document.createElement('span');
+                span.innerHTML = node.data.replace(searchRegExp, '<span class="highlight">$&</span>');
+                node.parentNode.replaceChild(span, node);
+            }
+        } else if (node.nodeType === 1 && node.childNodes && !/script|style/i.test(node.tagName)) {
+            highlightElement(node, searchRegExp);
+        }
     }
 }
 
