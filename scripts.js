@@ -38,6 +38,23 @@ function clickChartButtonInIframe() {
 // Toggle DexScreener embed visibility
 document.getElementById('toggle-dexscreener').addEventListener('click', function() {
     const embedContainer = document.getElementById('dexscreener-embed-container');
-    embedContainer.style.display = (embedContainer.style.display === 'none' || embedContainer.style.display === '') ? 'block' : 'none';
+    const iframe = document.getElementById('dexscreener-iframe');
+    const isVisible = embedContainer.style.display === 'block';
+
+    embedContainer.style.display = isVisible ? 'none' : 'block';
+    
+    if (!isVisible) {
+        setTimeout(() => {
+            iframe.contentWindow.postMessage('selectChartTab', '*');
+        }, 1000);
+    }
 });
 
+window.addEventListener('message', (event) => {
+    if (event.data === 'selectChartTab') {
+        const chartButton = document.querySelector('button[aria-label="Chart"]');
+        if (chartButton) {
+            chartButton.click();
+        }
+    }
+});
