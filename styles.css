@@ -93,3 +93,23 @@ footer {
     bottom: 0;
     width: 100%;
 }
+
+.home-button {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.home-button .button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #e67e22;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.home-button .button:hover {
+    background-color: #d35400;
+}
+
