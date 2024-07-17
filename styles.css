@@ -3,8 +3,8 @@ html, body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light grey text */
 }
 
 body {
@@ -17,8 +17,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #333;
-    color: #fff;
+    background-color: #1e1e1e; /* Darker header background */
+    color: #e0e0e0; /* Light grey text */
     padding: 10px;
 }
 
@@ -30,6 +30,8 @@ body {
     padding: 5px;
     border-radius: 3px;
     border: none;
+    background-color: #2e2e2e; /* Dark input background */
+    color: #e0e0e0; /* Light grey text */
 }
 
 main {
@@ -50,7 +52,7 @@ main {
 }
 
 .toggle-section h2 {
-    background-color: #e67e22;
+    background-color: #007acc; /* Blue background */
     color: white;
     padding: 10px;
     cursor: pointer;
@@ -62,14 +64,14 @@ main {
 .toggle-content {
     display: none;
     padding: 10px;
-    background-color: #fff;
+    background-color: #2e2e2e; /* Darker content background */
     border-radius: 0 0 5px 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add shadow */
 }
 
 footer {
-    background-color: #333;
-    color: #fff;
+    background-color: #1e1e1e; /* Darker footer background */
+    color: #e0e0e0; /* Light grey text */
     text-align: center;
     padding: 10px 0;
     width: 100%;
@@ -93,7 +95,7 @@ footer {
 .home-button .button {
     display: inline-block;
     padding: 10px 20px;
-    background-color: #e67e22;
+    background-color: #007acc; /* Blue background */
     color: white;
     text-decoration: none;
     border-radius: 5px;
@@ -101,7 +103,7 @@ footer {
 }
 
 .home-button .button:hover {
-    background-color: #d35400;
+    background-color: #005a99; /* Darker blue on hover */
 }
 
 .social-logo {
@@ -130,7 +132,7 @@ footer {
 }
 
 .sub-category {
-    background-color: #e67e22;
+    background-color: #007acc; /* Blue background */
     color: white;
     padding: 10px;
     cursor: pointer;
@@ -141,7 +143,7 @@ footer {
 }
 
 .sub-category:hover {
-    background-color: #d35400;
+    background-color: #005a99; /* Darker blue on hover */
 }
 
 .centered-content {
@@ -158,14 +160,14 @@ table {
 }
 
 th, td {
-    border: 1px solid #ddd;
+    border: 1px solid #444; /* Darker border */
     padding: 8px;
     text-align: left;
 }
 
 th {
-    background-color: #f2f2f2;
-    color: black;
+    background-color: #333; /* Darker header background */
+    color: #e0e0e0; /* Light grey text */
 }
 
 #dexscreener-embed {
@@ -199,7 +201,7 @@ th {
 .button {
     display: inline-block;
     padding: 10px 20px;
-    background-color: #e67e22;
+    background-color: #007acc; /* Blue background */
     color: white;
     text-decoration: none;
     border-radius: 5px;
@@ -208,7 +210,7 @@ th {
 }
 
 .button:hover {
-    background-color: #d35400;
+    background-color: #005a99; /* Darker blue on hover */
 }
 
 .dexscreener-container {
