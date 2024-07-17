@@ -53,9 +53,12 @@ nav ul li a:hover {
 }
 
 main {
+    flex: 1;
     padding: 20px;
     max-width: 800px;
     margin: auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .content {
@@ -89,8 +92,7 @@ footer {
     color: #fff;
     text-align: center;
     padding: 10px 0;
-    position: fixed;
-    bottom: 0;
+    flex-shrink: 0;
     width: 100%;
 }
 
@@ -98,9 +100,7 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #333;
-    color: #fff;
-    padding: 10px 20px;
+    padding: 0 20px;
 }
 
 .home-button {
