@@ -26,12 +26,10 @@
         </ul>
     </nav>
     <main>
-        
         <div class="content">
-            <div class="races">
-                <h2>Races</h2>
-                <div class="races-section">
-                    
+            <div class="toggle-section">
+                <h2 onclick="toggleSection('races')">Races</h2>
+                <div id="races" class="toggle-content">
                     <div class="race human">
                         <h3>Human</h3>
                         <ul>
@@ -66,67 +64,20 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="content">
-            <div class="classes">
-                <h2>Classes</h2>
-                <div class="classes-section">
-                    <div class="class shaman">
-                        <h3>Shaman</h3>
-                        <ul>
-                            <li><a href="#">Can be used by any Race</a></li>
-                            <li><a href="#">Races: Human, Beast, Undead, Elf</a></li>
-                            <li><a href="#">Shaman Skills can be used with Fan weapon</a></li>
-                        </ul>
-                    </div>
-                    <div class="class assassin">
-                        <h3>Assassin</h3>
-                        <ul>
-                            <li><a href="#">Can be used by any Race</a></li>
-                            <li><a href="#">Races: Human, Beast, Undead, Elf</a></li>
-                            <li><a href="#">Assassin Skills can be used with Dagger weapon</a></li>
-                        </ul>
-                    </div>
-                    <div class="class hunter">
-                        <h3>Hunter</h3>
-                        <ul>
-                            <li><a href="#">Can be used by any Race</a></li>
-                            <li><a href="#">Races: Human, Beast, Undead, Elf</a></li>
-                            <li><a href="#">Shaman Skills can be used with Bow weapon</a></li>
-                        </ul>
-                    </div>
-                    <div class="class warrior">
-                        <h3>Warrior (Soon)</h3>
-                        <ul>
-                            <li><a href="#">Can be used by any Race</a></li>
-                            <li><a href="#">Races: Human, Beast, Undead, Elf</a></li>
-                            <li><a href="#">Shaman Skills can be used with Sword weapon</a></li>
-                        </ul>
-                    </div>
-                    <div class="class wizard">
-                        <h3>Wizard (Soon)</h3>
-                        <ul>
-                            <li><a href="#">Can be used by any Race</a></li>
-                            <li><a href="#">Races: Human, Beast, Undead, Elf</a></li>
-                            <li><a href="#">Shaman Skills can be used with Staff weapon</a></li>
-                        </ul>
-                    </div>
+            <div class="toggle-section">
+                <h2 onclick="toggleSection('world-map')">World Maps</h2>
+                <div id="world-map" class="toggle-content">
+                    <img src="world-map.jpg" alt="World Map">
+                    <ul>
+                        <li><a href="#">Eternal Sunshine</a></li>
+                        <li><a href="#">Eternal Frosty</a></li>
+                        <li><a href="#">Capital</a></li>
+                    </ul>
                 </div>
             </div>
-                
-            <div class="world-map">
-                <h2>World Maps</h2>
-                <img src="world-map.jpg" alt="World Map">
-                <ul>
-                    <li><a href="#">Eternal Sunshine</a></li>
-                    <li><a href="#">Eternal Frosty</a></li>
-                    <li><a href="#">Capital</a></li>
-                </ul>
-            </div>
-            <div class="quick-links">
-                <h2>All in one click</h2>
-                <div class="equipment">
-                    <h3>Equipment</h3>
+            <div class="toggle-section">
+                <h2 onclick="toggleSection('equipment')">Equipment</h2>
+                <div id="equipment" class="toggle-content">
                     <ul>
                         <li><a href="#">Armours</a></li>
                         <li><a href="#">Weapons</a></li>
@@ -140,8 +91,10 @@
                         <li><a href="#">Belts (Soon)</a></li>
                     </ul>
                 </div>
-                <div class="quests">
-                    <h3>Quests</h3>
+            </div>
+            <div class="toggle-section">
+                <h2 onclick="toggleSection('quests')">Quests</h2>
+                <div id="quests" class="toggle-content">
                     <ul>
                         <li><a href="#">Main Quests</a></li>
                         <li><a href="#">Biologist Quests</a></li>
@@ -151,8 +104,10 @@
                         <li><a href="#">Daily Quests</a></li>
                     </ul>
                 </div>
-                <div class="others">
-                    <h3>Others</h3>
+            </div>
+            <div class="toggle-section">
+                <h2 onclick="toggleSection('others')">Others</h2>
+                <div id="others" class="toggle-content">
                     <ul>
                         <li><a href="#">Mounts</a></li>
                         <li><a href="#">Pets</a></li>
