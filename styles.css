@@ -15,6 +15,9 @@ body.dark-mode {
     color: #f4f4f4;
 }
 
+/* Restul stilurilor */
+
+
 .header-container {
     display: flex;
     justify-content: space-between;
