@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8" />
-<title>TCL dApp – Connect xPortal (WalletConnect v2)</title>
+<title>TCL dApp – xPortal (WalletConnect v2)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root { --bdr:#e5e7eb; --muted:#6b7280; --txt:#111827; --bg:#fff; --mono:#f3f4f6; --brand:#10b981; }
@@ -24,7 +24,7 @@
 <div class="wrap">
   <div class="card">
     <h1>TCL dApp – Connect xPortal</h1>
-    <p class="muted">Conectează xPortal prin WalletConnect v2. Pe desktop apare QR; pe mobil se deschide xPortal direct. Confirmă în aplicație!</p>
+    <p class="muted">Desktop: scanezi QR. Mobil: se deschide xPortal direct. Confirmă <b>Connect/Approve</b> în aplicație.</p>
   </div>
 
   <div class="card">
@@ -37,15 +37,15 @@
     <div class="kv">
       <div class="muted">Status</div><div id="status" class="mono">disconnected</div>
       <div class="muted">Address</div><div id="address" class="mono">—</div>
-      <div class="muted">Network</div><div id="network" class="mono">mvx:1 (mainnet)</div>
+      <div class="muted">Network</div><div id="network" class="mono">—</div>
     </div>
     <div id="qrWrap" class="card hidden">
       <h3>Scan with xPortal</h3>
       <img id="qr" alt="QR" class="qr">
-      <p class="muted statusline" id="hintDesktop">Deschide xPortal pe telefon și apasă <b>Connect / Approve</b>.</p>
+      <p class="muted statusline">În xPortal apasă <b>Connect / Approve</b>. Dacă refuzi, apasă „Retry”.</p>
     </div>
-    <p class="muted statusline" id="hintMobile" class="hidden" style="display:none">
-      Pe mobil, se va deschide xPortal. Dacă nu apare, apasă <b>Retry</b> și confirmă în aplicație.
+    <p class="muted statusline" id="hintMobile" style="display:none">
+      Pe mobil se va deschide xPortal. Dacă nu apare, apasă <b>Retry</b> și confirmă în aplicație.
     </p>
   </div>
 
@@ -62,29 +62,28 @@
   </div>
 </div>
 
-<!-- ESM imports -->
 <script type="module">
 import UniversalProvider from "https://esm.sh/@walletconnect/universal-provider@2.11.3";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
 /* ====== CONFIG ====== */
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // ← string din WalletConnect Cloud
-const MVX_CHAIN = "mvx:1"; // mainnet
+const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // ← string din WC Cloud
+const CHAINS = ["elrond:1", "mvx:1"]; // încercăm ambele
+const NAMESPACES = ["elrond", "mvx"];  // încercăm ambele
 /* ==================== */
 
 const $ = (id)=>document.getElementById(id);
-const statusEl=$("status"), addrEl=$("address"), sigEl=$("sig"), msgEl=$("msg");
+const statusEl=$("status"), addrEl=$("address"), netEl=$("network"), sigEl=$("sig"), msgEl=$("msg");
 const qrWrap=$("qrWrap"), qrImg=$("qr"), hintMobile=$("hintMobile");
 const btnConnect=$("btnConnect"), btnRetry=$("btnRetry"), btnDisconnect=$("btnDisconnect");
 const btnSign=$("btnSign"), btnRand=$("btnRand");
 
-let provider=null, session=null, account=null, lastUri=null;
+let provider=null, session=null, account=null, activeChain=null, lastUri=null;
 
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
 function setStatus(s){ statusEl.textContent = s; }
-function renderConnected(){ setStatus("connected"); addrEl.textContent = account || "—"; }
-function renderDisconnected(){ setStatus("disconnected"); addrEl.textContent = "—"; sigEl.textContent = "—"; }
+function renderConnected(){ setStatus("connected"); addrEl.textContent = account||"—"; netEl.textContent = activeChain||"—"; }
+function renderDisconnected(){ setStatus("disconnected"); addrEl.textContent="—"; netEl.textContent="—"; sigEl.textContent="—"; }
 
 async function initProvider(){
   if (provider) return provider;
@@ -106,7 +105,6 @@ async function initProvider(){
 
     if (isMobile()) {
       hintMobile.style.display = "";
-      // încearcă deeplink către xPortal
       const u = encodeURIComponent(uri);
       const candidates = [
         `xportal://walletconnect?uri=${u}`,
@@ -116,7 +114,6 @@ async function initProvider(){
       const tryOpen = () => { if (i < candidates.length) { location.href = candidates[i++]; setTimeout(tryOpen, 600); } };
       tryOpen();
     } else {
-      // Desktop: afișăm QR în pagină
       hintMobile.style.display = "none";
       qrWrap.classList.remove("hidden");
       try { qrImg.src = await QRCode.toDataURL(uri); }
@@ -128,50 +125,69 @@ async function initProvider(){
     qrWrap.classList.add("hidden");
     hintMobile.style.display = "none";
     session = data.session;
-    const ns = session?.namespaces?.mvx;
-    const acc = ns?.accounts?.[0];          // "mvx:1:erd1..."
-    account = acc ? acc.split(":")[2] : null;
+
+    // extragem fie din 'elrond', fie din 'mvx'
+    let ns = session.namespaces["elrond"] || session.namespaces["mvx"];
+    if (!ns || !ns.accounts?.length) { renderDisconnected(); return; }
+
+    // exemplu accounts: "elrond:1:erd1..." sau "mvx:1:erd1..."
+    const accStr = ns.accounts[0];
+    const parts = accStr.split(":"); // [namespace, chainId, address]
+    activeChain = `${parts[0]}:${parts[1]}`;
+    account = parts[2] || null;
     renderConnected();
   });
 
   provider.on("session_update", ({ params }) => {
-    const ns = params?.namespaces?.mvx;
-    const acc = ns?.accounts?.[0];
-    account = acc ? acc.split(":")[2] : account;
-    renderConnected();
+    let ns = params.namespaces["elrond"] || params.namespaces["mvx"];
+    if (ns && ns.accounts?.length) {
+      const parts = ns.accounts[0].split(":");
+      activeChain = `${parts[0]}:${parts[1]}`;
+      account = parts[2] || account;
+      renderConnected();
+    }
   });
 
   provider.on("disconnect", () => {
     qrWrap.classList.add("hidden");
     hintMobile.style.display = "none";
-    session=null; account=null; renderDisconnected();
+    session=null; account=null; activeChain=null; renderDisconnected();
   });
 
   return provider;
 }
 
-// ——— CONNECT / RETRY ———
-async function startConnect(){
+// propunere de sesiune (încercăm întâi 'elrond', apoi 'mvx')
+async function proposeSession(){
   await initProvider();
-  // ascunde QR vechi, va veni unul nou în display_uri
-  qrWrap.classList.add("hidden"); lastUri=null; setStatus("connecting…");
-  return provider.connect({
-    requiredNamespaces: {
-      mvx: {
-        methods: ["mvx_signMessage"],   // adaugi ulterior "mvx_signTransaction" dacă vrei
-        chains: [MVX_CHAIN],
-        events: []
+  setStatus("connecting…");
+  qrWrap.classList.add("hidden"); lastUri=null;
+
+  // 1) încerci 'elrond'
+  try {
+    await provider.connect({
+      requiredNamespaces: {
+        elrond: { methods: ["erd_signMessage"], chains: ["elrond:1"], events: [] }
       }
-    }
-  });
+    });
+    return;
+  } catch (e1) {
+    // 2) fallback pe 'mvx'
+    await provider.connect({
+      requiredNamespaces: {
+        mvx: { methods: ["mvx_signMessage"], chains: ["mvx:1"], events: [] }
+      }
+    });
+  }
 }
 
+// CONNECT
 btnConnect.addEventListener("click", async ()=>{
-  try { await startConnect(); }
-  catch (e) {
-    const msg = (e && e.message) || String(e);
+  try {
+    await proposeSession();
+  } catch (e) {
+    const msg = (e && e.message) ? e.message : String(e);
     if (/rejected/i.test(msg)) {
-      // userul a închis în xPortal
       try { if (provider) await provider.disconnect(); } catch {}
       renderDisconnected();
       alert("Conectarea a fost anulată în xPortal. Apasă Retry și aprobă în aplicație.");
@@ -181,52 +197,66 @@ btnConnect.addEventListener("click", async ()=>{
   }
 });
 
+// RETRY
 btnRetry.addEventListener("click", async ()=>{
   try {
-    // dacă există o sesiune veche, închide-o
     try { if (provider) await provider.disconnect(); } catch {}
-    await startConnect();
+    await proposeSession();
   } catch (e) {
     alert("Retry error: " + ((e && e.message) || e));
   }
 });
 
+// DISCONNECT
 btnDisconnect.addEventListener("click", async ()=>{
   try { if (provider) await provider.disconnect(); } catch {}
   renderDisconnected();
 });
 
-// ——— SIGN MESSAGE ———
+// SIGN (încearcă toate combinațiile cunoscute)
 btnSign.addEventListener("click", async ()=>{
   try{
-    if (!provider || !session) { alert("Not connected."); return; }
+    if (!provider || !session || !account || !activeChain) {
+      alert("Not connected."); return;
+    }
     const msg = msgEl.value || "TCL-VERIFY";
     let res;
+
+    // a) erd_signMessage (vechi)
     try {
-      // varianta 1
       res = await provider.request({
         topic: session.topic,
-        chainId: MVX_CHAIN,
-        request: { method: "mvx_signMessage", params: { address: account, message: msg } }
+        chainId: activeChain,
+        request: { method: "erd_signMessage", params: { address: account, message: msg } }
       });
-    } catch (e1) {
+    } catch (eA) {
+      // b) mvx_signMessage (nou)
       try {
-        // varianta 2
         res = await provider.request({
           topic: session.topic,
-          chainId: MVX_CHAIN,
-          request: { method: "mvx_signMessage", params: { address: account, data: msg } }
+          chainId: activeChain,
+          request: { method: "mvx_signMessage", params: { address: account, message: msg } }
         });
-      } catch (e2) {
-        // varianta 3 (base64)
-        const b64 = btoa(unescape(encodeURIComponent(msg)));
-        res = await provider.request({
-          topic: session.topic,
-          chainId: MVX_CHAIN,
-          request: { method: "mvx_signMessage", params: { address: account, message: b64, encoding: "base64" } }
-        });
+      } catch (eB) {
+        // c) altă cheie: data
+        try {
+          res = await provider.request({
+            topic: session.topic,
+            chainId: activeChain,
+            request: { method: "mvx_signMessage", params: { address: account, data: msg } }
+          });
+        } catch (eC) {
+          // d) base64
+          const b64 = btoa(unescape(encodeURIComponent(msg)));
+          res = await provider.request({
+            topic: session.topic,
+            chainId: activeChain,
+            request: { method: "mvx_signMessage", params: { address: account, message: b64, encoding: "base64" } }
+          });
+        }
       }
     }
+
     const signature = res?.signature || res?.result || JSON.stringify(res);
     sigEl.textContent = signature || "n/a";
   }catch(e){
@@ -234,14 +264,14 @@ btnSign.addEventListener("click", async ()=>{
   }
 });
 
-// ——— RANDOM NONCE ———
+// NONCE random
 btnRand.addEventListener("click", ()=>{
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let s = "TCL-"; for (let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
   msgEl.value = s;
 });
 
-// Init
+// init
 renderDisconnected();
 </script>
 </html>
