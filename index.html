@@ -56,50 +56,29 @@
   </div>
 </div>
 
-<!-- CDN: WalletConnect Universal Provider + QR modal -->
+<!-- WalletConnect Universal Provider + QR modal (UMD via CDN) -->
 <script type="module">
-/*
-  Minimal dApp static, WalletConnect v2.
-  NOTĂ: Pentru MultiversX avem nevoie de „namespace” corect (CAIP-2) și metodele suportate de xPortal.
-
-  Ce folosim:
-  - @walletconnect/universal-provider pentru sesiune WC v2
-  - @walletconnect/qrcode-modal pentru desktop QR
-  - Namespace MultiversX (propus): "mvx"
-  - Chain mainnet: "mvx:1"
-  - Metode tipice: "mvx_signMessage" (semnare mesaj), "mvx_signTransaction" (semnare tranzacție)
-
-  !!! Ai nevoie de un Project ID: înlocuiește WC_PROJECT_ID mai jos.
-*/
-
 import UniversalProvider from "https://unpkg.com/@walletconnect/universal-provider@2.11.3/dist/umd/index.min.js";
 import QRCodeModal from "https://unpkg.com/@walletconnect/qrcode-modal@1.8.0/dist/umd/index.min.js";
 
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // <-- înlocuiește
+/* ====== CONFIG ====== */
+const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // ← dacă ai alt Project ID, pune-l aici
 const MVX_NAMESPACE = "mvx";
-const CHAIN_ID = "1"; // mainnet (devnet: 2, testnet: 0 - valorile pot diferi; ajustează dacă e cazul)
-const MVX_CHAIN = `${MVX_NAMESPACE}:${CHAIN_ID}`;
+const CHAIN_ID = "1";                   // mainnet (ajustează dacă vrei devnet/testnet)
+const MVX_CHAIN = `${MVX_NAMESPACE}:${CHAIN_ID}`; // "mvx:1"
+/* ==================== */
 
-// Elemente UI
 const el = (id)=>document.getElementById(id);
-const statusEl = el("status");
-const addrEl   = el("address");
-const netEl    = el("network");
-const sigEl    = el("sig");
-const msgEl    = el("msg");
-const qrWrap   = el("qrWrap");
-const qrImg    = el("qr");
-const btnConnect    = el("btnConnect");
-const btnDisconnect = el("btnDisconnect");
-const btnSign       = el("btnSign");
-const btnRand       = el("btnRand");
+const statusEl = el("status"), addrEl = el("address"), netEl = el("network");
+const sigEl = el("sig"), msgEl = el("msg");
+const qrWrap = el("qrWrap");
+const btnConnect = el("btnConnect"), btnDisconnect = el("btnDisconnect");
+const btnSign = el("btnSign"), btnRand = el("btnRand");
 
-// Stare globală
-let provider = null;
-let session  = null;
-let account  = null;
+let provider = null, session = null, account = null;
 
-// Helper: generate random TCL nonce
+function isMobile(){ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent); }
+
 function randomNonce(){
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let s = "TCL-";
@@ -107,10 +86,29 @@ function randomNonce(){
   return s;
 }
 
+function renderConnected(){
+  statusEl.textContent = "connected";
+  addrEl.textContent = account || "—";
+  netEl.textContent = `${MVX_CHAIN} (mainnet)`;
+}
+function renderDisconnected(){
+  statusEl.textContent = "disconnected";
+  addrEl.textContent = "—";
+  sigEl.textContent = "—";
+}
+
+function updateFromSession(){
+  const ns = session?.namespaces?.[MVX_NAMESPACE];
+  const acc = (ns?.accounts && ns.accounts[0]) || null; // "mvx:1:erd1..."
+  account = acc ? acc.split(":")[2] : null;
+  renderConnected();
+}
+
 async function initProvider(){
   if (provider) return provider;
+
   provider = await UniversalProvider.init({
-    projectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+    projectId: WC_PROJECT_ID,
     logger: "error",
     relayUrl: "wss://relay.walletconnect.com",
     metadata: {
@@ -121,14 +119,29 @@ async function initProvider(){
     }
   });
 
-  // Evenimente WC v2
-provider.on("display_uri", (uri) => {
-  if (uri) {
-    QRCodeModal.open(uri, () => QRCodeModal.close()); // ← direct, fără split/concat
-    qrWrap.style.display = ""; // dacă vrei să arăți și cadrul local
-  }
-});
+  // Desktop: QR; Mobil: deschide xPortal cu deeplink pe baza URI-ului WC
+  provider.on("display_uri", (uri) => {
+    if (!uri) return;
 
+    if (!isMobile()) {
+      QRCodeModal.open(uri, () => QRCodeModal.close());
+      qrWrap.style.display = "";
+      return;
+    }
+
+    const u = encodeURIComponent(uri);
+    const candidates = [
+      `xportal://walletconnect?uri=${u}`,
+      `xportal://wc?uri=${u}`
+    ];
+    let tried = 0;
+    const tryOpen = () => {
+      if (tried >= candidates.length) return;
+      window.location.href = candidates[tried++];
+      if (tried < candidates.length) setTimeout(tryOpen, 600);
+    };
+    tryOpen();
+  });
 
   provider.on("connect", (data) => {
     QRCodeModal.close();
@@ -137,109 +150,81 @@ provider.on("display_uri", (uri) => {
     updateFromSession();
   });
 
-  provider.on("session_update", ({ topic, params }) => {
-    const { namespaces } = params;
-    if (session) session.namespaces = namespaces;
+  provider.on("session_update", ({ params }) => {
+    if (session) session.namespaces = params.namespaces;
     updateFromSession();
   });
 
   provider.on("disconnect", () => {
     QRCodeModal.close();
     qrWrap.style.display = "none";
-    session = null;
-    account = null;
+    session = null; account = null;
     renderDisconnected();
   });
 
   return provider;
 }
 
-function updateFromSession(){
-  // extragem contul din namespace mvx
-  if (!session || !session.namespaces || !session.namespaces[MVX_NAMESPACE]) {
-    renderDisconnected();
-    return;
-  }
-  const ns = session.namespaces[MVX_NAMESPACE];
-  // accounts de forma "mvx:1:erd1..."
-  const acc = (ns.accounts && ns.accounts[0]) || null;
-  account = acc ? acc.split(":")[2] : null;
-  renderConnected();
-}
-
-function renderConnected(){
-  statusEl.textContent = "connected";
-  addrEl.textContent = account || "—";
-  netEl.textContent = MVX_CHAIN + " (mainnet)";
-}
-
-function renderDisconnected(){
-  statusEl.textContent = "disconnected";
-  addrEl.textContent = "—";
-  sigEl.textContent = "—";
-}
-
-// Connect
+// CONNECT
 btnConnect.onclick = async ()=>{
   try{
     await initProvider();
 
-    // cerem permisiuni pe namespace-ul MultiversX
+    // Varianta mai compatibilă: requiredNamespaces (începe doar cu signMessage)
     await provider.connect({
-      optionalNamespaces: {
+      requiredNamespaces: {
         [MVX_NAMESPACE]: {
-          methods: [
-            "mvx_signMessage",
-            "mvx_signTransaction"
-          ],
-          chains: [MVX_CHAIN],
+          methods: ["mvx_signMessage"], // poți adăuga "mvx_signTransaction" ulterior
+          chains: [MVX_CHAIN],          // "mvx:1"
           events: []
         }
       }
     });
 
-    // pe mobil, WalletConnect ar trebui să deschidă xPortal automat
-    // pe desktop, se afișează QR (display_uri)
   }catch(e){
     alert("Connect error: " + (e?.message || e));
   }
 };
 
-// Disconnect
+// DISCONNECT
 btnDisconnect.onclick = async ()=>{
-  try{
-    if (provider) {
-      await provider.disconnect();
-    }
-  }catch(e){
-    console.warn(e);
-  }
+  try{ if (provider) await provider.disconnect(); }
+  catch(e){ console.warn(e); }
 };
 
-// Sign message
+// SIGN MESSAGE (cu fallback-uri de parametri)
 btnSign.onclick = async ()=>{
   try{
-    if (!provider || !session) {
-      alert("Not connected.");
-      return;
-    }
+    if (!provider || !session) { alert("Not connected."); return; }
     const msg = msgEl.value || "TCL-VERIFY";
-    // request către xPortal (WalletConnect) — metoda specifică MultiversX
-    // Param format (propunere): { address, message } — poate varia în funcție de versiunea xPortal.
-    const res = await provider.request({
-      topic: session.topic,
-      chainId: MVX_CHAIN,
-      request: {
-        method: "mvx_signMessage",
-        params: {
-          address: account,
-          message: msg
-        }
-      }
-    });
+    let res;
 
-    // xPortal ar trebui să întoarcă { signature: "...", address: "..." } sau similar
-    // Ajustează exact în funcție de răspunsul real.
+    // 1) message (text)
+    try {
+      res = await provider.request({
+        topic: session.topic,
+        chainId: MVX_CHAIN,
+        request: { method: "mvx_signMessage", params: { address: account, message: msg } }
+      });
+    } catch (e1) {
+      // 2) data (text)
+      try {
+        res = await provider.request({
+          topic: session.topic,
+          chainId: MVX_CHAIN,
+          request: { method: "mvx_signMessage", params: { address: account, data: msg } }
+        });
+      } catch (e2) {
+        // 3) base64
+        const b64 = btoa(unescape(encodeURIComponent(msg)));
+        res = await provider.request({
+          topic: session.topic,
+          chainId: MVX_CHAIN,
+          request: { method: "mvx_signMessage", params: { address: account, message: b64, encoding: "base64" } }
+        });
+      }
+    }
+
     const signature = res?.signature || res?.result || JSON.stringify(res);
     sigEl.textContent = signature || "n/a";
   }catch(e){
@@ -247,12 +232,10 @@ btnSign.onclick = async ()=>{
   }
 };
 
-// Random nonce
-btnRand.onclick = ()=>{
-  msgEl.value = randomNonce();
-};
+// RANDOM NONCE
+btnRand.onclick = ()=>{ msgEl.value = randomNonce(); };
 
-// Init
+// INIT
 renderDisconnected();
 </script>
-
+</html>
