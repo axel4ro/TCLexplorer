@@ -18,12 +18,16 @@
   #qrBox{background:#111;padding:16px;border-radius:16px;max-width:360px}
   #qrBox h3{color:#fff;margin:0 0 10px;font-weight:600}
   #qr{width:320px;max-width:100%}
+  /* Mobile sheet */
+  #sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -10px 30px rgba(0,0,0,.15);padding:16px;display:none;z-index:60}
+  #sheet h3{margin:0 0 8px}
+  #sheet p{margin:6px 0 12px;color:#374151;font-size:14px}
 </style>
 
 <div class="wrap">
   <div class="card">
     <h1>TCL dApp – Connect xPortal</h1>
-    <p class="muted">Conectare cu xPortal prin WalletConnect v2 (SDK oficial MultiversX). Static (GitHub Pages).</p>
+    <p class="muted">Conectare cu xPortal prin WalletConnect v2 (SDK MultiversX). Desktop: QR. Mobil: deeplink în app.</p>
   </div>
 
   <div class="card">
@@ -52,7 +56,7 @@
   </div>
 </div>
 
-<!-- Simple QR modal -->
+<!-- Desktop QR modal -->
 <div id="qrModal">
   <div id="qrBox">
     <h3>Scan with xPortal</h3>
@@ -61,33 +65,41 @@
   </div>
 </div>
 
-<script type="module">
-/*
-  Conform doc-urilor MultiversX:
-  - Folosim @multiversx/sdk-wallet-connect-provider (WalletConnect v2) pentru xPortal.
-  - Metode JSON-RPC: mvx_signMessage, mvx_signTransaction(s), etc.  (vezi docs)
-  - Namespace mvx, chainId "1" (mainnet) / "T" / "D".
-*/
+<!-- Mobile sheet (user gesture for deeplink) -->
+<div id="sheet">
+  <h3>Open in xPortal</h3>
+  <p>Apasă butonul de mai jos pentru a continua conectarea în aplicația xPortal.</p>
+  <div class="row">
+    <button id="btnOpenXPortal" class="btn primary">Open xPortal</button>
+    <button id="btnCancelOpen" class="btn">Cancel</button>
+  </div>
+  <p class="muted" id="sheetHint" style="margin-top:10px;display:none">Dacă nu se deschide, apasă din nou „Open xPortal”.</p>
+</div>
 
+<script type="module">
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
 import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff";   // <-- pune aici Project ID-ul tău
+const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff";
 const RELAY_URL     = "wss://relay.walletconnect.com";
-const CHAIN_ID      = "1";                 // "1"=mainnet, "T"=testnet, "D"=devnet
+const CHAIN_ID      = "1"; // "1"=mainnet, "T"=testnet, "D"=devnet
 const MVX_CHAIN     = `mvx:${CHAIN_ID}`;
 
-const el = id => document.getElementById(id);
-const statusEl = el("status"), addrEl = el("address"), netEl = el("network");
-const sigEl = el("sig"), msgEl = el("msg");
-const btnConnect = el("btnConnect"), btnDisconnect = el("btnDisconnect");
-const btnSign = el("btnSign"), btnRand = el("btnRand");
-const qrModal = el("qrModal"), qrDiv = el("qr");
+const $ = id => document.getElementById(id);
+const statusEl = $("status"), addrEl = $("address"), netEl = $("network");
+const sigEl = $("sig"), msgEl = $("msg");
+const btnConnect = $("btnConnect"), btnDisconnect = $("btnDisconnect");
+const btnSign = $("btnSign"), btnRand = $("btnRand");
+const qrModal = $("qrModal"), qrDiv = $("qr");
+const sheet = $("sheet"), btnOpenXPortal = $("btnOpenXPortal"), btnCancelOpen = $("btnCancelOpen"), sheetHint = $("sheetHint");
 
 let provider = null;
+let pendingApproval = null;
+let lastUri = null;
 
-/** UI helpers */
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 function setConnected(address){
   statusEl.textContent = "connected";
   addrEl.textContent = address || "—";
@@ -99,7 +111,6 @@ function setDisconnected(){
   sigEl.textContent = "—";
 }
 async function openQR(uri){
-  // Generează SVG pentru QR și arată modalul
   const svg = await QRCode.toString(uri, { type: "svg", margin: 1 });
   qrDiv.innerHTML = svg;
   qrModal.style.display = "grid";
@@ -108,89 +119,118 @@ function closeQR(){
   qrModal.style.display = "none";
   qrDiv.innerHTML = "";
 }
+function openSheet(){
+  sheet.style.display = "block";
+}
+function closeSheet(){
+  sheet.style.display = "none";
+}
 
-/** Init provider conform SDK */
 async function initProvider(){
   if (provider) return provider;
 
   const callbacks = {
     onClientLogin: async () => {
-      closeQR();
+      closeQR(); closeSheet();
       const address = await provider.getAddress();
       setConnected(address);
     },
     onClientLogout: async () => {
       setDisconnected();
-    },
-    onClientEvent: async (event) => {
-      // optional: console.log("WC event", event);
     }
   };
 
   provider = new WalletConnectProvider(
     callbacks,
-    CHAIN_ID,          // "1" | "T" | "D"
+    CHAIN_ID,
     RELAY_URL,
     WC_PROJECT_ID,
-    { logger: "error" } // opțional
+    { logger: "error" }
   );
 
   await provider.init();
   return provider;
 }
 
-/** Connect flow */
+function buildDeeplink(uri){
+  const u = encodeURIComponent(uri);
+  // două variante cunoscute
+  return [
+    `xportal://walletconnect?uri=${u}`,
+    `xportal://wc?uri=${u}`
+  ];
+}
+
+async function startConnect(){
+  await initProvider();
+
+  // ceri metodele minime; poți adăuga și altele (mvx_signTransactions etc.)
+  const { uri, approval } = await provider.connect({
+    methods: ["mvx_signMessage"]
+  });
+
+  lastUri = uri;
+  pendingApproval = approval;
+
+  if (isMobile()) {
+    // iOS/Android: cere gesture (buton) → deschide deeplink
+    openSheet();
+    sheetHint.style.display = "none";
+  } else {
+    await openQR(uri);
+  }
+
+  // finalizează login-ul (așteaptă aprobarea din xPortal)
+  await provider.login({ approval });
+}
+
 btnConnect.onclick = async () => {
   try {
-    await initProvider();
-
-    // Poți cere explicit metode extra; by default sunt mvx_signMessage / signTransaction(s)
-    const { uri, approval } = await provider.connect({
-      methods: ["mvx_signMessage"]
-    });
-
-    // Desktop → arătăm QR; pe mobil, WalletConnect va lansa xPortal (dacă are handler)
-    await openQR(uri);
-
-    // Așteaptă aprobarea utilizatorului în xPortal, apoi finalizează login-ul
-    await provider.login({ approval });
-
+    await startConnect();
   } catch (e) {
-    closeQR();
-    alert("Connect error: " + (e?.message || e));
+    closeQR(); closeSheet();
+    if (/rejected/i.test(e?.message || "")) {
+      alert("Conectarea a fost respinsă în xPortal. Încearcă din nou și apasă Approve.");
+    } else {
+      alert("Connect error: " + (e?.message || e));
+    }
   }
 };
 
-/** Disconnect */
+btnOpenXPortal.onclick = () => {
+  if (!lastUri) return;
+  const candidates = buildDeeplink(lastUri);
+  let i = 0;
+  // încercăm 2 scheme cunoscute; dacă nu pornește din prima, mai încearcă o dată
+  const tryOpen = () => {
+    if (i >= candidates.length) { sheetHint.style.display = ""; return; }
+    window.location.href = candidates[i++];
+    setTimeout(tryOpen, 600);
+  };
+  tryOpen();
+};
+
+btnCancelOpen.onclick = () => closeSheet();
+
 btnDisconnect.onclick = async () => {
-  try {
-    if (provider) await provider.logout();
-  } catch (e) {
-    console.warn(e);
-  } finally {
-    setDisconnected();
-  }
+  try { if (provider) await provider.logout(); } catch {}
+  closeQR(); closeSheet();
+  setDisconnected();
 };
 
-/** Sign message (mvx_signMessage) */
 btnSign.onclick = async () => {
   try {
     if (!provider) { alert("Not connected."); return; }
-
     const msgStr = msgEl.value || "TCL-VERIFY";
     const message = new SignableMessage({ message: new TextEncoder().encode(msgStr) });
     await provider.signMessage(message);
-
-    // JSON include semnătura în hex; afișăm compact
-    const json = message.toJSON(); // { address, message, signature, version }
+    const json = message.toJSON();
     sigEl.textContent = json.signature || JSON.stringify(json);
-
   } catch (e) {
     alert("Sign error: " + (e?.message || e));
   }
 };
 
-/** Random nonce helper */
 btnRand.onclick = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let s = "TCL-";
@@ -198,7 +238,6 @@ btnRand.onclick = () => {
   msgEl.value = s;
 };
 
-// Init UI
 setDisconnected();
 </script>
 </html>
