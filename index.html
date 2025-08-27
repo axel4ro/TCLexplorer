@@ -17,18 +17,21 @@
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--mono);padding:6px 8px;border-radius:10px;word-break:break-all}
   .kv{display:grid;grid-template-columns:180px 1fr;gap:8px 12px;align-items:start}
   .qr{max-width:280px;margin-top:10px}
+  .hidden{display:none}
+  .statusline{margin-top:10px}
 </style>
 
 <div class="wrap">
   <div class="card">
     <h1>TCL dApp – Connect xPortal</h1>
-    <p class="muted">Conectează xPortal prin WalletConnect v2. Pe desktop apare QR; pe mobil se deschide xPortal direct.</p>
+    <p class="muted">Conectează xPortal prin WalletConnect v2. Pe desktop apare QR; pe mobil se deschide xPortal direct. Confirmă în aplicație!</p>
   </div>
 
   <div class="card">
     <h2>Connection</h2>
     <div class="row" style="margin-bottom:10px">
       <button id="btnConnect" class="btn primary">Connect xPortal</button>
+      <button id="btnRetry"   class="btn">Retry / Regenerate QR</button>
       <button id="btnDisconnect" class="btn">Disconnect</button>
     </div>
     <div class="kv">
@@ -36,11 +39,14 @@
       <div class="muted">Address</div><div id="address" class="mono">—</div>
       <div class="muted">Network</div><div id="network" class="mono">mvx:1 (mainnet)</div>
     </div>
-    <div id="qrWrap" class="card" style="display:none">
+    <div id="qrWrap" class="card hidden">
       <h3>Scan with xPortal</h3>
       <img id="qr" alt="QR" class="qr">
-      <p class="muted">Deschide xPortal pe telefon și scanează acest cod.</p>
+      <p class="muted statusline" id="hintDesktop">Deschide xPortal pe telefon și apasă <b>Connect / Approve</b>.</p>
     </div>
+    <p class="muted statusline" id="hintMobile" class="hidden" style="display:none">
+      Pe mobil, se va deschide xPortal. Dacă nu apare, apasă <b>Retry</b> și confirmă în aplicație.
+    </p>
   </div>
 
   <div class="card">
@@ -56,27 +62,29 @@
   </div>
 </div>
 
-<!-- ESM imports (nu UMD) -->
+<!-- ESM imports -->
 <script type="module">
 import UniversalProvider from "https://esm.sh/@walletconnect/universal-provider@2.11.3";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
 /* ====== CONFIG ====== */
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // <- string
+const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // ← string din WalletConnect Cloud
 const MVX_CHAIN = "mvx:1"; // mainnet
 /* ==================== */
 
 const $ = (id)=>document.getElementById(id);
-const statusEl = $("status"), addrEl = $("address"), sigEl = $("sig"), msgEl = $("msg");
-const qrWrap = $("qrWrap"), qrImg = $("qr");
-const btnConnect = $("btnConnect"), btnDisconnect = $("btnDisconnect"), btnSign = $("btnSign"), btnRand = $("btnRand");
+const statusEl=$("status"), addrEl=$("address"), sigEl=$("sig"), msgEl=$("msg");
+const qrWrap=$("qrWrap"), qrImg=$("qr"), hintMobile=$("hintMobile");
+const btnConnect=$("btnConnect"), btnRetry=$("btnRetry"), btnDisconnect=$("btnDisconnect");
+const btnSign=$("btnSign"), btnRand=$("btnRand");
 
-let provider = null, session = null, account = null;
+let provider=null, session=null, account=null, lastUri=null;
 
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-function renderConnected(){ statusEl.textContent = "connected"; addrEl.textContent = account || "—"; }
-function renderDisconnected(){ statusEl.textContent = "disconnected"; addrEl.textContent = "—"; sigEl.textContent = "—"; }
+function setStatus(s){ statusEl.textContent = s; }
+function renderConnected(){ setStatus("connected"); addrEl.textContent = account || "—"; }
+function renderDisconnected(){ setStatus("disconnected"); addrEl.textContent = "—"; sigEl.textContent = "—"; }
 
 async function initProvider(){
   if (provider) return provider;
@@ -93,10 +101,12 @@ async function initProvider(){
   });
 
   provider.on("display_uri", async (uri) => {
+    lastUri = uri;
     if (!uri) return;
 
     if (isMobile()) {
-      // Deschide xPortal pe mobil
+      hintMobile.style.display = "";
+      // încearcă deeplink către xPortal
       const u = encodeURIComponent(uri);
       const candidates = [
         `xportal://walletconnect?uri=${u}`,
@@ -106,21 +116,20 @@ async function initProvider(){
       const tryOpen = () => { if (i < candidates.length) { location.href = candidates[i++]; setTimeout(tryOpen, 600); } };
       tryOpen();
     } else {
-      // Desktop: arată QR în pagină
-      qrWrap.style.display = "";
-      try {
-        qrImg.src = await QRCode.toDataURL(uri);
-      } catch (e) {
-        console.error("QR gen error", e);
-      }
+      // Desktop: afișăm QR în pagină
+      hintMobile.style.display = "none";
+      qrWrap.classList.remove("hidden");
+      try { qrImg.src = await QRCode.toDataURL(uri); }
+      catch(e){ console.error("QR gen error", e); }
     }
   });
 
   provider.on("connect", (data) => {
-    qrWrap.style.display = "none";
+    qrWrap.classList.add("hidden");
+    hintMobile.style.display = "none";
     session = data.session;
     const ns = session?.namespaces?.mvx;
-    const acc = ns?.accounts?.[0]; // "mvx:1:erd1..."
+    const acc = ns?.accounts?.[0];          // "mvx:1:erd1..."
     account = acc ? acc.split(":")[2] : null;
     renderConnected();
   });
@@ -132,38 +141,64 @@ async function initProvider(){
     renderConnected();
   });
 
-  provider.on("disconnect", () => { qrWrap.style.display = "none"; session = null; account = null; renderDisconnected(); });
+  provider.on("disconnect", () => {
+    qrWrap.classList.add("hidden");
+    hintMobile.style.display = "none";
+    session=null; account=null; renderDisconnected();
+  });
 
   return provider;
 }
 
-// Connect
-btnConnect.addEventListener("click", async () => {
-  try {
-    await initProvider();
-    await provider.connect({
-      requiredNamespaces: {
-        mvx: {
-          methods: ["mvx_signMessage"], // poți adăuga "mvx_signTransaction" ulterior
-          chains: [MVX_CHAIN],
-          events: []
-        }
+// ——— CONNECT / RETRY ———
+async function startConnect(){
+  await initProvider();
+  // ascunde QR vechi, va veni unul nou în display_uri
+  qrWrap.classList.add("hidden"); lastUri=null; setStatus("connecting…");
+  return provider.connect({
+    requiredNamespaces: {
+      mvx: {
+        methods: ["mvx_signMessage"],   // adaugi ulterior "mvx_signTransaction" dacă vrei
+        chains: [MVX_CHAIN],
+        events: []
       }
-    });
-  } catch (e) {
-    console.error(e);
-    alert("Connect error: " + (e?.message || e));
+    }
+  });
+}
+
+btnConnect.addEventListener("click", async ()=>{
+  try { await startConnect(); }
+  catch (e) {
+    const msg = (e && e.message) || String(e);
+    if (/rejected/i.test(msg)) {
+      // userul a închis în xPortal
+      try { if (provider) await provider.disconnect(); } catch {}
+      renderDisconnected();
+      alert("Conectarea a fost anulată în xPortal. Apasă Retry și aprobă în aplicație.");
+      return;
+    }
+    alert("Connect error: " + msg);
   }
 });
 
-// Disconnect
-btnDisconnect.addEventListener("click", async () => {
-  try { if (provider) await provider.disconnect(); } catch(e) { console.warn(e); }
+btnRetry.addEventListener("click", async ()=>{
+  try {
+    // dacă există o sesiune veche, închide-o
+    try { if (provider) await provider.disconnect(); } catch {}
+    await startConnect();
+  } catch (e) {
+    alert("Retry error: " + ((e && e.message) || e));
+  }
 });
 
-// Sign message (cu fallback-uri)
-btnSign.addEventListener("click", async () => {
-  try {
+btnDisconnect.addEventListener("click", async ()=>{
+  try { if (provider) await provider.disconnect(); } catch {}
+  renderDisconnected();
+});
+
+// ——— SIGN MESSAGE ———
+btnSign.addEventListener("click", async ()=>{
+  try{
     if (!provider || !session) { alert("Not connected."); return; }
     const msg = msgEl.value || "TCL-VERIFY";
     let res;
@@ -194,14 +229,13 @@ btnSign.addEventListener("click", async () => {
     }
     const signature = res?.signature || res?.result || JSON.stringify(res);
     sigEl.textContent = signature || "n/a";
-  } catch (e) {
-    console.error(e);
+  }catch(e){
     alert("Sign error: " + (e?.message || e));
   }
 });
 
-// Random nonce
-btnRand.addEventListener("click", () => {
+// ——— RANDOM NONCE ———
+btnRand.addEventListener("click", ()=>{
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let s = "TCL-"; for (let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
   msgEl.value = s;
