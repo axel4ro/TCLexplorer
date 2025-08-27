@@ -1,60 +1,50 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8" />
-<title>TCL dApp – xPortal (WalletConnect v2)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TCL dApp · xPortal connect (WalletConnect v2)</title>
 <style>
-  :root { --bdr:#e5e7eb; --muted:#6b7280; --txt:#111827; --bg:#fff; --mono:#f3f4f6; --brand:#10b981; }
-  *{box-sizing:border-box} body{margin:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
-  .wrap{max-width:960px;margin:auto}
+  :root{--bdr:#e5e7eb;--muted:#6b7280;--txt:#111827;--bg:#fff;--mono:#f3f4f6;--brand:#10b981}
+  *{box-sizing:border-box}body{margin:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--txt);background:var(--bg)}
+  .wrap{max-width:920px;margin:auto}
   .card{border:1px solid var(--bdr);border-radius:16px;padding:18px;margin:14px 0}
-  h1{margin:0 0 10px;font-size:24px}
-  h2{margin:0 0 10px;font-size:18px}
-  .muted{color:var(--muted);font-size:14px}
+  h1{margin:0 0 8px;font-size:24px} .muted{color:var(--muted);font-size:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--bdr);background:#fff;cursor:pointer}
   .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--mono);padding:6px 8px;border-radius:10px;word-break:break-all}
-  .kv{display:grid;grid-template-columns:180px 1fr;gap:8px 12px;align-items:start}
-  .qr{max-width:280px;margin-top:10px}
-  .hidden{display:none}
-  .statusline{margin-top:10px}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--mono);padding:6px 8px;border-radius:10px;word-break:break-all}
+  .kv{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:start}
+  #qrModal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.6);z-index:50}
+  #qrBox{background:#111;padding:16px;border-radius:16px;max-width:360px}
+  #qrBox h3{color:#fff;margin:0 0 10px;font-weight:600}
+  #qr{width:320px;max-width:100%}
 </style>
 
 <div class="wrap">
   <div class="card">
     <h1>TCL dApp – Connect xPortal</h1>
-    <p class="muted">Desktop: scanezi QR. Mobil: se deschide xPortal direct. Confirmă <b>Connect/Approve</b> în aplicație.</p>
+    <p class="muted">Conectare cu xPortal prin WalletConnect v2 (SDK oficial MultiversX). Static (GitHub Pages).</p>
   </div>
 
   <div class="card">
     <h2>Connection</h2>
     <div class="row" style="margin-bottom:10px">
       <button id="btnConnect" class="btn primary">Connect xPortal</button>
-      <button id="btnRetry"   class="btn">Retry / Regenerate QR</button>
       <button id="btnDisconnect" class="btn">Disconnect</button>
     </div>
     <div class="kv">
       <div class="muted">Status</div><div id="status" class="mono">disconnected</div>
       <div class="muted">Address</div><div id="address" class="mono">—</div>
-      <div class="muted">Network</div><div id="network" class="mono">—</div>
+      <div class="muted">Network</div><div id="network" class="mono">mvx:1 (mainnet)</div>
     </div>
-    <div id="qrWrap" class="card hidden">
-      <h3>Scan with xPortal</h3>
-      <img id="qr" alt="QR" class="qr">
-      <p class="muted statusline">În xPortal apasă <b>Connect / Approve</b>. Dacă refuzi, apasă „Retry”.</p>
-    </div>
-    <p class="muted statusline" id="hintMobile" style="display:none">
-      Pe mobil se va deschide xPortal. Dacă nu apare, apasă <b>Retry</b> și confirmă în aplicație.
-    </p>
   </div>
 
   <div class="card">
     <h2>Sign Message</h2>
     <div class="row" style="margin-bottom:10px">
       <input id="msg" class="mono" style="flex:1" value="TCL-VERIFY" />
-      <button id="btnSign" class="btn">Sign</button>
       <button id="btnRand" class="btn">Random Nonce</button>
+      <button id="btnSign" class="btn">Sign</button>
     </div>
     <div class="kv">
       <div class="muted">Signature</div><div id="sig" class="mono">—</div>
@@ -62,216 +52,153 @@
   </div>
 </div>
 
+<!-- Simple QR modal -->
+<div id="qrModal">
+  <div id="qrBox">
+    <h3>Scan with xPortal</h3>
+    <div id="qr"></div>
+    <div class="muted" style="color:#cbd5e1;margin-top:8px">Deschide xPortal pe telefon și scanează.</div>
+  </div>
+</div>
+
 <script type="module">
-import UniversalProvider from "https://esm.sh/@walletconnect/universal-provider@2.11.3";
+/*
+  Conform doc-urilor MultiversX:
+  - Folosim @multiversx/sdk-wallet-connect-provider (WalletConnect v2) pentru xPortal.
+  - Metode JSON-RPC: mvx_signMessage, mvx_signTransaction(s), etc.  (vezi docs)
+  - Namespace mvx, chainId "1" (mainnet) / "T" / "D".
+*/
+
+import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
+import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
-/* ====== CONFIG ====== */
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // ← string din WC Cloud
-const CHAINS = ["elrond:1", "mvx:1"]; // încercăm ambele
-const NAMESPACES = ["elrond", "mvx"];  // încercăm ambele
-/* ==================== */
+const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff";   // <-- pune aici Project ID-ul tău
+const RELAY_URL     = "wss://relay.walletconnect.com";
+const CHAIN_ID      = "1";                 // "1"=mainnet, "T"=testnet, "D"=devnet
+const MVX_CHAIN     = `mvx:${CHAIN_ID}`;
 
-const $ = (id)=>document.getElementById(id);
-const statusEl=$("status"), addrEl=$("address"), netEl=$("network"), sigEl=$("sig"), msgEl=$("msg");
-const qrWrap=$("qrWrap"), qrImg=$("qr"), hintMobile=$("hintMobile");
-const btnConnect=$("btnConnect"), btnRetry=$("btnRetry"), btnDisconnect=$("btnDisconnect");
-const btnSign=$("btnSign"), btnRand=$("btnRand");
+const el = id => document.getElementById(id);
+const statusEl = el("status"), addrEl = el("address"), netEl = el("network");
+const sigEl = el("sig"), msgEl = el("msg");
+const btnConnect = el("btnConnect"), btnDisconnect = el("btnDisconnect");
+const btnSign = el("btnSign"), btnRand = el("btnRand");
+const qrModal = el("qrModal"), qrDiv = el("qr");
 
-let provider=null, session=null, account=null, activeChain=null, lastUri=null;
+let provider = null;
 
-const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-function setStatus(s){ statusEl.textContent = s; }
-function renderConnected(){ setStatus("connected"); addrEl.textContent = account||"—"; netEl.textContent = activeChain||"—"; }
-function renderDisconnected(){ setStatus("disconnected"); addrEl.textContent="—"; netEl.textContent="—"; sigEl.textContent="—"; }
+/** UI helpers */
+function setConnected(address){
+  statusEl.textContent = "connected";
+  addrEl.textContent = address || "—";
+  netEl.textContent = `${MVX_CHAIN} (mainnet)`;
+}
+function setDisconnected(){
+  statusEl.textContent = "disconnected";
+  addrEl.textContent = "—";
+  sigEl.textContent = "—";
+}
+async function openQR(uri){
+  // Generează SVG pentru QR și arată modalul
+  const svg = await QRCode.toString(uri, { type: "svg", margin: 1 });
+  qrDiv.innerHTML = svg;
+  qrModal.style.display = "grid";
+}
+function closeQR(){
+  qrModal.style.display = "none";
+  qrDiv.innerHTML = "";
+}
 
+/** Init provider conform SDK */
 async function initProvider(){
   if (provider) return provider;
-  provider = await UniversalProvider.init({
-    projectId: WC_PROJECT_ID,
-    logger: "error",
-    relayUrl: "wss://relay.walletconnect.com",
-    metadata: {
-      name: "TCL dApp",
-      description: "Simple TCL dApp on GitHub Pages",
-      url: location.origin,
-      icons: ["https://avatars.githubusercontent.com/u/48141889?s=200&v=4"]
+
+  const callbacks = {
+    onClientLogin: async () => {
+      closeQR();
+      const address = await provider.getAddress();
+      setConnected(address);
+    },
+    onClientLogout: async () => {
+      setDisconnected();
+    },
+    onClientEvent: async (event) => {
+      // optional: console.log("WC event", event);
     }
-  });
+  };
 
-  provider.on("display_uri", async (uri) => {
-    lastUri = uri;
-    if (!uri) return;
+  provider = new WalletConnectProvider(
+    callbacks,
+    CHAIN_ID,          // "1" | "T" | "D"
+    RELAY_URL,
+    WC_PROJECT_ID,
+    { logger: "error" } // opțional
+  );
 
-    if (isMobile()) {
-      hintMobile.style.display = "";
-      const u = encodeURIComponent(uri);
-      const candidates = [
-        `xportal://walletconnect?uri=${u}`,
-        `xportal://wc?uri=${u}`
-      ];
-      let i = 0;
-      const tryOpen = () => { if (i < candidates.length) { location.href = candidates[i++]; setTimeout(tryOpen, 600); } };
-      tryOpen();
-    } else {
-      hintMobile.style.display = "none";
-      qrWrap.classList.remove("hidden");
-      try { qrImg.src = await QRCode.toDataURL(uri); }
-      catch(e){ console.error("QR gen error", e); }
-    }
-  });
-
-  provider.on("connect", (data) => {
-    qrWrap.classList.add("hidden");
-    hintMobile.style.display = "none";
-    session = data.session;
-
-    // extragem fie din 'elrond', fie din 'mvx'
-    let ns = session.namespaces["elrond"] || session.namespaces["mvx"];
-    if (!ns || !ns.accounts?.length) { renderDisconnected(); return; }
-
-    // exemplu accounts: "elrond:1:erd1..." sau "mvx:1:erd1..."
-    const accStr = ns.accounts[0];
-    const parts = accStr.split(":"); // [namespace, chainId, address]
-    activeChain = `${parts[0]}:${parts[1]}`;
-    account = parts[2] || null;
-    renderConnected();
-  });
-
-  provider.on("session_update", ({ params }) => {
-    let ns = params.namespaces["elrond"] || params.namespaces["mvx"];
-    if (ns && ns.accounts?.length) {
-      const parts = ns.accounts[0].split(":");
-      activeChain = `${parts[0]}:${parts[1]}`;
-      account = parts[2] || account;
-      renderConnected();
-    }
-  });
-
-  provider.on("disconnect", () => {
-    qrWrap.classList.add("hidden");
-    hintMobile.style.display = "none";
-    session=null; account=null; activeChain=null; renderDisconnected();
-  });
-
+  await provider.init();
   return provider;
 }
 
-// propunere de sesiune (încercăm întâi 'elrond', apoi 'mvx')
-async function proposeSession(){
-  await initProvider();
-  setStatus("connecting…");
-  qrWrap.classList.add("hidden"); lastUri=null;
-
-  // 1) încerci 'elrond'
+/** Connect flow */
+btnConnect.onclick = async () => {
   try {
-    await provider.connect({
-      requiredNamespaces: {
-        elrond: { methods: ["erd_signMessage"], chains: ["elrond:1"], events: [] }
-      }
+    await initProvider();
+
+    // Poți cere explicit metode extra; by default sunt mvx_signMessage / signTransaction(s)
+    const { uri, approval } = await provider.connect({
+      methods: ["mvx_signMessage"]
     });
-    return;
-  } catch (e1) {
-    // 2) fallback pe 'mvx'
-    await provider.connect({
-      requiredNamespaces: {
-        mvx: { methods: ["mvx_signMessage"], chains: ["mvx:1"], events: [] }
-      }
-    });
-  }
-}
 
-// CONNECT
-btnConnect.addEventListener("click", async ()=>{
-  try {
-    await proposeSession();
+    // Desktop → arătăm QR; pe mobil, WalletConnect va lansa xPortal (dacă are handler)
+    await openQR(uri);
+
+    // Așteaptă aprobarea utilizatorului în xPortal, apoi finalizează login-ul
+    await provider.login({ approval });
+
   } catch (e) {
-    const msg = (e && e.message) ? e.message : String(e);
-    if (/rejected/i.test(msg)) {
-      try { if (provider) await provider.disconnect(); } catch {}
-      renderDisconnected();
-      alert("Conectarea a fost anulată în xPortal. Apasă Retry și aprobă în aplicație.");
-      return;
-    }
-    alert("Connect error: " + msg);
+    closeQR();
+    alert("Connect error: " + (e?.message || e));
   }
-});
+};
 
-// RETRY
-btnRetry.addEventListener("click", async ()=>{
+/** Disconnect */
+btnDisconnect.onclick = async () => {
   try {
-    try { if (provider) await provider.disconnect(); } catch {}
-    await proposeSession();
+    if (provider) await provider.logout();
   } catch (e) {
-    alert("Retry error: " + ((e && e.message) || e));
+    console.warn(e);
+  } finally {
+    setDisconnected();
   }
-});
+};
 
-// DISCONNECT
-btnDisconnect.addEventListener("click", async ()=>{
-  try { if (provider) await provider.disconnect(); } catch {}
-  renderDisconnected();
-});
+/** Sign message (mvx_signMessage) */
+btnSign.onclick = async () => {
+  try {
+    if (!provider) { alert("Not connected."); return; }
 
-// SIGN (încearcă toate combinațiile cunoscute)
-btnSign.addEventListener("click", async ()=>{
-  try{
-    if (!provider || !session || !account || !activeChain) {
-      alert("Not connected."); return;
-    }
-    const msg = msgEl.value || "TCL-VERIFY";
-    let res;
+    const msgStr = msgEl.value || "TCL-VERIFY";
+    const message = new SignableMessage({ message: new TextEncoder().encode(msgStr) });
+    await provider.signMessage(message);
 
-    // a) erd_signMessage (vechi)
-    try {
-      res = await provider.request({
-        topic: session.topic,
-        chainId: activeChain,
-        request: { method: "erd_signMessage", params: { address: account, message: msg } }
-      });
-    } catch (eA) {
-      // b) mvx_signMessage (nou)
-      try {
-        res = await provider.request({
-          topic: session.topic,
-          chainId: activeChain,
-          request: { method: "mvx_signMessage", params: { address: account, message: msg } }
-        });
-      } catch (eB) {
-        // c) altă cheie: data
-        try {
-          res = await provider.request({
-            topic: session.topic,
-            chainId: activeChain,
-            request: { method: "mvx_signMessage", params: { address: account, data: msg } }
-          });
-        } catch (eC) {
-          // d) base64
-          const b64 = btoa(unescape(encodeURIComponent(msg)));
-          res = await provider.request({
-            topic: session.topic,
-            chainId: activeChain,
-            request: { method: "mvx_signMessage", params: { address: account, message: b64, encoding: "base64" } }
-          });
-        }
-      }
-    }
+    // JSON include semnătura în hex; afișăm compact
+    const json = message.toJSON(); // { address, message, signature, version }
+    sigEl.textContent = json.signature || JSON.stringify(json);
 
-    const signature = res?.signature || res?.result || JSON.stringify(res);
-    sigEl.textContent = signature || "n/a";
-  }catch(e){
+  } catch (e) {
     alert("Sign error: " + (e?.message || e));
   }
-});
+};
 
-// NONCE random
-btnRand.addEventListener("click", ()=>{
+/** Random nonce helper */
+btnRand.onclick = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let s = "TCL-"; for (let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  let s = "TCL-";
+  for (let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
   msgEl.value = s;
-});
+};
 
-// init
-renderDisconnected();
+// Init UI
+setDisconnected();
 </script>
 </html>
