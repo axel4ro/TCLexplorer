@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Open xPortal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px;line-height:1.5}
+  .card{max-width:720px;margin:auto;padding:16px;border:1px solid #e5e7eb;border-radius:14px}
+  code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+  a.button{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #e5e7eb;text-decoration:none}
+</style>
+<div class="card">
+  <h1>Opening xPortal…</h1>
+  <p>If the app doesn't open automatically, tap one of the options below.</p>
+  <ol>
+    <li><a id="dl" class="button" href="#">Open in xPortal (deeplink)</a></li>
+    <li><a id="intent" class="button" href="#">Android intent fallback</a></li>
+  </ol>
+  <p>Signing message: <code id="nonce">…</code></p>
+</div>
+<script>
+  function qp(name){ return new URL(location.href).searchParams.get(name) || ""; }
+  const message  = qp("message");
+  const callback = qp("callback") || "https://axel4ro.github.io/TheCursedLand/";
+
+  // build targets
+  const params = new URLSearchParams({ message, callbackUrl: callback });
+  const deeplink = "xportal://wallet/sign-message?" + params.toString();
+  const intent   = "intent://wallet/sign-message?" + params.toString()
+                 + "#Intent;scheme=xportal;package=com.elrond.maiar.wallet;end";
+
+  // wire links
+  document.getElementById("nonce").textContent = message;
+  document.getElementById("dl").href = deeplink;
+  document.getElementById("intent").href = intent;
+
+  // try auto-open after a short delay (lets page render first)
+  setTimeout(function(){
+    // iOS/Android browsers often block immediate custom-scheme navigation inside in-app browsers.
+    // Users can tap the buttons above if blocked.
+    window.location.href = deeplink;
+    // Optional: backup redirect after 1.2s for some Androids:
+    setTimeout(function(){
+      // If deeplink failed and we are still here, try intent (Android Chrome)
+      if (navigator.userAgent.toLowerCase().includes("android")) {
+        window.location.href = intent;
+      }
+    }, 1200);
+  }, 250);
+</script>
