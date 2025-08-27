@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TCL – xPortal Signature</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b0f13;color:#e9f5f2}
+  .wrap{max-width:720px;margin:0 auto;padding:20px}
+  .card{background:#0f151a;border:1px solid #1f2a33;border-radius:16px;padding:18px;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+  .title{font-size:20px;margin:0 0 8px;font-weight:700}
+  .row{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap}
+  .label{opacity:.8;min-width:110px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
+  button,a.btn{border:0;border-radius:12px;padding:10px 14px;background:#20e3c2;color:#042422;
+    font-weight:700;text-decoration:none;display:inline-block}
+  .ghost{background:#172026;color:#c6d7d4}
+  .muted{opacity:.7;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="font-size:24px;margin:12px 0 16px;">TCL – xPortal Signature</h1>
+  <div class="card">
+    <p class="muted">După semnare în xPortal vei vedea mai jos <strong>signature</strong> și <strong>address</strong>.
+       Apasă <em>Copy</em> și lipește în Discord la bot.</p>
+
+    <div class="row"><div class="label">Status</div><div id="status" class="mono">Waiting…</div></div>
+    <div class="row"><div class="label">Message</div><div id="msg" class="mono">–</div></div>
+    <div class="row"><div class="label">Address</div><div id="addr" class="mono">–</div><button class="ghost" id="copyAddr">Copy</button></div>
+    <div class="row"><div class="label">Signature</div><div id="sig" class="mono">–</div><button class="ghost" id="copySig">Copy</button></div>
+
+    <div class="row">
+      <a class="btn" id="openDeeplink">Open xPortal again</a>
+      <button class="ghost" id="copyDeeplink">Copy deeplink</button>
+    </div>
+
+    <p class="muted">Dacă nu apare semnătura: deschide linkul din nou din Discord / apasă “Open xPortal again”.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  const qs = new URLSearchParams(location.search);
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+
+  // hook-ul poate întoarce în query sau fragment – citim din ambele:
+  const data = (k) => qs.get(k) || hash.get(k) || '';
+  const message   = data('message') || data('nonce') || '';
+  const signature = data('signature') || data('sign') || '';
+  const address   = data('address') || data('addr') || '';
+  const error     = data('error') || '';
+
+  const $ = (id) => document.getElementById(id);
+  const enc = encodeURIComponent;
+
+  $('msg').textContent  = message || '–';
+  $('addr').textContent = address || '–';
+  $('sig').textContent  = signature || '–';
+  $('status').textContent = error ? ('Error: ' + error) :
+                              (signature ? 'Signed ✅' : 'Waiting…');
+
+  function copy(txt){
+    navigator.clipboard.writeText(txt).then(()=>alert('Copied!'));
+  }
+  $('copyAddr').onclick = () => address && copy(address);
+  $('copySig').onclick  = () => signature && copy(signature);
+
+  // re-deschidere xPortal direct din pagină (pentru mobil)
+  const cb = location.origin + location.pathname; // întoarcere pe aceeași pagină
+  const deeplink = 'xportal://wallet/sign-message?message=' + enc(message || '') + '&callbackUrl=' + enc(cb);
+
+  $('openDeeplink').href = deeplink;
+  $('copyDeeplink').onclick = () => copy(deeplink);
+})();
+</script>
+</body>
+</html>
