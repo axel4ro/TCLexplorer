@@ -1,78 +1,75 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TCL – xPortal Signature</title>
 <style>
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:#0b0f13;color:#e9f5f2}
-  .wrap{max-width:720px;margin:0 auto;padding:20px}
-  .card{background:#0f151a;border:1px solid #1f2a33;border-radius:16px;padding:18px;box-shadow:0 4px 18px rgba(0,0,0,.25)}
-  .title{font-size:20px;margin:0 0 8px;font-weight:700}
-  .row{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap}
-  .label{opacity:.8;min-width:110px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
-  button,a.btn{border:0;border-radius:12px;padding:10px 14px;background:#20e3c2;color:#042422;
-    font-weight:700;text-decoration:none;display:inline-block}
-  .ghost{background:#172026;color:#c6d7d4}
-  .muted{opacity:.7;font-size:13px}
+  :root { color-scheme: dark; }
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial;background:#0b0f14;color:#e8f6f2}
+  .card{max-width:720px;margin:48px auto;padding:28px 24px;background:#0f151c;border:1px solid #1f2a36;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+  h1{font-size:28px;margin:0 0 12px}
+  .muted{color:#9fb3c8}
+  .row{display:flex;align-items:center;gap:10px;margin:14px 0}
+  .key{min-width:110px;color:#9fb3c8}
+  .val{word-break:break-all;font-weight:600}
+  .btn{appearance:none;border:1px solid #1fe4d0;background:#0b4741;color:#dffffa;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .btn.sec{background:#111826;border-color:#2b3947;color:#cfe6ff}
+  .grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .note{margin-top:14px;color:#9fb3c8;font-size:14px}
 </style>
-</head>
-<body>
-<div class="wrap">
-  <h1 style="font-size:24px;margin:12px 0 16px;">TCL – xPortal Signature</h1>
-  <div class="card">
-    <p class="muted">După semnare în xPortal vei vedea mai jos <strong>signature</strong> și <strong>address</strong>.
-       Apasă <em>Copy</em> și lipește în Discord la bot.</p>
+<div class="card">
+  <h1>TCL – xPortal Signature</h1>
+  <p class="muted">După semnare în xPortal vei vedea mai jos <b>signature</b> și <b>address</b>. Apasă Copy și lipește în Discord la bot.</p>
 
-    <div class="row"><div class="label">Status</div><div id="status" class="mono">Waiting…</div></div>
-    <div class="row"><div class="label">Message</div><div id="msg" class="mono">–</div></div>
-    <div class="row"><div class="label">Address</div><div id="addr" class="mono">–</div><button class="ghost" id="copyAddr">Copy</button></div>
-    <div class="row"><div class="label">Signature</div><div id="sig" class="mono">–</div><button class="ghost" id="copySig">Copy</button></div>
+  <div class="row"><div class="key">Status</div><div id="st" class="val">Waiting…</div></div>
+  <div class="row"><div class="key">Message</div><div id="msg" class="val">–</div></div>
+  <div class="row"><div class="key">Address</div><div id="addr" class="val">–</div><button class="btn sec" id="copyAddr">Copy</button></div>
+  <div class="row"><div class="key">Signature</div><div id="sig" class="val">–</div><button class="btn sec" id="copySig">Copy</button></div>
 
-    <div class="row">
-      <a class="btn" id="openDeeplink">Open xPortal again</a>
-      <button class="ghost" id="copyDeeplink">Copy deeplink</button>
-    </div>
-
-    <p class="muted">Dacă nu apare semnătura: deschide linkul din nou din Discord / apasă “Open xPortal again”.</p>
+  <div class="grid">
+    <a id="openWeb" class="btn">Open xPortal again</a>
+    <button id="copyDeep" class="btn sec">Copy deeplink</button>
+    <button id="copyIntent" class="btn sec">Copy Android intent</button>
   </div>
+  <p class="note">Dacă nu apare semnătura: redeschide linkul din mesajul Discord sau apasă “Open xPortal again”.</p>
 </div>
 
 <script>
 (function () {
   const qs = new URLSearchParams(location.search);
-  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const message = qs.get("message") || "";
+  const address = qs.get("address") || "";
+  const signature = qs.get("signature") || "";
+  const status = qs.get("status") || (signature ? "signed" : "waiting");
 
-  // hook-ul poate întoarce în query sau fragment – citim din ambele:
-  const data = (k) => qs.get(k) || hash.get(k) || '';
-  const message   = data('message') || data('nonce') || '';
-  const signature = data('signature') || data('sign') || '';
-  const address   = data('address') || data('addr') || '';
-  const error     = data('error') || '';
+  const $ = id => document.getElementById(id);
+  $("msg").textContent = message || "–";
+  $("addr").textContent = address || "–";
+  $("sig").textContent = signature || "–";
+  $("st").textContent = status === "cancelled" ? "Cancelled" : (signature ? "Signed ✓" : "Waiting…");
 
-  const $ = (id) => document.getElementById(id);
-  const enc = encodeURIComponent;
+  // link care deschide browser->wallet.multiversx.com->xPortal
+  const callbackUrl = location.origin + location.pathname; // rămânem pe aceeași pagină
+  const walletHook = "https://wallet.multiversx.com/hook/sign-message?" +
+    new URLSearchParams({ message, callbackUrl }).toString();
+  $("openWeb").href = walletHook;
 
-  $('msg').textContent  = message || '–';
-  $('addr').textContent = address || '–';
-  $('sig').textContent  = signature || '–';
-  $('status').textContent = error ? ('Error: ' + error) :
-                              (signature ? 'Signed ✅' : 'Waiting…');
+  // deeplink direct pentru aplicație
+  const q = new URLSearchParams({ message, callbackUrl });
+  const deeplink = "xportal://wallet/sign-message?" + q.toString();
+  const intent = `intent://wallet/sign-message?${q.toString()}#Intent;scheme=xportal;package=com.elrond.maiar.wallet;end`;
 
-  function copy(txt){
-    navigator.clipboard.writeText(txt).then(()=>alert('Copied!'));
+  async function copy(txt) {
+    try { await navigator.clipboard.writeText(txt); } catch(e) {
+      const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy"); ta.remove();
+    }
   }
-  $('copyAddr').onclick = () => address && copy(address);
-  $('copySig').onclick  = () => signature && copy(signature);
 
-  // re-deschidere xPortal direct din pagină (pentru mobil)
-  const cb = location.origin + location.pathname; // întoarcere pe aceeași pagină
-  const deeplink = 'xportal://wallet/sign-message?message=' + enc(message || '') + '&callbackUrl=' + enc(cb);
-
-  $('openDeeplink').href = deeplink;
-  $('copyDeeplink').onclick = () => copy(deeplink);
+  $("copyAddr").onclick = () => address ? copy(address) : null;
+  $("copySig").onclick  = () => signature ? copy(signature) : null;
+  $("copyDeep").onclick = () => copy(deeplink);
+  $("copyIntent").onclick = () => copy(intent);
 })();
 </script>
-</body>
-</html>
