@@ -80,6 +80,10 @@
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
 import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
+import { Buffer } from "https://esm.sh/buffer@6.0.3";     // 👈 ADĂUGAT
+// face Buffer disponibil global (unele utilitare din SDK îl folosesc)
+if (!globalThis.Buffer) globalThis.Buffer = Buffer;
+
 
 const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff";
 const RELAY_URL     = "wss://relay.walletconnect.com";
@@ -221,15 +225,29 @@ btnDisconnect.onclick = async () => {
 btnSign.onclick = async () => {
   try {
     if (!provider) { alert("Not connected."); return; }
-    const msgStr = msgEl.value || "TCL-VERIFY";
-    const message = new SignableMessage({ message: new TextEncoder().encode(msgStr) });
+
+    const msgStr = (msgEl.value ?? "").toString();
+    if (!msgStr.length) {
+      alert("Message is empty."); 
+      return;
+    }
+
+    // asigură-te că avem TextEncoder (Safari vechi)
+    const enc = (typeof TextEncoder !== "undefined") ? new TextEncoder() : null;
+    const bytes = enc ? enc.encode(msgStr) : Buffer.from(msgStr, "utf8");  // Uint8Array
+
+    // construim explicit payloadul
+    const message = new SignableMessage({ message: bytes });
+
     await provider.signMessage(message);
-    const json = message.toJSON();
-    sigEl.textContent = json.signature || JSON.stringify(json);
+
+    const { signature, address } = message.toJSON();  // { signature: hex, ... }
+    sigEl.textContent = signature || JSON.stringify(message.toJSON());
   } catch (e) {
     alert("Sign error: " + (e?.message || e));
   }
 };
+
 
 btnRand.onclick = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
