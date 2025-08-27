@@ -1,35 +1,45 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Verify with xPortal</title>
+<title>TCL – Verify with xPortal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root { --b:#111827; --c:#374151; --t:#f9fafb; --g:#10b981; --bdr:#e5e7eb; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; background:#fff; color:#111; }
-  .wrap { max-width: 880px; margin: auto; }
-  .card { border:1px solid var(--bdr); border-radius:16px; padding:18px; margin:14px 0; }
-  h1 { margin:0 0 10px; font-size:24px; }
-  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--bdr); text-decoration:none; cursor:pointer; background:#fff; }
-  .btn.primary { background: var(--g); border-color: var(--g); color:#fff; }
-  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f3f4f6; padding:8px 10px; border-radius:10px; overflow:auto; }
-  .kv { display:grid; grid-template-columns: 140px 1fr; gap:8px 12px; align-items:start; }
-  .kv .label { color:#4b5563; }
-  .muted { color:#6b7280; font-size:14px; }
+  :root { --bdr:#e5e7eb; --muted:#6b7280; --txt:#111827; --bg:#ffffff; --mono:#f3f4f6; --brand:#10b981; }
+  *{box-sizing:border-box} body{margin:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  .wrap{max-width:920px;margin:auto}
+  .card{border:1px solid var(--bdr);border-radius:16px;padding:18px;margin:14px 0}
+  h1{margin:0 0 10px;font-size:24px}
+  h2{margin:0 0 10px;font-size:18px}
+  .muted{color:var(--muted);font-size:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--bdr);text-decoration:none;background:#fff;cursor:pointer}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.ghost{background:#fff}
+  code, .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--mono);padding:6px 8px;border-radius:10px}
+  .kv{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:start}
+  .label{color:var(--muted)}
+  .spinner{width:16px;height:16px;border:3px solid #d1d5db;border-top-color:var(--brand);border-radius:50%;animation:spin 0.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
+
 <div class="wrap">
   <div class="card">
     <h1>Verify wallet ownership with xPortal</h1>
-    <p class="muted">Sign the nonce to prove ownership. After signing, copy the <b>signature</b> and paste it into the bot using <code>/verify_sign</code>.</p>
+    <p class="muted">
+      1) Tap <b>Connect / Open xPortal</b> și semnează mesajul (nonce).<br>
+      2) Vei fi adus înapoi aici; copiază <b>signature</b> și lipește în <code>/verify_sign</code> în Discord.
+    </p>
   </div>
 
+  <!-- BEFORE SIGN -->
   <div id="pre" class="card" style="display:none">
     <h2>Connect & Sign</h2>
-    <p class="muted">Tap the button below. If it doesn’t open, use the Android intent fallback.</p>
+    <p class="muted">Pagina rămâne deschisă. Dacă nu se deschide aplicația, folosește fallback-ul Android sau „Copy deeplink”.</p>
     <div class="row" style="margin:10px 0 6px">
-      <a id="openXp" class="btn primary">Open xPortal (Sign)</a>
-      <a id="openIntent" class="btn">Android intent fallback</a>
-      <button id="copyDl" class="btn">Copy deeplink</button>
+      <a id="openXp" class="btn primary">Connect / Open xPortal</a>
+      <a id="openIntent" class="btn ghost">Android intent fallback</a>
+      <button id="copyDl" class="btn ghost">Copy deeplink</button>
+      <button id="recheck" class="btn ghost" title="Re-scan URL pentru rezultat">Re-check</button>
     </div>
     <div class="kv" style="margin-top:10px">
       <div class="label">Message (nonce)</div>
@@ -37,8 +47,13 @@
       <div class="label">Callback</div>
       <div class="mono" id="cb">—</div>
     </div>
+    <div id="waiting" class="row" style="margin-top:12px;display:none">
+      <div class="spinner"></div>
+      <span class="muted">Waiting for signature… revino aici după ce semnezi în xPortal.</span>
+    </div>
   </div>
 
+  <!-- AFTER SIGN -->
   <div id="post" class="card" style="display:none">
     <h2>Signed ✅</h2>
     <div class="kv">
@@ -46,78 +61,91 @@
       <div>
         <div class="mono" id="addr">—</div>
         <div class="row" style="margin-top:8px">
-          <button id="copyAddr" class="btn">Copy address</button>
+          <button id="copyAddr" class="btn ghost">Copy address</button>
         </div>
       </div>
       <div class="label">Signature</div>
       <div>
-        <div class="mono" id="sig">—</div>
+        <div class="mono" id="sig" style="word-break:break-all">—</div>
         <div class="row" style="margin-top:8px">
-          <button id="copySig" class="btn">Copy signature</button>
+          <button id="copySig" class="btn ghost">Copy signature</button>
         </div>
       </div>
     </div>
-    <p class="muted" style="margin-top:10px">
-      Paste the signature in Discord with <code>/verify_sign address:&nbsp;… signature:&nbsp;…</code>
+    <p class="muted" style="margin-top:12px">
+      Lipeste în Discord: <code>/verify_sign address: … signature: …</code>
     </p>
     <div class="row" style="margin-top:8px">
       <a id="reopen" class="btn">Re-open xPortal</a>
+      <a href="discord://" class="btn ghost">Back to Discord</a>
     </div>
   </div>
 </div>
 
 <script>
+  // --- helpers ---
   function qp(n){ return new URL(location.href).searchParams.get(n) || ""; }
   function setText(id, v){ const el = document.getElementById(id); if (el) el.textContent = v || "—"; }
-  async function copy(txt){ try{ await navigator.clipboard.writeText(txt); alert("Copied!"); }catch(e){ prompt("Copy:", txt); } }
+  async function copy(txt){ try{ await navigator.clipboard.writeText(txt); alert("Copied!"); } catch(e){ prompt("Copy:", txt); } }
 
-  const messageParam  = qp("message");  // NONCE trimis de bot prin relay
-  const addressParam  = qp("address");  // la retur de la xPortal
-  const signatureParam= qp("signature");// la retur de la xPortal
+  // Keep the page "sticky" for a given nonce so user can switch apps and come back.
+  const STORAGE_KEY = "tcl_last_nonce";
 
-  // Callback = chiar această pagină, fără query (curată), pentru a reconstrui linkurile stabil
-  const cleanUrl = location.origin + location.pathname;
-  const callbackUrl = cleanUrl;
+  // From bot->relay we expect: ?message=<nonce> on first open
+  // From xPortal after signing we expect: ?signature=...&address=...
+  const messageParam   = qp("message");   // nonce provided by bot via relay
+  const signatureParam = qp("signature"); // after signing
+  const addressParam   = qp("address");   // after signing
 
-  // Construim deeplink/intent folosind nonce-ul primit (ESENȚIAL să fie același pe care îl știe botul!)
-  const params = new URLSearchParams({ message: messageParam, callbackUrl });
+  // Clean canonical URL (no query) to use as callbackUrl
+  const callbackUrl = location.origin + location.pathname;
+
+  // If new nonce arrives, store it. If not, try to reuse last stored one so the page stays useful.
+  let nonce = messageParam || localStorage.getItem(STORAGE_KEY) || "";
+  if (messageParam) {
+    nonce = messageParam;
+    localStorage.setItem(STORAGE_KEY, nonce);
+  }
+
+  // Build deeplink/intent for xPortal using the (persistent) nonce and this page as callback
+  const params   = new URLSearchParams({ message: nonce, callbackUrl: callbackUrl });
   const deeplink = "xportal://wallet/sign-message?" + params.toString();
   const intent   = "intent://wallet/sign-message?" + params.toString()
                  + "#Intent;scheme=xportal;package=com.elrond.maiar.wallet;end";
 
-  // UI wiring
-  const pre  = document.getElementById("pre");
-  const post = document.getElementById("post");
+  const pre   = document.getElementById("pre");
+  const post  = document.getElementById("post");
+  const wait  = document.getElementById("waiting");
 
   const hasSigned = !!(signatureParam && addressParam);
 
-  if (hasSigned) {
-    // Afișăm rezultatele
+  function showPre(){
+    pre.style.display = "";
+    post.style.display = "none";
+    setText("nonce", nonce || "(missing)");
+    setText("cb", callbackUrl);
+    document.getElementById("openXp").href = deeplink;
+    document.getElementById("openIntent").href = intent;
+    document.getElementById("copyDl").onclick = () => copy(deeplink);
+    document.getElementById("recheck").onclick = () => location.reload();
+    wait.style.display = nonce ? "flex" : "none";
+  }
+
+  function showPost(){
     pre.style.display = "none";
     post.style.display = "";
     setText("addr", addressParam);
     setText("sig", signatureParam);
-    document.getElementById("reopen").href = deeplink;
-
     document.getElementById("copyAddr").onclick = () => copy(addressParam);
     document.getElementById("copySig").onclick  = () => copy(signatureParam);
+    document.getElementById("reopen").href = deeplink;
+  }
 
+  if (hasSigned) {
+    showPost();
   } else {
-    // Cerem conectarea / semnarea
-    pre.style.display = "";
-    post.style.display = "none";
-    setText("nonce", messageParam || "(missing)");
-    setText("cb", callbackUrl);
-
-    const openXp = document.getElementById("openXp");
-    const openIntent = document.getElementById("openIntent");
-    const copyDl = document.getElementById("copyDl");
-
-    openXp.href = deeplink;
-    openIntent.href = intent;
-    copyDl.onclick = () => copy(deeplink);
-
-    // Auto-open xPortal după ce se vede UI-ul
-    setTimeout(() => { if (messageParam) window.location.href = deeplink; }, 350);
+    showPre();
+    // NU auto-open, dar dacă vrei auto-open controlat, decomentează:
+    // if (nonce) setTimeout(() => { window.location.href = deeplink; }, 400);
   }
 </script>
