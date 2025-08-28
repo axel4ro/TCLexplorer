@@ -22,17 +22,38 @@
 </div>
 <script>
   function qp(name){ return new URL(location.href).searchParams.get(name) || ""; }
+  function appendParam(url, key, val){
+    try{
+      const u = new URL(url);
+      u.searchParams.set(key, val);
+      return u.toString();
+    }catch{
+      const j = url.includes("?") ? "&" : "?";
+      return url + j + encodeURIComponent(key) + "=" + encodeURIComponent(val);
+    }
+  }
+
   const message  = qp("message");
   const callback = qp("callback") || "https://axel4ro.github.io/TheCursedLand/index.html";
 
-  const params = new URLSearchParams({ message, callbackUrl: callback });
+  // ✅ propagăm nonce-ul înapoi în site
+  const callbackWithMsg = appendParam(callback, "message", message);
+
+  // build targets
+  const params = new URLSearchParams({
+    message,
+    callbackUrl: callbackWithMsg   // <— IMPORTANT
+  });
+
   const deeplink = "xportal://wallet/sign-message?" + params.toString();
   const intent   = "intent://wallet/sign-message?" + params.toString()
                  + "#Intent;scheme=xportal;package=com.elrond.maiar.wallet;end";
 
+  // wire links
   document.getElementById("nonce").textContent = message;
   document.getElementById("dl").href = deeplink;
   document.getElementById("intent").href = intent;
-  document.getElementById("site").href = callback;
+  document.getElementById("openSite").href = callbackWithMsg; // <— și site-ul primește ?message=...
 </script>
 </html>
+
