@@ -171,26 +171,39 @@ async function startConnect(){
 
 async function signCurrentMessage(){
   if (!provider) { alert("Nu ești conectat."); return; }
-  const text = String(msgEl.value ?? "");
+  const text = String(msgEl?.value ?? "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
-  // Construim signable cu Buffer — e cel mai sigur pentru SDK
-  const signable = new SignableMessage({ message: Buffer.from(text, "utf8") });
+  let hex = "";
 
-  // SDK întoarce { signature } și în același timp completează și obiectul
-  const res = await provider.signMessage(signable);
-
-  const hex = (res && res.signature) || (signable.toJSON().signature) || "";
-  sigHexEl.textContent = hex || "—";
-
-  // HEX -> Base64 (pentru /verify_sign)
-  let b64 = "";
-  if (hex) {
-    const arr = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
-    b64 = btoa(String.fromCharCode(...arr));
+  // 1) Cel mai compatibil: pass string direct
+  try {
+    const res1 = await provider.signMessage(text); // multe versiuni acceptă string
+    hex = res1?.signature || "";
+  } catch (e1) {
+    try {
+      // 2) Plain object (IPlainMessage)
+      const res2 = await provider.signMessage({ message: text });
+      hex = res2?.signature || "";
+    } catch (e2) {
+      // 3) Fallback: SignableMessage cu Buffer
+      const signable = new SignableMessage({ message: Buffer.from(text, "utf8") });
+      const res3 = await provider.signMessage(signable);
+      hex = res3?.signature || signable.toJSON().signature || "";
+    }
   }
+
+  if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
+
+  // afișează HEX
+  sigHexEl.textContent = hex;
+
+  // HEX -> Base64 (pt. /verify_sign din bot)
+  const bytes = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+  const b64 = btoa(String.fromCharCode(...bytes));
   sigB64El.textContent = b64 || "—";
 }
+
 
 
 // ── Listeners
@@ -229,5 +242,6 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
