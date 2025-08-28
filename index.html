@@ -50,7 +50,7 @@
     </div>
     <div class="row" style="margin-top:12px">
       <button id="btnDisconnect" class="btn">Disconnect</button>
-      <button id="btnCopy" class="btn">Copy address</button>
+      <button id="btnCopySig" class="btn">Copy signature (Base64)</button>
     </div>
   </div>
 
@@ -95,7 +95,7 @@ const signCard = $("signCard");
 const btnSign = $("btnSign");
 const btnCopySig = $("btnCopySig");
 const msgEl = $("msg");
-const sigEl = $("sig");
+const sigB64El = $("sigB64");
 
 let provider = null;
 let pendingApproval = null;
@@ -181,8 +181,17 @@ async function signCurrentMessage(){
   const m = new SignableMessage({ message: bytes });
   await provider.signMessage(m);
   const { signature } = m.toJSON(); // hex
-  sigEl.textContent = signature || "—";
-}
+  const hex = signature || "";
+  sigEl.textContent = hex;
+  
+  // hex -> bytes -> base64
+  let b64 = "";
+  if (hex) {
+    const bytes = Uint8Array.from(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+    b64 = btoa(String.fromCharCode(...bytes));
+  }
+  sigB64El.textContent = b64 || "—";
+
 
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
@@ -206,8 +215,11 @@ btnSign.addEventListener('click', async () => {
 });
 
 btnCopySig.addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(sigEl.textContent || ""); alert('Signature copied!'); }
+  const txt = sigB64El.textContent || "";
+  try { await navigator.clipboard.writeText(txt); alert('Signature (Base64) copied!'); }
   catch { alert('Copy failed'); }
+});
+
 });
 
 // --- Initialize view & URL message ---
@@ -220,4 +232,5 @@ setDisconnected();
 
 </script>
 </html>
+
 
