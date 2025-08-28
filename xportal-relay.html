@@ -21,7 +21,7 @@
 <script>
   function qp(name){ return new URL(location.href).searchParams.get(name) || ""; }
   const message  = qp("message");
-  const callback = qp("callback") || "https://axel4ro.github.io/TheCursedLand/";
+  const callback = qp("callback") || "https://axel4ro.github.io/TheCursedLand/index.html";
 
   // build targets
   const params = new URLSearchParams({ message, callbackUrl: callback });
@@ -36,15 +36,15 @@
 
   // try auto-open after a short delay (lets page render first)
   setTimeout(function(){
-    // iOS/Android browsers often block immediate custom-scheme navigation inside in-app browsers.
-    // Users can tap the buttons above if blocked.
     window.location.href = deeplink;
-    // Optional: backup redirect after 1.2s for some Androids:
     setTimeout(function(){
-      // If deeplink failed and we are still here, try intent (Android Chrome)
       if (navigator.userAgent.toLowerCase().includes("android")) {
         window.location.href = intent;
+      } else {
+        // pe desktop, redirecționează către site-ul nostru
+        window.location.href = callback;
       }
     }, 1200);
   }, 250);
 </script>
+</html>
