@@ -174,31 +174,45 @@ async function signCurrentMessage(){
   const text = String(msgEl?.value ?? "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
+  // încercăm pe rând toate formele cunoscute și PRINDEM fiecare excepție
   let hex = "";
 
-  // 1) Cel mai compatibil: pass string direct
+  // 1) String direct
   try {
-    const res1 = await provider.signMessage(text); // multe versiuni acceptă string
-    hex = res1?.signature || "";
+    const r1 = await provider.signMessage(text);
+    hex = r1?.signature || "";
   } catch (e1) {
+    // 2) Plain object cu STRING
     try {
-      // 2) Plain object (IPlainMessage)
-      const res2 = await provider.signMessage({ message: text });
-      hex = res2?.signature || "";
+      const r2 = await provider.signMessage({ message: text });
+      hex = r2?.signature || "";
     } catch (e2) {
-      // 3) Fallback: SignableMessage cu Buffer
-      const signable = new SignableMessage({ message: Buffer.from(text, "utf8") });
-      const res3 = await provider.signMessage(signable);
-      hex = res3?.signature || signable.toJSON().signature || "";
+      // 3) Plain object cu Uint8Array (TextEncoder)
+      try {
+        const bytes = new TextEncoder().encode(text);
+        const r3 = await provider.signMessage({ message: bytes });
+        hex = r3?.signature || "";
+      } catch (e3) {
+        // 4) SignableMessage cu Buffer (fallback final)
+        try {
+          const signable = new SignableMessage({ message: Buffer.from(text, "utf8") });
+          const r4 = await provider.signMessage(signable);
+          hex = r4?.signature || signable.toJSON().signature || "";
+        } catch (e4) {
+          console.error("[signMessage] all attempts failed:", { e1, e2, e3, e4 });
+          alert("Sign error: nu am putut trimite payload valid către xPortal.");
+          return;
+        }
+      }
     }
   }
 
   if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
 
-  // afișează HEX
+  // Afișează HEX
   sigHexEl.textContent = hex;
 
-  // HEX -> Base64 (pt. /verify_sign din bot)
+  // HEX -> Base64 (pentru /verify_sign)
   const bytes = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
   const b64 = btoa(String.fromCharCode(...bytes));
   sigB64El.textContent = b64 || "—";
@@ -242,6 +256,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
