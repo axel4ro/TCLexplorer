@@ -8,22 +8,29 @@
   .card{max-width:720px;margin:auto;padding:16px;border:1px solid #e5e7eb;border-radius:14px}
   code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
   a.button{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #e5e7eb;text-decoration:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .muted{color:#6b7280}
 </style>
+
 <div class="card">
   <h1>Opening xPortal…</h1>
-  <p>If the app doesn't open automatically, tap one of the options below.</p>
-  <ol>
-    <li><a id="dl" class="button" href="#">Open in xPortal (deeplink)</a></li>
-    <li><a id="intent" class="button" href="#">Android intent fallback</a></li>
-  </ol>
+  <p class="muted">If the app doesn't open automatically, tap one of the options below.</p>
+  <div class="row">
+    <a id="dl" class="button" href="#">Open in xPortal (deeplink)</a>
+    <a id="intent" class="button" href="#">Android intent fallback</a>
+    <a id="openSite" class="button" href="#">Continue on website</a>
+  </div>
   <p>Signing message: <code id="nonce">…</code></p>
 </div>
+
 <script>
   function qp(name){ return new URL(location.href).searchParams.get(name) || ""; }
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const message  = qp("message");
   const callback = qp("callback") || "https://axel4ro.github.io/TheCursedLand/index.html";
+  const auto     = (qp("auto") || "").toLowerCase(); // optional: always | desktop | off
 
-  // build targets
   const params = new URLSearchParams({ message, callbackUrl: callback });
   const deeplink = "xportal://wallet/sign-message?" + params.toString();
   const intent   = "intent://wallet/sign-message?" + params.toString()
@@ -33,18 +40,25 @@
   document.getElementById("nonce").textContent = message;
   document.getElementById("dl").href = deeplink;
   document.getElementById("intent").href = intent;
+  document.getElementById("openSite").href = callback;
 
-  // try auto-open after a short delay (lets page render first)
-  setTimeout(function(){
-    window.location.href = deeplink;
-    setTimeout(function(){
-      if (navigator.userAgent.toLowerCase().includes("android")) {
-        window.location.href = intent;
-      } else {
-        // pe desktop, redirecționează către site-ul nostru
-        window.location.href = callback;
-      }
-    }, 1200);
-  }, 250);
+  // Auto-behavior:
+  // - Desktop: mergem direct pe site (vezi QR/status) — exact cum ai vrut
+  // - Mobile: NU mai auto-deschidem xPortal; userul apasă butonul
+  //   (poți forța auto cu ?auto=always sau doar pe desktop cu ?auto=desktop)
+  const goDeeplink = () => { window.location.href = deeplink; };
+  const goIntent   = () => { window.location.href = intent; };
+  const goSite     = () => { window.location.href = callback; };
+
+  if (!isMobile && (auto === "always" || auto === "" || auto === "desktop")) {
+    // desktop -> site imediat
+    setTimeout(goSite, 200);
+  } else if (isMobile && auto === "always") {
+    // dacă vrei totuși auto pe mobil, apelezi cu ?auto=always
+    setTimeout(() => {
+      goDeeplink();
+      setTimeout(() => { if (navigator.userAgent.toLowerCase().includes("android")) goIntent(); }, 800);
+    }, 250);
+  }
 </script>
 </html>
