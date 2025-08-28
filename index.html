@@ -71,6 +71,7 @@
 
 <script type="module">
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
+import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
 if (!globalThis.Buffer) globalThis.Buffer = Buffer;
@@ -170,51 +171,26 @@ async function startConnect(){
 
 async function signCurrentMessage(){
   if (!provider) { alert("Nu ești conectat."); return; }
+  const text = String(msgEl.value || "");
+  if (!text) { alert("Mesaj gol"); return; }
 
-  const text = String(msgEl?.value ?? "");
-  if (!text.length) { alert("Mesaj gol"); return; }
+  // Creăm semnabilul așa cum cere SDK-ul
+  const signable = new SignableMessage({ message: new TextEncoder().encode(text) });
 
-  // 1) adresă (unele versiuni o cer explicit)
-  const address = (await provider.getAddress()) || "";
-
-  // 2) mesajul ca array de octeți (number[]) — e acceptat de toate branch-urile interne
-  const bytes = Array.from(new TextEncoder().encode(text)); // [84,67,76,...]
-
-  let hex = "";
-
-  // A. forma completă recomandată: { message: number[], address: string }
   try {
-    const r = await provider.signMessage({ message: bytes, address });
-    hex = r?.signature || "";
-  } catch (eA) {
-    // B. fallback fără address
-    try {
-      const r = await provider.signMessage({ message: bytes });
-      hex = r?.signature || "";
-    } catch (eB) {
-      // C. fallback final: trecem stringul (unele build-uri acceptă direct)
-      try {
-        const r = await provider.signMessage({ message: text, address });
-        hex = r?.signature || "";
-      } catch (eC) {
-        console.error("[signMessage] all attempts failed", { eA, eB, eC });
-        alert("Sign error: " + (eC?.message || eB?.message || eA?.message || "unknown"));
-        return;
-      }
-    }
+    await provider.signMessage(signable);
+  } catch (e) {
+    console.error("signMessage failed", e);
+    alert("Sign error: " + e.message);
+    return;
   }
 
-  if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
+  const hex = signable.toJSON().signature;
+  sigHexEl.textContent = hex || "—";
 
-  // Afișează HEX
-  sigHexEl.textContent = hex;
-
-  // HEX -> Base64 (pentru /verify_sign din bot)
   const b = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
-  const b64 = btoa(String.fromCharCode(...b));
-  sigB64El.textContent = b64 || "—";
+  sigB64El.textContent = btoa(String.fromCharCode(...b)) || "—";
 }
-
   
 // ── Listeners
 btnConnect.addEventListener('click', async () => {
@@ -252,6 +228,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
