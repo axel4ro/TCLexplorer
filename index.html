@@ -170,27 +170,46 @@ async function startConnect(){
 
 async function signCurrentMessage(){
   if (!provider) { alert("Nu ești conectat."); return; }
+
   const text = String(msgEl?.value ?? "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
-  // Conversie doar dacă ai nevoie de bytesArray în altă parte
-  const bytesArray = Array.from(Buffer.from(text, "utf8"));
-  console.log("Bytes array:", bytesArray); // Doar pentru debug
+  const address = await provider.getAddress();
+  if (!address) { alert("Nu am primit adresa din provider."); return; }
 
-  // Trimitem string-ul direct (așa cum așteaptă SDK-ul)
-  const res = await provider.signMessage(text);
+  let res, hex = "";
 
-  const hex = res?.signature || "";
+  // ✅ Forma recomandată de SDK / JSON-RPC: { message: string, address: string }
+  try {
+    res = await provider.signMessage({ message: text, address });
+    hex = res?.signature || "";
+  } catch (e1) {
+    // Fallback 1: { message: Buffer, address }
+    try {
+      res = await provider.signMessage({ message: Buffer.from(text, "utf8"), address });
+      hex = res?.signature || "";
+    } catch (e2) {
+      // Fallback 2: (message, address) – unele versiuni acceptă semnătură pozițională
+      try {
+        res = await provider.signMessage(text, address);
+        hex = res?.signature || "";
+      } catch (e3) {
+        console.error("[signMessage] failed:", { e1, e2, e3 });
+        alert("Sign error: " + (e3?.message || e2?.message || e1?.message));
+        return;
+      }
+    }
+  }
+
   if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
 
-  // afișează HEX
+  // Afișează HEX + Base64 (pt. /verify_sign)
   sigHexEl.textContent = hex;
-
-  // HEX -> Base64 (pentru /verify_sign)
-  const b = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
-  const b64 = btoa(String.fromCharCode(...b));
+  const bytes = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+  const b64 = btoa(String.fromCharCode(...bytes));
   sigB64El.textContent = b64 || "—";
 }
+
 
   
 // ── Listeners
@@ -229,6 +248,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
