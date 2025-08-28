@@ -176,8 +176,8 @@ async function signCurrentMessage(){
   // transformăm mesajul într-un array de octeți (number[])
   const bytesArray = Array.from(Buffer.from(text, "utf8")); // ex: [84,67,76,45,65,66...]
 
-  // trimitem exact forma pe care SDK-ul o știe sigur
-  const res = await provider.signMessage({ message: bytesArray }); // { signature: hex, address }
+  // CORECTARE: Trimitem direct array-ul de bytes, nu un obiect
+  const res = await provider.signMessage(bytesArray); // { signature: hex, address }
 
   const hex = res?.signature || "";
   if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
@@ -190,7 +190,6 @@ async function signCurrentMessage(){
   const b64 = btoa(String.fromCharCode(...b));
   sigB64El.textContent = b64 || "—";
 }
-
 
 // ── Listeners
 btnConnect.addEventListener('click', async () => {
@@ -228,6 +227,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
