@@ -131,7 +131,7 @@ async function initProvider(){
     onClientLogin: async () => {
       const address = await provider.getAddress();
       setConnected(address);
-      if (queryMsg) { try { await signCurrentMessage(); } catch(e){ console.error(e); } }
+     // if (queryMsg) { try { await signCurrentMessage(); } catch(e){ console.error(e); } }
     },
     onClientLogout: async () => { setDisconnected(); }
   };
@@ -174,28 +174,31 @@ async function signCurrentMessage(){
   const text = String(msgEl?.value ?? "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
-  const address = await provider.getAddress();
-  if (!address) { alert("Nu am primit adresa din provider."); return; }
+  // 1) adresă (unele versiuni o cer explicit)
+  const address = (await provider.getAddress()) || "";
 
-  let res, hex = "";
+  // 2) mesajul ca array de octeți (number[]) — e acceptat de toate branch-urile interne
+  const bytes = Array.from(new TextEncoder().encode(text)); // [84,67,76,...]
 
-  // ✅ Forma recomandată de SDK / JSON-RPC: { message: string, address: string }
+  let hex = "";
+
+  // A. forma completă recomandată: { message: number[], address: string }
   try {
-    res = await provider.signMessage({ message: text, address });
-    hex = res?.signature || "";
-  } catch (e1) {
-    // Fallback 1: { message: Buffer, address }
+    const r = await provider.signMessage({ message: bytes, address });
+    hex = r?.signature || "";
+  } catch (eA) {
+    // B. fallback fără address
     try {
-      res = await provider.signMessage({ message: Buffer.from(text, "utf8"), address });
-      hex = res?.signature || "";
-    } catch (e2) {
-      // Fallback 2: (message, address) – unele versiuni acceptă semnătură pozițională
+      const r = await provider.signMessage({ message: bytes });
+      hex = r?.signature || "";
+    } catch (eB) {
+      // C. fallback final: trecem stringul (unele build-uri acceptă direct)
       try {
-        res = await provider.signMessage(text, address);
-        hex = res?.signature || "";
-      } catch (e3) {
-        console.error("[signMessage] failed:", { e1, e2, e3 });
-        alert("Sign error: " + (e3?.message || e2?.message || e1?.message));
+        const r = await provider.signMessage({ message: text, address });
+        hex = r?.signature || "";
+      } catch (eC) {
+        console.error("[signMessage] all attempts failed", { eA, eB, eC });
+        alert("Sign error: " + (eC?.message || eB?.message || eA?.message || "unknown"));
         return;
       }
     }
@@ -203,13 +206,14 @@ async function signCurrentMessage(){
 
   if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
 
-  // Afișează HEX + Base64 (pt. /verify_sign)
+  // Afișează HEX
   sigHexEl.textContent = hex;
-  const bytes = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
-  const b64 = btoa(String.fromCharCode(...bytes));
+
+  // HEX -> Base64 (pentru /verify_sign din bot)
+  const b = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+  const b64 = btoa(String.fromCharCode(...b));
   sigB64El.textContent = b64 || "—";
 }
-
 
   
 // ── Listeners
@@ -248,6 +252,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
