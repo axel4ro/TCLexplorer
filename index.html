@@ -71,7 +71,6 @@
 
 <script type="module">
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
-import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
 if (!globalThis.Buffer) globalThis.Buffer = Buffer;
@@ -174,18 +173,14 @@ async function signCurrentMessage(){
   const text = String(msgEl.value || "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
-  // 🔒 Folosește mereu Buffer (evităm cazul 'undefined' din TextEncoder/Uint8Array)
-  const bytes = Buffer.from(text, "utf8");
-  const m = new SignableMessage({ message: bytes });
+  // trimitem un IPlainMessage: { message: Buffer | Uint8Array | string }
+  const payload = { message: Buffer.from(text, "utf8") };
+  const res = await provider.signMessage(payload); // { signature: hex, address }
 
-  await provider.signMessage(m);
-
-  // m.toJSON().signature este HEX
-  const { signature } = m.toJSON();
-  const hex = signature || "";
+  const hex = res?.signature || "";
   sigHexEl.textContent = hex;
 
-  // HEX -> Base64 (pentru /verify_sign din bot)
+  // HEX -> Base64 (pt. /verify_sign)
   let b64 = "";
   if (hex) {
     const arr = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
@@ -193,6 +188,7 @@ async function signCurrentMessage(){
   }
   sigB64El.textContent = b64 || "—";
 }
+
 
 // ── Listeners
 btnConnect.addEventListener('click', async () => {
@@ -230,3 +226,4 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
