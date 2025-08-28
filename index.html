@@ -104,6 +104,12 @@ let queryMsg = null;
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const qp = (k) => new URL(location.href).searchParams.get(k) || "";
+function qph(k){ // caută și în hash: #message=...
+  const h = new URL(location.href).hash.replace(/^#/, "");
+  if (!h) return "";
+  const sp = new URLSearchParams(h);
+  return sp.get(k) || "";
+}
 
 function show(el){ el.classList.remove("hidden"); }
 function hide(el){ el.classList.add("hidden"); }
@@ -205,8 +211,13 @@ btnCopySig.addEventListener('click', async () => {
 });
 
 // --- Initialize view & URL message ---
-queryMsg = qp("message");
+queryMsg =
+  qp("message") || qp("nonce") || qp("msg") || qp("m") ||
+  qph("message") || qph("nonce") || "";
+
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
+
 </script>
 </html>
+
