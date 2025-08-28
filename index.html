@@ -53,10 +53,25 @@
       <button id="btnCopy" class="btn">Copy address</button>
     </div>
   </div>
+
+  <div id="signCard" class="card hidden">
+    <h2>Sign Message</h2>
+    <p class="muted">Mesajul de semnat (nonce) poate veni din URL (?message=...)
+      sau îl poți edita mai jos.</p>
+    <div class="row" style="margin-bottom:10px">
+      <input id="msg" class="mono" style="flex:1" value="TCL-VERIFY" />
+      <button id="btnSign" class="btn">Sign in xPortal</button>
+      <button id="btnCopySig" class="btn">Copy signature</button>
+    </div>
+    <div class="grid">
+      <div class="muted">Signature</div><div id="sig" class="mono">—</div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
+import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
 if (!globalThis.Buffer) globalThis.Buffer = Buffer;
@@ -76,12 +91,19 @@ const addrEl = $("address");
 const netEl = $("network");
 const connectCard = $("connectCard");
 const statusCard = $("statusCard");
+const signCard = $("signCard");
+const btnSign = $("btnSign");
+const btnCopySig = $("btnCopySig");
+const msgEl = $("msg");
+const sigEl = $("sig");
 
 let provider = null;
 let pendingApproval = null;
 let lastUri = null;
+let queryMsg = null;
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const qp = (k) => new URL(location.href).searchParams.get(k) || "";
 
 function show(el){ el.classList.remove("hidden"); }
 function hide(el){ el.classList.add("hidden"); }
@@ -89,15 +111,16 @@ function hide(el){ el.classList.add("hidden"); }
 function setDisconnected(){
   statusEl.textContent = "disconnected";
   addrEl.textContent = "—";
+  sigEl.textContent = "—";
   show(connectCard);
-  hide(statusCard);
+  hide(statusCard); hide(signCard);
 }
 
 function setConnected(address){
   statusEl.textContent = "connected";
   addrEl.textContent = address || "—";
   hide(connectCard);
-  show(statusCard);
+  show(statusCard); show(signCard);
 }
 
 async function initProvider(){
@@ -106,6 +129,7 @@ async function initProvider(){
     onClientLogin: async () => {
       const address = await provider.getAddress();
       setConnected(address);
+      if (queryMsg) { try { await signCurrentMessage(); } catch(e){ console.error(e); } }
     },
     onClientLogout: async () => { setDisconnected(); }
   };
@@ -142,6 +166,18 @@ async function startConnect(){
   await provider.login({ approval });
 }
 
+async function signCurrentMessage(){
+  if (!provider) { alert("Nu ești conectat."); return; }
+  const text = (msgEl.value || "").toString();
+  if (!text) { alert("Mesaj gol"); return; }
+  const enc = (typeof TextEncoder !== "undefined") ? new TextEncoder() : null;
+  const bytes = enc ? enc.encode(text) : Buffer.from(text, "utf8");
+  const m = new SignableMessage({ message: bytes });
+  await provider.signMessage(m);
+  const { signature } = m.toJSON(); // hex
+  sigEl.textContent = signature || "—";
+}
+
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
   catch (e) { console.error(e); alert("Connect error: " + (e?.message || e)); setDisconnected(); }
@@ -158,6 +194,19 @@ btnCopy.addEventListener('click', async () => {
   catch { alert('Copy failed'); }
 });
 
+btnSign.addEventListener('click', async () => {
+  try { await signCurrentMessage(); }
+  catch(e){ alert("Sign error: " + (e?.message || e)); }
+});
+
+btnCopySig.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(sigEl.textContent || ""); alert('Signature copied!'); }
+  catch { alert('Copy failed'); }
+});
+
+// --- Initialize view & URL message ---
+queryMsg = qp("message");
+if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
 </html>
