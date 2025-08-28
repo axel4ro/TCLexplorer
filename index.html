@@ -50,21 +50,21 @@
     </div>
     <div class="row" style="margin-top:12px">
       <button id="btnDisconnect" class="btn">Disconnect</button>
-      <button id="btnCopySig" class="btn">Copy signature (Base64)</button>
+      <button id="btnCopyAddr" class="btn">Copy address</button>
     </div>
   </div>
 
   <div id="signCard" class="card hidden">
     <h2>Sign Message</h2>
-    <p class="muted">Mesajul de semnat (nonce) poate veni din URL (?message=...)
-      sau îl poți edita mai jos.</p>
+    <p class="muted">Mesajul de semnat (nonce) poate veni din URL (?message=...) sau îl poți edita mai jos.</p>
     <div class="row" style="margin-bottom:10px">
       <input id="msg" class="mono" style="flex:1" value="TCL-VERIFY" />
       <button id="btnSign" class="btn">Sign in xPortal</button>
-      <button id="btnCopySig" class="btn">Copy signature</button>
+      <button id="btnCopySig" class="btn">Copy signature (Base64)</button>
     </div>
     <div class="grid">
-      <div class="muted">Signature</div><div id="sig" class="mono">—</div>
+      <div class="muted">Signature (hex)</div><div id="sigHex" class="mono">—</div>
+      <div class="muted">Signature (Base64)</div><div id="sigB64" class="mono">—</div>
     </div>
   </div>
 </div>
@@ -85,7 +85,7 @@ const $ = (id) => document.getElementById(id);
 const qrDiv = $("qr");
 const btnConnect = $("btnConnect");
 const btnDisconnect = $("btnDisconnect");
-const btnCopy = $("btnCopy");
+const btnCopyAddr = $("btnCopyAddr");
 const statusEl = $("status");
 const addrEl = $("address");
 const netEl = $("network");
@@ -95,6 +95,7 @@ const signCard = $("signCard");
 const btnSign = $("btnSign");
 const btnCopySig = $("btnCopySig");
 const msgEl = $("msg");
+const sigHexEl = $("sigHex");
 const sigB64El = $("sigB64");
 
 let provider = null;
@@ -117,7 +118,8 @@ function hide(el){ el.classList.add("hidden"); }
 function setDisconnected(){
   statusEl.textContent = "disconnected";
   addrEl.textContent = "—";
-  sigEl.textContent = "—";
+  sigHexEl.textContent = "—";
+  sigB64El.textContent = "—";
   show(connectCard);
   hide(statusCard); hide(signCard);
 }
@@ -182,16 +184,16 @@ async function signCurrentMessage(){
   await provider.signMessage(m);
   const { signature } = m.toJSON(); // hex
   const hex = signature || "";
-  sigEl.textContent = hex;
-  
+  sigHexEl.textContent = hex;
+
   // hex -> bytes -> base64
   let b64 = "";
   if (hex) {
-    const bytes = Uint8Array.from(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
-    b64 = btoa(String.fromCharCode(...bytes));
+    const b = Uint8Array.from(hex.match(/.{1,2}/g).map(s => parseInt(s, 16)));
+    b64 = btoa(String.fromCharCode(...b));
   }
   sigB64El.textContent = b64 || "—";
-
+}
 
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
@@ -203,7 +205,7 @@ btnDisconnect.addEventListener('click', async () => {
   setDisconnected();
 });
 
-btnCopy.addEventListener('click', async () => {
+btnCopyAddr.addEventListener('click', async () => {
   const txt = addrEl.textContent || "";
   try { await navigator.clipboard.writeText(txt); alert('Copied!'); }
   catch { alert('Copy failed'); }
@@ -220,8 +222,6 @@ btnCopySig.addEventListener('click', async () => {
   catch { alert('Copy failed'); }
 });
 
-});
-
 // --- Initialize view & URL message ---
 queryMsg =
   qp("message") || qp("nonce") || qp("msg") || qp("m") ||
@@ -229,8 +229,5 @@ queryMsg =
 
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
-
 </script>
 </html>
-
-
