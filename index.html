@@ -173,11 +173,8 @@ async function signCurrentMessage(){
   const text = String(msgEl?.value ?? "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
-  // transformăm mesajul într-un array de octeți (number[])
-  const bytesArray = Array.from(Buffer.from(text, "utf8")); // ex: [84,67,76,45,65,66...]
-
-  // CORECTARE: Trimitem direct array-ul de bytes, nu un obiect
-  const res = await provider.signMessage(bytesArray); // { signature: hex, address }
+  // CORECTARE: Convertim mesajul direct la string (formatul așteptat de SDK)
+  const res = await provider.signMessage(text);
 
   const hex = res?.signature || "";
   if (!hex) { alert("Nu am primit semnătura din xPortal."); return; }
@@ -227,6 +224,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
