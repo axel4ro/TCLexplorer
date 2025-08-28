@@ -85,7 +85,7 @@ const $ = (id) => document.getElementById(id);
 const qrDiv = $("qr");
 const btnConnect = $("btnConnect");
 const btnDisconnect = $("btnDisconnect");
-const btnCopyAddr = $("btnCopyAddr");
+const btnCopyAddr = $("btnCopyAddr"); // ← asigură-te că butonul are acest id
 const statusEl = $("status");
 const addrEl = $("address");
 const netEl = $("network");
@@ -105,12 +105,7 @@ let queryMsg = null;
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const qp = (k) => new URL(location.href).searchParams.get(k) || "";
-function qph(k){ // caută și în hash: #message=...
-  const h = new URL(location.href).hash.replace(/^#/, "");
-  if (!h) return "";
-  const sp = new URLSearchParams(h);
-  return sp.get(k) || "";
-}
+function qph(k){ const h = new URL(location.href).hash.replace(/^#/, ""); if (!h) return ""; const sp = new URLSearchParams(h); return sp.get(k) || ""; }
 
 function show(el){ el.classList.remove("hidden"); }
 function hide(el){ el.classList.add("hidden"); }
@@ -176,25 +171,30 @@ async function startConnect(){
 
 async function signCurrentMessage(){
   if (!provider) { alert("Nu ești conectat."); return; }
-  const text = (msgEl.value || "").toString();
-  if (!text) { alert("Mesaj gol"); return; }
-  const enc = (typeof TextEncoder !== "undefined") ? new TextEncoder() : null;
-  const bytes = enc ? enc.encode(text) : Buffer.from(text, "utf8");
+  const text = String(msgEl.value || "");
+  if (!text.length) { alert("Mesaj gol"); return; }
+
+  // 🔒 Folosește mereu Buffer (evităm cazul 'undefined' din TextEncoder/Uint8Array)
+  const bytes = Buffer.from(text, "utf8");
   const m = new SignableMessage({ message: bytes });
+
   await provider.signMessage(m);
-  const { signature } = m.toJSON(); // hex
+
+  // m.toJSON().signature este HEX
+  const { signature } = m.toJSON();
   const hex = signature || "";
   sigHexEl.textContent = hex;
 
-  // hex -> bytes -> base64
+  // HEX -> Base64 (pentru /verify_sign din bot)
   let b64 = "";
   if (hex) {
-    const b = Uint8Array.from(hex.match(/.{1,2}/g).map(s => parseInt(s, 16)));
-    b64 = btoa(String.fromCharCode(...b));
+    const arr = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+    b64 = btoa(String.fromCharCode(...arr));
   }
   sigB64El.textContent = b64 || "—";
 }
 
+// ── Listeners
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
   catch (e) { console.error(e); alert("Connect error: " + (e?.message || e)); setDisconnected(); }
@@ -222,7 +222,7 @@ btnCopySig.addEventListener('click', async () => {
   catch { alert('Copy failed'); }
 });
 
-// --- Initialize view & URL message ---
+// ── Init: preia message/nonce din URL sau hash
 queryMsg =
   qp("message") || qp("nonce") || qp("msg") || qp("m") ||
   qph("message") || qph("nonce") || "";
@@ -230,4 +230,3 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
-</html>
