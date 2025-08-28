@@ -53,45 +53,29 @@
       <button id="btnCopy" class="btn">Copy address</button>
     </div>
   </div>
-
-  <div id="connectedView" class="card hidden center">
-    <div>
-      <h2>✅ Connected</h2>
-      <p class="muted">Wallet: <span id="addrShort" class="mono">—</span></p>
-      <div class="row center" style="justify-content:center">
-        <button id="btnDisconnect2" class="btn">Disconnect</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script type="module">
-// --- Imports via ESM for static hosting (GitHub Pages friendly) ---
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
-if (!globalThis.Buffer) globalThis.Buffer = Buffer; // some SDK utils expect Buffer
+if (!globalThis.Buffer) globalThis.Buffer = Buffer;
 
-// --- Config ---
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff"; // schimbă cu ID-ul tău din WalletConnect Cloud
+const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff";
 const RELAY_URL = "wss://relay.walletconnect.com";
-const CHAIN_ID = "1"; // "1"=mainnet, "T"=testnet, "D"=devnet
+const CHAIN_ID = "1";
 const MVX_CHAIN = `mvx:${CHAIN_ID}`;
 
-// --- Elements ---
 const $ = (id) => document.getElementById(id);
 const qrDiv = $("qr");
 const btnConnect = $("btnConnect");
 const btnDisconnect = $("btnDisconnect");
-const btnDisconnect2 = $("btnDisconnect2");
 const btnCopy = $("btnCopy");
 const statusEl = $("status");
 const addrEl = $("address");
 const netEl = $("network");
-const addrShort = $("addrShort");
 const connectCard = $("connectCard");
 const statusCard = $("statusCard");
-const connectedView = $("connectedView");
 
 let provider = null;
 let pendingApproval = null;
@@ -105,46 +89,27 @@ function hide(el){ el.classList.add("hidden"); }
 function setDisconnected(){
   statusEl.textContent = "disconnected";
   addrEl.textContent = "—";
-  addrShort.textContent = "—";
   show(connectCard);
-  hide(connectedView);
+  hide(statusCard);
 }
 
 function setConnected(address){
   statusEl.textContent = "connected";
   addrEl.textContent = address || "—";
-  addrShort.textContent = shorten(address);
   hide(connectCard);
   show(statusCard);
-  show(connectedView);
-}
-
-function shorten(addr){
-  if (!addr) return "—";
-  return addr.slice(0, 10) + "…" + addr.slice(-6);
 }
 
 async function initProvider(){
   if (provider) return provider;
-
   const callbacks = {
     onClientLogin: async () => {
       const address = await provider.getAddress();
       setConnected(address);
     },
-    onClientLogout: async () => {
-      setDisconnected();
-    }
+    onClientLogout: async () => { setDisconnected(); }
   };
-
-  provider = new WalletConnectProvider(
-    callbacks,
-    CHAIN_ID,
-    RELAY_URL,
-    WC_PROJECT_ID,
-    { logger: "error" }
-  );
-
+  provider = new WalletConnectProvider(callbacks, CHAIN_ID, RELAY_URL, WC_PROJECT_ID, { logger: "error" });
   await provider.init();
   netEl.textContent = `${MVX_CHAIN} (mainnet)`;
   return provider;
@@ -152,11 +117,7 @@ async function initProvider(){
 
 function buildDeeplink(uri){
   const u = encodeURIComponent(uri);
-  // diverse scheme folosite de xPortal
-  return [
-    `xportal://walletconnect?uri=${u}`,
-    `xportal://wc?uri=${u}`
-  ];
+  return [`xportal://walletconnect?uri=${u}`, `xportal://wc?uri=${u}`];
 }
 
 async function renderQR(uri){
@@ -167,16 +128,10 @@ async function renderQR(uri){
 async function startConnect(){
   await initProvider();
   const { uri, approval } = await provider.connect({ methods: ["mvx_signMessage"] });
-  lastUri = uri;
-  pendingApproval = approval;
-
-  // Show QR immediately so desktop users can scan
+  lastUri = uri; pendingApproval = approval;
   await renderQR(uri);
-
-  // If on mobile, also attempt deeplink (requires a user gesture – we are in a click handler)
   if (isMobile()) {
     const links = buildDeeplink(uri);
-    // try both schemes quickly
     let i = 0; const tryOpen = () => {
       if (i >= links.length) return;
       window.location.href = links[i++];
@@ -184,26 +139,15 @@ async function startConnect(){
     };
     tryOpen();
   }
-
-  // Wait for approval in wallet
   await provider.login({ approval });
 }
 
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
-  catch (e) {
-    console.error(e);
-    alert("Connect error: " + (e?.message || e));
-    setDisconnected();
-  }
+  catch (e) { console.error(e); alert("Connect error: " + (e?.message || e)); setDisconnected(); }
 });
 
 btnDisconnect.addEventListener('click', async () => {
-  try { if (provider) await provider.logout(); } catch {}
-  setDisconnected();
-});
-
-btnDisconnect2.addEventListener('click', async () => {
   try { if (provider) await provider.logout(); } catch {}
   setDisconnected();
 });
@@ -214,8 +158,6 @@ btnCopy.addEventListener('click', async () => {
   catch { alert('Copy failed'); }
 });
 
-// Init view
 setDisconnected();
-show(statusCard);
 </script>
 </html>
