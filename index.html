@@ -285,18 +285,20 @@ async function signViaDeeplink(){
   const message = String(msgEl?.value ?? "");
   if (!message) { alert("Mesaj gol"); return; }
 
-  const callbackUrl = new URL(location.href);
-  callbackUrl.searchParams.set("message", message);
-
-  const params = new URLSearchParams({ message, callbackUrl: callbackUrl.toString() });
-  const deeplink = "xportal://wallet/sign-message?" + params.toString();
+  // Construim URL-ul spre relay-ul nostru, care la rândul lui deschide xPortal corect
+  const relayBase = new URL("./xportal-relay.html", location.href).toString();
+  const currentPage = new URL(location.href).toString(); // revenim înapoi aici
+  const relayUrl = `${relayBase}?message=${encodeURIComponent(message)}&callback=${encodeURIComponent(currentPage)}`;
 
   if (isMobile()) {
-    location.href = deeplink;
+    // pe mobil deschidem direct relay-ul (acolo ai și intent fallback)
+    location.href = relayUrl;
   } else {
-    await renderQR(deeplink); // scanezi cu xPortal din desktop
+    // pe desktop afișăm QR cu relay-ul (îl scanezi din xPortal → ecranul de semnare apare garantat)
+    await renderQR(relayUrl);
   }
 }
+
 
 /* ---------- listeners ---------- */
 btnConnect.addEventListener('click', async () => {
@@ -340,3 +342,4 @@ if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
 </html>
+
