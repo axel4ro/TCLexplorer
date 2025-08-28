@@ -299,7 +299,23 @@ async function signViaDeeplink(){
   }
 }
 
+function openXPortalSign(message, callbackUrl) {
+  const params = new URLSearchParams({
+    message,
+    callbackUrl: callbackUrl || location.href
+  });
+  const deeplink = "xportal://wallet/sign-message?" + params.toString();
+  const intent   = "intent://wallet/sign-message?" + params.toString()
+                 + "#Intent;scheme=xportal;package=com.elrond.maiar.wallet;end";
 
+  // trimite spre xPortal; dacă nu pornește, încearcă intent (Android)
+  location.href = deeplink;
+  setTimeout(() => {
+    if (/android/i.test(navigator.userAgent)) location.href = intent;
+  }, 800);
+}
+
+  
 /* ---------- listeners ---------- */
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
@@ -323,9 +339,23 @@ btnSignWC.addEventListener('click', async () => {
 });
 
 btnSignDL.addEventListener('click', async () => {
-  try { await signViaDeeplink(); }
-  catch(e){ console.error(e); alert("Sign (deeplink) error: " + (e?.message || e)); }
+  const msg = String(msgEl?.value ?? "");
+  if (!msg) { alert("Mesaj gol"); return; }
+
+  // ne întoarcem în aceeași pagină, păstrând ?message=...
+  const callback = new URL(location.href);
+  callback.searchParams.set("message", msg);
+
+  // pe mobil deschidem direct xPortal; pe desktop afișăm și QR cu același deeplink
+  openXPortalSign(msg, callback.toString());
+
+  if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    const p = new URLSearchParams({ message: msg, callbackUrl: callback.toString() });
+    const deeplink = "xportal://wallet/sign-message?" + p.toString();
+    await renderQR(deeplink); // ca să poți scana din xPortal pe desktop
+  }
 });
+
 
 btnCopySig.addEventListener('click', async () => {
   const txt = sigB64El.textContent || "";
@@ -342,4 +372,5 @@ if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
 </html>
+
 
