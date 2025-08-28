@@ -173,7 +173,11 @@ async function signCurrentMessage(){
   const text = String(msgEl?.value ?? "");
   if (!text.length) { alert("Mesaj gol"); return; }
 
-  // CORECTARE: Convertim mesajul direct la string (formatul așteptat de SDK)
+  // Conversie doar dacă ai nevoie de bytesArray în altă parte
+  const bytesArray = Array.from(Buffer.from(text, "utf8"));
+  console.log("Bytes array:", bytesArray); // Doar pentru debug
+
+  // Trimitem string-ul direct (așa cum așteaptă SDK-ul)
   const res = await provider.signMessage(text);
 
   const hex = res?.signature || "";
@@ -188,6 +192,7 @@ async function signCurrentMessage(){
   sigB64El.textContent = b64 || "—";
 }
 
+  
 // ── Listeners
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
@@ -224,6 +229,7 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
+
 
 
 
