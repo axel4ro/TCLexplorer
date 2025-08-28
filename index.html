@@ -33,10 +33,10 @@
     <h2>1) Scanează sau deschide xPortal</h2>
     <div class="row" style="margin-bottom:10px">
       <button id="btnConnect" class="btn primary">Connect xPortal</button>
-      <span class="muted">sau scanează QR-ul de mai jos ⤵</span>
+      <span class="muted">sau scanează/vezi QR-ul de mai jos ⤵</span>
     </div>
     <div id="qr" class="center">
-      <div class="muted">QR va apărea aici după ce apeși <b>Connect xPortal</b>.</div>
+      <div class="muted">QR / link va apărea aici după ce apeși <b>Connect xPortal</b> sau când folosim fallback la semnare.</div>
     </div>
     <p class="muted" style="margin-top:10px">Mobil: apasă „Connect xPortal” pentru a deschide aplicația. Desktop: scanează QR cu xPortal.</p>
   </div>
@@ -59,7 +59,8 @@
     <p class="muted">Mesajul de semnat (nonce) poate veni din URL (?message=...) sau îl poți edita mai jos.</p>
     <div class="row" style="margin-bottom:10px">
       <input id="msg" class="mono" style="flex:1" value="TCL-VERIFY" />
-      <button id="btnSign" class="btn">Sign in xPortal</button>
+      <button id="btnSignWC" class="btn">Sign (WalletConnect)</button>
+      <button id="btnSignDL" class="btn">Sign via xPortal (deeplink)</button>
       <button id="btnCopySig" class="btn">Copy signature (Base64)</button>
     </div>
     <div class="grid">
@@ -71,7 +72,6 @@
 
 <script type="module">
 import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
-import { SignableMessage } from "https://esm.sh/@multiversx/sdk-core@13.15.0";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
 if (!globalThis.Buffer) globalThis.Buffer = Buffer;
@@ -85,14 +85,15 @@ const $ = (id) => document.getElementById(id);
 const qrDiv = $("qr");
 const btnConnect = $("btnConnect");
 const btnDisconnect = $("btnDisconnect");
-const btnCopyAddr = $("btnCopyAddr"); // ← asigură-te că butonul are acest id
+const btnCopyAddr = $("btnCopyAddr");
 const statusEl = $("status");
 const addrEl = $("address");
 const netEl = $("network");
 const connectCard = $("connectCard");
 const statusCard = $("statusCard");
 const signCard = $("signCard");
-const btnSign = $("btnSign");
+const btnSignWC = $("btnSignWC");
+const btnSignDL = $("btnSignDL");
 const btnCopySig = $("btnCopySig");
 const msgEl = $("msg");
 const sigHexEl = $("sigHex");
@@ -105,7 +106,12 @@ let queryMsg = null;
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const qp = (k) => new URL(location.href).searchParams.get(k) || "";
-function qph(k){ const h = new URL(location.href).hash.replace(/^#/, ""); if (!h) return ""; const sp = new URLSearchParams(h); return sp.get(k) || ""; }
+function qph(k){
+  const h = new URL(location.href).hash.replace(/^#/, "");
+  if (!h) return "";
+  const sp = new URLSearchParams(h);
+  return sp.get(k) || "";
+}
 
 function show(el){ el.classList.remove("hidden"); }
 function hide(el){ el.classList.add("hidden"); }
@@ -117,6 +123,7 @@ function setDisconnected(){
   sigB64El.textContent = "—";
   show(connectCard);
   hide(statusCard); hide(signCard);
+  qrDiv.innerHTML = `<div class="muted">QR / link va apărea aici după ce apeși <b>Connect xPortal</b> sau când folosim fallback la semnare.</div>`;
 }
 
 function setConnected(address){
@@ -132,7 +139,8 @@ async function initProvider(){
     onClientLogin: async () => {
       const address = await provider.getAddress();
       setConnected(address);
-     // if (queryMsg) { try { await signCurrentMessage(); } catch(e){ console.error(e); } }
+      // Poți reactiva auto-sign dacă vrei:
+      // if (queryMsg) { try { await signViaWalletConnect(); } catch(e){ console.error(e); } }
     },
     onClientLogout: async () => { setDisconnected(); }
   };
@@ -142,13 +150,13 @@ async function initProvider(){
   return provider;
 }
 
-function buildDeeplink(uri){
+function buildDeeplinkWC(uri){
   const u = encodeURIComponent(uri);
   return [`xportal://walletconnect?uri=${u}`, `xportal://wc?uri=${u}`];
 }
 
-async function renderQR(uri){
-  const svg = await QRCode.toString(uri, { type: "svg", margin: 1 });
+async function renderQR(data){
+  const svg = await QRCode.toString(data, { type: "svg", margin: 1 });
   qrDiv.innerHTML = svg;
 }
 
@@ -156,9 +164,13 @@ async function startConnect(){
   await initProvider();
   const { uri, approval } = await provider.connect({ methods: ["mvx_signMessage"] });
   lastUri = uri; pendingApproval = approval;
+
+  // arată QR pentru WalletConnect pe desktop
   await renderQR(uri);
+
   if (isMobile()) {
-    const links = buildDeeplink(uri);
+    // pe mobil dăm drumul la deeplink WC
+    const links = buildDeeplinkWC(uri);
     let i = 0; const tryOpen = () => {
       if (i >= links.length) return;
       window.location.href = links[i++];
@@ -169,29 +181,93 @@ async function startConnect(){
   await provider.login({ approval });
 }
 
-async function signCurrentMessage(){
-  if (!provider) { alert("Nu ești conectat."); return; }
-  const text = String(msgEl.value || "");
-  if (!text) { alert("Mesaj gol"); return; }
+// ===== JSON-RPC helper (oferă compat în funcție de provider) =====
+async function wcRequest(method, params){
+  if (provider?.sendCustomRequest) {
+    // stil vechi
+    return await provider.sendCustomRequest({ method, params });
+  }
+  if (provider?.request) {
+    // stil EIP-1193 like
+    return await provider.request({ method, params });
+  }
+  // dacă nu expune nimic, aruncăm – vom face fallback pe deeplink
+  throw new Error("Provider nu expune request() / sendCustomRequest().");
+}
 
-  // Creăm semnabilul așa cum cere SDK-ul
-  const signable = new SignableMessage({ message: new TextEncoder().encode(text) });
+// ===== Sign via WalletConnect (JSON-RPC mvx_signMessage) =====
+async function signViaWalletConnect(){
+  await initProvider();
+  const message = String(msgEl?.value ?? "");
+  if (!message) { alert("Mesaj gol"); return; }
+  const address = await provider.getAddress();
+  if (!address) { alert("Nu am adresa din provider."); return; }
 
   try {
-    await provider.signMessage(signable);
+    // EXACT ca utilitarul oficial: mvx_signMessage cu { address, message }
+    const res = await wcRequest("mvx_signMessage", { address, message });
+    // poate reveni ca string sau ca obiect { signature }
+    const sigRaw = (res && res.signature) ? res.signature : res;
+
+    let hex = "", b64 = "";
+    const isB64 = typeof sigRaw === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(sigRaw);
+    if (isB64){
+      b64 = sigRaw;
+      hex = b64ToHex(b64);
+    } else {
+      hex = String(sigRaw || "");
+      b64 = hexToB64(hex);
+    }
+
+    sigHexEl.textContent = hex || "—";
+    sigB64El.textContent = b64 || "—";
   } catch (e) {
-    console.error("signMessage failed", e);
-    alert("Sign error: " + e.message);
-    return;
+    console.error("mvx_signMessage JSON-RPC failed:", e);
+    // Fallback: deeplink de semnare
+    alert("Nu s-a putut semna prin WalletConnect. Deschidem deeplink xPortal…");
+    await signViaDeeplink();
   }
-
-  const hex = signable.toJSON().signature;
-  sigHexEl.textContent = hex || "—";
-
-  const b = Uint8Array.from(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
-  sigB64El.textContent = btoa(String.fromCharCode(...b)) || "—";
 }
-  
+
+// ===== Sign via xPortal deeplink (fallback sigur) =====
+async function signViaDeeplink(){
+  const message = String(msgEl?.value ?? "");
+  if (!message) { alert("Mesaj gol"); return; }
+
+  const callbackUrl = new URL(location.href);
+  // asigură propagarea mesajului înapoi pe site
+  callbackUrl.searchParams.set("message", message);
+
+  const params = new URLSearchParams({
+    message,
+    callbackUrl: callbackUrl.toString()
+  });
+
+  const deeplink = "xportal://wallet/sign-message?" + params.toString();
+
+  if (isMobile()) {
+    // pe mobil, deschidem aplicația
+    window.location.href = deeplink;
+  } else {
+    // pe desktop, afișăm QR cu deeplink-ul de semnare (scanat din xPortal)
+    await renderQR(deeplink);
+  }
+}
+
+// ===== Converters =====
+function hexToB64(hex){
+  if (!hex) return "";
+  const u8 = Uint8Array.from((hex.match(/.{1,2}/g) || []).map(h => parseInt(h,16)));
+  return btoa(String.fromCharCode(...u8));
+}
+function b64ToHex(b64){
+  if (!b64) return "";
+  const bin = atob(b64);
+  let out = "";
+  for (let i = 0; i < bin.length; i++) out += bin.charCodeAt(i).toString(16).padStart(2,"0");
+  return out;
+}
+
 // ── Listeners
 btnConnect.addEventListener('click', async () => {
   try { await startConnect(); }
@@ -209,9 +285,14 @@ btnCopyAddr.addEventListener('click', async () => {
   catch { alert('Copy failed'); }
 });
 
-btnSign.addEventListener('click', async () => {
-  try { await signCurrentMessage(); }
-  catch(e){ alert("Sign error: " + (e?.message || e)); }
+btnSignWC.addEventListener('click', async () => {
+  try { await signViaWalletConnect(); }
+  catch(e){ alert("Sign (WC) error: " + (e?.message || e)); }
+});
+
+btnSignDL.addEventListener('click', async () => {
+  try { await signViaDeeplink(); }
+  catch(e){ alert("Sign (deeplink) error: " + (e?.message || e)); }
 });
 
 btnCopySig.addEventListener('click', async () => {
@@ -228,14 +309,4 @@ queryMsg =
 if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
 setDisconnected();
 </script>
-
-
-
-
-
-
-
-
-
-
-
+</html>
