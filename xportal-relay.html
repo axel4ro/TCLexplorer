@@ -42,7 +42,7 @@
   // build targets
   const params = new URLSearchParams({
     message,
-    callbackUrl: callbackWithMsg   // <— IMPORTANT
+    callbackUrl: callbackWithMsg
   });
 
   const deeplink = "xportal://wallet/sign-message?" + params.toString();
@@ -53,6 +53,18 @@
   document.getElementById("nonce").textContent = message;
   document.getElementById("dl").href = deeplink;
   document.getElementById("intent").href = intent;
-  document.getElementById("site").href = callbackWithMsg; // <— site-ul primește ?message=...
+  document.getElementById("site").href = callbackWithMsg;
+
+  // auto-open pe mobil, dar lăsăm și butoanele
+  setTimeout(function(){
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      location.href = deeplink;
+      setTimeout(function(){
+        if (navigator.userAgent.toLowerCase().includes("android")) {
+          location.href = intent;
+        }
+      }, 1200);
+    }
+  }, 250);
 </script>
 </html>
