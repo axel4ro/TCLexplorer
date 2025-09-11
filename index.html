@@ -97,6 +97,26 @@
     [data-theme="dark"] .result {
       background: var(--card-dark);
     }
+	
+	.action-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-top:12px;
+}
+.btn-trade{
+  display:inline-block;
+  padding:10px 20px;
+  border-radius:8px;
+  text-decoration:none;
+  background:#2ff6de; /* albastru */
+  color:#090909;
+  font-size:16px;
+  font-weight:600;
+}
+.btn-trade:hover{ opacity:.9; }
+
+
 
     /* ✅ RESPONSIVE */
     @media (max-width: 768px) {
@@ -165,10 +185,14 @@
         <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
       </div>
     </div>
-  </div>
+<div class="action-row">
+  <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
+  <a class="btn-trade"
+     href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
+     target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
+</div>
 
-  <button style="background-color: #28a745;" onclick="calculate()">Calculate Impact</button>
-  <div class="result" id="resultBox"></div>
+<div class="result" id="resultBox"></div>
 
   <script>
     let mode = 'buy';
@@ -302,11 +326,10 @@
     }, 300000);
   };
 </script>
-    <style>#dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}@media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}#dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}</style><div id="dexscreener-embed"><iframe src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe></div>
+
+  <style>#dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}@media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}#dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}</style><div id="dexscreener-embed"><iframe src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe></div>
 </body>
 </html>
-
-
 
 
 
