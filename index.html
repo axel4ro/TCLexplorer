@@ -234,7 +234,7 @@
         const boughtTCL = tcl - newTCL;
         const avgPrice = value / boughtTCL;
         const newPrice = newUSDC / newTCL;
-        const priceImpact = ((avgPrice - curPrice) / curPrice) * 100;
+        const priceImpact = (avgPrice - curPrice) / avgPrice * 100;
         const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
         resultBox.innerHTML =
@@ -295,4 +295,5 @@
   </script>
 </body>
 </html>
+
 
