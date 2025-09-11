@@ -232,8 +232,8 @@
       `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
       `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
       `Average paid price: ${avgPrice.toFixed(6)} USDC ($)\n` +
-      `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
+      `💲 Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔄 Estimated Pool After Transaction:\n` +
       `• TCL in Pool: ${formatNumber(newTCL)}\n` +
       `• USDC in Pool: ${formatNumber(newUSDC)}`;
@@ -249,8 +249,8 @@
       `✅ Sell ${formatNumber(value)} TCL\n` +
       `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
       `Average received price: ${avgPrice.toFixed(6)} USDC ($)\n` +
-      `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
+      `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔄 Estimated Pool After Transaction:\n` +
       `• TCL in Pool: ${formatNumber(newTCL)}\n` +
       `• USDC in Pool: ${formatNumber(newUSDC)}`;
@@ -282,6 +282,7 @@
   </script>
 </body>
 </html>
+
 
 
 
