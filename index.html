@@ -212,46 +212,52 @@
     }
 
     function calculate() {
-      const tcl = parseNumber(document.getElementById("curTCL").value);
-      const usdc = parseNumber(document.getElementById("curUSDC").value);
-      const curPrice = parseNumber(document.getElementById("curPrice").value);
-      const value = parseNumber(document.getElementById("amount").value);
-      const resultBox = document.getElementById("resultBox");
+  const tcl = parseNumber(document.getElementById("curTCL").value);
+  const usdc = parseNumber(document.getElementById("curUSDC").value);
+  const curPrice = parseNumber(document.getElementById("curPrice").value);
+  const value = parseNumber(document.getElementById("amount").value);
+  const resultBox = document.getElementById("resultBox");
 
-      resultBox.innerHTML = "";
+  resultBox.innerHTML = "";
 
-      if (mode === 'buy' && value > 0) {
-        const newUSDC = usdc + value;
-        const newTCL = (tcl * usdc) / newUSDC;
-        const boughtTCL = tcl - newTCL;
-        const avgPrice = value / boughtTCL;
-        const newPrice = newUSDC / newTCL;
-        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
+  if (mode === 'buy' && value > 0) {
+    const newUSDC = usdc + value;
+    const newTCL = (tcl * usdc) / newUSDC;
+    const boughtTCL = tcl - newTCL;
+    const avgPrice = value / boughtTCL;
+    const newPrice = newUSDC / newTCL;
+    const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
-        resultBox.innerHTML =
-          `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
-          `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
-          `Average paid price: ${avgPrice.toFixed(6)} USDC ($)\n` +
-          `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-          `🔼 Estimated Increase: ${pctChange.toFixed(2)}%`;
-      } else if (mode === 'sell' && value > 0) {
-        const newTCL = tcl + value;
-        const newUSDC = (usdc * tcl) / newTCL;
-        const receivedUSDC = usdc - newUSDC;
-        const avgPrice = receivedUSDC / value;
-        const newPrice = newUSDC / newTCL;
-        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
+    resultBox.innerHTML =
+      `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
+      `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
+      `Average paid price: ${avgPrice.toFixed(6)} USDC ($)\n` +
+      `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
+      `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
+      `🔄 Estimated Pool After Transaction:\n` +
+      `• TCL in Pool: ${formatNumber(newTCL)}\n` +
+      `• USDC in Pool: ${formatNumber(newUSDC)}`;
+  } else if (mode === 'sell' && value > 0) {
+    const newTCL = tcl + value;
+    const newUSDC = (usdc * tcl) / newTCL;
+    const receivedUSDC = usdc - newUSDC;
+    const avgPrice = receivedUSDC / value;
+    const newPrice = newUSDC / newTCL;
+    const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
-        resultBox.innerHTML =
-          `✅ Sell ${formatNumber(value)} TCL\n` +
-          `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
-          `Average received price: ${avgPrice.toFixed(6)} USDC ($)\n` +
-          `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-          `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%`;
-      } else {
-        resultBox.innerHTML = "Please enter a valid amount.";
-      }
-    }
+    resultBox.innerHTML =
+      `✅ Sell ${formatNumber(value)} TCL\n` +
+      `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
+      `Average received price: ${avgPrice.toFixed(6)} USDC ($)\n` +
+      `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
+      `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
+      `🔄 Estimated Pool After Transaction:\n` +
+      `• TCL in Pool: ${formatNumber(newTCL)}\n` +
+      `• USDC in Pool: ${formatNumber(newUSDC)}`;
+  } else {
+    resultBox.innerHTML = "Please enter a valid amount.";
+  }
+}
 
     async function fetchPoolData() {
       try {
@@ -276,5 +282,6 @@
   </script>
 </body>
 </html>
+
 
 
