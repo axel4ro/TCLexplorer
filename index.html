@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,7 +54,7 @@
 
   <div class="section">
     <strong>🔹 Initial Pool (Listing)</strong><br>
-    TCL: <span id="initialTCL">4,000,000</span> | USDC ($) : <span id="initialUSDC ($) ">25,000</span> | Initial Price: <strong>0.006 $</strong>
+    TCL: <span id="initialTCL">4,000,000</span> | USDC ($): <span id="initialUSDC">25,000</span> | Initial Price: <strong>0.006 $</strong>
   </div>
 
   <div class="section">
@@ -67,11 +66,11 @@
         <input type="text" id="curTCL" value="12,440,888" readonly>
       </div>
       <div>
-        <label>USDC ($)  in pool</label>
-        <input type="text" id="curUSDC ($) " value="10,164.21" readonly>
+        <label>USDC ($) in pool</label>
+        <input type="text" id="curUSDC" value="10,164.21" readonly>
       </div>
       <div>
-        <label>Current Price (USDC ($) /TCL)</label>
+        <label>Current Price (USDC / TCL)</label>
         <input type="text" id="curPrice" value="0.000817" readonly>
       </div>
     </div>
@@ -119,11 +118,11 @@
 
       if (mode === 'buy') {
         mode = 'sell';
-        inputLabel.innerHTML = 'Enter amount in <b>TCL</b> to sell for USDC ($) :';
+        inputLabel.innerHTML = 'Enter amount in <b>TCL</b> to sell for USDC ($):';
         switchBtn.innerHTML = '🔁 Switch to: Buy TCL';
       } else {
         mode = 'buy';
-        inputLabel.innerHTML = 'Enter amount in <b>USDC ($)  ($)</b> to buy TCL:';
+        inputLabel.innerHTML = 'Enter amount in <b>USDC ($)</b> to buy TCL:';
         switchBtn.innerHTML = '🔁 Switch to: Sell TCL';
       }
 
@@ -133,7 +132,7 @@
 
     function calculate() {
       const tcl = parseNumber(document.getElementById("curTCL").value);
-      const USDC ($)  = parseNumber(document.getElementById("curUSDC ($) ").value);
+      const usdc = parseNumber(document.getElementById("curUSDC").value);
       const curPrice = parseNumber(document.getElementById("curPrice").value);
       const value = parseNumber(document.getElementById("amount").value);
       const resultBox = document.getElementById("resultBox");
@@ -141,40 +140,32 @@
       resultBox.innerHTML = "";
 
       if (mode === 'buy' && value > 0) {
-        const newUSDC ($)  = USDC ($)  + value;
-        const newTCL = (tcl * USDC ($) ) / newUSDC ($) ;
+        const newUSDC = usdc + value;
+        const newTCL = (tcl * usdc) / newUSDC;
         const boughtTCL = tcl - newTCL;
         const avgPrice = value / boughtTCL;
-        const newPrice = newUSDC ($)  / newTCL;
+        const newPrice = newUSDC / newTCL;
         const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
         resultBox.innerHTML =
-          `✅ Buy TCL with ${formatNumber(value)} USDC ($) 
-` +
-          `Estimated TCL received: ${formatNumber(boughtTCL)}
-` +
-          `Average paid price: ${avgPrice.toFixed(6)} USDC ($) 
-` +
-          `Estimated final price: ${newPrice.toFixed(6)} USDC ($) 
-` +
+          `✅ Buy TCL with ${formatNumber(value)} USDC\n` +
+          `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
+          `Average paid price: ${avgPrice.toFixed(6)} USDC\n` +
+          `Estimated final price: ${newPrice.toFixed(6)} USDC\n` +
           `🔼 Estimated Increase: ${pctChange.toFixed(2)}%`;
       } else if (mode === 'sell' && value > 0) {
         const newTCL = tcl + value;
-        const newUSDC ($)  = (USDC ($)  * tcl) / newTCL;
-        const receivedUSDC ($)  = USDC ($)  - newUSDC ($) ;
-        const avgPrice = receivedUSDC ($)  / value;
-        const newPrice = newUSDC ($)  / newTCL;
+        const newUSDC = (usdc * tcl) / newTCL;
+        const receivedUSDC = usdc - newUSDC;
+        const avgPrice = receivedUSDC / value;
+        const newPrice = newUSDC / newTCL;
         const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
         resultBox.innerHTML =
-          `✅ Sell ${formatNumber(value)} TCL
-` +
-          `Estimated USDC ($)  received: ${formatNumber(receivedUSDC ($) )}
-` +
-          `Average received price: ${avgPrice.toFixed(6)} USDC ($) 
-` +
-          `Estimated final price: ${newPrice.toFixed(6)} USDC ($) 
-` +
+          `✅ Sell ${formatNumber(value)} TCL\n` +
+          `Estimated USDC received: ${formatNumber(receivedUSDC)}\n` +
+          `Average received price: ${avgPrice.toFixed(6)} USDC\n` +
+          `Estimated final price: ${newPrice.toFixed(6)} USDC\n` +
           `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%`;
       } else {
         resultBox.innerHTML = "Please enter a valid amount.";
@@ -183,5 +174,3 @@
   </script>
 </body>
 </html>
-
-
