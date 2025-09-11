@@ -4,26 +4,54 @@
   <meta charset="UTF-8" />
   <title>TCL Price Impact Calculator</title>
   <style>
+    :root {
+      --bg-light: #f8f9fa;
+      --bg-dark: #1a1a1a;
+      --text-light: #212529;
+      --text-dark: #f1f1f1;
+      --card-light: #ffffff;
+      --card-dark: #2b2b2b;
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 30px auto;
       max-width: 720px;
       line-height: 1.6;
-      background-color: #f8f9fa;
-      color: #212529;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: all 0.3s ease;
     }
+
+    [data-theme="dark"] {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
     h2 {
       color: #0d6efd;
     }
+
     .section {
       margin-bottom: 24px;
     }
+
     input[type="text"] {
       width: 100%;
       padding: 8px;
       font-size: 16px;
       margin-top: 4px;
+      background-color: var(--card-light);
+      border: 1px solid #ccc;
+      color: inherit;
     }
+
+    [data-theme="dark"] input[type="text"] {
+      background-color: var(--card-dark);
+      border: 1px solid #444;
+      color: #fff;
+    }
+
     button {
       padding: 10px 20px;
       background-color: #007bff;
@@ -32,29 +60,47 @@
       font-size: 16px;
       cursor: pointer;
     }
+
     .result {
       margin-top: 20px;
-      background: #ffffff;
+      background: var(--card-light);
       border-left: 6px solid #28a745;
       padding: 16px;
       white-space: pre-wrap;
       font-size: 15px;
     }
+
+    [data-theme="dark"] .result {
+      background: var(--card-dark);
+    }
+
     .row-group {
       display: flex;
       gap: 16px;
     }
+
     .row-group > div {
       flex: 1;
+    }
+
+    #themeToggle {
+      float: right;
+      margin-top: -40px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      background: #444;
+      color: white;
     }
   </style>
 </head>
 <body>
+
   <h2>📊 TCL Price Impact Calculator</h2>
+  <button id="themeToggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 
   <div class="section">
     <strong>🔹 Initial Pool (Listing)</strong><br>
-    TCL: <span id="initialTCL">4,000,000</span> | USDC ($): <span id="initial">25,000</span> | Initial Price: <strong>0.006 $</strong>
+    TCL: <span>4,000,000</span> | USDC ($): <span>25,000</span> | Initial Price: <strong>0.006 $</strong>
   </div>
 
   <div class="section">
@@ -63,15 +109,15 @@
     <div class="row-group">
       <div>
         <label>TCL in pool</label>
-        <input type="text" id="curTCL" value="12,440,888" readonly>
+        <input type="text" id="curTCL" readonly>
       </div>
       <div>
         <label>USDC ($) in pool</label>
-        <input type="text" id="curUSDC" value="10,164.21" readonly>
+        <input type="text" id="curUSDC" readonly>
       </div>
       <div>
-        <label>Current Price (USDC ($) / TCL)</label>
-        <input type="text" id="curPrice" value="0.000817" readonly>
+        <label>Current Price (USDC/TCL)</label>
+        <input type="text" id="curPrice" readonly>
       </div>
     </div>
   </div>
@@ -90,11 +136,11 @@
   </div>
 
   <button style="background-color: #28a745;" onclick="calculate()">Calculate Impact</button>
-
   <div class="result" id="resultBox"></div>
 
   <script>
     let mode = 'buy'; // Default mode
+    const DEX_API_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq";
 
     function formatNumber(n) {
       return Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -128,6 +174,14 @@
 
       input.value = '';
       document.getElementById("resultBox").innerHTML = '';
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      document.getElementById('themeToggle').innerText = newTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
     }
 
     function calculate() {
@@ -171,7 +225,27 @@
         resultBox.innerHTML = "Please enter a valid amount.";
       }
     }
+
+    async function fetchPoolData() {
+      try {
+        const res = await fetch(DEX_API_URL);
+        const data = await res.json();
+        const pool = data.pair;
+
+        document.getElementById("curTCL").value = formatNumber(pool.liquidity.base);
+        document.getElementById("curUSDC").value = formatNumber(pool.liquidity.quote);
+        document.getElementById("curPrice").value = parseFloat(pool.priceUsd).toFixed(6);
+      } catch (err) {
+        console.error("Failed to fetch pool data:", err);
+      }
+    }
+
+    window.onload = () => {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.body.setAttribute('data-theme', savedTheme);
+      document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+      fetchPoolData();
+    };
   </script>
 </body>
 </html>
-
