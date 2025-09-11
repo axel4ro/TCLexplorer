@@ -156,27 +156,38 @@
   </style>
 </head>
 <body>
+  <div style="display: flex; align-items: center; justify-content: space-between;">
   <h2>📊 TCL Price Impact Calculator</h2>
-  <button id="themeToggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
-
-<div class="section">
-      <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong><br />
-  <div class="stats-row">
-    <div class="stat">
-      <div class="stat-top"><span>TCL Supply</span></div>
-      <div class="stat-value">4,000,000</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>USDC Supply</span></div>
-      <div class="stat-value">25,000 $</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>Initial Price</span></div>
-      <div class="stat-value">0.006 $</div>
-    </div>
-  </div>
+  <button id="themeToggle" onclick="toggleTheme()" style="
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+  ">🌙</button>
 </div>
 
+  <div class="section">
+    <strong>💰 Simulate Transaction</strong><br />
+    <div class="row-group">
+      <div style="flex: 2;">
+        <label id="inputLabel">Enter amount in <b>USDC ($)</b> to buy TCL:</label>
+        <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" />
+      </div>
+      <div style="flex: 1; display: flex; align-items: flex-end;">
+        <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
+      <a class="btn-trade"
+         href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
+         target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
+    </div>
+
+    <div class="result" id="resultBox"></div>
+  </div>
+  
 
 <div class="section">
   <strong><span class="chip-live">LIVE DATA</span></strong>
@@ -209,28 +220,23 @@
   </span>
 </div>
 
-
-  <div class="section">
-    <strong>💰 Simulate Transaction</strong><br />
-    <div class="row-group">
-      <div style="flex: 2;">
-        <label id="inputLabel">Enter amount in <b>USDC ($)</b> to buy TCL:</label>
-        <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" />
-      </div>
-      <div style="flex: 1; display: flex; align-items: flex-end;">
-        <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
-      </div>
+<div class="section">
+      <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong><br />
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-top"><span>TCL Supply</span></div>
+      <div class="stat-value">4,000,000</div>
     </div>
-
-    <div class="action-row">
-      <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
-      <a class="btn-trade"
-         href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
-         target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
+    <div class="stat">
+      <div class="stat-top"><span>USDC Supply</span></div>
+      <div class="stat-value">25,000 $</div>
     </div>
-
-    <div class="result" id="resultBox"></div>
+    <div class="stat">
+      <div class="stat-top"><span>Initial Price</span></div>
+      <div class="stat-value">0.006 $</div>
+    </div>
   </div>
+</div>
 
   <script>
     let mode = 'buy';
@@ -269,15 +275,17 @@
       document.getElementById("resultBox").innerHTML = '';
     }
 
-    function toggleTheme() {
-      const currentTheme = document.body.getAttribute('data-theme') || 'light';
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      document.body.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      document.getElementById('themeToggle').innerText = newTheme === 'dark'
-        ? '🌞 Toggle Theme'
-        : '🌙 Toggle Theme';
-    }
+	function toggleTheme() {
+	  const currentTheme = document.body.getAttribute('data-theme') || 'light';
+	  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+	  document.body.setAttribute('data-theme', newTheme);
+	  localStorage.setItem('theme', newTheme);
+
+	  // schimbă emoji
+	  document.getElementById('themeToggle').textContent =
+		newTheme === 'dark' ? '🌞' : '🌙';
+	}
+
 
     function calculate() {
       const tcl = parseNumber(getText("curTCL"));
@@ -370,7 +378,7 @@ window.onload = () => {
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.body.setAttribute('data-theme', savedTheme);
   document.getElementById('themeToggle').innerText =
-    savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+    savedTheme === 'dark' ? '🌞' : '🌙';
 
   fetchPoolData();
   fetchGeckoAthAtl();
