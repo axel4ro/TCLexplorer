@@ -54,7 +54,7 @@
 
   <div class="section">
     <strong>🔹 Initial Pool (Listing)</strong><br>
-    TCL: <span id="initialTCL">4,000,000</span> | USDC ($): <span id="initialUSDC">25,000</span> | Initial Price: <strong>0.006 $</strong>
+    TCL: <span id="initialTCL">4,000,000</span> | USDC ($): <span id="initial">25,000</span> | Initial Price: <strong>0.006 $</strong>
   </div>
 
   <div class="section">
@@ -70,7 +70,7 @@
         <input type="text" id="curUSDC" value="10,164.21" readonly>
       </div>
       <div>
-        <label>Current Price (USDC / TCL)</label>
+        <label>Current Price (USDC ($) / TCL)</label>
         <input type="text" id="curPrice" value="0.000817" readonly>
       </div>
     </div>
@@ -148,10 +148,10 @@
         const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
         resultBox.innerHTML =
-          `✅ Buy TCL with ${formatNumber(value)} USDC\n` +
+          `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
           `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
-          `Average paid price: ${avgPrice.toFixed(6)} USDC\n` +
-          `Estimated final price: ${newPrice.toFixed(6)} USDC\n` +
+          `Average paid price: ${avgPrice.toFixed(6)} USDC ($)\n` +
+          `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
           `🔼 Estimated Increase: ${pctChange.toFixed(2)}%`;
       } else if (mode === 'sell' && value > 0) {
         const newTCL = tcl + value;
@@ -163,9 +163,9 @@
 
         resultBox.innerHTML =
           `✅ Sell ${formatNumber(value)} TCL\n` +
-          `Estimated USDC received: ${formatNumber(receivedUSDC)}\n` +
-          `Average received price: ${avgPrice.toFixed(6)} USDC\n` +
-          `Estimated final price: ${newPrice.toFixed(6)} USDC\n` +
+          `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
+          `Average received price: ${avgPrice.toFixed(6)} USDC ($)\n` +
+          `Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
           `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%`;
       } else {
         resultBox.innerHTML = "Please enter a valid amount.";
@@ -174,3 +174,4 @@
   </script>
 </body>
 </html>
+
