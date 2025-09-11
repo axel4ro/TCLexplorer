@@ -314,7 +314,7 @@
           `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
           `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
           `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-          `🔄 Estimated Pool After Transaction:\n` +
+          `🔄 Estimated Supply After Transaction:\n` +
           `• TCL in Pool: ${formatNumber(newTCL)}\n` +
           `• USDC in Pool: ${formatNumber(newUSDC)}`;
       } else if (mode === 'sell' && value > 0) {
@@ -333,7 +333,7 @@
           `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
           `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
           `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-          `🔄 Estimated Pool After Transaction:\n` +
+          `🔄 Estimated Supply After Transaction:\n` +
           `• TCL in Pool: ${formatNumber(newTCL)}\n` +
           `• USDC in Pool: ${formatNumber(newUSDC)}`;
       } else {
@@ -403,3 +403,4 @@ window.onload = () => {
   </div>
 </body>
 </html>
+
