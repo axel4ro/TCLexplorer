@@ -225,7 +225,7 @@
     const newTCL = (tcl * usdc) / newUSDC;
     const boughtTCL = tcl - newTCL;
     const avgPrice = value / boughtTCL;
-    const priceImpactPct = ((avgPrice - curPrice) / curPrice) * 100;
+    const priceImpactPct = ((newPrice - curPrice) / curPrice) * 100;
     const newPrice = newUSDC / newTCL;
     const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
@@ -244,7 +244,7 @@
     const newUSDC = (usdc * tcl) / newTCL;
     const receivedUSDC = usdc - newUSDC;
     const avgPrice = receivedUSDC / value;
-    const priceImpactPct = ((avgPrice - curPrice) / curPrice) * 100;
+    const priceImpactPct = ((newPrice - curPrice) / curPrice) * 100;
     const newPrice = newUSDC / newTCL;
     const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
