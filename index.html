@@ -220,39 +220,46 @@
 
   resultBox.innerHTML = "";
 
+  const feePct = 0.01; // 1% fee
+  const valueAfterFee = value * (1 - feePct);
+
   if (mode === 'buy' && value > 0) {
-    const newUSDC = usdc + value;
+    const newUSDC = usdc + valueAfterFee;
     const newTCL = (tcl * usdc) / newUSDC;
     const boughtTCL = tcl - newTCL;
-    const avgPrice = value / boughtTCL;
+
+    const realReceivedTCL = boughtTCL; // No TCL fee deducted on buy
+    const avgPrice = value / realReceivedTCL;
     const newPrice = newUSDC / newTCL;
-    const priceImpactPct = ((newPrice - curPrice) / curPrice) * 100;
+    const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
     const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
     resultBox.innerHTML =
       `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
-      `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
+      `Estimated TCL received: ${formatNumber(realReceivedTCL)}\n` +
       `Average paid price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
-      `💥 Price Impact: ${priceImpactPct.toFixed(2)}%\n` +
+      `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
       `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
       `💲 Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔄 Estimated Pool After Transaction:\n` +
       `• TCL in Pool: ${formatNumber(newTCL)}\n` +
       `• USDC in Pool: ${formatNumber(newUSDC)}`;
   } else if (mode === 'sell' && value > 0) {
-    const newTCL = tcl + value;
+    const valueAfterFee = value * (1 - feePct); // you sell less due to fee
+    const newTCL = tcl + valueAfterFee;
     const newUSDC = (usdc * tcl) / newTCL;
     const receivedUSDC = usdc - newUSDC;
+
     const avgPrice = receivedUSDC / value;
     const newPrice = newUSDC / newTCL;
-    const priceImpactPct = ((curPrice - newPrice) / curPrice) * 100;
+    const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
     const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
     resultBox.innerHTML =
       `✅ Sell ${formatNumber(value)} TCL\n` +
       `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
       `Average received price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
-      `💥 Price Impact: ${priceImpactPct.toFixed(2)}%\n` +
+      `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
       `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
       `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔄 Estimated Pool After Transaction:\n` +
@@ -262,6 +269,7 @@
     resultBox.innerHTML = "Please enter a valid amount.";
   }
 }
+
     async function fetchPoolData() {
       try {
         const res = await fetch(DEX_API_URL);
@@ -285,6 +293,7 @@
   </script>
 </body>
 </html>
+
 
 
 
