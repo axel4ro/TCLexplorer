@@ -231,7 +231,7 @@
     resultBox.innerHTML =
       `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
       `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
-      `Average paid price: ${avgPrice.toFixed(6)} USDC ($)\n` +
+      `Average paid price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
       `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
       `💲 Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔄 Estimated Pool After Transaction:\n` +
@@ -248,7 +248,7 @@
     resultBox.innerHTML =
       `✅ Sell ${formatNumber(value)} TCL\n` +
       `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
-      `Average received price: ${avgPrice.toFixed(6)} USDC ($)\n` +
+      `Average received price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
       `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
       `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
       `🔄 Estimated Pool After Transaction:\n` +
@@ -282,6 +282,7 @@
   </script>
 </body>
 </html>
+
 
 
 
