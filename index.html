@@ -16,8 +16,9 @@
 
     body {
       font-family: Arial, sans-serif;
-      margin: 30px auto;
-      max-width: 720px;
+      margin: 20px auto;
+      padding: 0 20px;
+      max-width: 900px;
       line-height: 1.6;
       background-color: var(--bg-light);
       color: var(--text-light);
@@ -31,6 +32,7 @@
 
     h2 {
       color: #0d6efd;
+      margin-bottom: 8px;
     }
 
     .section {
@@ -39,11 +41,12 @@
 
     input[type="text"] {
       width: 100%;
-      padding: 8px;
+      padding: 10px;
       font-size: 16px;
       margin-top: 4px;
       background-color: var(--card-light);
       border: 1px solid #ccc;
+      border-radius: 8px;
       color: inherit;
     }
 
@@ -59,20 +62,17 @@
       color: white;
       border: none;
       font-size: 16px;
+      border-radius: 8px;
       cursor: pointer;
     }
 
-    .result {
-      margin-top: 20px;
-      background: var(--card-light);
-      border-left: 6px solid #28a745;
-      padding: 16px;
-      white-space: pre-wrap;
-      font-size: 15px;
-    }
-
-    [data-theme="dark"] .result {
-      background: var(--card-dark);
+    #themeToggle {
+      float: right;
+      font-size: 14px;
+      background-color: #444;
+      color: white;
+      margin-top: -30px;
+      margin-bottom: 20px;
     }
 
     .row-group {
@@ -84,16 +84,21 @@
       flex: 1;
     }
 
-    #themeToggle {
-      float: right;
-      margin-top: -40px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      background: #444;
-      color: white;
+    .result {
+      margin-top: 20px;
+      background: var(--card-light);
+      border-left: 6px solid #28a745;
+      padding: 16px;
+      white-space: pre-wrap;
+      font-size: 15px;
+      border-radius: 8px;
     }
 
-    /* ✅ MOBILE RESPONSIVE */
+    [data-theme="dark"] .result {
+      background: var(--card-dark);
+    }
+
+    /* ✅ RESPONSIVE */
     @media (max-width: 768px) {
       body {
         margin: 20px 12px;
@@ -121,40 +126,40 @@
   </style>
 </head>
 <body>
-
   <h2>📊 TCL Price Impact Calculator</h2>
   <button id="themeToggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 
   <div class="section">
-    <strong>🔹 Initial Pool (Listing)</strong><br>
+    <strong>🔹 Initial Pool (Listing)</strong><br />
     TCL: <span>4,000,000</span> | USDC ($): <span>25,000</span> | Initial Price: <strong>0.006 $</strong>
   </div>
 
   <div class="section">
-    <strong>🔸 Current Pool</strong><br>
-    <span style="font-size: 13px; color: #0d6efd;">🔵 Data is fetched live from the MultiversX Blockchain (DexScreener)</span><br><br>
+    <strong>🔸 Current Pool</strong><br />
+    <span style="font-size: 13px; color: #0d6efd;">🔵 Data is fetched live from the MultiversX Blockchain (DexScreener)</span>
+    <br /><br />
     <div class="row-group">
       <div>
         <label>TCL in pool</label>
-        <input type="text" id="curTCL" readonly>
+        <input type="text" id="curTCL" readonly />
       </div>
       <div>
         <label>USDC ($) in pool</label>
-        <input type="text" id="curUSDC" readonly>
+        <input type="text" id="curUSDC" readonly />
       </div>
       <div>
         <label>Current Price (USDC/TCL)</label>
-        <input type="text" id="curPrice" readonly>
+        <input type="text" id="curPrice" readonly />
       </div>
     </div>
   </div>
 
   <div class="section">
-    <strong>💰 Simulate Transaction</strong><br>
+    <strong>💰 Simulate Transaction</strong><br />
     <div class="row-group">
       <div style="flex: 2;">
         <label id="inputLabel">Enter amount in <b>USDC ($)</b> to buy TCL:</label>
-        <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)">
+        <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" />
       </div>
       <div style="flex: 1; display: flex; align-items: flex-end;">
         <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
@@ -166,7 +171,7 @@
   <div class="result" id="resultBox"></div>
 
   <script>
-    let mode = 'buy'; // Default mode
+    let mode = 'buy';
     const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
 
     function formatNumber(n) {
@@ -188,16 +193,15 @@
       const inputLabel = document.getElementById("inputLabel");
       const switchBtn = document.getElementById("switchBtn");
       const input = document.getElementById("amount");
+      mode = (mode === 'buy') ? 'sell' : 'buy';
 
-      if (mode === 'buy') {
-        mode = 'sell';
-        inputLabel.innerHTML = 'Enter amount in <b>TCL</b> to sell for USDC ($):';
-        switchBtn.innerHTML = '🔁 Switch to: Buy TCL';
-      } else {
-        mode = 'buy';
-        inputLabel.innerHTML = 'Enter amount in <b>USDC ($)</b> to buy TCL:';
-        switchBtn.innerHTML = '🔁 Switch to: Sell TCL';
-      }
+      inputLabel.innerHTML = mode === 'buy'
+        ? 'Enter amount in <b>USDC ($)</b> to buy TCL:'
+        : 'Enter amount in <b>TCL</b> to sell for USDC ($):';
+
+      switchBtn.innerHTML = mode === 'buy'
+        ? '🔁 Switch to: Sell TCL'
+        : '🔁 Switch to: Buy TCL';
 
       input.value = '';
       document.getElementById("resultBox").innerHTML = '';
@@ -208,95 +212,86 @@
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
       document.body.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
-      document.getElementById('themeToggle').innerText = newTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+      document.getElementById('themeToggle').innerText = newTheme === 'dark'
+        ? '🌞 Toggle Theme'
+        : '🌙 Toggle Theme';
     }
 
     function calculate() {
-  const tcl = parseNumber(document.getElementById("curTCL").value);
-  const usdc = parseNumber(document.getElementById("curUSDC").value);
-  const curPrice = parseNumber(document.getElementById("curPrice").value);
-  const value = parseNumber(document.getElementById("amount").value);
-  const resultBox = document.getElementById("resultBox");
+      const tcl = parseNumber(document.getElementById("curTCL").value);
+      const usdc = parseNumber(document.getElementById("curUSDC").value);
+      const curPrice = parseNumber(document.getElementById("curPrice").value);
+      const value = parseNumber(document.getElementById("amount").value);
+      const resultBox = document.getElementById("resultBox");
 
-  resultBox.innerHTML = "";
+      resultBox.innerHTML = "";
+      const feePct = 0.01;
+      const valueAfterFee = value * (1 - feePct);
 
-  const feePct = 0.01; // 1% fee
-  const valueAfterFee = value * (1 - feePct);
+      if (mode === 'buy' && value > 0) {
+        const newUSDC = usdc + valueAfterFee;
+        const newTCL = (tcl * usdc) / newUSDC;
+        const boughtTCL = tcl - newTCL;
+        const avgPrice = value / boughtTCL;
+        const newPrice = newUSDC / newTCL;
+        const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
+        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
-  if (mode === 'buy' && value > 0) {
-    const newUSDC = usdc + valueAfterFee;
-    const newTCL = (tcl * usdc) / newUSDC;
-    const boughtTCL = tcl - newTCL;
+        resultBox.innerHTML =
+          `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
+          `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
+          `Average paid price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
+          `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
+          `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
+          `💲 Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
+          `🔄 Estimated Pool After Transaction:\n` +
+          `• TCL in Pool: ${formatNumber(newTCL)}\n` +
+          `• USDC in Pool: ${formatNumber(newUSDC)}`;
+      } else if (mode === 'sell' && value > 0) {
+        const newTCL = tcl + valueAfterFee;
+        const newUSDC = (usdc * tcl) / newTCL;
+        const receivedUSDC = usdc - newUSDC;
+        const avgPrice = receivedUSDC / value;
+        const newPrice = newUSDC / newTCL;
+        const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
+        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
-    const realReceivedTCL = boughtTCL; // No TCL fee deducted on buy
-    const avgPrice = value / realReceivedTCL;
-    const newPrice = newUSDC / newTCL;
-    const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
-    const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-
-    resultBox.innerHTML =
-      `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
-      `Estimated TCL received: ${formatNumber(realReceivedTCL)}\n` +
-      `Average paid price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
-      `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
-      `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
-      `💲 Estimated final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-      `🔄 Estimated Pool After Transaction:\n` +
-      `• TCL in Pool: ${formatNumber(newTCL)}\n` +
-      `• USDC in Pool: ${formatNumber(newUSDC)}`;
-  } else if (mode === 'sell' && value > 0) {
-    const valueAfterFee = value * (1 - feePct); // you sell less due to fee
-    const newTCL = tcl + valueAfterFee;
-    const newUSDC = (usdc * tcl) / newTCL;
-    const receivedUSDC = usdc - newUSDC;
-
-    const avgPrice = receivedUSDC / value;
-    const newPrice = newUSDC / newTCL;
-    const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
-    const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-
-    resultBox.innerHTML =
-      `✅ Sell ${formatNumber(value)} TCL\n` +
-      `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
-      `Average received price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
-      `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
-      `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
-      `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-      `🔄 Estimated Pool After Transaction:\n` +
-      `• TCL in Pool: ${formatNumber(newTCL)}\n` +
-      `• USDC in Pool: ${formatNumber(newUSDC)}`;
-  } else {
-    resultBox.innerHTML = "Please enter a valid amount.";
-  }
-}
+        resultBox.innerHTML =
+          `✅ Sell ${formatNumber(value)} TCL\n` +
+          `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
+          `Average received price: ${avgPrice.toFixed(6)} USDC ($)/TCL\n` +
+          `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
+          `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
+          `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
+          `🔄 Estimated Pool After Transaction:\n` +
+          `• TCL in Pool: ${formatNumber(newTCL)}\n` +
+          `• USDC in Pool: ${formatNumber(newUSDC)}`;
+      } else {
+        resultBox.innerHTML = "⚠️ Please enter a valid amount.";
+      }
+    }
 
     async function fetchPoolData() {
       try {
         const res = await fetch(DEX_API_URL);
         const data = await res.json();
         const pool = data.pair;
-
         document.getElementById("curTCL").value = formatNumber(pool.liquidity.base);
         document.getElementById("curUSDC").value = formatNumber(pool.liquidity.quote);
         document.getElementById("curPrice").value = parseFloat(pool.priceUsd).toFixed(6);
       } catch (err) {
-        console.error("Failed to fetch pool data:", err);
+        console.error("❌ Failed to fetch pool data:", err);
       }
     }
 
     window.onload = () => {
       const savedTheme = localStorage.getItem('theme') || 'light';
       document.body.setAttribute('data-theme', savedTheme);
-      document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+      document.getElementById('themeToggle').innerText = savedTheme === 'dark'
+        ? '🌞 Toggle Theme'
+        : '🌙 Toggle Theme';
       fetchPoolData();
     };
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
