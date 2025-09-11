@@ -159,30 +159,56 @@
   <h2>📊 TCL Price Impact Calculator</h2>
   <button id="themeToggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 
-  <div class="section">
-    <strong>🔹 Initial Pool (Listing)</strong><br />
-    TCL: <span>4,000,000</span> | USDC ($): <span>25,000</span> | Initial Price: <strong>0.006 $</strong>
-  </div>
-
-  <div class="section">
-    <strong>🔸 Current Pool</strong><br />
-    <span style="font-size: 13px; color: #0d6efd;">🔵 Data is fetched live from the MultiversX Blockchain (DexScreener)</span>
-    <br /><br />
-    <div class="stats-row">
-      <div class="stat">
-        <div class="stat-top"><span>TCL in pool</span><span class="chip-live">Live</span></div>
-        <div id="curTCL" class="stat-value">—</div>
-      </div>
-      <div class="stat">
-        <div class="stat-top"><span>USDC ($) in pool</span><span class="chip-live">Live</span></div>
-        <div id="curUSDC" class="stat-value">—</div>
-      </div>
-      <div class="stat">
-        <div class="stat-top"><span>Current Price (USDC/TCL)</span><span class="chip-live">Live</span></div>
-        <div id="curPrice" class="stat-value">—</div>
-      </div>
+<div class="section">
+      <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong><br />
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-top"><span>TCL Supply</span></div>
+      <div class="stat-value">4,000,000</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>USDC Supply</span></div>
+      <div class="stat-value">25,000 $</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>Initial Price</span></div>
+      <div class="stat-value">0.006 $</div>
     </div>
   </div>
+</div>
+
+
+<div class="section">
+  <strong><span class="chip-live">LIVE DATA</span></strong>
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-top"><span>ATH</span><span class="chip-live">Live</span></div>
+      <div id="ath" class="stat-value">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>ATL</span><span class="chip-live">Live</span></div>
+      <div id="atl" class="stat-value">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>TCL Supply</span><span class="chip-live">Live</span></div>
+      <div id="curTCL" class="stat-value">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>USDC Supply</span><span class="chip-live">Live</span></div>
+      <div id="curUSDC" class="stat-value">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>Current Price</span><span class="chip-live">Live</span></div>
+      <div id="curPrice" class="stat-value">—</div>
+    </div>
+  </div>
+
+  <!-- mesaj sub carduri -->
+  <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
+    🔵 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
+  </span>
+</div>
+
 
   <div class="section">
     <strong>💰 Simulate Transaction</strong><br />
@@ -307,33 +333,56 @@
       }
     }
 
-    async function fetchPoolData() {
-      try {
-        const res = await fetch(DEX_API_URL);
-        const data = await res.json();
-        const pool = data.pair;
-        setText("curTCL", formatNumber(pool.liquidity.base));
-        setText("curUSDC", formatNumber(pool.liquidity.quote));
-        setText("curPrice", parseFloat(pool.priceUsd).toFixed(6));
-      } catch (err) {
-        console.error("❌ Failed to fetch pool data:", err);
-      }
+async function fetchPoolData() {
+  try {
+    const res = await fetch(DEX_API_URL);
+    const data = await res.json();
+    const pool = data.pair;
+
+    setText("curTCL", formatNumber(pool.liquidity.base));
+    setText("curUSDC", formatNumber(pool.liquidity.quote) + " $");
+    setText("curPrice", parseFloat(pool.priceUsd).toFixed(6) + " $");
+  } catch (err) {
+    console.error("❌ Failed to fetch pool data:", err);
+  }
+}
+
+
+
+async function fetchGeckoAthAtl(){
+  try {
+    const resp = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander");
+    const arr = await resp.json();
+    if(arr && arr.length > 0){
+      const data = arr[0];
+      // afișăm cu $ la final
+      setText("ath", data.ath.toFixed(6) + " $");
+      setText("atl", data.atl.toFixed(6) + " $");
     }
+  } catch(e){
+    console.error("❌ CoinGecko ATH/ATL error", e);
+  }
+}
 
-    window.onload = () => {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      document.body.setAttribute('data-theme', savedTheme);
-      document.getElementById('themeToggle').innerText =
-        savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
 
-      fetchPoolData();
 
-      setInterval(() => {
-        fetchPoolData();
-        const hasValue = parseNumber(document.getElementById('amount').value) > 0;
-        if (hasValue) calculate();
-      }, 300000);
-    };
+window.onload = () => {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.body.setAttribute('data-theme', savedTheme);
+  document.getElementById('themeToggle').innerText =
+    savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+
+  fetchPoolData();
+  fetchGeckoAthAtl();
+
+  setInterval(() => {
+    fetchPoolData();
+    fetchGeckoAthAtl();
+    const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+    if (hasValue) calculate();
+  }, 300000);
+};
+
   </script>
 
   <style>
