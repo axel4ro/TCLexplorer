@@ -308,12 +308,12 @@
         const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
         resultBox.innerHTML =
-          `✅ Buy TCL with ${formatNumber(value)} USDC ($)\n` +
-          `Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
-          `Average paid price: ${avgPrice.toFixed(6)} USDC/TCL\n` +
+          `💱 Buy TCL with ${formatNumber(value)} USDC ($)\n` +
+          `💲 Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
+          `⚖️ Average paid price: ${avgPrice.toFixed(6)} USDC/TCL\n` +
           `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
-          `🔼 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
-          `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
+          `📈 Estimated Increase: ${pctChange.toFixed(2)}%\n\n` +
+          `📊 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
           `🔄 Estimated Supply After Transaction:\n` +
           `• TCL in Pool: ${formatNumber(newTCL)}\n` +
           `• USDC in Pool: ${formatNumber(newUSDC)}`;
@@ -327,12 +327,12 @@
         const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
         resultBox.innerHTML =
-          `✅ Sell ${formatNumber(value)} TCL\n` +
-          `Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
-          `Average received price: ${avgPrice.toFixed(6)} USDC/TCL\n` +
+          `💱 Sell ${formatNumber(value)} TCL\n` +
+          `💲 Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
+          `⚖️ Average received price: ${avgPrice.toFixed(6)} USDC/TCL\n` +
           `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
-          `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
-          `💲 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
+          `📉 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
+          `📊 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
           `🔄 Estimated Supply After Transaction:\n` +
           `• TCL in Pool: ${formatNumber(newTCL)}\n` +
           `• USDC in Pool: ${formatNumber(newUSDC)}`;
@@ -403,4 +403,5 @@ window.onload = () => {
   </div>
 </body>
 </html>
+
 
