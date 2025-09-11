@@ -1,376 +1,185 @@
-<!doctype html>
-<html lang="ro">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>TCL dApp · Conectare xPortal (WalletConnect v2)</title>
-<style>
-  :root{--bdr:#e5e7eb;--muted:#6b7280;--txt:#111827;--bg:#fff;--mono:#f3f4f6;--brand:#10b981}
-  *{box-sizing:border-box}body{margin:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--txt);background:var(--bg)}
-  .wrap{max-width:880px;margin:auto}
-  .card{border:1px solid var(--bdr);border-radius:16px;padding:18px;margin:14px 0}
-  h1{margin:0 0 12px;font-size:28px}
-  h2{margin:0 0 8px}
-  .muted{color:var(--muted);font-size:14px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--bdr);background:#fff;cursor:pointer}
-  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--mono);padding:6px 8px;border-radius:10px;word-break:break-all}
-  .grid{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:start}
-  #qr{width:320px;max-width:100%;background:#fff;border-radius:12px;padding:12px;border:1px dashed var(--bdr)}
-  .center{display:grid;place-items:center}
-  .hidden{display:none !important}
-</style>
 
-<div class="wrap">
-  <div class="card center">
-    <div>
-      <h1>Conectează-te cu xPortal</h1>
-      <p class="muted">WalletConnect v2 – funcționează pe desktop (QR) și mobil (deeplink). Găzduire statică – perfect pentru GitHub Pages.</p>
-    </div>
-  </div>
-
-  <div id="connectCard" class="card">
-    <h2>1) Scanează sau deschide xPortal</h2>
-    <div class="row" style="margin-bottom:10px">
-      <button id="btnConnect" class="btn primary">Connect xPortal</button>
-      <span class="muted">sau scanează/vezi QR-ul de mai jos ⤵</span>
-    </div>
-    <div id="qr" class="center">
-      <div class="muted">QR / link va apărea aici după ce apeși <b>Connect xPortal</b> sau la fallback.</div>
-    </div>
-    <p class="muted" style="margin-top:10px">Mobil: apasă „Connect xPortal” pentru a deschide aplicația. Desktop: scanează QR cu xPortal.</p>
-  </div>
-
-  <div id="statusCard" class="card hidden">
-    <h2>Stare conexiune</h2>
-    <div class="grid">
-      <div class="muted">Status</div><div id="status" class="mono">disconnected</div>
-      <div class="muted">Wallet</div><div id="address" class="mono">—</div>
-      <div class="muted">Rețea</div><div id="network" class="mono">mvx:1 (mainnet)</div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <button id="btnDisconnect" class="btn">Disconnect</button>
-      <button id="btnCopyAddr" class="btn">Copy address</button>
-    </div>
-  </div>
-
-  <div id="signCard" class="card hidden">
-    <h2>Sign Message</h2>
-    <p class="muted">Mesajul de semnat (nonce) poate veni din URL (?message=...) sau îl poți edita mai jos.</p>
-    <div class="row" style="margin-bottom:10px">
-      <input id="msg" class="mono" style="flex:1" value="TCL-VERIFY" />
-      <button id="btnSignWC" class="btn">Sign (WalletConnect)</button>
-      <button id="btnSignDL" class="btn">Sign via xPortal (deeplink)</button>
-      <button id="btnCopySig" class="btn">Copy signature (Base64)</button>
-    </div>
-    <div class="grid">
-      <div class="muted">Signature (hex)</div><div id="sigHex" class="mono">—</div>
-      <div class="muted">Signature (Base64)</div><div id="sigB64" class="mono">—</div>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { WalletConnectV2Provider as WalletConnectProvider } from "https://esm.sh/@multiversx/sdk-wallet-connect-provider@6.1.2";
-import QRCode from "https://esm.sh/qrcode@1.5.3";
-import { Buffer } from "https://esm.sh/buffer@6.0.3";
-if (!globalThis.Buffer) globalThis.Buffer = Buffer;
-
-const WC_PROJECT_ID = "3b2862ec02219f2359a7d54b5f0f46ff";
-const RELAY_URL = "wss://relay.walletconnect.com";
-const CHAIN_ID = "1";
-const MVX_CHAIN = `mvx:${CHAIN_ID}`;
-
-const $ = (id) => document.getElementById(id);
-const qrDiv = $("qr");
-const btnConnect = $("btnConnect");
-const btnDisconnect = $("btnDisconnect");
-const btnCopyAddr = $("btnCopyAddr");
-const statusEl = $("status");
-const addrEl = $("address");
-const netEl = $("network");
-const connectCard = $("connectCard");
-const statusCard = $("statusCard");
-const signCard = $("signCard");
-const btnSignWC = $("btnSignWC");
-const btnSignDL = $("btnSignDL");
-const btnCopySig = $("btnCopySig");
-const msgEl = $("msg");
-const sigHexEl = $("sigHex");
-const sigB64El = $("sigB64");
-
-let provider = null;
-let pendingApproval = null;
-let lastUri = null;
-let queryMsg = null;
-
-const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const qp = (k) => new URL(location.href).searchParams.get(k) || "";
-function qph(k){ const h = new URL(location.href).hash.replace(/^#/, ""); if (!h) return ""; const sp = new URLSearchParams(h); return sp.get(k) || ""; }
-
-function show(el){ el.classList.remove("hidden"); }
-function hide(el){ el.classList.add("hidden"); }
-
-function setDisconnected(){
-  statusEl.textContent = "disconnected";
-  addrEl.textContent = "—";
-  sigHexEl.textContent = "—";
-  sigB64El.textContent = "—";
-  show(connectCard);
-  hide(statusCard); hide(signCard);
-  qrDiv.innerHTML = `<div class="muted">QR / link va apărea aici după ce apeși <b>Connect xPortal</b> sau la fallback.</div>`;
-}
-
-function setConnected(address){
-  statusEl.textContent = "connected";
-  addrEl.textContent = address || "—";
-  hide(connectCard);
-  show(statusCard); show(signCard);
-}
-
-async function initProvider(){
-  if (provider) return provider;
-  const callbacks = {
-    onClientLogin: async () => {
-      const address = await provider.getAddress();
-      setConnected(address);
-      // dacă vrei auto-sign la ?message=..., decomentează:
-      // if (queryMsg) { try { await signViaWalletConnect(); } catch(e){ console.error(e); } }
-    },
-    onClientLogout: async () => { setDisconnected(); }
-  };
-  provider = new WalletConnectProvider(callbacks, CHAIN_ID, RELAY_URL, WC_PROJECT_ID, { logger: "error" });
-  await provider.init();
-  netEl.textContent = `${MVX_CHAIN} (mainnet)`;
-  return provider;
-}
-
-function buildDeeplinkWC(uri){
-  const u = encodeURIComponent(uri);
-  return [`xportal://walletconnect?uri=${u}`, `xportal://wc?uri=${u}`];
-}
-
-async function renderQR(data){
-  const svg = await QRCode.toString(data, { type: "svg", margin: 1 });
-  qrDiv.innerHTML = svg;
-}
-
-async function startConnect(){
-  await initProvider();
-  const { uri, approval } = await provider.connect({ methods: ["mvx_signMessage"] });
-  lastUri = uri; pendingApproval = approval;
-
-  await renderQR(uri); // pe desktop – QR
-  if (isMobile()) {
-    const links = buildDeeplinkWC(uri);
-    let i = 0; const tryOpen = () => {
-      if (i >= links.length) return;
-      window.location.href = links[i++];
-      setTimeout(tryOpen, 500);
-    };
-    tryOpen();
-  }
-  await provider.login({ approval });
-}
-
-/* ---------- helpers ---------- */
-function hexToB64(hex){
-  if (!hex) return "";
-  const u8 = Uint8Array.from((hex.replace(/^0x/i,"").match(/.{1,2}/g) || []).map(h => parseInt(h,16)));
-  return btoa(String.fromCharCode(...u8));
-}
-function b64ToHex(b64){
-  if (!b64) return "";
-  const bin = atob(b64.replace(/-/g,'+').replace(/_/g,'/'));
-  let out = "";
-  for (let i = 0; i < bin.length; i++) out += bin.charCodeAt(i).toString(16).padStart(2,"0");
-  return out;
-}
-function looksLikeBase64(s){
-  return typeof s === "string" && /^[A-Za-z0-9+/_-]+={0,2}$/.test(s) && s.length % 4 === 0;
-}
-function looksLikeHex(s){
-  return typeof s === "string" && /^0x?[0-9a-fA-F]+$/.test(s);
-}
-
-/* normalizează diverse forme de răspuns în {hex,b64} */
-function normalizeSignature(res){
-  // string pur
-  if (typeof res === "string"){
-    if (looksLikeBase64(res)) return { b64: res, hex: b64ToHex(res) };
-    if (looksLikeHex(res))    return { hex: res.replace(/^0x/i,""), b64: hexToB64(res) };
-  }
-  // array – ia prima piesă utilă
-  if (Array.isArray(res)){
-    for (const item of res){
-      const norm = normalizeSignature(item);
-      if (norm.hex || norm.b64) return norm;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TCL Price Impact Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px auto;
+      max-width: 720px;
+      line-height: 1.6;
+      background-color: #f8f9fa;
+      color: #212529;
     }
-  }
-  // obiect – multe forme posibile
-  if (res && typeof res === "object"){
-    // { signature: '...' } sau { data: '...' }
-    if (res.signature) return normalizeSignature(res.signature);
-    if (res.data)      return normalizeSignature(res.data);
-    // { signature: { hex, base64 } }
-    if (res.signatureHex || (res.signature && res.signature.hex)){
-      const hex = (res.signatureHex || res.signature.hex || "").replace(/^0x/i,"");
-      return { hex, b64: hexToB64(hex) };
+    h2 {
+      color: #0d6efd;
     }
-    if (res.signatureBase64 || (res.signature && (res.signature.base64 || res.signature.b64))){
-      const b64 = res.signatureBase64 || res.signature.base64 || res.signature.b64;
-      return { b64, hex: b64ToHex(b64) };
+    .section {
+      margin-bottom: 24px;
     }
-  }
-  return { hex:"", b64:"" };
-}
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      margin-top: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      background: #ffffff;
+      border-left: 6px solid #28a745;
+      padding: 16px;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+    .row-group {
+      display: flex;
+      gap: 16px;
+    }
+    .row-group > div {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 TCL Price Impact Calculator</h2>
 
-/* request generic – normalizează params în array pentru ambele API-uri */
-async function wcRequest(method, params){
-  const arr = Array.isArray(params) ? params : [params];
-  if (typeof provider?.sendCustomRequest === "function"){
-    return await provider.sendCustomRequest({ method, params: arr });
-  }
-  if (typeof provider?.request === "function"){
-    return await provider.request({ method, params: arr });
-  }
-  throw new Error("Provider nu expune request() / sendCustomRequest().");
-}
+  <div class="section">
+    <strong>🔹 Initial Pool (Listing)</strong><br>
+    TCL: <span id="initialTCL">4,000,000</span> | USDC: <span id="initialUSDC">25,000</span> | Initial Price: <strong>0.006</strong>
+  </div>
 
-/* ---------- sign via WalletConnect (JSON-RPC) ---------- */
-async function signViaWalletConnect(){
-  await initProvider();
-  const message = String(msgEl?.value ?? "");
-  if (!message) { alert("Mesaj gol"); return; }
-  const address = await provider.getAddress();
-  if (!address) { alert("Nu am adresa din provider."); return; }
+  <div class="section">
+    <strong>🔸 Current Pool</strong><br>
+    <span style="font-size: 13px; color: #0d6efd;">🔵 Data is fetched live from the MultiversX Blockchain (DexScreener)</span><br><br>
+    <div class="row-group">
+      <div>
+        <label>TCL in pool</label>
+        <input type="text" id="curTCL" value="12,440,888" readonly>
+      </div>
+      <div>
+        <label>USDC in pool</label>
+        <input type="text" id="curUSDC" value="10,164.21" readonly>
+      </div>
+      <div>
+        <label>Current Price (USDC/TCL)</label>
+        <input type="text" id="curPrice" value="0.000817" readonly>
+      </div>
+    </div>
+  </div>
 
-  const tries = [
-    // cele mai comune forme
-    [{ address, message }],           // 1) [{address,message}]
-    [address, message],               // 2) [address, message]
-    [{ message }],                    // 3) [{message}]
-    [message],                        // 4) [message]
-    [{ message, address }],           // 5) [{message,address}]
-  ];
+  <div class="section">
+    <strong>💰 Simulate Transaction</strong><br>
+    <div class="row-group">
+      <div style="flex: 2;">
+        <label id="inputLabel">Enter amount in <b>USDC ($)</b> to buy TCL:</label>
+        <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)">
+      </div>
+      <div style="flex: 1; display: flex; align-items: flex-end;">
+        <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
+      </div>
+    </div>
+  </div>
 
-  let res, lastErr = null;
-  for (const params of tries){
-    try {
-      res = await wcRequest("mvx_signMessage", params);
-      if (res != null) break;
-    } catch(e){ lastErr = e; }
-  }
-  if (res == null){
-    console.error("mvx_signMessage failed. lastErr:", lastErr);
-    alert("Nu s-a putut semna prin WalletConnect. Deschidem deeplink xPortal…");
-    await signViaDeeplink();
-    return;
-  }
+  <button style="background-color: #28a745;" onclick="calculate()">Calculate Impact</button>
 
-  const { hex, b64 } = normalizeSignature(res);
-  if (!hex && !b64){
-    console.warn("Unexpected signMessage result:", res);
-    alert("Semnarea a răspuns într-un format neașteptat. Încercăm deeplink.");
-    await signViaDeeplink();
-    return;
-  }
+  <div class="result" id="resultBox"></div>
 
-  sigHexEl.textContent = hex || (b64 ? b64ToHex(b64) : "—");
-  sigB64El.textContent = b64 || (hex ? hexToB64(hex) : "—");
-}
+  <script>
+    let mode = 'buy'; // Default mode
 
-/* ---------- sign via deeplink (fallback sigur) ---------- */
-async function signViaDeeplink(){
-  const message = String(msgEl?.value ?? "");
-  if (!message) { alert("Mesaj gol"); return; }
+    function formatNumber(n) {
+      return Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
+    }
 
-  // Construim URL-ul spre relay-ul nostru, care la rândul lui deschide xPortal corect
-  const relayBase = new URL("./xportal-relay.html", location.href).toString();
-  const currentPage = new URL(location.href).toString(); // revenim înapoi aici
-  const relayUrl = `${relayBase}?message=${encodeURIComponent(message)}&callback=${encodeURIComponent(currentPage)}`;
+    function formatInputField(input) {
+      let value = input.value.replace(/,/g, '');
+      if (!isNaN(value) && value !== '') {
+        input.value = formatNumber(value);
+      }
+    }
 
-  if (isMobile()) {
-    // pe mobil deschidem direct relay-ul (acolo ai și intent fallback)
-    location.href = relayUrl;
-  } else {
-    // pe desktop afișăm QR cu relay-ul (îl scanezi din xPortal → ecranul de semnare apare garantat)
-    await renderQR(relayUrl);
-  }
-}
+    function parseNumber(value) {
+      return parseFloat(value.replace(/,/g, '')) || 0;
+    }
 
-function openXPortalSign(message, callbackUrl) {
-  const params = new URLSearchParams({
-    message,
-    callbackUrl: callbackUrl || location.href
-  });
-  const deeplink = "xportal://wallet/sign-message?" + params.toString();
-  const intent   = "intent://wallet/sign-message?" + params.toString()
-                 + "#Intent;scheme=xportal;package=com.elrond.maiar.wallet;end";
+    function switchMode() {
+      const inputLabel = document.getElementById("inputLabel");
+      const switchBtn = document.getElementById("switchBtn");
+      const input = document.getElementById("amount");
 
-  // trimite spre xPortal; dacă nu pornește, încearcă intent (Android)
-  location.href = deeplink;
-  setTimeout(() => {
-    if (/android/i.test(navigator.userAgent)) location.href = intent;
-  }, 800);
-}
+      if (mode === 'buy') {
+        mode = 'sell';
+        inputLabel.innerHTML = 'Enter amount in <b>TCL</b> to sell for USDC:';
+        switchBtn.innerHTML = '🔁 Switch to: Buy TCL';
+      } else {
+        mode = 'buy';
+        inputLabel.innerHTML = 'Enter amount in <b>USDC ($)</b> to buy TCL:';
+        switchBtn.innerHTML = '🔁 Switch to: Sell TCL';
+      }
 
-  
-/* ---------- listeners ---------- */
-btnConnect.addEventListener('click', async () => {
-  try { await startConnect(); }
-  catch (e) { console.error(e); alert("Connect error: " + (e?.message || e)); setDisconnected(); }
-});
+      input.value = '';
+      document.getElementById("resultBox").innerHTML = '';
+    }
 
-btnDisconnect.addEventListener('click', async () => {
-  try { if (provider) await provider.logout(); } catch {}
-  setDisconnected();
-});
+    function calculate() {
+      const tcl = parseNumber(document.getElementById("curTCL").value);
+      const usdc = parseNumber(document.getElementById("curUSDC").value);
+      const curPrice = parseNumber(document.getElementById("curPrice").value);
+      const value = parseNumber(document.getElementById("amount").value);
+      const resultBox = document.getElementById("resultBox");
 
-btnCopyAddr.addEventListener('click', async () => {
-  const txt = addrEl.textContent || "";
-  try { await navigator.clipboard.writeText(txt); alert('Copied!'); }
-  catch { alert('Copy failed'); }
-});
+      resultBox.innerHTML = "";
 
-btnSignWC.addEventListener('click', async () => {
-  try { await signViaWalletConnect(); }
-  catch(e){ console.error(e); alert("Sign (WC) error: " + (e?.message || e)); }
-});
+      if (mode === 'buy' && value > 0) {
+        const newUSDC = usdc + value;
+        const newTCL = (tcl * usdc) / newUSDC;
+        const boughtTCL = tcl - newTCL;
+        const avgPrice = value / boughtTCL;
+        const newPrice = newUSDC / newTCL;
+        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
-btnSignDL.addEventListener('click', async () => {
-  const msg = String(msgEl?.value ?? "");
-  if (!msg) { alert("Mesaj gol"); return; }
+        resultBox.innerHTML =
+          `✅ Buy TCL with ${formatNumber(value)} USDC
+` +
+          `Estimated TCL received: ${formatNumber(boughtTCL)}
+` +
+          `Average paid price: ${avgPrice.toFixed(6)} USDC
+` +
+          `Estimated final price: ${newPrice.toFixed(6)} USDC
+` +
+          `🔼 Estimated Increase: ${pctChange.toFixed(2)}%`;
+      } else if (mode === 'sell' && value > 0) {
+        const newTCL = tcl + value;
+        const newUSDC = (usdc * tcl) / newTCL;
+        const receivedUSDC = usdc - newUSDC;
+        const avgPrice = receivedUSDC / value;
+        const newPrice = newUSDC / newTCL;
+        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
-  // ne întoarcem în aceeași pagină, păstrând ?message=...
-  const callback = new URL(location.href);
-  callback.searchParams.set("message", msg);
-
-  // pe mobil deschidem direct xPortal; pe desktop afișăm și QR cu același deeplink
-  openXPortalSign(msg, callback.toString());
-
-  if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    const p = new URLSearchParams({ message: msg, callbackUrl: callback.toString() });
-    const deeplink = "xportal://wallet/sign-message?" + p.toString();
-    await renderQR(deeplink); // ca să poți scana din xPortal pe desktop
-  }
-});
-
-
-btnCopySig.addEventListener('click', async () => {
-  const txt = sigB64El.textContent || "";
-  try { await navigator.clipboard.writeText(txt); alert('Signature (Base64) copied!'); }
-  catch { alert('Copy failed'); }
-});
-
-/* ---------- init ---------- */
-queryMsg =
-  qp("message") || qp("nonce") || qp("msg") || qp("m") ||
-  qph("message") || qph("nonce") || "";
-
-if (queryMsg) { try { msgEl.value = queryMsg; } catch{} }
-setDisconnected();
-</script>
+        resultBox.innerHTML =
+          `✅ Sell ${formatNumber(value)} TCL
+` +
+          `Estimated USDC received: ${formatNumber(receivedUSDC)}
+` +
+          `Average received price: ${avgPrice.toFixed(6)} USDC
+` +
+          `Estimated final price: ${newPrice.toFixed(6)} USDC
+` +
+          `🔻 Estimated Decrease: ${pctChange.toFixed(2)}%`;
+      } else {
+        resultBox.innerHTML = "Please enter a valid amount.";
+      }
+    }
+  </script>
+</body>
 </html>
-
-
