@@ -284,18 +284,28 @@
       }
     }
 
-    window.onload = () => {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      document.body.setAttribute('data-theme', savedTheme);
-      document.getElementById('themeToggle').innerText = savedTheme === 'dark'
-        ? '🌞 Toggle Theme'
-        : '🌙 Toggle Theme';
+  window.onload = () => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeToggle').innerText =
+      savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+
+    // prima încărcare
+    fetchPoolData();
+
+    // 🔁 auto-refresh la 5 minute (300000 ms)
+    setInterval(() => {
       fetchPoolData();
-    };
-  </script>
+      // opțional: recalculează rezultatul dacă există o valoare introdusă
+      const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+      if (hasValue) calculate();
+    }, 300000);
+  };
+</script>
     <style>#dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}@media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}#dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}</style><div id="dexscreener-embed"><iframe src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe></div>
 </body>
 </html>
+
 
 
 
