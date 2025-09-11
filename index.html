@@ -226,7 +226,7 @@
     const boughtTCL = tcl - newTCL;
     const avgPrice = value / boughtTCL;
     const newPrice = newUSDC / newTCL;
-    const priceImpactPct = ((avgPrice - curPrice) / curPrice) * 100;
+    const priceImpactPct = ((newPrice - curPrice) / curPrice) * 100;
     const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
     resultBox.innerHTML =
@@ -245,7 +245,7 @@
     const receivedUSDC = usdc - newUSDC;
     const avgPrice = receivedUSDC / value;
     const newPrice = newUSDC / newTCL;
-    const priceImpactPct = ((avgPrice - curPrice) / curPrice) * 100;
+    const priceImpactPct = ((curPrice - newPrice) / curPrice) * 100;
     const pctChange = ((newPrice - curPrice) / curPrice) * 100;
 
     resultBox.innerHTML =
@@ -262,7 +262,6 @@
     resultBox.innerHTML = "Please enter a valid amount.";
   }
 }
-
     async function fetchPoolData() {
       try {
         const res = await fetch(DEX_API_URL);
@@ -286,6 +285,7 @@
   </script>
 </body>
 </html>
+
 
 
 
