@@ -97,51 +97,61 @@
     [data-theme="dark"] .result {
       background: var(--card-dark);
     }
-	
-	.action-row{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  margin-top:12px;
-}
-.btn-trade{
-  display:inline-block;
-  padding:10px 20px;
-  border-radius:8px;
-  text-decoration:none;
-  background:#2ff6de; /* albastru */
-  color:#090909;
-  font-size:16px;
-  font-weight:600;
-}
-.btn-trade:hover{ opacity:.9; }
 
+    .action-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      margin-top:12px;
+    }
+    .btn-trade{
+      display:inline-block;
+      padding:10px 20px;
+      border-radius:8px;
+      text-decoration:none;
+      background:#2ff6de;
+      color:#090909;
+      font-size:16px;
+      font-weight:600;
+    }
+    .btn-trade:hover{ opacity:.9; }
 
+    /* Live stats (read-only) */
+    .stats-row{ display:flex; gap:16px; }
+    .stat{
+      flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:10px;
+      background:var(--card-light);
+    }
+    [data-theme="dark"] .stat{ background:var(--card-dark); border-color:#444; }
+    .stat-top{ display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#6b7280; }
+    .stat-value{ font-size:18px; font-weight:700; margin-top:6px; }
+    .chip-live{
+      font-size:11px; padding:2px 8px; border-radius:999px; background:#10b9811a; color:#10b981;
+      display:inline-flex; align-items:center; gap:6px;
+    }
+    .chip-live::before{ content:"🔒"; }
 
     /* ✅ RESPONSIVE */
     @media (max-width: 768px) {
       body {
         margin: 20px 12px;
       }
-
       .row-group {
         flex-direction: column;
       }
-
       h2 {
         font-size: 20px;
       }
-
       input[type="text"],
       button {
         font-size: 15px;
       }
-
       #themeToggle {
         float: none;
         display: block;
         margin: 10px 0 20px auto;
       }
+      .stats-row{ flex-direction:column; }
     }
   </style>
 </head>
@@ -158,18 +168,18 @@
     <strong>🔸 Current Pool</strong><br />
     <span style="font-size: 13px; color: #0d6efd;">🔵 Data is fetched live from the MultiversX Blockchain (DexScreener)</span>
     <br /><br />
-    <div class="row-group">
-      <div>
-        <label>TCL in pool</label>
-        <input type="text" id="curTCL" readonly />
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-top"><span>TCL in pool</span><span class="chip-live">Live</span></div>
+        <div id="curTCL" class="stat-value">—</div>
       </div>
-      <div>
-        <label>USDC ($) in pool</label>
-        <input type="text" id="curUSDC" readonly />
+      <div class="stat">
+        <div class="stat-top"><span>USDC ($) in pool</span><span class="chip-live">Live</span></div>
+        <div id="curUSDC" class="stat-value">—</div>
       </div>
-      <div>
-        <label>Current Price (USDC/TCL)</label>
-        <input type="text" id="curPrice" readonly />
+      <div class="stat">
+        <div class="stat-top"><span>Current Price (USDC/TCL)</span><span class="chip-live">Live</span></div>
+        <div id="curPrice" class="stat-value">—</div>
       </div>
     </div>
   </div>
@@ -185,14 +195,16 @@
         <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
       </div>
     </div>
-<div class="action-row">
-  <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
-  <a class="btn-trade"
-     href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
-     target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
-</div>
 
-<div class="result" id="resultBox"></div>
+    <div class="action-row">
+      <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
+      <a class="btn-trade"
+         href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
+         target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
+    </div>
+
+    <div class="result" id="resultBox"></div>
+  </div>
 
   <script>
     let mode = 'buy';
@@ -201,17 +213,17 @@
     function formatNumber(n) {
       return Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
     }
-
+    function parseNumber(value) {
+      return parseFloat((value || '').toString().replace(/,/g, '')) || 0;
+    }
     function formatInputField(input) {
       let value = input.value.replace(/,/g, '');
       if (!isNaN(value) && value !== '') {
         input.value = formatNumber(value);
       }
     }
-
-    function parseNumber(value) {
-      return parseFloat(value.replace(/,/g, '')) || 0;
-    }
+    function getText(id){ return (document.getElementById(id).textContent || '').trim(); }
+    function setText(id, v){ document.getElementById(id).textContent = v; }
 
     function switchMode() {
       const inputLabel = document.getElementById("inputLabel");
@@ -242,9 +254,9 @@
     }
 
     function calculate() {
-      const tcl = parseNumber(document.getElementById("curTCL").value);
-      const usdc = parseNumber(document.getElementById("curUSDC").value);
-      const curPrice = parseNumber(document.getElementById("curPrice").value);
+      const tcl = parseNumber(getText("curTCL"));
+      const usdc = parseNumber(getText("curUSDC"));
+      const curPrice = parseNumber(getText("curPrice"));
       const value = parseNumber(document.getElementById("amount").value);
       const resultBox = document.getElementById("resultBox");
 
@@ -300,36 +312,37 @@
         const res = await fetch(DEX_API_URL);
         const data = await res.json();
         const pool = data.pair;
-        document.getElementById("curTCL").value = formatNumber(pool.liquidity.base);
-        document.getElementById("curUSDC").value = formatNumber(pool.liquidity.quote);
-        document.getElementById("curPrice").value = parseFloat(pool.priceUsd).toFixed(6);
+        setText("curTCL", formatNumber(pool.liquidity.base));
+        setText("curUSDC", formatNumber(pool.liquidity.quote));
+        setText("curPrice", parseFloat(pool.priceUsd).toFixed(6));
       } catch (err) {
         console.error("❌ Failed to fetch pool data:", err);
       }
     }
 
-  window.onload = () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', savedTheme);
-    document.getElementById('themeToggle').innerText =
-      savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
+    window.onload = () => {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.body.setAttribute('data-theme', savedTheme);
+      document.getElementById('themeToggle').innerText =
+        savedTheme === 'dark' ? '🌞 Toggle Theme' : '🌙 Toggle Theme';
 
-    // prima încărcare
-    fetchPoolData();
-
-    // 🔁 auto-refresh la 5 minute (300000 ms)
-    setInterval(() => {
       fetchPoolData();
-      // opțional: recalculează rezultatul dacă există o valoare introdusă
-      const hasValue = parseNumber(document.getElementById('amount').value) > 0;
-      if (hasValue) calculate();
-    }, 300000);
-  };
-</script>
 
-  <style>#dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}@media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}#dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}</style><div id="dexscreener-embed"><iframe src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe></div>
+      setInterval(() => {
+        fetchPoolData();
+        const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+        if (hasValue) calculate();
+      }, 300000);
+    };
+  </script>
+
+  <style>
+    #dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}
+    @media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}
+    #dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}
+  </style>
+  <div id="dexscreener-embed">
+    <iframe src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe>
+  </div>
 </body>
 </html>
-
-
-
