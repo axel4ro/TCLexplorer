@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TCL Staking Leaderboard — client-side</title>
+<style>
+  :root { color-scheme: dark; }
+  body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0f1218;color:#e7e9ee;margin:0;padding:24px}
+  .wrap{max-width:1100px;margin:0 auto}
+  h1{display:flex;align-items:center;gap:.6rem;margin:.2rem 0 1rem}
+  h1 span{background:#1f2837;border:1px solid #2a364a;padding:.25rem .5rem;border-radius:999px;font-size:.8rem}
+  .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+  .row > *{margin:.2rem 0}
+  select,input{background:#121827;border:1px solid #2a364a;color:#e7e9ee;border-radius:.6rem;padding:.55rem .7rem;font:inherit;outline:none}
+  input[type="number"]{width:7rem}
+  button{background:#16a34a;border:none;color:white;border-radius:.7rem;padding:.6rem .9rem;font:600 1rem/1 system-ui;cursor:pointer}
+  button.secondary{background:#1f2937}
+  .pill{background:#1f2937;color:#a9b4c7;border:1px solid #2a364a;border-radius:999px;padding:.25rem .5rem;font-size:.8rem}
+  .muted{opacity:.75}
+  .error{color:#ffb4b4}
+  .kpi{display:flex;gap:1rem;margin:.9rem 0}
+  .kpi .card{flex:1;background:#0e1623;border:1px solid #1f2a3d;border-radius:1rem;padding:.8rem}
+  table{width:100%;border-collapse:collapse;margin-top:.8rem;border-radius:1rem;overflow:hidden}
+  th,td{padding:.6rem .7rem;border-bottom:1px solid #1f2a3d}
+  th{background:#0b1320;text-align:left}
+  tr:hover td{background:#0e1524}
+  .addr{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+  footer{margin-top:1rem;font-size:.85rem;color:#9fb0c9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏆 TCL Staking Leaderboard <span id="age">Last 32 weeks</span></h1>
+
+  <p class="muted">Static, client-side scan → MultiversX API → decode adrese → <code>getRewardsData</code> → sortare. Rulează 100% în browser.</p>
+
+  <div class="row" style="gap:.6rem 1rem;margin:.7rem 0 1rem">
+    <label>API host
+      <select id="apiHost">
+        <option value="https://api.multiversx.com">api.multiversx.com</option>
+        <option value="https://multiversx-api.public.blastapi.io">Blast (public)</option>
+        <option value="https://testnet-api.multiversx.com">testnet-api</option>
+        <option value="https://devnet-api.multiversx.com">devnet-api</option>
+      </select>
+    </label>
+
+    <label>Săptămâni
+      <select id="weeks">
+        <option>4</option><option>8</option><option>16</option><option selected>32</option><option>52</option>
+      </select>
+    </label>
+
+    <label>Max adrese (0 = nelimitat)
+      <input id="maxAddrs" type="number" min="0" step="1" value="0">
+    </label>
+
+    <label>Funcții urmărite</label>
+    <span class="pill">claimRewards</span>
+    <span class="pill">claimLendingRewards</span>
+    <span class="pill">claimInfinityRewards</span>
+    <span class="pill">addDaysAutoClaim</span>
+    <span class="pill">setReinvestInfinity</span>
+
+    <div style="flex:1"></div>
+    <button id="scanBtn">🔎 Scan &amp; Build</button>
+    <button class="secondary" id="exportBtn">💾 Export JSON</button>
+  </div>
+
+  <label>Contract:
+    <input id="sc" style="width:640px" value="erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk">
+  </label>
+
+  <div id="status" class="muted" style="margin:.6rem 0 0.2rem">—</div>
+
+  <div class="kpi">
+    <div class="card"><div class="muted">ADRESE UNICE</div><div id="kpiUnique" style="font-weight:700;font-size:1.2rem">0</div></div>
+    <div class="card"><div class="muted">INTEROGĂRI SC</div><div id="kpiCalls" style="font-weight:700;font-size:1.2rem">0</div></div>
+    <div class="card"><div class="muted">FINALIZATE</div><div id="kpiDone" style="font-weight:700;font-size:1.2rem">0</div></div>
+    <div class="card"><div class="muted">ERORI</div><div id="kpiErr" style="font-weight:700;font-size:1.2rem">0</div></div>
+  </div>
+
+  <table id="tbl">
+    <thead>
+      <tr><th style="width:60px">#</th><th>Address</th><th>Total (TCL)</th><th>NFT</th><th>Loan</th><th>Infinity</th></tr>
+    </thead>
+    <tbody id="rows">
+      <tr><td colspan="6" class="muted">No data yet.</td></tr>
+    </tbody>
+  </table>
+
+  <footer class="muted">
+    Notă: valorile sunt brute (18 decimale). Afișarea este în TCL, cu 2 zecimale. Time filter: UNIX <b>before/after</b> pe endpointul <code>Transactions</code>.<br>
+    Dacă primești <span class="error">HTTP 400</span>: rulează de pe un domeniu <b>https</b> (ex. GitHub Pages) și/sau comută host-ul pe “Blast (public)”.
+  </footer>
+</div>
+
+<script>
+/* ====== Config de bază ====== */
+const CONTRACT_FUNCTIONS = [
+  "claimRewards", "claimLendingRewards", "claimInfinityRewards",
+  "addDaysAutoClaim", "setReinvestInfinity"
+];
+const PAGE_SIZE = 100;           // listare /transactions
+const SLEEP_TX = 600;            // throttling /query ~2 req/s
+const DECIMALS = 18;
+const TCL_MAIN_SC = () => document.getElementById('sc').value.trim();
+
+/* ====== Utilitare ====== */
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const padB64 = (s) => s + "===".slice((s.length + 3) % 4);
+
+/* bech32 minimal (erd) – portat simplu din Python-ul tău */
+const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+function bech32Polymod(values){
+  const G=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];
+  let chk=1;
+  for(const v of values){
+    const b = chk >>> 25;
+    chk = ((chk & 0x1ffffff) << 5) ^ v;
+    for(let i=0;i<5;i++){ if((b>>>i)&1) chk ^= G[i]; }
+  }
+  return chk;
+}
+function bech32HrpExpand(hrp){
+  const r=[]; for(const c of hrp){ r.push(c.charCodeAt(0)>>5); }
+  r.push(0);
+  for(const c of hrp){ r.push(c.charCodeAt(0)&31); }
+  return r;
+}
+function bech32CreateChecksum(hrp,data){
+  const values = bech32HrpExpand(hrp).concat(data);
+  const polymod = bech32Polymod(values.concat([0,0,0,0,0,0])) ^ 1;
+  const res=[]; for(let i=0;i<6;i++){ res.push((polymod >>> (5*(5-i))) & 31); }
+  return res;
+}
+function convertBits(data,frombits,tobits,pad=true){
+  let acc=0,bits=0; const ret=[]; const maxv=(1<<tobits)-1;
+  for(const value of data){
+    if(value<0 || (value>>frombits)) return null;
+    acc = (acc<<frombits)|value;
+    bits += frombits;
+    while(bits >= tobits){
+      bits -= tobits;
+      ret.push((acc>>bits)&maxv);
+    }
+  }
+  if(pad){
+    if(bits) ret.push((acc<<(tobits-bits))&maxv);
+  } else if(bits>=frombits || ((acc<<(tobits-bits))&maxv)) return null;
+  return ret;
+}
+function hexToBech32(hex){
+  const hrp="erd";
+  const bytes = hex.match(/.{1,2}/g).map(h=>parseInt(h,16));
+  const five = convertBits(bytes,8,5,true);
+  const data = five;
+  const combined = data.concat(bech32CreateChecksum(hrp,data));
+  return hrp + "1" + combined.map(d=>CHARSET[d]).join('');
+}
+function bech32ToHex(addr){
+  addr = addr.toLowerCase();
+  const pos = addr.lastIndexOf('1');
+  const hrp = addr.slice(0,pos);
+  const data = [];
+  for(const ch of addr.slice(pos+1)){
+    const d = CHARSET.indexOf(ch);
+    if(d<0) return null;
+    data.push(d);
+  }
+  const payload = data.slice(0, -6);
+  const bytes = convertBits(payload,5,8,false);
+  return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function decodeBase64ToBech32(b64){
+  try{
+    const decoded = atob(padB64(b64).replace(/-/g,'+').replace(/_/g,'/'));
+    const parts = decoded.split("@");
+    if(parts.length < 2) return null;
+    const hex = parts[1];
+    if(!/^[0-9a-fA-F]+$/.test(hex)) return null;
+    return hexToBech32(hex);
+  }catch(e){ return null; }
+}
+function formatTcl(raw){
+  try{
+    const bn = BigInt(raw);
+    const whole = Number(bn / BigInt(10**DECIMALS));
+    return whole.toLocaleString('en-US') + " TCL";
+  }catch{ return "0 TCL"; }
+}
+
+/* ====== Fetch helpers ====== */
+function apiBase(){
+  return document.getElementById('apiHost').value;
+}
+async function fetchJSON(url, init){
+  const r = await fetch(url, init);
+  if(!r.ok){
+    let msg = `${r.status} ${r.statusText}`;
+    try{ const j = await r.json(); if(j && (j.error || j.message)) msg += ` — ${j.error||j.message}`; }catch{}
+    throw new Error(msg);
+  }
+  return r.json();
+}
+
+/* ====== /transactions scan ====== */
+async function listTxForFunction(fn, before, after){
+  const base = apiBase();
+  let from = 0, out=[];
+  while(true){
+    const url = new URL(base + "/transactions");
+    url.searchParams.set("from", from);
+    url.searchParams.set("size", PAGE_SIZE);
+    url.searchParams.set("receiver", TCL_MAIN_SC());
+    url.searchParams.set("status", "success");
+    url.searchParams.set("function", fn);
+    url.searchParams.set("before", String(before));
+    url.searchParams.set("after", String(after));
+    url.searchParams.set("withScamInfo", "true"); // important pt. unele gateway-uri
+
+    const data = await fetchJSON(url.toString());
+    if(!Array.isArray(data) || data.length === 0) break;
+
+    for(const tx of data){
+      if(fn === "claimRewards" || fn === "claimLendingRewards" || fn === "claimInfinityRewards"){
+        const addr = decodeBase64ToBech32(tx.data||"");
+        if(addr) out.push(addr);
+      } else {
+        out.push(tx.sender);
+      }
+    }
+    from += PAGE_SIZE;
+    // mic respiro ca să nu lovim rate-limit
+    await sleep(250);
+  }
+  return out;
+}
+
+/* ====== /query getRewardsData ====== */
+async function queryRewards(addr){
+  const base = apiBase();
+  const hexArg = bech32ToHex(addr);
+  if(!hexArg) return null;
+
+  const payload = {
+    scAddress: TCL_MAIN_SC(),
+    funcName: "getRewardsData",
+    caller: addr,
+    value: "0",
+    args: [hexArg]
+  };
+
+  // unele instanțe răspund 201, altele 200
+  const r = await fetch(base + "/query", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify(payload)
+  });
+  if(!(r.status === 200 || r.status === 201)){
+    // în browser, CORS blocat = TypeError înainte de status;
+    // dacă totuși avem 400/403/etc., raportăm
+    let extra="";
+    try{ const j=await r.json(); extra=j.error||j.message||""; }catch{}
+    throw new Error(`${r.status} ${r.statusText} ${extra}`);
+  }
+  const data = await r.json();
+  if(!data || !data.returnData || !data.returnData.length) return null;
+
+  const decoded = atob(padB64(data.returnData[0]));
+  const parts = decoded.split(" ");
+  const nft = parts[4] ? BigInt(parts[4]) : 0n;
+  const loan = parts[5] ? BigInt(parts[5]) : 0n;
+  const infinity = parts[17] ? BigInt(parts[17]) : 0n;
+  const total = nft + loan + infinity;
+
+  return { nft, loan, infinity, total };
+}
+
+/* ====== UI helpers ====== */
+const el = id => document.getElementById(id);
+function setStatus(msg, isErr=false){
+  el("status").textContent = (isErr?"Eroare: ":"") + msg;
+  el("status").className = isErr? "error" : "muted";
+}
+function updateKPIs({unique,calls,done,err}){
+  if(unique!==undefined) el("kpiUnique").textContent = unique;
+  if(calls!==undefined) el("kpiCalls").textContent = calls;
+  if(done!==undefined) el("kpiDone").textContent = done;
+  if(err!==undefined) el("kpiErr").textContent = err;
+}
+function renderTable(items){
+  const tbody = el("rows");
+  tbody.innerHTML = "";
+  items.forEach((it, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx+1}</td>
+      <td class="addr">${it.addr}</td>
+      <td>${formatTcl(it.total)}</td>
+      <td>${formatTcl(it.nft)}</td>
+      <td>${formatTcl(it.loan)}</td>
+      <td>${formatTcl(it.infinity)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  if(items.length===0){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="6" class="muted">No data.</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+/* ====== Workflow principal ====== */
+let lastLeaderboard = {};
+async function scanAndBuild(){
+  const w = parseInt(el("weeks").value,10);
+  const now = Math.floor(Date.now()/1000);
+  const offset = 7*24*3600 * w;
+  const before = now;
+  const after  = now - offset;
+
+  setStatus(`Scan in curs… (before=${before}, after=${after})`);
+  updateKPIs({unique:0,calls:0,done:0,err:0});
+  renderTable([]);
+
+  try{
+    // 1) transactions → adrese
+    const addrMap = new Map();
+    for(const fn of CONTRACT_FUNCTIONS){
+      const list = await listTxForFunction(fn, before, after);
+      list.forEach(a => { if(a) addrMap.set(a, true); });
+    }
+
+    // 2) limitare la maxAddrs (dacă a fost setat)
+    const max = parseInt(el("maxAddrs").value,10) || 0;
+    const addrs = Array.from(addrMap.keys());
+    const limited = max>0 ? addrs.slice(0, max) : addrs;
+
+    updateKPIs({unique: limited.length});
+    setStatus(`Găsite ${limited.length} adrese. Interoghez SC…`);
+
+    // 3) getRewardsData pentru fiecare
+    const results = {};
+    let calls=0, done=0, err=0;
+
+    for(const addr of limited){
+      try{
+        const data = await queryRewards(addr);
+        calls++; updateKPIs({calls});
+        if(data){
+          results[addr] = data;
+          done++; updateKPIs({done});
+        }
+      }catch(e){
+        err++; updateKPIs({err});
+        // dacă e 400 în masă, sugerează schimbarea host-ului
+        if(err===1) setStatus(`HTTP ${e.message}. Dacă e CORS/400, încearcă host-ul "Blast (public)" sau rulează de pe https.`, true);
+      }
+      await sleep(SLEEP_TX);
+    }
+
+    // 4) sort + render
+    const items = Object.entries(results)
+      .map(([addr,v])=>({addr, ...v}))
+      .sort((a,b)=> (b.total > a.total ? 1 : b.total < a.total ? -1 : 0));
+
+    // rank + dict pt. export
+    lastLeaderboard = {};
+    items.forEach((it,i)=>{
+      lastLeaderboard[it.addr] = {
+        rank: i+1,
+        nft: it.nft.toString(),
+        loan: it.loan.toString(),
+        infinity: it.infinity.toString(),
+        total: it.total.toString()
+      };
+    });
+
+    renderTable(items);
+    setStatus(`Gata. ${items.length} poziții calculate.`);
+  }catch(e){
+    setStatus(`HTTP ${e.message}. Dacă e CORS, comută host-ul sau rulează dintr-un domeniu https.`, true);
+  }
+}
+
+/* ====== Export ====== */
+function exportJSON(){
+  if(!Object.keys(lastLeaderboard).length){
+    alert("Nu am date de exportat încă.");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(lastLeaderboard, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "leaderboard.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ====== Hooks UI ====== */
+document.getElementById('scanBtn').addEventListener('click', scanAndBuild);
+document.getElementById('exportBtn').addEventListener('click', exportJSON);
+</script>
+</body>
+</html>
