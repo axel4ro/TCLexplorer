@@ -117,10 +117,17 @@ async def extract_transactions_async():
                                 extracted_data.append(address)
                         else:
                             extracted_data.append(tx.get("sender"))
-                current_from += PAGE_SIZE
+
+                    # mergem la pagina următoare
+                    current_from += PAGE_SIZE
+                    if len(data) < PAGE_SIZE:
+                        break
+
                 await asyncio.sleep(0.2)
+
             transactions_by_function[contract_function] = extracted_data
     return transactions_by_function
+
 
 
 def filter_unique_addresses(data):
