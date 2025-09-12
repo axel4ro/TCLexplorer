@@ -156,8 +156,9 @@ async def generate_leaderboard_async(addresses, batch_size=50):
                 for attempt in range(retries):
                     try:
                         async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
-                            if response.status != 200:
+                            if response.status not in (200, 201):
                                 print(f"⚠️ Query failed for {addr} with status {response.status}")
+                                ...
                                 if response.status in (429, 500):
                                     wait = 1 + attempt * 2 + random.random()
                                     print(f"⏳ Retry {attempt+1}/{retries} after {wait:.1f}s")
