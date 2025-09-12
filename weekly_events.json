@@ -1,0 +1,261 @@
+{
+  "Mon": [
+    {
+      "emoji": "<:Drop:1233669863810273280>",
+      "name": "Item Drop",
+      "description": "During the event, mobs have a small chance to drop more items!",
+      "start": "07:00",
+      "end": "08:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+	{
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "18:00",
+      "end": "19:00"
+    }
+  ],
+  "Tue": [
+    {
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "07:00",
+      "end": "08:00"
+    },
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:Drop:1233669863810273280>",
+      "name": "Item Drop",
+      "description": "During the event, mobs have a small chance to drop more items!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "18:00",
+      "end": "19:00"
+    }
+  ],
+  "Wed": [
+    {
+      "emoji": "<:Upgrade:1233669907623968768>",
+      "name": "Forge Boost",
+      "description": "During the event, enjoy a +10% bonus chance to upgrade your items – only at the Blacksmith NPC!",
+      "start": "10:00",
+      "end": "11:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:CrystalsFrenzy:1371609604550823956>",
+      "name": "Crystals Frenzy",
+      "description": "The world is unstable – during the event, crystals are spawning like crazy every 5 minutes!",
+      "start": "14:00",
+      "end": "15:00"
+    },
+    {
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "18:00",
+      "end": "19:00"
+    }
+  ],
+  "Thu": [
+    {
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "07:00",
+      "end": "08:00"
+    },
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:Drop:1233669863810273280>",
+      "name": "Item Drop",
+      "description": "During the event, mobs have a small chance to drop more items!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "18:00",
+      "end": "19:00"
+    }
+  ],
+  "Fri": [
+      {
+      "emoji": "<:Drop:1233669863810273280>",
+      "name": "Item Drop",
+      "description": "During the event, mobs have a small chance to drop more items!",
+      "start": "07:00",
+      "end": "08:00"
+    },
+    {
+      "emoji": "<:Upgrade:1233669907623968768>",
+      "name": "Forge Boost",
+      "description": "During the event, enjoy a +10% bonus chance to upgrade your items – only at the Blacksmith NPC!",
+      "start": "10:00",
+      "end": "11:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:CrystalsFrenzy:1371609604550823956>",
+      "name": "Crystals Frenzy",
+      "description": "The world is unstable – during the event, crystals are spawning like crazy every 5 minutes!",
+      "start": "14:00",
+      "end": "15:00"
+    },
+	{
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+	{
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "18:00",
+      "end": "20:00"
+    }
+  ],
+  "Sat": [
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "07:00",
+      "end": "09:00"
+    },
+    {
+      "emoji": "<:Upgrade:1233669907623968768>",
+      "name": "Forge Boost",
+      "description": "During the event, enjoy a +10% bonus chance to upgrade your items – only at the Blacksmith NPC!",
+      "start": "10:00",
+      "end": "11:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:CrystalsFrenzy:1371609604550823956>",
+      "name": "Crystals Frenzy",
+      "description": "The world is unstable – during the event, crystals are spawning like crazy every 5 minutes!",
+      "start": "14:00",
+      "end": "15:00"
+    },
+    {
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "18:00",
+      "end": "20:00"
+    }
+  ],
+  "Sun": [
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "07:00",
+      "end": "09:00"
+    },
+    {
+      "emoji": "<:Upgrade:1233669907623968768>",
+      "name": "Forge Boost",
+      "description": "During the event, enjoy a +10% bonus chance to upgrade your items – only at the Blacksmith NPC!",
+      "start": "10:00",
+      "end": "11:00"
+    },
+	{
+      "emoji": "<:EXP:1233669937646534668>",
+      "name": "Experience",
+      "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
+      "start": "12:00",
+      "end": "13:00"
+    },
+    {
+      "emoji": "<:CrystalsFrenzy:1371609604550823956>",
+      "name": "Crystals Frenzy",
+      "description": "The world is unstable – during the event, crystals are spawning like crazy every 5 minutes!",
+      "start": "14:00",
+      "end": "15:00"
+    },
+    {
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
+      "start": "16:00",
+      "end": "17:00"
+    },
+    {
+      "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
+      "name": "Moonlight Treasure",
+      "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
+      "start": "18:00",
+      "end": "20:00"
+    }
+  ]
+}
