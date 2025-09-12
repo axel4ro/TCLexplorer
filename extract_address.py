@@ -5,10 +5,11 @@ import asyncio
 import base64
 import json
 import time
+import random
 from datetime import datetime
 
 TCL_MAIN_SC = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
-MULTIVERSX_API = "https://api.elrond.com"
+MULTIVERSX_API = "https://api.elrond.com"  # stabil pentru interogări
 CONTRACT_FUNCTIONS = [
     "claimRewards", "claimLendingRewards", "claimInfinityRewards",
     "addDaysAutoClaim", "setReinvestInfinity"
@@ -118,16 +119,14 @@ async def extract_transactions_async():
                         else:
                             extracted_data.append(tx.get("sender"))
 
-                    # mergem la pagina următoare
                     current_from += PAGE_SIZE
                     if len(data) < PAGE_SIZE:
                         break
 
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.3)
 
             transactions_by_function[contract_function] = extracted_data
     return transactions_by_function
-
 
 
 def filter_unique_addresses(data):
@@ -147,25 +146,37 @@ async def generate_leaderboard_async(addresses):
                 "value": "0",
                 "args": [hex_arg]
             }
-            try:
-               async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
-                    if response.status != 200:
-                        print(f"⚠️ Query failed for {addr} with status {response.status}")
-                        continue
-                    data = await response.json()
-                    if "returnData" not in data or not data["returnData"]:
-                        continue
-                    decoded = base64.b64decode(data["returnData"][0]).decode("utf-8")
-                    parts = decoded.split(" ")
-                    nft = int(parts[4]) if len(parts) > 4 else 0
-                    loan = int(parts[5]) if len(parts) > 5 else 0
-                    infinity = int(parts[17]) if len(parts) > 17 else 0
-                    total = nft + loan + infinity
-                    results[addr] = {"nft": nft, "loan": loan, "infinity": infinity, "total": total}
-                
-            except Exception as e:
-                print(f"⚠️ {addr} error: {e}")
-            await asyncio.sleep(0.2)
+
+            retries = 3
+            for attempt in range(retries):
+                try:
+                    async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
+                        if response.status != 200:
+                            print(f"⚠️ Query failed for {addr} with status {response.status}")
+                            if response.status in (429, 500):
+                                wait = 1 + attempt * 2 + random.random()
+                                print(f"⏳ Retry {attempt+1}/{retries} after {wait:.1f}s")
+                                await asyncio.sleep(wait)
+                                continue
+                            break
+
+                        data = await response.json()
+                        if "returnData" not in data or not data["returnData"]:
+                            break
+
+                        decoded = base64.b64decode(data["returnData"][0]).decode("utf-8")
+                        parts = decoded.split(" ")
+                        nft = int(parts[4]) if len(parts) > 4 else 0
+                        loan = int(parts[5]) if len(parts) > 5 else 0
+                        infinity = int(parts[17]) if len(parts) > 17 else 0
+                        total = nft + loan + infinity
+                        results[addr] = {"nft": nft, "loan": loan, "infinity": infinity, "total": total}
+                        break
+                except Exception as e:
+                    print(f"⚠️ {addr} error: {e}")
+                    await asyncio.sleep(1)
+
+            await asyncio.sleep(0.8)  # pauză globală mai lungă (reduce 429)
 
     sorted_results = sorted(results.items(), key=lambda x: x[1]["total"], reverse=True)
     leaderboard = {}
@@ -178,6 +189,8 @@ async def generate_leaderboard_async(addresses):
 async def main():
     tx_data = await extract_transactions_async()
     addresses = filter_unique_addresses(tx_data)
+    print(f"📊 Found {len(addresses)} unique addresses")
+
     leaderboard = await generate_leaderboard_async(addresses)
 
     output = {
