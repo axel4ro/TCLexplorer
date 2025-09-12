@@ -384,7 +384,10 @@ function formatTcl(val, decimals = 18) {
   if (!val) return "0";
 
   // transformăm valoarea într-un string "normal" (fără e+xx)
-  let strVal = typeof val === "number" ? val.toLocaleString("fullwide", { useGrouping: false }) : val.toString();
+  let strVal = typeof val === "number"
+  ? val.toLocaleString("fullwide", { useGrouping: false })
+  : val.toString(); // ✅ merge și cu string
+
 
   // acum folosim BigInt
   let num = BigInt(strVal);
@@ -523,6 +526,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
