@@ -437,23 +437,32 @@ const results = Object.entries(data).map(([addr, v]) => ({
   total: v.total
 }));
 
+// sortăm după rank
+results.sort((a, b) => a.rank - b.rank);
 
-    results.sort((a, b) => a.rank - b.rank);
+// ✅ filtrăm cei cu 0 peste tot
+const filtered = results.filter(r =>
+  Number(r.total) > 0 ||
+  Number(r.nft) > 0 ||
+  Number(r.loan) > 0 ||
+  Number(r.infinity) > 0
+);
 
-    let html = "";
-    results.forEach(r => {
-      let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
-      html += "<tr>" +
-        "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
-        "<td style='padding:6px;'>" + shortAddr + "</td>" +
-        "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
-        "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
-        "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
-        "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
-      "</tr>";
-    });
+let html = "";
+filtered.forEach(r => {
+  let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
+  html += "<tr>" +
+    "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
+    "<td style='padding:6px;'>" + shortAddr + "</td>" +
+    "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
+  "</tr>";
+});
 
-    body.innerHTML = html;
+body.innerHTML = html;
+
     updateLastUpdated();
 	  
   } catch (err) {
@@ -521,6 +530,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
