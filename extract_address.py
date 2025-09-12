@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 
 TCL_MAIN_SC = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
-MULTIVERSX_API = "https://api.multiversx.com"
+MULTIVERSX_API = "https://api.elrond.com"
 CONTRACT_FUNCTIONS = [
     "claimRewards", "claimLendingRewards", "claimInfinityRewards",
     "addDaysAutoClaim", "setReinvestInfinity"
@@ -149,7 +149,7 @@ async def generate_leaderboard_async(addresses):
             }
             try:
                 async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
-                    if response.status != 201:
+                    if response.status != 200:
                         continue
                     data = await response.json()
                     if "returnData" not in data or not data["returnData"]:
