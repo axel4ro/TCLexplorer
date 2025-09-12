@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- 🔥 Ajustat pentru mobile să facă zoom-out -->
   <meta name="viewport" content="width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes" />
   <title>The Cursed Land</title>
   <style>
@@ -23,9 +24,19 @@
       background-color: var(--bg-light);
       color: var(--text-light);
       transition: all 0.3s ease;
+      overflow-x: auto;           /* ✅ permite scroll orizontal dacă tabelul e mai mare */
+      -webkit-text-size-adjust: none; /* ✅ previne zoom automat pe text mare */
     }
-    #stakingTable th {
+    #stakingTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto; /* ✅ face coloanele mai flexibile */
+    }
+
+    #stakingTable th, #stakingTable td {
+      padding: 6px;
       text-align: center;
+      white-space: nowrap; /* ✅ previne spargerea pe mai multe linii */
     }
 
     [data-theme="dark"] {
@@ -534,6 +545,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
