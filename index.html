@@ -417,25 +417,26 @@ async function fetchLeaderboard() {
       return;
     }
 
-    const data = await resp.json();
+const data = await resp.json();
 
-    if (!data.data || Object.keys(data.data).length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
-      statusEl.textContent = "⚠️ Leaderboard update still in progress...";
-      return;
-    }
+if (!data || Object.keys(data).length === 0) {
+  body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
+  statusEl.textContent = "⚠️ Leaderboard update still in progress...";
+  return;
+}
 
-    // ✅ ignorăm complet last_update din JSON
-    lastUpdateTime = new Date();
+// ✅ acum lucrăm direct cu data
+lastUpdateTime = new Date();
 
-    const results = Object.entries(data.data).map(([addr, v]) => ({
-      addr,
-      rank: v.rank,
-      nft: v.nft,
-      loan: v.loan,
-      infinity: v.infinity,
-      total: v.total
-    }));
+const results = Object.entries(data).map(([addr, v]) => ({
+  addr,
+  rank: v.rank,
+  nft: v.nft,
+  loan: v.loan,
+  infinity: v.infinity,
+  total: v.total
+}));
+
 
     results.sort((a, b) => a.rank - b.rank);
 
@@ -520,6 +521,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
