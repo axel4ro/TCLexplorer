@@ -2,7 +2,7 @@ name: Update Leaderboard
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # rulează la fiecare 15 minute
+    - cron: "*/5 * * * *"   # rulează la fiecare 15 minute
   workflow_dispatch:
 
 jobs:
