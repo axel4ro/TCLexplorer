@@ -6,18 +6,35 @@ from datetime import datetime
 SC_ADDRESS = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
 API_URL = "https://api.multiversx.com/vm-values/query"
 
-# Adrese reale de stakeri (exemplu, adaugă câte vrei)
-ADDRESSES = [
-    "erd1tktmr7l8z033aulcrd558zyg74jk72nt40vjzq9xss7ka3dk4j0sfa58n8",
-    "erd1uqvfhreupzgjh7ug630pwfxecg50kdv9umfcwq6d5whpad2hheussk9exc",
-]
 
+# ======================================================
+# Utils
+# ======================================================
 def bech32_to_hex(addr: str) -> str:
     import bech32
     hrp, data = bech32.bech32_decode(addr)
     decoded = bech32.convertbits(data, 5, 8, False)
     return "0x" + "".join(f"{b:02x}" for b in decoded)
 
+
+# ======================================================
+# Extrage toate adresele stakerilor din blockchain
+# ======================================================
+def get_all_addresses():
+    url = f"https://api.multiversx.com/accounts/{SC_ADDRESS}/nfts?size=10000"
+    resp = requests.get(url).json()
+
+    addrs = set()
+    for nft in resp:
+        if "owner" in nft:
+            addrs.add(nft["owner"])
+
+    return list(addrs)
+
+
+# ======================================================
+# Ia rewards pentru o adresă
+# ======================================================
 def get_rewards(addr: str):
     try:
         hex_addr = bech32_to_hex(addr)
@@ -27,6 +44,7 @@ def get_rewards(addr: str):
             "args": [hex_addr]
         }
         resp = requests.post(API_URL, json=payload).json()
+
         if "returnData" not in resp or not resp["returnData"]:
             return (0, 0, 0, 0)
 
@@ -37,14 +55,23 @@ def get_rewards(addr: str):
         loan = int(parts[5]) if len(parts) > 5 else 0
         infinity = int(parts[17]) if len(parts) > 17 else 0
         total = nft + loan + infinity
+
         return (nft, loan, infinity, total)
     except Exception as e:
         print(f"⚠️ Error {addr}: {e}")
         return (0, 0, 0, 0)
 
+
+# ======================================================
+# Main
+# ======================================================
 def main():
     leaderboard = {}
-    for i, addr in enumerate(ADDRESSES, start=1):
+    addresses = get_all_addresses()
+
+    print(f"✅ Found {len(addresses)} stakers")
+
+    for i, addr in enumerate(addresses, start=1):
         nft, loan, infinity, total = get_rewards(addr)
         leaderboard[addr] = {
             "rank": i,
@@ -54,7 +81,7 @@ def main():
             "total": total
         }
 
-    # ✅ punem și timestamp
+    # Output final
     output = {
         "last_update": datetime.utcnow().isoformat() + "Z",
         "data": leaderboard
@@ -64,6 +91,7 @@ def main():
         json.dump(output, f, indent=2)
 
     print(f"✅ leaderboard.json updated at {output['last_update']}")
+
 
 if __name__ == "__main__":
     main()
