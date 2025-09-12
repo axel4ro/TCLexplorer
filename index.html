@@ -421,7 +421,7 @@ async function fetchLeaderboard() {
         new Date(data.last_update).toLocaleString();
     }
 
-    const results = Object.entries(data.data).map(([addr, v]) => ({
+    const results = Object.entries(data.data || data).map(([addr, v]) => ({
       addr,
       rank: v.rank,
       nft: v.nft,
@@ -514,6 +514,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
