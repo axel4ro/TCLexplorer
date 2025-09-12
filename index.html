@@ -241,30 +241,27 @@
 
 <!-- Staking -->
 <div id="staking" class="section-page">
-<h2>🏆 Top Staking</h2>
-<small id="lastUpdated" style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
-  ⏳ Loading update time...
-</small>
-
+  <h2>🏆 Top Staking</h2>
+  <small id="lastUpdated" style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
+    ⏳ Loading update time...
+  </small>
 
   <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
-<thead>
-  <tr style="background:#007bff;color:white;">
-    <th style="padding:8px; text-align:center;">Rank</th>
-    <th style="padding:8px; text-align:center;">Address</th>
-    <th style="padding:8px; text-align:center;">Total TCL</th>
-    <th style="padding:8px; text-align:center;">NFT</th>
-    <th style="padding:8px; text-align:center;">Loan</th>
-    <th style="padding:8px; text-align:center;">Infinity</th>
-  </tr>
-</thead>
+    <thead>
+      <tr style="background:#007bff;color:white;">
+        <th style="padding:8px; text-align:center;">Rank</th>
+        <th style="padding:8px; text-align:center;">Address</th>
+        <th style="padding:8px; text-align:center;">Total TCL</th>
+        <th style="padding:8px; text-align:center;">NFT</th>
+        <th style="padding:8px; text-align:center;">Loan</th>
+        <th style="padding:8px; text-align:center;">Infinity</th>
+      </tr>
+    </thead>
     <tbody id="stakingBody">
       <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
     </tbody>
   </table>
 </div>
-
-
 
 <script>
   let mode = 'buy';
@@ -462,19 +459,6 @@ async function fetchLeaderboard() {
   }
 }
 
-
-    // ✅ Salvează timpul ultimei actualizări
-    lastUpdateTime = new Date();
-    updateLastUpdated();
-
-  } catch (err) {
-    console.error("Leaderboard error", err);
-    document.getElementById("stakingBody").innerHTML =
-      '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
-  }
-}
-
-
   function updateStakingLeaderboard() {
     fetchLeaderboard();
   }
@@ -530,6 +514,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
