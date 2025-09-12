@@ -241,7 +241,12 @@
 
 <!-- Staking -->
 <div id="staking" class="section-page">
-  <h2>🏆 Top Staking</h2>
+<h2>🏆 Top Staking</h2>
+<small id="lastUpdated" style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
+  ⏳ Loading update time...
+</small>
+
+
   <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
 <thead>
   <tr style="background:#007bff;color:white;">
@@ -394,59 +399,84 @@ function formatTcl(val, decimals = 18) {
 }
 
 
-  async function fetchLeaderboard() {
-    try {
-      const body = document.getElementById("stakingBody");
-      if (!body) return;
+let lastUpdateTime = null;
 
-      body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>';
+async function fetchLeaderboard() {
+  try {
+    const body = document.getElementById("stakingBody");
+    if (!body) return;
 
-      const resp = await fetch(LEADERBOARD_URL);
-      if (!resp.ok) {
-        body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Failed to load leaderboard</td></tr>';
-        return;
-      }
+    body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>';
 
-      const data = await resp.json();
-      const results = Object.entries(data).map(([addr, v]) => ({
-        addr,
-        rank: v.rank,
-        nft: v.nft,
-        loan: v.loan,
-        infinity: v.infinity,
-        total: v.total
-      }));
-
-      results.sort((a, b) => a.rank - b.rank);
-
-let html = "";
-results.forEach(r => {
-  // scurtăm adresa
-  let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
-
-  html += "<tr>" +
-    "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
-    "<td style='padding:6px;'>" + shortAddr + "</td>" +
-    "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
-    "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
-    "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
-    "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
-  "</tr>";
-});
-
-
-      body.innerHTML = html;
-
-    } catch (err) {
-      console.error("Leaderboard error", err);
-      document.getElementById("stakingBody").innerHTML =
-        '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
+    const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now()); // bust cache
+    if (!resp.ok) {
+      body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Failed to load leaderboard</td></tr>';
+      return;
     }
+
+    const data = await resp.json();
+    const results = Object.entries(data).map(([addr, v]) => ({
+      addr,
+      rank: v.rank,
+      nft: v.nft,
+      loan: v.loan,
+      infinity: v.infinity,
+      total: v.total
+    }));
+
+    results.sort((a, b) => a.rank - b.rank);
+
+    let html = "";
+    results.forEach(r => {
+      let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
+      html += "<tr>" +
+        "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
+        "<td style='padding:6px;'>" + shortAddr + "</td>" +
+        "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
+        "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
+        "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
+        "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
+      "</tr>";
+    });
+
+    body.innerHTML = html;
+
+    // ✅ Salvează timpul ultimei actualizări
+    lastUpdateTime = new Date();
+    updateLastUpdated();
+
+  } catch (err) {
+    console.error("Leaderboard error", err);
+    document.getElementById("stakingBody").innerHTML =
+      '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
   }
+}
+
 
   function updateStakingLeaderboard() {
     fetchLeaderboard();
   }
+
+function updateLastUpdated() {
+  if (!lastUpdateTime) return;
+  const now = new Date();
+  const diffMs = now - lastUpdateTime;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+  let text = "✅ Last updated ";
+  if (diffMins > 0) {
+    text += diffMins + " minute" + (diffMins > 1 ? "s" : "") + " ago";
+  } else if (diffSecs < 10) {
+    text += "just now";
+  } else {
+    text += diffSecs + " seconds ago";
+  }
+  document.getElementById("lastUpdated").textContent = text;
+}
+
+// Actualizează automat la fiecare minut textul
+setInterval(updateLastUpdated, 60000);
 
   // ===== Navigation =====
   function showPage(id) {
