@@ -106,7 +106,7 @@ async def extract_transactions_async():
                     f"&before={BEFORE_TIMING}&after={AFTER_TIMING}"
                 )
                 async with session.get(url) as response:
-                    if response.status != 200:
+                    if response.status != 201:
                         break
                     data = await response.json()
                     if not data:
@@ -151,7 +151,7 @@ async def generate_leaderboard_async(addresses):
             for attempt in range(retries):
                 try:
                     async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
-                        if response.status != 200:
+                        if response.status != 201:
                             print(f"⚠️ Query failed for {addr} with status {response.status}")
                             if response.status in (429, 500):
                                 wait = 1 + attempt * 2 + random.random()
@@ -170,7 +170,14 @@ async def generate_leaderboard_async(addresses):
                         loan = int(parts[5]) if len(parts) > 5 else 0
                         infinity = int(parts[17]) if len(parts) > 17 else 0
                         total = nft + loan + infinity
-                        results[addr] = {"nft": nft, "loan": loan, "infinity": infinity, "total": total}
+                        if total >= 1:  # ✅ doar dacă are minim 1 TCL
+                            results[addr] = {
+                                "nft": nft,
+                                "loan": loan,
+                                "infinity": infinity,
+                                "total": total
+                            }
+
                         break
                 except Exception as e:
                     print(f"⚠️ {addr} error: {e}")
