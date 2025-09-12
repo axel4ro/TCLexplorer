@@ -1,130 +1,45 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TCL Staking Leaderboard</title>
+  <meta charset="UTF-8">
+  <title>TCL Leaderboard</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #f1f1f1;
-      margin: 20px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #ffcc00;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: #1e1e1e;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #333;
-    }
-    th {
-      background: #0056b3;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background: #2a2a2a;
-    }
-    tr:hover {
-      background: #333333;
-    }
-    .address {
-      font-family: monospace;
-      word-break: break-all;
-    }
+    body { font-family: Arial, sans-serif; margin: 30px; background: #f8f9fa; color: #333; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #333; color: #fff; }
   </style>
 </head>
 <body>
   <h1>🏆 TCL Staking Leaderboard</h1>
-
   <table id="leaderboard">
     <thead>
       <tr>
-        <th>Rank</th>
-        <th>Address</th>
-        <th>Total TCL</th>
-        <th>NFT</th>
-        <th>Loan</th>
-        <th>Infinity</th>
+        <th>Rank</th><th>Address</th><th>Total</th><th>NFT</th><th>Loan</th><th>Infinity</th>
       </tr>
     </thead>
-    <tbody>
-      <tr><td colspan="6">Loading...</td></tr>
-    </tbody>
+    <tbody></tbody>
   </table>
 
   <script>
-    // Parser CSV care respectă ghilimelele și separatorii
-    function parseCSV(str) {
-      return str.trim().split("\n").map(row => {
-        const regex = /(".*?"|[^",]+)(?=\s*,|\s*$)/g;
-        return [...row.matchAll(regex)].map(m => m[1].replace(/^"|"$/g, ""));
-      });
-    }
-
-    async function loadLeaderboardFromCSV() {
-      const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKNTIDBGnZ9UF92luKUh9pZPnHUAo-ntj1HCLsq8Gz4LgePos88Z8ZwmSLwhOM_APVA9hhpvku4e04/pub?output=csv";
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const text = await res.text();
-
-        const rows = parseCSV(text);
-        rows.shift(); // scoatem header-ul
-
-        const data = rows
-          .filter(r => r.length >= 6) // elimină rândurile incomplete
-          .map(r => ({
-            rank: r[0] || "",
-            address: r[1] || "",
-            total: parseFloat((r[2] || "0").replace(/,/g, "")),
-            nft: parseFloat((r[3] || "0").replace(/,/g, "")),
-            loan: parseFloat((r[4] || "0").replace(/,/g, "")),
-            infinity: parseFloat((r[5] || "0").replace(/,/g, ""))
-          }));
-
-        renderLeaderboard(data);
-      } catch (e) {
-        console.error("Eroare la încărcare CSV:", e);
-        const tbody = document.querySelector("#leaderboard tbody");
-        tbody.innerHTML = `<tr><td colspan="6">❌ Nu am putut încărca datele.</td></tr>`;
-      }
-    }
-
-    function renderLeaderboard(data) {
-      // Sortează după Total descrescător
-      data.sort((a, b) => b.total - a.total);
-
+    async function loadLeaderboard() {
+      const response = await fetch("leaderboard.json"); // același repo
+      const data = await response.json();
       const tbody = document.querySelector("#leaderboard tbody");
       tbody.innerHTML = "";
-
-      data.forEach((row, i) => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${i + 1}</td>
-            <td class="address">${row.address}</td>
-            <td>${Math.round(row.total).toLocaleString()}</td>
-            <td>${Math.round(row.nft).toLocaleString()}</td>
-            <td>${Math.round(row.loan).toLocaleString()}</td>
-            <td>${Math.round(row.infinity).toLocaleString()}</td>
-          </tr>
-        `;
+      Object.entries(data).forEach(([address, stats]) => {
+        const row = `<tr>
+          <td>${stats.rank}</td>
+          <td>${address}</td>
+          <td>${stats.total}</td>
+          <td>${stats.nft}</td>
+          <td>${stats.loan}</td>
+          <td>${stats.infinity}</td>
+        </tr>`;
+        tbody.innerHTML += row;
       });
     }
-
-    // La încărcare
-    loadLeaderboardFromCSV();
+    loadLeaderboard();
   </script>
 </body>
 </html>
