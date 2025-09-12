@@ -83,17 +83,16 @@
         const rows = parseCSV(text);
         rows.shift(); // scoatem header-ul
 
-const data = rows
-  .filter(r => r.length >= 6) // elimină rândurile incomplete
-  .map(r => ({
-    rank: r[0] || "",
-    address: r[1] || "",
-    total: parseFloat((r[2] || "0").replace(/,/g, "")),
-    nft: parseFloat((r[3] || "0").replace(/,/g, "")),
-    loan: parseFloat((r[4] || "0").replace(/,/g, "")),
-    infinity: parseFloat((r[5] || "0").replace(/,/g, ""))
-  }));
-
+        const data = rows
+          .filter(r => r.length >= 6) // elimină rândurile incomplete
+          .map(r => ({
+            rank: r[0] || "",
+            address: r[1] || "",
+            total: parseFloat((r[2] || "0").replace(/,/g, "")),
+            nft: parseFloat((r[3] || "0").replace(/,/g, "")),
+            loan: parseFloat((r[4] || "0").replace(/,/g, "")),
+            infinity: parseFloat((r[5] || "0").replace(/,/g, ""))
+          }));
 
         renderLeaderboard(data);
       } catch (e) {
@@ -115,16 +114,15 @@ const data = rows
           <tr>
             <td>${i + 1}</td>
             <td class="address">${row.address}</td>
-            <td>${row.total.toLocaleString()}</td>
-            <td>${row.nft.toLocaleString()}</td>
-            <td>${row.loan.toLocaleString()}</td>
-            <td>${row.infinity.toLocaleString()}</td>
+            <td>${Math.round(row.total).toLocaleString()}</td>
+            <td>${Math.round(row.nft).toLocaleString()}</td>
+            <td>${Math.round(row.loan).toLocaleString()}</td>
+            <td>${Math.round(row.infinity).toLocaleString()}</td>
           </tr>
         `;
       });
     }
 
-  
     // La încărcare
     loadLeaderboardFromCSV();
   </script>
