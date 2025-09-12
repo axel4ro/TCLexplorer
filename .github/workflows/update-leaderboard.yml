@@ -27,10 +27,9 @@ jobs:
         run: |
           python extract_address.py
 
-      - name: Commit & Push changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add leaderboard.json
-          git commit -m "🔄 Auto-update leaderboard.json [skip ci]" || echo "No changes to commit"
-          git push
+            - name: Commit & Push changes
+        uses: ad-m/github-push-action@v0.8.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
