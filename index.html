@@ -26,7 +26,61 @@
       transition: all 0.3s ease;
       overflow-x: auto;           /* ✅ permite scroll orizontal dacă tabelul e mai mare */
       -webkit-text-size-adjust: none; /* ✅ previne zoom automat pe text mare */
-    }
+	  
+/* Default card */
+.event-card {
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--card-light);
+  color: var(--text-light);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+}
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+[data-theme="dark"] .event-card {
+  background: var(--card-dark);
+  border: 1px solid #333;
+  color: var(--text-dark);
+}
+
+/* Titlu, descriere, status */
+.event-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.event-desc {
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #6b7280;
+}
+[data-theme="dark"] .event-desc {
+  color: #a1a1aa;
+}
+.event-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* Status colors */
+.event-status.active {
+   border-left: 6px solid #10b981
+}
+.event-status.upcoming {
+   border-left: 6px solid #facc15
+}
+.event-expired {
+  border-left: 6px solid #ef4444 !important;
+}
+
+
+		}
     #stakingTable {
       width: 100%;
       border-collapse: collapse;
@@ -52,6 +106,9 @@
     .section {
       margin-bottom: 24px;
     }
+
+
+
 
     /* NAV BUTTONS */
     .nav-buttons {
@@ -158,6 +215,9 @@
       display:inline-flex; align-items:center; gap:6px;
     }
     .chip-live::before{ content:"🔒"; }
+	
+	
+
 
     /* RESPONSIVE */
     @media (max-width: 768px) {
@@ -244,11 +304,20 @@
     <div class="result" id="resultBox"></div>
   </div>
 
-  <!-- Events -->
-  <div id="events" class="section-page">
-    <h2>📅 Weekly Events</h2>
-    <p>Aici bagi conținutul pentru evenimente (tabel/JSON).</p>
+<!-- Events -->
+<div id="events" class="section-page">
+  <h2>📅 Weekly Events</h2>
+  <small style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
+    Data is live – synced with <code>The Cursed Land in-game Weekely Events</code>
+  </small>
+
+  <div id="eventContainer">
+    ⏳ Loading events...
   </div>
+
+  <div style="margin-top:15px; display:flex; gap:6px; flex-wrap:wrap;" id="eventButtons"></div>
+</div>
+
 
 <!-- Staking -->
 <div id="staking" class="section-page">
@@ -365,6 +434,122 @@
       resultBox.innerHTML = "⚠️ Please enter a valid amount.";
     }
   }
+const EVENTS_URL = "https://axel4ro.github.io/TCLPriceImpactCalculator/weekly_events.json";
+let eventsData = {};
+let currentDay = null;
+
+// Încarcă events din JSON
+async function loadEvents() {
+  try {
+    const res = await fetch(EVENTS_URL + "?t=" + Date.now());
+    eventsData = await res.json();
+    const todayIndex = new Date().getUTCDay(); // 0=Sun, 1=Mon
+    const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    currentDay = weekdays[todayIndex];
+    renderDayButtons(currentDay);
+    showEventsForDay(currentDay);
+  } catch (err) {
+    document.getElementById("eventContainer").innerHTML = "❌ Error loading events.";
+    console.error("Events load error", err);
+  }
+}
+
+// Butoane zile
+function renderDayButtons(activeDay) {
+  const weekdays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  let html = "";
+  weekdays.forEach(day => {
+    const isActive = day === activeDay;
+    html += `<button onclick="showEventsForDay('${day}')"
+                style="flex:1; padding:6px; border-radius:6px; border:none; cursor:pointer; font-weight:600;
+                       background:${isActive ? '#28a745' : '#007bff'}; color:white;">
+                ${day}
+             </button>`;
+  });
+  document.getElementById("eventButtons").innerHTML = html;
+}
+
+// Afișare evenimente
+function showEventsForDay(day) {
+  currentDay = day;
+  renderDayButtons(day);
+
+  const container = document.getElementById("eventContainer");
+  const events = eventsData[day] || [];
+  if (events.length === 0) {
+    container.innerHTML = "<p>No events scheduled.</p>";
+    return;
+  }
+
+  const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  let now = new Date();
+  let html = "";
+
+  events.forEach(ev => {
+    let [sh, sm] = ev.start.split(":").map(Number);
+    let [eh, em] = ev.end.split(":").map(Number);
+
+    let targetIndex = weekdays.indexOf(day);
+
+    let targetDate = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() - now.getUTCDay() + targetIndex,
+      sh, sm
+    ));
+
+    let start = new Date(targetDate);
+    let end = new Date(targetDate);
+    end.setUTCHours(eh, em, 0, 0);
+
+    if (end <= start) end.setUTCDate(end.getUTCDate() + 1);
+    if (end < now) {
+      start.setUTCDate(start.getUTCDate() + 7);
+      end.setUTCDate(end.getUTCDate() + 7);
+    }
+
+    let statusText = "";
+    let borderClass = "";
+
+    if (now >= start && now <= end) {
+      // 🔵 Event is ACTIVE
+      let diff = Math.floor((end - now) / 60000);
+      let h = Math.floor(diff / 60), m = diff % 60;
+      statusText = `🔵 Active Now – ends in ${h}h ${m}m`;
+      borderClass = "event-active";
+    } else {
+      let diff = Math.floor((start - now) / 60000);
+      let h = Math.floor(diff / 60), m = diff % 60;
+
+      if (diff <= 0) {
+        statusText = "🔴 Event Ended";
+        borderClass = "event-expired";
+      } else if (diff <= 24 * 60) {
+        statusText = `🟡 Starts in ${h}h ${m}m`;
+        borderClass = "event-soon";
+      } else {
+        statusText = `🟠 Starts in ${h}h ${m}m`;
+      }
+    }
+
+    let durMs = end - start;
+    let durH = Math.floor(durMs / 3600000);
+    let durM = (durMs % 3600000) / 60000;
+
+    html += `
+      <div class="event-card ${borderClass}">
+        <div class="event-title">${ev.name}</div>
+        <div class="event-desc">${ev.description}</div>
+        <div class="event-status">
+          ${statusText} • ⏱ Duration: ${durH>0 ? durH+'h ' : ''}${durM>0 ? durM+'m' : ''}
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+
 
   // ===== Data Fetch =====
   async function fetchPoolData() {
@@ -515,7 +700,6 @@ function updateLastUpdated() {
 setInterval(updateLastUpdated, 1000);
 
 
-  // ===== Navigation =====
 // ===== Navigation =====
 function showPage(id) {
   document.querySelectorAll('.section-page').forEach(sec => sec.classList.remove('active'));
@@ -548,27 +732,32 @@ function showPage(id) {
 }
 
   // ===== On Load =====
-  window.onload = function() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', savedTheme);
-    document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '🌞' : '🌙';
+window.onload = function() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.body.setAttribute('data-theme', savedTheme);
+  document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '🌞' : '🌙';
 
+  fetchPoolData();
+  fetchGeckoAthAtl();
+  updateStakingLeaderboard();
+  loadEvents(); // ✅ încarcă și events
+
+  setInterval(function() {
     fetchPoolData();
     fetchGeckoAthAtl();
-    updateStakingLeaderboard();
+    const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+    if (hasValue) calculate();
+  }, 300000);
 
-    setInterval(function() {
-      fetchPoolData();
-      fetchGeckoAthAtl();
-      const hasValue = parseNumber(document.getElementById('amount').value) > 0;
-      if (hasValue) calculate();
-    }, 300000);
+  setInterval(updateStakingLeaderboard, 15 * 60 * 1000);
+};
+// Auto-refresh events countdown every minute
+setInterval(() => {
+  if (currentDay) {
+    showEventsForDay(currentDay);
+  }
+}, 60000); // 60000ms = 1 minut
 
-    setInterval(updateStakingLeaderboard, 15 * 60 * 1000);
-  };
 </script>
 </body>
 </html>
-
-
-
