@@ -21,16 +21,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests bech32
 
       - name: Run leaderboard script
         run: |
-          python extract_address.py   # scriptul tău care generează leaderboard.json
+          python extract_address.py
 
       - name: Commit & Push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add leaderboard.json
-          git commit -m "Auto-update leaderboard.json [skip ci]" || echo "No changes to commit"
+          git commit -m "🔄 Auto-update leaderboard.json [skip ci]" || echo "No changes to commit"
           git push
