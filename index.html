@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TCL Price Impact Calculator</title>
+  <title>The Cursed Land</title>
   <style>
     :root {
       --bg-light: #f8f9fa;
-      --bg-dark: #1a1a1a;
+      --bg-dark: #161a24;
       --text-light: #212529;
       --text-dark: #f1f1f1;
       --card-light: #ffffff;
-      --card-dark: #2b2b2b;
+      --card-dark: #161a24;
     }
 
     body {
       font-family: Arial, sans-serif;
       margin: 20px auto;
       padding: 0 20px;
-      max-width: 900px;
+      max-width: 1000px;
       line-height: 1.6;
       background-color: var(--bg-light);
       color: var(--text-light);
@@ -39,6 +39,32 @@
       margin-bottom: 24px;
     }
 
+    /* NAV BUTTONS */
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .nav-buttons button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #007bff;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .nav-buttons button.active {
+      background: #28a745;
+    }
+
+    /* HIDE/SHOW SECTIONS */
+    .section-page { display: none; }
+    .section-page.active { display: block; }
+
     input[type="text"] {
       width: 100%;
       padding: 10px;
@@ -49,7 +75,6 @@
       border-radius: 8px;
       color: inherit;
     }
-
     [data-theme="dark"] input[type="text"] {
       background-color: var(--card-dark);
       border: 1px solid #444;
@@ -68,21 +93,14 @@
 
     #themeToggle {
       float: right;
-      font-size: 14px;
-      background-color: #444;
-      color: white;
-      margin-top: -30px;
-      margin-bottom: 20px;
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
     }
 
-    .row-group {
-      display: flex;
-      gap: 16px;
-    }
-
-    .row-group > div {
-      flex: 1;
-    }
+    .row-group { display: flex; gap: 16px; }
+    .row-group > div { flex: 1; }
 
     .result {
       margin-top: 20px;
@@ -93,10 +111,7 @@
       font-size: 15px;
       border-radius: 8px;
     }
-
-    [data-theme="dark"] .result {
-      background: var(--card-dark);
-    }
+    [data-theme="dark"] .result { background: var(--card-dark); }
 
     .action-row{
       display:flex;
@@ -116,11 +131,10 @@
     }
     .btn-trade:hover{ opacity:.9; }
 
-    /* Live stats (read-only) */
-    .stats-row{ display:flex; gap:16px; }
+    .stats-row{ display:flex; gap:16px; flex-wrap:wrap; }
     .stat{
       flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:10px;
-      background:var(--card-light);
+      background:var(--card-light); min-width:160px;
     }
     [data-theme="dark"] .stat{ background:var(--card-dark); border-color:#444; }
     .stat-top{ display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#6b7280; }
@@ -131,43 +145,75 @@
     }
     .chip-live::before{ content:"🔒"; }
 
-    /* ✅ RESPONSIVE */
+    /* RESPONSIVE */
     @media (max-width: 768px) {
-      body {
-        margin: 20px 12px;
-      }
-      .row-group {
-        flex-direction: column;
-      }
-      h2 {
-        font-size: 20px;
-      }
-      input[type="text"],
-      button {
-        font-size: 15px;
-      }
-      #themeToggle {
-        float: none;
-        display: block;
-        margin: 10px 0 20px auto;
-      }
+      body { margin: 20px 12px; }
+      .row-group { flex-direction: column; }
+      h2 { font-size: 20px; }
+      input[type="text"], button { font-size: 15px; }
       .stats-row{ flex-direction:column; }
     }
+
+    /* Dexscreener aspect ratio */
+    #dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}
+    @media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}
+    #dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}
   </style>
 </head>
 <body>
+  <!-- Toggle Theme -->
   <div style="display: flex; align-items: center; justify-content: space-between;">
-  <h2>📊 TCL Price Impact Calculator</h2>
-  <button id="themeToggle" onclick="toggleTheme()" style="
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-  ">🌙</button>
-</div>
+    <h2>The Cursed Land</h2>
+    <button id="themeToggle" onclick="toggleTheme()">🌙</button>
+  </div>
 
-  <div class="section">
-    <strong>💰 Simulate Transaction</strong><br />
+  <!-- NAVIGATION -->
+  <div class="nav-buttons">
+    <button onclick="showPage('explorer')" id="btn-explorer" class="active">📊 Explorer Data</button>
+    <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
+    <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
+	<button onclick="showPage('events')" id="btn-events">📅 Events</button>
+
+  </div>
+
+  <!-- Explorer -->
+  <div id="explorer" class="section-page active">
+    <h2>📊 TCL Explorer Data</h2>
+
+    <div class="section">
+      <strong><span class="chip-live">LIVE DATA</span></strong>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-top"><span>Current Price</span><span class="chip-live">Live</span></div><div id="curPrice" class="stat-value">—</div></div>
+        <div class="stat"><div class="stat-top"><span>ATH</span><span class="chip-live">Live</span></div><div id="ath" class="stat-value">—</div></div>
+        <div class="stat"><div class="stat-top"><span>ATL</span><span class="chip-live">Live</span></div><div id="atl" class="stat-value">—</div></div>
+        <div class="stat"><div class="stat-top"><span>TCL Supply</span><span class="chip-live">Live</span></div><div id="curTCL" class="stat-value">—</div></div>
+        <div class="stat"><div class="stat-top"><span>USDC Supply</span><span class="chip-live">Live</span></div><div id="curUSDC" class="stat-value">—</div></div>
+      </div>
+      <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
+        🔵 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
+      </span>
+    </div>
+
+    <div class="section">
+      <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-top"><span>TCL Supply</span></div><div class="stat-value">4,000,000</div></div>
+        <div class="stat"><div class="stat-top"><span>USDC Supply</span></div><div class="stat-value">25,000 $</div></div>
+        <div class="stat"><div class="stat-top"><span>Initial Price</span></div><div class="stat-value">0.006 $</div></div>
+      </div>
+    </div>
+
+<div id="dexscreener-embed" style="margin-top:20px;">
+  <iframe 
+    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"
+    style="width:100%;height:500px;border:0;">
+  </iframe>
+</div>
+  </div>
+
+  <!-- Calculator -->
+  <div id="calculator" class="section-page">
+    <h2>🧮 Simulate Transaction</h2>
     <div class="row-group">
       <div style="flex: 2;">
         <label id="inputLabel">Enter amount in <b>USDC ($)</b> to buy TCL:</label>
@@ -177,232 +223,241 @@
         <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
       </div>
     </div>
-
     <div class="action-row">
       <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
-      <a class="btn-trade"
-         href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
-         target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
+      <a class="btn-trade" href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d" target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
     </div>
-
     <div class="result" id="resultBox"></div>
   </div>
-  
 
-<div class="section">
-  <strong><span class="chip-live">LIVE DATA</span></strong>
-  <div class="stats-row">
-  <div class="stat">
-      <div class="stat-top"><span>Current Price</span><span class="chip-live">Live</span></div>
-      <div id="curPrice" class="stat-value">—</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>ATH</span><span class="chip-live">Live</span></div>
-      <div id="ath" class="stat-value">—</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>ATL</span><span class="chip-live">Live</span></div>
-      <div id="atl" class="stat-value">—</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>TCL Supply</span><span class="chip-live">Live</span></div>
-      <div id="curTCL" class="stat-value">—</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>USDC Supply</span><span class="chip-live">Live</span></div>
-      <div id="curUSDC" class="stat-value">—</div>
-    </div>
+  <!-- Events -->
+  <div id="events" class="section-page">
+    <h2>📅 Weekly Events</h2>
+    <p>Aici bagi conținutul pentru evenimente (tabel/JSON).</p>
   </div>
 
-  <!-- mesaj sub carduri -->
-  <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
-    🔵 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
-  </span>
+<!-- Staking -->
+<div id="staking" class="section-page">
+  <h2>🏆 Top Staking</h2>
+  <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
+    <thead>
+      <tr style="background:#007bff;color:white;">
+        <th style="padding:8px;">Rank</th>
+        <th style="padding:8px;">Address</th>
+        <th style="padding:8px;">Total TCL</th>
+        <th style="padding:8px;">NFT</th>
+        <th style="padding:8px;">Loan</th>
+        <th style="padding:8px;">Infinity</th>
+      </tr>
+    </thead>
+    <tbody id="stakingBody">
+      <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
+    </tbody>
+  </table>
 </div>
 
-<div class="section">
-      <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong><br />
-  <div class="stats-row">
-    <div class="stat">
-      <div class="stat-top"><span>TCL Supply</span></div>
-      <div class="stat-value">4,000,000</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>USDC Supply</span></div>
-      <div class="stat-value">25,000 $</div>
-    </div>
-    <div class="stat">
-      <div class="stat-top"><span>Initial Price</span></div>
-      <div class="stat-value">0.006 $</div>
-    </div>
-  </div>
-</div>
-
-  <script>
-    let mode = 'buy';
-    const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
-
-    function formatNumber(n) {
-      return Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
-    }
-    function parseNumber(value) {
-      return parseFloat((value || '').toString().replace(/,/g, '')) || 0;
-    }
-    function formatInputField(input) {
-      let value = input.value.replace(/,/g, '');
-      if (!isNaN(value) && value !== '') {
-        input.value = formatNumber(value);
-      }
-    }
-    function getText(id){ return (document.getElementById(id).textContent || '').trim(); }
-    function setText(id, v){ document.getElementById(id).textContent = v; }
-
-    function switchMode() {
-      const inputLabel = document.getElementById("inputLabel");
-      const switchBtn = document.getElementById("switchBtn");
-      const input = document.getElementById("amount");
-      mode = (mode === 'buy') ? 'sell' : 'buy';
-
-      inputLabel.innerHTML = mode === 'buy'
-        ? 'Enter amount in <b>USDC ($)</b> to buy TCL:'
-        : 'Enter amount in <b>TCL</b> to sell for USDC ($):';
-
-      switchBtn.innerHTML = mode === 'buy'
-        ? '🔁 Switch to: Sell TCL'
-        : '🔁 Switch to: Buy TCL';
-
-      input.value = '';
-      document.getElementById("resultBox").innerHTML = '';
-    }
-
-	function toggleTheme() {
-	  const currentTheme = document.body.getAttribute('data-theme') || 'light';
-	  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-	  document.body.setAttribute('data-theme', newTheme);
-	  localStorage.setItem('theme', newTheme);
-
-	  // schimbă emoji
-	  document.getElementById('themeToggle').textContent =
-		newTheme === 'dark' ? '🌞' : '🌙';
-	}
 
 
-    function calculate() {
-      const tcl = parseNumber(getText("curTCL"));
-      const usdc = parseNumber(getText("curUSDC"));
-      const curPrice = parseNumber(getText("curPrice"));
-      const value = parseNumber(document.getElementById("amount").value);
-      const resultBox = document.getElementById("resultBox");
+<script>
+  let mode = 'buy';
+  const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+  const LEADERBOARD_URL = "leaderboard.json"; // JSON-ul generat de bot
+  const MULTIVERSX_API = "https://api.multiversx.com";
 
-      resultBox.innerHTML = "";
-      const feePct = 0.01;
-      const valueAfterFee = value * (1 - feePct);
-
-      if (mode === 'buy' && value > 0) {
-        const newUSDC = usdc + valueAfterFee;
-        const newTCL = (tcl * usdc) / newUSDC;
-        const boughtTCL = tcl - newTCL;
-        const avgPrice = value / boughtTCL;
-        const newPrice = newUSDC / newTCL;
-        const priceImpact = (avgPrice - curPrice) / avgPrice * 100;
-        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-
-        resultBox.innerHTML =
-          `💱 Buy TCL with ${formatNumber(value)} USDC ($)\n` +
-          `💲 Estimated TCL received: ${formatNumber(boughtTCL)}\n` +
-          `⚖️ Average paid price: ${avgPrice.toFixed(6)} USDC/TCL\n` +
-          `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
-          `📈 Estimated Increase: + ${pctChange.toFixed(2)}%\n\n` +
-          `📊 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-          `🔄 Estimated Supply After Transaction:\n` +
-          `• TCL in Pool: ${formatNumber(newTCL)}\n` +
-          `• USDC in Pool: ${formatNumber(newUSDC)}`;
-      } else if (mode === 'sell' && value > 0) {
-        const newTCL = tcl + valueAfterFee;
-        const newUSDC = (usdc * tcl) / newTCL;
-        const receivedUSDC = usdc - newUSDC;
-        const avgPrice = receivedUSDC / value;
-        const newPrice = newUSDC / newTCL;
-        const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
-        const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-
-        resultBox.innerHTML =
-          `💱 Sell ${formatNumber(value)} TCL\n` +
-          `💲 Estimated USDC ($) received: ${formatNumber(receivedUSDC)}\n` +
-          `⚖️ Average received price: ${avgPrice.toFixed(6)} USDC/TCL\n` +
-          `💥 Price Impact: ${priceImpact.toFixed(2)}%\n` +
-          `📉 Estimated Decrease: ${pctChange.toFixed(2)}%\n\n` +
-          `📊 Estimated TCL final price: ${newPrice.toFixed(6)} USDC ($)\n` +
-          `🔄 Estimated Supply After Transaction:\n` +
-          `• TCL in Pool: ${formatNumber(newTCL)}\n` +
-          `• USDC in Pool: ${formatNumber(newUSDC)}`;
-      } else {
-        resultBox.innerHTML = "⚠️ Please enter a valid amount.";
-      }
-    }
-
-async function fetchPoolData() {
-  try {
-    const res = await fetch(DEX_API_URL);
-    const data = await res.json();
-    const pool = data.pair;
-
-    setText("curTCL", formatNumber(pool.liquidity.base));
-    setText("curUSDC", formatNumber(pool.liquidity.quote) + " $");
-    setText("curPrice", parseFloat(pool.priceUsd).toFixed(6) + " $");
-  } catch (err) {
-    console.error("❌ Failed to fetch pool data:", err);
+  // ===== Utils =====
+  function formatNumber(n) {
+    return Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
   }
-}
-
-
-
-async function fetchGeckoAthAtl(){
-  try {
-    const resp = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander");
-    const arr = await resp.json();
-    if(arr && arr.length > 0){
-      const data = arr[0];
-      // afișăm cu $ la final
-      setText("ath", data.ath.toFixed(6) + " $");
-      setText("atl", data.atl.toFixed(6) + " $");
-    }
-  } catch(e){
-    console.error("❌ CoinGecko ATH/ATL error", e);
+  function parseNumber(value) {
+    return parseFloat((value || '').toString().replace(/,/g, '')) || 0;
   }
-}
+  function formatInputField(input) {
+    let value = input.value.replace(/,/g, '');
+    if (!isNaN(value) && value !== '') input.value = formatNumber(value);
+  }
+  function getText(id){ return (document.getElementById(id).textContent || '').trim(); }
+  function setText(id, v){ document.getElementById(id).textContent = v; }
 
+  // ===== Calculator =====
+  function switchMode() {
+    const inputLabel = document.getElementById("inputLabel");
+    const switchBtn = document.getElementById("switchBtn");
+    const input = document.getElementById("amount");
+    mode = (mode === 'buy') ? 'sell' : 'buy';
+    inputLabel.innerHTML = mode === 'buy'
+      ? 'Enter amount in <b>USDC ($)</b> to buy TCL:'
+      : 'Enter amount in <b>TCL</b> to sell for USDC ($):';
+    switchBtn.innerHTML = mode === 'buy' ? '🔁 Switch to: Sell TCL' : '🔁 Switch to: Buy TCL';
+    input.value = ''; 
+    document.getElementById("resultBox").innerHTML = '';
+  }
 
+  function toggleTheme() {
+    const currentTheme = document.body.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '🌞' : '🌙';
+  }
 
-window.onload = () => {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.body.setAttribute('data-theme', savedTheme);
-  document.getElementById('themeToggle').innerText =
-    savedTheme === 'dark' ? '🌞' : '🌙';
+  function calculate() {
+    const tcl = parseNumber(getText("curTCL"));
+    const usdc = parseNumber(getText("curUSDC"));
+    const curPrice = parseNumber(getText("curPrice"));
+    const value = parseNumber(document.getElementById("amount").value);
+    const resultBox = document.getElementById("resultBox");
+    resultBox.innerHTML = "";
+    const feePct = 0.01, valueAfterFee = value * (1 - feePct);
 
-  fetchPoolData();
-  fetchGeckoAthAtl();
+    if (mode === 'buy' && value > 0) {
+      const newUSDC = usdc + valueAfterFee;
+      const newTCL = (tcl * usdc) / newUSDC;
+      const boughtTCL = tcl - newTCL;
+      const avgPrice = value / boughtTCL;
+      const newPrice = newUSDC / newTCL;
+      const priceImpact = (avgPrice - curPrice) / avgPrice * 100;
+      const pctChange = ((newPrice - curPrice) / curPrice) * 100;
+      resultBox.innerHTML =
+        "💱 Buy TCL with " + formatNumber(value) + " USDC ($)\n" +
+        "💲 Estimated TCL received: " + formatNumber(boughtTCL) + "\n" +
+        "⚖️ Average paid price: " + avgPrice.toFixed(6) + " USDC/TCL\n" +
+        "💥 Price Impact: " + priceImpact.toFixed(2) + "%\n" +
+        "📈 Estimated Increase: + " + pctChange.toFixed(2) + "%\n\n" +
+        "📊 Estimated TCL final price: " + newPrice.toFixed(6) + " USDC ($)\n" +
+        "🔄 Estimated Supply After Transaction:\n" +
+        "• TCL in Pool: " + formatNumber(newTCL) + "\n" +
+        "• USDC in Pool: " + formatNumber(newUSDC);
+    } else if (mode === 'sell' && value > 0) {
+      const newTCL = tcl + valueAfterFee;
+      const newUSDC = (usdc * tcl) / newTCL;
+      const receivedUSDC = usdc - newUSDC;
+      const avgPrice = receivedUSDC / value;
+      const newPrice = newUSDC / newTCL;
+      const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
+      const pctChange = ((newPrice - curPrice) / curPrice) * 100;
+      resultBox.innerHTML =
+        "💱 Sell " + formatNumber(value) + " TCL\n" +
+        "💲 Estimated USDC ($) received: " + formatNumber(receivedUSDC) + "\n" +
+        "⚖️ Average received price: " + avgPrice.toFixed(6) + " USDC/TCL\n" +
+        "💥 Price Impact: " + priceImpact.toFixed(2) + "%\n" +
+        "📉 Estimated Decrease: " + pctChange.toFixed(2) + "%\n\n" +
+        "📊 Estimated TCL final price: " + newPrice.toFixed(6) + " USDC ($)\n" +
+        "🔄 Estimated Supply After Transaction:\n" +
+        "• TCL in Pool: " + formatNumber(newTCL) + "\n" +
+        "• USDC in Pool: " + formatNumber(newUSDC);
+    } else {
+      resultBox.innerHTML = "⚠️ Please enter a valid amount.";
+    }
+  }
 
-  setInterval(() => {
+  // ===== Data Fetch =====
+  async function fetchPoolData() {
+    try {
+      const res = await fetch(DEX_API_URL);
+      const data = await res.json();
+      const pool = data.pair;
+      setText("curTCL", formatNumber(pool.liquidity.base));
+      setText("curUSDC", formatNumber(pool.liquidity.quote) + " $");
+      setText("curPrice", parseFloat(pool.priceUsd).toFixed(6) + " $");
+    } catch (err) { console.error("❌ Failed to fetch pool data:", err); }
+  }
+
+  async function fetchGeckoAthAtl(){
+    try {
+      const resp = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander");
+      const arr = await resp.json();
+      if(arr && arr.length > 0){
+        const data = arr[0];
+        setText("ath", data.ath.toFixed(6) + " $");
+        setText("atl", data.atl.toFixed(6) + " $");
+      }
+    } catch(e){ console.error("❌ CoinGecko ATH/ATL error", e); }
+  }
+
+  // ===== Staking Leaderboard din JSON =====
+  function formatTcl(val, decimals=18) {
+    return (parseInt(val) / (10 ** decimals)).toLocaleString("en-US", {
+      maximumFractionDigits: 0
+    }) + " TCL";
+  }
+
+  async function fetchLeaderboard() {
+    try {
+      const body = document.getElementById("stakingBody");
+      if (!body) return;
+
+      body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>';
+
+      const resp = await fetch(LEADERBOARD_URL);
+      if (!resp.ok) {
+        body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Failed to load leaderboard</td></tr>';
+        return;
+      }
+
+      const data = await resp.json();
+      const results = Object.entries(data).map(([addr, v]) => ({
+        addr,
+        rank: v.rank,
+        nft: v.nft,
+        loan: v.loan,
+        infinity: v.infinity,
+        total: v.total
+      }));
+
+      results.sort((a, b) => a.rank - b.rank);
+
+      let html = "";
+      results.forEach(r => {
+        html += "<tr>" +
+          "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
+          "<td style='padding:6px;'>" + r.addr + "</td>" +
+          "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
+          "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
+          "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
+          "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
+        "</tr>";
+      });
+
+      body.innerHTML = html;
+
+    } catch (err) {
+      console.error("Leaderboard error", err);
+      document.getElementById("stakingBody").innerHTML =
+        '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
+    }
+  }
+
+  function updateStakingLeaderboard() {
+    fetchLeaderboard();
+  }
+
+  // ===== Navigation =====
+  function showPage(id) {
+    document.querySelectorAll('.section-page').forEach(function(sec){ sec.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-buttons button').forEach(function(btn){ btn.classList.remove('active'); });
+    document.getElementById('btn-' + id).classList.add('active');
+  }
+
+  // ===== On Load =====
+  window.onload = function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '🌞' : '🌙';
+
     fetchPoolData();
     fetchGeckoAthAtl();
-    const hasValue = parseNumber(document.getElementById('amount').value) > 0;
-    if (hasValue) calculate();
-  }, 300000);
-};
+    updateStakingLeaderboard();
 
-  </script>
+    setInterval(function() {
+      fetchPoolData();
+      fetchGeckoAthAtl();
+      const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+      if (hasValue) calculate();
+    }, 300000);
 
-  <style>
-    #dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}
-    @media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}
-    #dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}
-  </style>
-  <div id="dexscreener-embed">
-    <iframe src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"></iframe>
-  </div>
+    setInterval(updateStakingLeaderboard, 15 * 60 * 1000);
+  };
+</script>
 </body>
 </html>
-
-
-
