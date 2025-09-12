@@ -83,14 +83,17 @@
         const rows = parseCSV(text);
         rows.shift(); // scoatem header-ul
 
-        const data = rows.map(r => ({
-          rank: r[0],
-          address: r[1],
-          total: parseFloat(r[2].replace(/,/g, "")) || 0,
-          nft: parseFloat(r[3].replace(/,/g, "")) || 0,
-          loan: parseFloat(r[4].replace(/,/g, "")) || 0,
-          infinity: parseFloat(r[5].replace(/,/g, "")) || 0
-        }));
+const data = rows
+  .filter(r => r.length >= 6) // elimină rândurile incomplete
+  .map(r => ({
+    rank: r[0] || "",
+    address: r[1] || "",
+    total: parseFloat((r[2] || "0").replace(/,/g, "")),
+    nft: parseFloat((r[3] || "0").replace(/,/g, "")),
+    loan: parseFloat((r[4] || "0").replace(/,/g, "")),
+    infinity: parseFloat((r[5] || "0").replace(/,/g, ""))
+  }));
+
 
         renderLeaderboard(data);
       } catch (e) {
