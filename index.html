@@ -407,7 +407,6 @@ async function fetchLeaderboard() {
 
   if (!body) return;
 
-  // 🟢 Arată mesaj de "updating" pe toată perioada fetch
   body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Leaderboard is being updated on-chain...</td></tr>';
   statusEl.textContent = "⏳ Fetching latest staking data...";
 
@@ -426,11 +425,10 @@ async function fetchLeaderboard() {
       return;
     }
 
-    // ✅ afișăm timestamp-ul exact din JSON
+    // ✅ folosim timestamp-ul din JSON
     if (data.last_update) {
-      statusEl.textContent =
-        "✅ Last update on-chain: " +
-        new Date(data.last_update).toLocaleString();
+      lastUpdateTime = new Date(data.last_update);
+      updateLastUpdated();
     }
 
     const results = Object.entries(data.data).map(([addr, v]) => ({
@@ -459,9 +457,6 @@ async function fetchLeaderboard() {
 
     body.innerHTML = html;
 
-    lastUpdateTime = new Date();
-    updateLastUpdated();
-
   } catch (err) {
     console.error("Leaderboard error", err);
     statusEl.textContent = "❌ Error loading leaderboard";
@@ -470,11 +465,6 @@ async function fetchLeaderboard() {
   }
 }
 
-
-  function updateStakingLeaderboard() {
-    fetchLeaderboard();
-  }
-
 function updateLastUpdated() {
   if (!lastUpdateTime) return;
   const now = new Date();
@@ -482,19 +472,21 @@ function updateLastUpdated() {
   const diffMins = Math.floor(diffMs / 60000);
   const diffSecs = Math.floor((diffMs % 60000) / 1000);
 
-  let text = "✅ Last updated ";
+  let text = "✅ Last update on-chain: " + lastUpdateTime.toLocaleString() + " (";
   if (diffMins > 0) {
-    text += diffMins + " minute" + (diffMins > 1 ? "s" : "") + " ago";
+    text += diffMins + " minute" + (diffMins > 1 ? "s" : "");
   } else if (diffSecs < 10) {
     text += "just now";
   } else {
     text += diffSecs + " seconds ago";
   }
+  text += ")";
   document.getElementById("lastUpdated").textContent = text;
 }
 
-// Actualizează automat la fiecare minut textul
+// Actualizează automat la fiecare secundă textul
 setInterval(updateLastUpdated, 1000);
+
 
   // ===== Navigation =====
   function showPage(id) {
@@ -526,6 +518,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
