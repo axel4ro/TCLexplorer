@@ -106,7 +106,7 @@ async def extract_transactions_async():
                     f"&before={BEFORE_TIMING}&after={AFTER_TIMING}"
                 )
                 async with session.get(url) as response:
-                    if response.status != 201:
+                    if response.status != 200:
                         break
                     data = await response.json()
                     if not data:
@@ -134,57 +134,64 @@ def filter_unique_addresses(data):
 
 
 # ------------------- Generate Leaderboard -------------------
-async def generate_leaderboard_async(addresses):
+async def generate_leaderboard_async(addresses, batch_size=50):
     results = {}
     async with aiohttp.ClientSession() as session:
-        for addr in addresses:
-            hex_arg = bech32_to_hex(addr)
-            payload = {
-                "scAddress": TCL_MAIN_SC,
-                "funcName": "getRewardsData",
-                "caller": addr,
-                "value": "0",
-                "args": [hex_arg]
-            }
+        # împărțim adresele în batch-uri de câte batch_size
+        for i in range(0, len(addresses), batch_size):
+            batch = addresses[i:i+batch_size]
+            print(f"⚡ Processing batch {i//batch_size+1} with {len(batch)} addresses...")
 
-            retries = 3
-            for attempt in range(retries):
-                try:
-                    async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
-                        if response.status != 201:
-                            print(f"⚠️ Query failed for {addr} with status {response.status}")
-                            if response.status in (429, 500):
-                                wait = 1 + attempt * 2 + random.random()
-                                print(f"⏳ Retry {attempt+1}/{retries} after {wait:.1f}s")
-                                await asyncio.sleep(wait)
-                                continue
+            for addr in batch:
+                hex_arg = bech32_to_hex(addr)
+                payload = {
+                    "scAddress": TCL_MAIN_SC,
+                    "funcName": "getRewardsData",
+                    "caller": addr,
+                    "value": "0",
+                    "args": [hex_arg]
+                }
+
+                retries = 3
+                for attempt in range(retries):
+                    try:
+                        async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
+                            if response.status != 200:
+                                print(f"⚠️ Query failed for {addr} with status {response.status}")
+                                if response.status in (429, 500):
+                                    wait = 1 + attempt * 2 + random.random()
+                                    print(f"⏳ Retry {attempt+1}/{retries} after {wait:.1f}s")
+                                    await asyncio.sleep(wait)
+                                    continue
+                                break
+
+                            data = await response.json()
+                            if "returnData" not in data or not data["returnData"]:
+                                break
+
+                            decoded = base64.b64decode(data["returnData"][0]).decode("utf-8")
+                            parts = decoded.split(" ")
+                            nft = int(parts[4]) if len(parts) > 4 else 0
+                            loan = int(parts[5]) if len(parts) > 5 else 0
+                            infinity = int(parts[17]) if len(parts) > 17 else 0
+                            total = nft + loan + infinity
+                            if total >= 1:
+                                results[addr] = {
+                                    "nft": nft,
+                                    "loan": loan,
+                                    "infinity": infinity,
+                                    "total": total
+                                }
                             break
+                    except Exception as e:
+                        print(f"⚠️ {addr} error: {e}")
+                        await asyncio.sleep(1)
 
-                        data = await response.json()
-                        if "returnData" not in data or not data["returnData"]:
-                            break
+                await asyncio.sleep(0.5)  # mic delay per adresă
 
-                        decoded = base64.b64decode(data["returnData"][0]).decode("utf-8")
-                        parts = decoded.split(" ")
-                        nft = int(parts[4]) if len(parts) > 4 else 0
-                        loan = int(parts[5]) if len(parts) > 5 else 0
-                        infinity = int(parts[17]) if len(parts) > 17 else 0
-                        total = nft + loan + infinity
-                        if total >= 1:  # ✅ doar dacă are minim 1 TCL
-                            results[addr] = {
-                                "nft": nft,
-                                "loan": loan,
-                                "infinity": infinity,
-                                "total": total
-                            }
+            print(f"✅ Finished batch {i//batch_size+1}")
 
-                        break
-                except Exception as e:
-                    print(f"⚠️ {addr} error: {e}")
-                    await asyncio.sleep(1)
-
-            await asyncio.sleep(0.8)  # pauză globală mai lungă (reduce 429)
-
+    # sortare finală după total
     sorted_results = sorted(results.items(), key=lambda x: x[1]["total"], reverse=True)
     leaderboard = {}
     for i, (addr, data) in enumerate(sorted_results, start=1):
@@ -198,7 +205,7 @@ async def main():
     addresses = filter_unique_addresses(tx_data)
     print(f"📊 Found {len(addresses)} unique addresses")
 
-    leaderboard = await generate_leaderboard_async(addresses)
+    leaderboard = await generate_leaderboard_async(addresses, batch_size=50)
 
     output = {
         "last_update": datetime.utcnow().isoformat() + "Z",
@@ -209,7 +216,3 @@ async def main():
         json.dump(output, f, indent=2)
 
     print(f"✅ leaderboard.json updated with {len(leaderboard)} stakers")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
