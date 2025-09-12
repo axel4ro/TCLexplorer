@@ -35,4 +35,5 @@ jobs:
           git config --local user.name "GitHub Action"
           git add leaderboard.json
           git commit -m "🔄 Auto-update leaderboard.json [skip ci]" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git pull --rebase origin main
+          git push origin main
