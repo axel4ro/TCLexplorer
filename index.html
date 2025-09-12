@@ -403,7 +403,10 @@ async function fetchLeaderboard() {
   const statusEl = document.getElementById("lastUpdated");
 
   if (!body) return;
-  statusEl.textContent = "⏳ Updating from blockchain...";
+
+  // 🟢 Arată mesaj de "updating" pe toată perioada fetch
+  body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Leaderboard is being updated on-chain...</td></tr>';
+  statusEl.textContent = "⏳ Fetching latest staking data...";
 
   try {
     const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
@@ -414,6 +417,12 @@ async function fetchLeaderboard() {
 
     const data = await resp.json();
 
+    if (!data.data || Object.keys(data.data).length === 0) {
+      body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
+      statusEl.textContent = "⚠️ Leaderboard update still in progress...";
+      return;
+    }
+
     // ✅ afișăm timestamp-ul exact din JSON
     if (data.last_update) {
       statusEl.textContent =
@@ -421,7 +430,7 @@ async function fetchLeaderboard() {
         new Date(data.last_update).toLocaleString();
     }
 
-    const results = Object.entries(data.data || data).map(([addr, v]) => ({
+    const results = Object.entries(data.data).map(([addr, v]) => ({
       addr,
       rank: v.rank,
       nft: v.nft,
@@ -447,7 +456,6 @@ async function fetchLeaderboard() {
 
     body.innerHTML = html;
 
-    // ✅ Salvează timpul ultimei actualizări și pornește timerul
     lastUpdateTime = new Date();
     updateLastUpdated();
 
@@ -458,6 +466,7 @@ async function fetchLeaderboard() {
       '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
   }
 }
+
 
   function updateStakingLeaderboard() {
     fetchLeaderboard();
@@ -514,6 +523,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
