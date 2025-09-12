@@ -448,8 +448,11 @@ const filtered = results.filter(r =>
   Number(r.infinity) > 0
 );
 
+// ✅ păstrăm doar primii 100
+const top100 = filtered.slice(0, 100);
+
 let html = "";
-filtered.forEach(r => {
+top100.forEach(r => {
   let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
   html += "<tr>" +
     "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
@@ -462,6 +465,7 @@ filtered.forEach(r => {
 });
 
 body.innerHTML = html;
+
 
     updateLastUpdated();
 	  
@@ -530,6 +534,7 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
 
