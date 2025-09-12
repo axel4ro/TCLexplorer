@@ -450,7 +450,10 @@ async function fetchLeaderboard() {
 
     body.innerHTML = html;
 
+    // ✅ Salvează timpul ultimei actualizări și pornește timerul
     lastUpdateTime = new Date();
+    updateLastUpdated();
+
   } catch (err) {
     console.error("Leaderboard error", err);
     statusEl.textContent = "❌ Error loading leaderboard";
@@ -458,6 +461,7 @@ async function fetchLeaderboard() {
       '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
   }
 }
+
 
     // ✅ Salvează timpul ultimei actualizări
     lastUpdateTime = new Date();
@@ -526,5 +530,6 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
 
