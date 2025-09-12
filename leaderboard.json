@@ -1,26 +1,4 @@
 {
-  "last_update": "2025-09-12T11:52:45.867504Z",
-  "data": {
-    "erd10auv8yj2cuz6twzx4nx0374n4jxs3sa27kxskyfjlz4g6kfz9yhslyrd5r": {
-      "rank": 1,
-      "nft": 0,
-      "loan": 519674400000000000000000,
-      "infinity": 500000000000000000000000,
-      "total": 1019674400000000000000000
-    },
-    "erd1032wxxe4w039732rgrcth2xy65zarzuedgwxjrz9thk9er6glxlqpgs8l3": {
-      "rank": 2,
-      "nft": 0,
-      "loan": 0,
-      "infinity": 10806372062300619253143,
-      "total": 10806372062300619253143
-    },
-    "erd1046xhanguy8khh6uf7th34j6hcuhd7xsmdmv5kjh3tfxqc3kqyvsa0w34c": {
-      "rank": 3,
-      "nft": 0,
-      "loan": 0,
-      "infinity": 0,
-      "total": 0
-    }
-  }
+  "last_update": "2025-09-12T11:55:03.591797Z",
+  "data": {}
 }
