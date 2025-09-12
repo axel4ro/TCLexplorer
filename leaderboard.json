@@ -1,19 +1,4 @@
 {
-  "last_update": "2025-09-12T11:33:35.077921Z",
-  "data": {
-    "erd1tktmr7l8z033aulcrd558zyg74jk72nt40vjzq9xss7ka3dk4j0sfa58n8": {
-      "rank": 1,
-      "nft": 0,
-      "loan": 0,
-      "infinity": 0,
-      "total": 0
-    },
-    "erd1uqvfhreupzgjh7ug630pwfxecg50kdv9umfcwq6d5whpad2hheussk9exc": {
-      "rank": 2,
-      "nft": 0,
-      "loan": 0,
-      "infinity": 0,
-      "total": 0
-    }
-  }
+  "last_update": "2025-09-12T11:40:31.422237Z",
+  "data": {}
 }
