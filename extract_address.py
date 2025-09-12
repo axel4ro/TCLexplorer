@@ -189,30 +189,13 @@ async def generate_leaderboard_async(addresses, batch_size=50):
 
                 await asyncio.sleep(0.5)  # mic delay per adresă
 
-            print(f"✅ Finished batch {i//batch_size+1}")
+            print(f"✅ Finished batch {i//batch_size+1}, results so far: {len(results)} stakers")
 
     # sortare finală după total
     sorted_results = sorted(results.items(), key=lambda x: x[1]["total"], reverse=True)
     leaderboard = {}
     for i, (addr, data) in enumerate(sorted_results, start=1):
         leaderboard[addr] = {"rank": i, **data}
+
+    print(f"📊 Final leaderboard size: {len(leaderboard)}")
     return leaderboard
-
-
-# ------------------- Main -------------------
-async def main():
-    tx_data = await extract_transactions_async()
-    addresses = filter_unique_addresses(tx_data)
-    print(f"📊 Found {len(addresses)} unique addresses")
-
-    leaderboard = await generate_leaderboard_async(addresses, batch_size=50)
-
-    output = {
-        "last_update": datetime.utcnow().isoformat() + "Z",
-        "data": leaderboard
-    }
-
-    with open("leaderboard.json", "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2)
-
-    print(f"✅ leaderboard.json updated with {len(leaderboard)} stakers")
