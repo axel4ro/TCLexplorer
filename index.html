@@ -402,20 +402,29 @@ function formatTcl(val, decimals = 18) {
 let lastUpdateTime = null;
 
 async function fetchLeaderboard() {
+  const body = document.getElementById("stakingBody");
+  const statusEl = document.getElementById("lastUpdated");
+
+  if (!body) return;
+  statusEl.textContent = "⏳ Updating from blockchain...";
+
   try {
-    const body = document.getElementById("stakingBody");
-    if (!body) return;
-
-    body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>';
-
-    const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now()); // bust cache
+    const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
     if (!resp.ok) {
-      body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Failed to load leaderboard</td></tr>';
+      statusEl.textContent = "❌ Failed to load leaderboard";
       return;
     }
 
     const data = await resp.json();
-    const results = Object.entries(data).map(([addr, v]) => ({
+
+    // ✅ afișăm timestamp-ul exact din JSON
+    if (data.last_update) {
+      statusEl.textContent =
+        "✅ Last update on-chain: " +
+        new Date(data.last_update).toLocaleString();
+    }
+
+    const results = Object.entries(data.data).map(([addr, v]) => ({
       addr,
       rank: v.rank,
       nft: v.nft,
@@ -440,6 +449,15 @@ async function fetchLeaderboard() {
     });
 
     body.innerHTML = html;
+
+    lastUpdateTime = new Date();
+  } catch (err) {
+    console.error("Leaderboard error", err);
+    statusEl.textContent = "❌ Error loading leaderboard";
+    body.innerHTML =
+      '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
+  }
+}
 
     // ✅ Salvează timpul ultimei actualizări
     lastUpdateTime = new Date();
@@ -508,4 +526,5 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
