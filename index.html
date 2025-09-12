@@ -516,12 +516,36 @@ setInterval(updateLastUpdated, 1000);
 
 
   // ===== Navigation =====
-  function showPage(id) {
-    document.querySelectorAll('.section-page').forEach(function(sec){ sec.classList.remove('active'); });
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.nav-buttons button').forEach(function(btn){ btn.classList.remove('active'); });
-    document.getElementById('btn-' + id).classList.add('active');
+// ===== Navigation =====
+function showPage(id) {
+  document.querySelectorAll('.section-page').forEach(sec => sec.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  document.querySelectorAll('.nav-buttons button').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('btn-' + id).classList.add('active');
+
+  const viewport = document.querySelector("meta[name=viewport]");
+
+  if (id === "staking") {
+    // 🔥 Zoom pe PC
+    document.body.style.zoom = "0.75";
+
+    // 🔥 Zoom pe mobil (viewport)
+    viewport.setAttribute(
+      "content",
+      "width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
+    );
+  } else {
+    // Reset PC
+    document.body.style.zoom = "1";
+
+    // Reset mobil
+    viewport.setAttribute(
+      "content",
+      "width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
+    );
   }
+}
 
   // ===== On Load =====
   window.onload = function() {
@@ -545,4 +569,5 @@ setInterval(updateLastUpdated, 1000);
 </script>
 </body>
 </html>
+
 
