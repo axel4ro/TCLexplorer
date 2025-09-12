@@ -3,7 +3,7 @@ name: Update Leaderboard
 on:
   schedule:
     - cron: "*/15 * * * *"   # rulează la fiecare 15 minute
-  workflow_dispatch:         # poți declanșa manual din Actions tab
+  workflow_dispatch:
 
 jobs:
   update:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -28,7 +30,9 @@ jobs:
           python extract_address.py
 
       - name: Commit & Push changes
-        uses: ad-m/github-push-action@v0.8.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add leaderboard.json
+          git commit -m "🔄 Auto-update leaderboard.json [skip ci]" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
