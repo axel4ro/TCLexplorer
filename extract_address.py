@@ -6,7 +6,7 @@ from datetime import datetime
 SC_ADDRESS = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
 API_URL = "https://api.multiversx.com/vm-values/query"
 
-# Adrese reale de stakeri (adaugă câte vrei)
+# Adrese reale de stakeri (exemplu, adaugă câte vrei)
 ADDRESSES = [
     "erd1tktmr7l8z033aulcrd558zyg74jk72nt40vjzq9xss7ka3dk4j0sfa58n8",
     "erd1uqvfhreupzgjh7ug630pwfxecg50kdv9umfcwq6d5whpad2hheussk9exc",
@@ -54,10 +54,16 @@ def main():
             "total": total
         }
 
-    with open("leaderboard.json", "w", encoding="utf-8") as f:
-        json.dump(leaderboard, f, indent=2)
+    # ✅ punem și timestamp
+    output = {
+        "last_update": datetime.utcnow().isoformat() + "Z",
+        "data": leaderboard
+    }
 
-    print(f"✅ leaderboard.json updated at {datetime.utcnow().isoformat()} UTC")
+    with open("leaderboard.json", "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2)
+
+    print(f"✅ leaderboard.json updated at {output['last_update']}")
 
 if __name__ == "__main__":
     main()
