@@ -148,8 +148,9 @@ async def generate_leaderboard_async(addresses):
                 "args": [hex_arg]
             }
             try:
-                async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
+               async with session.post(f"{MULTIVERSX_API}/query", json=payload) as response:
                     if response.status != 200:
+                        print(f"⚠️ Query failed for {addr} with status {response.status}")
                         continue
                     data = await response.json()
                     if "returnData" not in data or not data["returnData"]:
@@ -161,6 +162,7 @@ async def generate_leaderboard_async(addresses):
                     infinity = int(parts[17]) if len(parts) > 17 else 0
                     total = nft + loan + infinity
                     results[addr] = {"nft": nft, "loan": loan, "infinity": infinity, "total": total}
+                
             except Exception as e:
                 print(f"⚠️ {addr} error: {e}")
             await asyncio.sleep(0.2)
