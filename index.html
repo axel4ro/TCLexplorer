@@ -24,6 +24,9 @@
       color: var(--text-light);
       transition: all 0.3s ease;
     }
+    #stakingTable th {
+      text-align: center;
+    }
 
     [data-theme="dark"] {
       background-color: var(--bg-dark);
@@ -240,16 +243,16 @@
 <div id="staking" class="section-page">
   <h2>🏆 Top Staking</h2>
   <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
-    <thead>
-      <tr style="background:#007bff;color:white;">
-        <th style="padding:8px;">Rank</th>
-        <th style="padding:8px;">Address</th>
-        <th style="padding:8px;">Total TCL</th>
-        <th style="padding:8px;">NFT</th>
-        <th style="padding:8px;">Loan</th>
-        <th style="padding:8px;">Infinity</th>
-      </tr>
-    </thead>
+<thead>
+  <tr style="background:#007bff;color:white;">
+    <th style="padding:8px; text-align:center;">Rank</th>
+    <th style="padding:8px; text-align:center;">Address</th>
+    <th style="padding:8px; text-align:center;">Total TCL</th>
+    <th style="padding:8px; text-align:center;">NFT</th>
+    <th style="padding:8px; text-align:center;">Loan</th>
+    <th style="padding:8px; text-align:center;">Infinity</th>
+  </tr>
+</thead>
     <tbody id="stakingBody">
       <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
     </tbody>
@@ -375,11 +378,21 @@
   }
 
   // ===== Staking Leaderboard din JSON =====
-  function formatTcl(val, decimals=18) {
-    return (parseInt(val) / (10 ** decimals)).toLocaleString("en-US", {
-      maximumFractionDigits: 0
-    }) + " TCL";
-  }
+function formatTcl(val, decimals = 18) {
+  if (!val) return "0";
+
+  // transformăm valoarea într-un string "normal" (fără e+xx)
+  let strVal = typeof val === "number" ? val.toLocaleString("fullwide", { useGrouping: false }) : val.toString();
+
+  // acum folosim BigInt
+  let num = BigInt(strVal);
+  let divisor = BigInt(10) ** BigInt(decimals);
+
+  let whole = num / divisor;
+
+  return whole.toLocaleString("en-US");
+}
+
 
   async function fetchLeaderboard() {
     try {
@@ -406,17 +419,21 @@
 
       results.sort((a, b) => a.rank - b.rank);
 
-      let html = "";
-      results.forEach(r => {
-        html += "<tr>" +
-          "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
-          "<td style='padding:6px;'>" + r.addr + "</td>" +
-          "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
-          "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
-          "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
-          "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
-        "</tr>";
-      });
+let html = "";
+results.forEach(r => {
+  // scurtăm adresa
+  let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
+
+  html += "<tr>" +
+    "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
+    "<td style='padding:6px;'>" + shortAddr + "</td>" +
+    "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
+  "</tr>";
+});
+
 
       body.innerHTML = html;
 
