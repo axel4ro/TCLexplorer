@@ -682,10 +682,10 @@ function showEventsForDay(day) {
     let borderClass = "";
 
     if (now >= start && now <= end) {
-      // 🔵 Event is ACTIVE
+      // 🟢 Event is ACTIVE
       let diff = Math.floor((end - now) / 60000);
       let h = Math.floor(diff / 60), m = diff % 60;
-      statusText = `🔵 Active Now – ends in ${h}h ${m}m`;
+      statusText = `🟢 Active Now – ends in ${h}h ${m}m`;
       borderClass = "event-active";
     } else {
       let diff = Math.floor((start - now) / 60000);
@@ -977,3 +977,4 @@ document.getElementById("menuToggle").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
