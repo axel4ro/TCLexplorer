@@ -26,59 +26,123 @@ body {
 }
 
 /* Navigația fixă sus */
-.nav-buttons {
+.nav-bar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 1000;
-  background: var(--bg-dark);
-  padding: 10px;
+  z-index: 1100;
+  background: #161a24;
+  padding: 8px 0;
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  justify-content: center;  /* 🔥 centrează pe orizontal */
+  align-items: center;
+}
 
-  /* 🔥 Scroll orizontal când nu încap butoanele */
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* smooth pe iOS */
-}
-.nav-buttons::-webkit-scrollbar {
-  display: none; /* ascunde scrollbar-ul */
-}
-.nav-buttons button {
-  flex: 1 0 auto; /* păstrează lățimea butoanelor, nu le micșorează forțat */
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  background: #007bff;
-  color: #fff;
+#menuToggle {
+  padding: 10px 18px;
   font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background: #249c8c;
+  color: white;
   font-weight: 600;
-  transition: background 0.2s;
-  white-space: nowrap; /* 🔥 previne să intre pe 2 rânduri */
-}
-.nav-buttons button.active {
-  background: #28a745;
+  cursor: pointer;
+
+  /* 🔥 umbra textului și a butonului */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* Indicator swipe pentru nav */
-.nav-swipe-hint {
-  text-align: center;
-  font-size: 13px;
-  color: #0d6efd;
-  margin: 6px 0 10px 0; /* spațiu sus și jos */
+#menuToggle:hover { 
+  opacity: 0.9; 
+  transform: translateY(-2px);
+}
+
+/* PANEL MENIU cu animație */
+.menu-panel {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  width: 100%;
+  max-height: 0;             /* ascuns implicit */
+  background: rgba(22,26,36,0.97);
+  overflow-y: hidden;        /* ascundem scroll-ul până se deschide */
+  z-index: 1090;
+  padding: 0 10px;           /* inițial fără padding */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+/* când e deschis */
+.menu-panel.open {
+  max-height: 2500px;         /* cât vrei să se vadă */
+  padding: 10px;             /* apare paddingul */
+  overflow-y: auto;          /* acum e scrollabil */
+}
+
+/* scroll bar vizibil */
+.menu-panel::-webkit-scrollbar { width: 10px; }
+.menu-panel::-webkit-scrollbar-track { background: #222; border-radius: 6px; }
+.menu-panel::-webkit-scrollbar-thumb { background: #555; border-radius: 6px; }
+.menu-panel::-webkit-scrollbar-thumb:hover { background: #888; }
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;  /* forțează vertical */
+  align-items: center;     /* centrează pe orizontal */
+  gap: 12px;
+  max-height: 2500px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  padding: 20px 0;
+}
+.menu-buttons::-webkit-scrollbar {
   display: none;
 }
-
-@media (max-width: 1024px) {
-  .nav-swipe-hint {
-    display: block;
-  }
+.menu-buttons button {
+  width: 200px; /* 🔥 forțează toate la aceeași lățime */
+  max-width: 90%;
 }
 
 
-#token.fullpage {
+/* Butoane din meniu */
+.menu-buttons button {
+  width: 200px;
+  max-width: 90%;
+  scroll-snap-align: center;
+  text-align: center;
+  padding: 16px;
+  border-radius: 50px;
+  background: #249c8c;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  transition: transform 0.2s, opacity 0.2s;
+  transform-origin: center;
+
+  /* 🔥 umbra textului */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 
+               -1px -1px 2px rgba(0, 0, 0, 0.6);
+
+  /* 🔥 umbra pe buton */
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+}
+
+.menu-buttons button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6);
+}
+
+/* efect rotunjire + simulare perspectivă */
+.menu-buttons button {
+  transform-origin: center;
+}
+
+
+
+#chart.fullpage {
   position: fixed;
   top: 60px; /* cât are nav-ul */
   left: 0;
@@ -89,11 +153,12 @@ body {
   z-index: 500;
   background: var(--bg-dark);
 }
-#token.fullpage iframe {
+#chart.fullpage iframe {
   width: 100%;
   height: 100%;
   border: none;
 }
+
 
 #xexchangeIframe.fullpage {
   position: fixed;
@@ -190,8 +255,8 @@ input[type="text"] {
   display: block;
 }
 
-/* Token special: full screen fără padding */
-#token.fullpage {
+/* chart special: full screen fără padding */
+#chart.fullpage {
   position: fixed;
   top: 60px; /* cât are nav-ul */
   left: 0;
@@ -319,22 +384,28 @@ button:hover { opacity: 0.9; }
 </head>
 <body>
 <!-- NAVIGATION -->
-<div class="nav-buttons">
-  <button onclick="showPage('explorer')" id="btn-explorer" class="active">🪙 Token</button>
-  <button onclick="showPage('token')" id="btn-token">📊 Chart</button>
-  <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
-  <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
-  <button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
-  <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
-  <button onclick="showPage('events')" id="btn-events">📅 Events</button>
+<div class="nav-bar">
+  <button id="menuToggle">☰ Menu</button>
 </div>
 
-<!-- 🔥 Hint-ul de swipe îl punem sub navigație -->
-<div class="nav-swipe-hint">◀️ Swipe ▶️</div>
+<!-- MENU PANEL -->
+<div id="menuPanel" class="menu-panel">
+  <div class="menu-buttons">
+    <button onclick="showPage('token')" id="btn-token" class="active">🪙 Token</button>
+    <button onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
+    <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
+    <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
+    <button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
+    <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
+    <button onclick="showPage('events')" id="btn-events">📅 Events</button>
+    <!-- poți adăuga oricâte vrei -->
+  </div>
+</div>
+
 
 
   <!-- Explorer -->
-  <div id="explorer" class="section-page active">
+  <div id="token" class="section-page active">
     <h2>🪙 Token</h2>
 
     <div class="section">
@@ -407,7 +478,7 @@ button:hover { opacity: 0.9; }
 
 
 <!-- TCL Token Chart -->
-<div id="token" class="section-page">
+<div id="chart" class="section-page">
   <iframe 
     src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15">
   </iframe>
@@ -810,14 +881,10 @@ function showPage(id) {
   const page = document.getElementById(id);
   page.classList.add('active');
 
-  // fullpage pentru token / explorer / xexchange
-  if (id === 'token' || id === 'explorerIframe' || id === 'xexchangeIframe') {
+  // fullpage pentru chart / explorer / xexchange
+  if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
     page.classList.add('fullpage');
   }
-
-  // activăm butonul corespunzător
-  document.querySelectorAll('.nav-buttons button').forEach(btn => btn.classList.remove('active'));
-  document.getElementById('btn-' + id).classList.add('active');
 
   // zoom special pentru staking
   const viewport = document.querySelector("meta[name=viewport]");
@@ -834,6 +901,12 @@ function showPage(id) {
       "width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
     );
   }
+
+  // 🔥 Închidem meniul după selectare
+  const panel = document.getElementById("menuPanel");
+  const btn = document.getElementById("menuToggle");
+  panel.classList.remove("open");
+  btn.textContent = "☰ Menu";
 }
 
 
@@ -861,6 +934,32 @@ setInterval(() => {
     showEventsForDay(currentDay);
   }
 }, 60000); // 60000ms = 1 minut
+
+
+// 🔥 Toggle pentru meniul de navigație
+document.getElementById("menuToggle").addEventListener("click", () => {
+  const panel = document.getElementById("menuPanel");
+  const btn = document.getElementById("menuToggle");
+  panel.classList.toggle("open");
+
+  if (panel.classList.contains("open")) {
+    btn.textContent = "✖ Close";
+
+    // ✅ punem direct Token pe centru
+    const tokenBtn = document.getElementById("btn-token");
+    if (tokenBtn) {
+      menuButtons.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+      tokenBtn.classList.add("active");
+      const offset = tokenBtn.offsetTop - (menuButtons.clientHeight / 2 - tokenBtn.clientHeight / 2);
+      menuButtons.scrollTop = offset;
+    }
+
+  } else {
+    btn.textContent = "☰ Menu";
+  }
+});
+
+
 
 </script>
 </body>
