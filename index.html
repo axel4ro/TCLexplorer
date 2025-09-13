@@ -64,11 +64,10 @@ body {
 
 /* Indicator swipe pentru nav */
 .nav-swipe-hint {
-  flex: 1 0 100%;
   text-align: center;
   font-size: 13px;
   color: #0d6efd;
-  margin-top: 6px;
+  margin: 6px 0 10px 0; /* spațiu sus și jos */
   display: none;
 }
 
@@ -77,6 +76,7 @@ body {
     display: block;
   }
 }
+
 
 #token.fullpage {
   position: fixed;
@@ -318,20 +318,20 @@ button:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
-  <!-- NAVIGATION -->
-  <div class="nav-buttons">
-    <button onclick="showPage('explorer')" id="btn-explorer" class="active">🪙 Token</button>
-	<button onclick="showPage('token')" id="btn-token">📊 Chart</button>
-    <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
-	<button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
-	<button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
-    <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
-	<button onclick="showPage('events')" id="btn-events">📅 Events</button>
-	
-  <div class="nav-swipe-hint"> ◀️ Swipe ▶️ </div>
+<!-- NAVIGATION -->
+<div class="nav-buttons">
+  <button onclick="showPage('explorer')" id="btn-explorer" class="active">🪙 Token</button>
+  <button onclick="showPage('token')" id="btn-token">📊 Chart</button>
+  <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
+  <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
+  <button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
+  <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
+  <button onclick="showPage('events')" id="btn-events">📅 Events</button>
+</div>
 
+<!-- 🔥 Hint-ul de swipe îl punem sub navigație -->
+<div class="nav-swipe-hint">◀️ Swipe ▶️</div>
 
-  </div>
 
   <!-- Explorer -->
   <div id="explorer" class="section-page active">
@@ -865,5 +865,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
-
