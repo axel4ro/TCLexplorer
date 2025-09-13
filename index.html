@@ -457,7 +457,7 @@ button:hover { opacity: 0.9; }
     </div>
     <div class="action-row">
       <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
-      <a class="btn-trade" href="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d" target="_blank" rel="noopener noreferrer">Trade Now ↗</a>
+      <button class="btn-trade" onclick="showPage('xexchangeIframe')">Trade Now ↗</button>
     </div>
     <div class="result" id="resultBox"></div>
   </div>
@@ -964,3 +964,4 @@ document.getElementById("menuToggle").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
