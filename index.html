@@ -457,7 +457,7 @@ button:hover { opacity: 0.9; }
     </div>
     <div class="action-row">
       <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
-      <button class="btn-trade" onclick="showPage('xexchangeIframe')">Trade Now ↗</button>
+<button class="btn-trade" onclick="showPage('xexchangeIframe')">Trade Now ↗</button>
     </div>
     <div class="result" id="resultBox"></div>
   </div>
@@ -871,7 +871,19 @@ setInterval(updateLastUpdated, 1000);
 
 
 // ===== Navigation =====
+const XEXCHANGE_URL = "https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d";
+
+function isMobile() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 function showPage(id) {
+  // 👉 Dacă apasă pe xExchange și e pe mobil → deschide link extern
+  if (id === "xexchangeIframe" && isMobile()) {
+    window.open(XEXCHANGE_URL, "_blank");
+    return;
+  }
+
   // ascundem toate paginile
   document.querySelectorAll('.section-page').forEach(sec => {
     sec.classList.remove('active', 'fullpage');
@@ -879,11 +891,13 @@ function showPage(id) {
 
   // activăm pagina selectată
   const page = document.getElementById(id);
-  page.classList.add('active');
+  if (page) {
+    page.classList.add('active');
 
-  // fullpage pentru chart / explorer / xexchange
-  if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
-    page.classList.add('fullpage');
+    // fullpage pentru chart / explorer / xexchange
+    if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
+      page.classList.add('fullpage');
+    }
   }
 
   // zoom special pentru staking
@@ -908,6 +922,7 @@ function showPage(id) {
   panel.classList.remove("open");
   btn.textContent = "☰ Menu";
 }
+
 
 
   // ===== On Load =====
@@ -959,9 +974,6 @@ document.getElementById("menuToggle").addEventListener("click", () => {
   }
 });
 
-
-
 </script>
 </body>
 </html>
-
