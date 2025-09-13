@@ -37,9 +37,16 @@ body {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+
+  /* 🔥 Scroll orizontal când nu încap butoanele */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth pe iOS */
+}
+.nav-buttons::-webkit-scrollbar {
+  display: none; /* ascunde scrollbar-ul */
 }
 .nav-buttons button {
-  flex: 1;
+  flex: 1 0 auto; /* păstrează lățimea butoanelor, nu le micșorează forțat */
   padding: 10px;
   border: none;
   border-radius: 8px;
@@ -49,10 +56,13 @@ body {
   font-size: 16px;
   font-weight: 600;
   transition: background 0.2s;
+  white-space: nowrap; /* 🔥 previne să intre pe 2 rânduri */
 }
 .nav-buttons button.active {
   background: #28a745;
 }
+
+
 
 #token.fullpage {
   position: fixed;
@@ -840,5 +850,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
-
