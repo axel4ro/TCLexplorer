@@ -6,34 +6,80 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes" />
   <title>The Cursed Land</title>
   <style>
-    :root {
-      --bg-light: #f8f9fa;
-      --bg-dark: #161a24;
-      --text-light: #212529;
-      --text-dark: #f1f1f1;
-      --card-light: #ffffff;
-      --card-dark: #161a24;
-    }
+:root {
+  --bg-dark: #161a24;
+  --text-dark: #f1f1f1;
+  --card-dark: #161a24;
+}
 
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px auto;
-      padding: 0 20px;
-      max-width: 1000px;
-      line-height: 1.6;
-      background-color: var(--bg-light);
-      color: var(--text-light);
-      transition: all 0.3s ease;
-      overflow-x: auto;           /* ✅ permite scroll orizontal dacă tabelul e mai mare */
-      -webkit-text-size-adjust: none; /* ✅ previne zoom automat pe text mare */
-	  
-/* Default card */
+/* BODY */
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px auto;
+  padding: 0 20px;
+  max-width: 1000px;
+  line-height: 1.6;
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+  overflow-x: auto;
+  -webkit-text-size-adjust: none;
+}
+
+/* Navigația fixă sus */
+.nav-buttons {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: var(--bg-dark);
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.nav-buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #007bff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.nav-buttons button.active {
+  background: #28a745;
+}
+
+#token.fullpage {
+  position: fixed;
+  top: 60px; /* cât are nav-ul */
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  margin: 0;
+  padding: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+}
+#token.fullpage iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+
+/* Carduri evenimente */
 .event-card {
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 14px;
-  background: var(--card-light);
-  color: var(--text-light);
+  background: var(--card-dark);
+  color: var(--text-dark);
+  border: 1px solid #333;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   transition: all 0.2s ease;
 }
@@ -41,14 +87,6 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
-
-[data-theme="dark"] .event-card {
-  background: var(--card-dark);
-  border: 1px solid #333;
-  color: var(--text-dark);
-}
-
-/* Titlu, descriere, status */
 .event-title {
   font-size: 16px;
   font-weight: 700;
@@ -57,9 +95,6 @@
 .event-desc {
   font-size: 14px;
   margin-bottom: 6px;
-  color: #6b7280;
-}
-[data-theme="dark"] .event-desc {
   color: #a1a1aa;
 }
 .event-status {
@@ -67,186 +102,155 @@
   font-weight: 600;
 }
 
-
 /* Status colors */
-.event-status.active {
-   border-left: 6px solid #10b981
+.event-status.active { border-left: 6px solid #10b981; }
+.event-status.upcoming { border-left: 6px solid #facc15; }
+.event-expired { border-left: 6px solid #ef4444 !important; }
+
+/* Tabele */
+#stakingTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
 }
-.event-status.upcoming {
-   border-left: 6px solid #facc15
+#stakingTable th, #stakingTable td {
+  padding: 6px;
+  text-align: center;
+  white-space: nowrap;
 }
-.event-expired {
-  border-left: 6px solid #ef4444 !important;
+
+/* Titluri și secțiuni */
+h2 {
+  color: #0d6efd;
+  margin-bottom: 8px;
+}
+.section {
+  margin-bottom: 24px;
 }
 
+/* Inputuri */
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 4px;
+  background-color: var(--card-dark);
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #fff;
+}
 
-		}
-    #stakingTable {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: auto; /* ✅ face coloanele mai flexibile */
-    }
-
-    #stakingTable th, #stakingTable td {
-      padding: 6px;
-      text-align: center;
-      white-space: nowrap; /* ✅ previne spargerea pe mai multe linii */
-    }
-
-    [data-theme="dark"] {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    h2 {
-      color: #0d6efd;
-      margin-bottom: 8px;
-    }
-
-    .section {
-      margin-bottom: 24px;
-    }
+/* HIDE/SHOW SECTIONS */
+.section-page { display: none; }
+.section-page.active { display: block; }
 
 
+/* Butoane */
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:hover { opacity: 0.9; }
+
+/* Rezultate */
+.result {
+  margin-top: 20px;
+  background: var(--card-dark);
+  border-left: 6px solid #28a745;
+  padding: 16px;
+  white-space: pre-wrap;
+  font-size: 15px;
+  border-radius: 8px;
+}
+
+/* Alte layouturi */
+.row-group { display: flex; gap: 16px; }
+.row-group > div { flex: 1; }
+
+.action-row {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-top:12px;
+}
+.btn-trade {
+  display:inline-block;
+  padding:10px 20px;
+  border-radius:8px;
+  text-decoration:none;
+  background:#2ff6de;
+  color:#090909;
+  font-size:16px;
+  font-weight:600;
+}
+.btn-trade:hover { opacity:.9; }
+
+.stats-row { display:flex; gap:16px; flex-wrap:wrap; }
+.stat {
+  flex:1;
+  padding:10px 12px;
+  border:1px solid #444;
+  border-radius:10px;
+  background: var(--card-dark);
+  min-width:160px;
+}
+.stat-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:13px;
+  color:#6b7280;
+}
+.stat-value {
+  font-size:18px;
+  font-weight:700;
+  margin-top:6px;
+}
+.chip-live {
+  font-size:11px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#10b9811a;
+  color:#10b981;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.chip-live::before { content:"🔒"; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  body { margin: 20px 12px; }
+  .row-group { flex-direction: column; }
+  h2 { font-size: 20px; }
+  input[type="text"], button { font-size: 15px; }
+  .stats-row{ flex-direction:column; }
+}
+
+/* Dexscreener aspect ratio */
+#dexscreener-embed { position:relative; width:100%; padding-bottom:125%; }
+@media(min-width:1400px){ #dexscreener-embed{padding-bottom:65%;} }
+#dexscreener-embed iframe { position:absolute; width:100%; height:100%; top:0; left:0; border:0; }
 
 
-    /* NAV BUTTONS */
-    .nav-buttons {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .nav-buttons button {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #007bff;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-    .nav-buttons button.active {
-      background: #28a745;
-    }
-
-    /* HIDE/SHOW SECTIONS */
-    .section-page { display: none; }
-    .section-page.active { display: block; }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-top: 4px;
-      background-color: var(--card-light);
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      color: inherit;
-    }
-    [data-theme="dark"] input[type="text"] {
-      background-color: var(--card-dark);
-      border: 1px solid #444;
-      color: #fff;
-    }
-
-    button {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #themeToggle {
-      float: right;
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-
-    .row-group { display: flex; gap: 16px; }
-    .row-group > div { flex: 1; }
-
-    .result {
-      margin-top: 20px;
-      background: var(--card-light);
-      border-left: 6px solid #28a745;
-      padding: 16px;
-      white-space: pre-wrap;
-      font-size: 15px;
-      border-radius: 8px;
-    }
-    [data-theme="dark"] .result { background: var(--card-dark); }
-
-    .action-row{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      margin-top:12px;
-    }
-    .btn-trade{
-      display:inline-block;
-      padding:10px 20px;
-      border-radius:8px;
-      text-decoration:none;
-      background:#2ff6de;
-      color:#090909;
-      font-size:16px;
-      font-weight:600;
-    }
-    .btn-trade:hover{ opacity:.9; }
-
-    .stats-row{ display:flex; gap:16px; flex-wrap:wrap; }
-    .stat{
-      flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:10px;
-      background:var(--card-light); min-width:160px;
-    }
-    [data-theme="dark"] .stat{ background:var(--card-dark); border-color:#444; }
-    .stat-top{ display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#6b7280; }
-    .stat-value{ font-size:18px; font-weight:700; margin-top:6px; }
-    .chip-live{
-      font-size:11px; padding:2px 8px; border-radius:999px; background:#10b9811a; color:#10b981;
-      display:inline-flex; align-items:center; gap:6px;
-    }
-    .chip-live::before{ content:"🔒"; }
-	
-	
-
-
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-      body { margin: 20px 12px; }
-      .row-group { flex-direction: column; }
-      h2 { font-size: 20px; }
-      input[type="text"], button { font-size: 15px; }
-      .stats-row{ flex-direction:column; }
-    }
-
-    /* Dexscreener aspect ratio */
-    #dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}
-    @media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}
-    #dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}
   </style>
 </head>
 <body>
-  <!-- Toggle Theme -->
-  <div style="display: flex; align-items: center; justify-content: space-between;">
-    <h2>The Cursed Land</h2>
-    <button id="themeToggle" onclick="toggleTheme()">🌙</button>
-  </div>
+
 
   <!-- NAVIGATION -->
   <div class="nav-buttons">
     <button onclick="showPage('explorer')" id="btn-explorer" class="active">📊 Explorer Data</button>
+	<button onclick="showPage('token')" id="btn-token">🪙 Token</button>
     <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
     <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
 	<button onclick="showPage('events')" id="btn-events">📅 Events</button>
+
 
   </div>
 
@@ -277,12 +281,7 @@
       </div>
     </div>
 
-<div id="dexscreener-embed" style="margin-top:20px;">
-  <iframe 
-    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15"
-    style="width:100%;height:500px;border:0;">
-  </iframe>
-</div>
+
   </div>
 
   <!-- Calculator -->
@@ -319,6 +318,17 @@
 </div>
 
 
+<!-- TCL Token Chart -->
+<div id="token" class="section-page">
+  <iframe 
+    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15">
+  </iframe>
+</div>
+
+  
+  
+
+
 <!-- Staking -->
 <div id="staking" class="section-page">
   <h2>🏆 TCL Staking Leaderboard</h2>
@@ -344,6 +354,7 @@
 </div>
 
 <script>
+
   let mode = 'buy';
   const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
   const LEADERBOARD_URL = "https://axel4ro.github.io/TCLPriceImpactCalculator/leaderboard.json";
@@ -377,13 +388,6 @@
     document.getElementById("resultBox").innerHTML = '';
   }
 
-  function toggleTheme() {
-    const currentTheme = document.body.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '🌞' : '🌙';
-  }
 
   function calculate() {
     const tcl = parseNumber(getText("curTCL"));
@@ -702,8 +706,16 @@ setInterval(updateLastUpdated, 1000);
 
 // ===== Navigation =====
 function showPage(id) {
-  document.querySelectorAll('.section-page').forEach(sec => sec.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.section-page').forEach(sec => {
+    sec.classList.remove('active', 'fullpage');
+  });
+
+  const page = document.getElementById(id);
+  page.classList.add('active');
+
+  if (id === 'token') {
+    page.classList.add('fullpage'); // 🔥 doar Token devine fullscreen
+  }
 
   document.querySelectorAll('.nav-buttons button').forEach(btn => btn.classList.remove('active'));
   document.getElementById('btn-' + id).classList.add('active');
@@ -711,19 +723,13 @@ function showPage(id) {
   const viewport = document.querySelector("meta[name=viewport]");
 
   if (id === "staking") {
-    // 🔥 Zoom pe PC
     document.body.style.zoom = "0.75";
-
-    // 🔥 Zoom pe mobil (viewport)
     viewport.setAttribute(
       "content",
       "width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
     );
   } else {
-    // Reset PC
     document.body.style.zoom = "1";
-
-    // Reset mobil
     viewport.setAttribute(
       "content",
       "width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
@@ -731,11 +737,10 @@ function showPage(id) {
   }
 }
 
+
   // ===== On Load =====
 window.onload = function() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.body.setAttribute('data-theme', savedTheme);
-  document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '🌞' : '🌙';
+
 
   fetchPoolData();
   fetchGeckoAthAtl();
