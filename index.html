@@ -71,6 +71,23 @@ body {
   border: none;
 }
 
+#xexchangeIframe.fullpage {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  margin: 0;
+  padding: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+}
+#xexchangeIframe.fullpage iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 
 /* Carduri evenimente */
 .event-card {
@@ -162,6 +179,22 @@ input[type="text"] {
   background: var(--bg-dark);
 }
 
+#explorerIframe.fullpage {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  margin: 0;
+  padding: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+}
+#explorerIframe.fullpage iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
 
 
 
@@ -263,17 +296,21 @@ button:hover { opacity: 0.9; }
 <body>
   <!-- NAVIGATION -->
   <div class="nav-buttons">
-    <button onclick="showPage('explorer')" id="btn-explorer" class="active">📊 Explorer Data</button>
-	<button onclick="showPage('token')" id="btn-token">🪙 Token</button>
+    <button onclick="showPage('explorer')" id="btn-explorer" class="active">🪙 Token</button>
+	<button onclick="showPage('token')" id="btn-token">📊 Chart</button>
     <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
+	<button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
+	<button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
     <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
 	<button onclick="showPage('events')" id="btn-events">📅 Events</button>
+	
+
 
 
   </div>
   <!-- Explorer -->
   <div id="explorer" class="section-page active">
-    <h2>📊 TCL Explorer Data</h2>
+    <h2>🪙 Token</h2>
 
     <div class="section">
       <strong><span class="chip-live">LIVE DATA</span></strong>
@@ -297,9 +334,18 @@ button:hover { opacity: 0.9; }
         <div class="stat"><div class="stat-top"><span>Initial Price</span></div><div class="stat-value">0.006 $</div></div>
       </div>
     </div>
-
+	
 
   </div>
+
+<!-- xExchange Trade -->
+<div id="xexchangeIframe" class="section-page">
+  <iframe 
+    src="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
+    style="width:100%;height:100%;border:0;">
+  </iframe>
+</div>
+
 
   <!-- Calculator -->
   <div id="calculator" class="section-page">
@@ -343,7 +389,14 @@ button:hover { opacity: 0.9; }
 </div>
 
   
-  
+  <!-- Explorer MultiversX -->
+<div id="explorerIframe" class="section-page">
+  <iframe 
+    src="https://explorer.multiversx.com/tokens/TCL-fe459d"
+    style="width:100%;height:100%;border:0;">
+  </iframe>
+</div>
+
 
 
 <!-- Staking -->
@@ -723,22 +776,26 @@ setInterval(updateLastUpdated, 1000);
 
 // ===== Navigation =====
 function showPage(id) {
+  // ascundem toate paginile
   document.querySelectorAll('.section-page').forEach(sec => {
     sec.classList.remove('active', 'fullpage');
   });
 
+  // activăm pagina selectată
   const page = document.getElementById(id);
   page.classList.add('active');
 
-  if (id === 'token') {
-    page.classList.add('fullpage'); // 🔥 doar Token devine fullscreen
+  // fullpage pentru token / explorer / xexchange
+  if (id === 'token' || id === 'explorerIframe' || id === 'xexchangeIframe') {
+    page.classList.add('fullpage');
   }
 
+  // activăm butonul corespunzător
   document.querySelectorAll('.nav-buttons button').forEach(btn => btn.classList.remove('active'));
   document.getElementById('btn-' + id).classList.add('active');
 
+  // zoom special pentru staking
   const viewport = document.querySelector("meta[name=viewport]");
-
   if (id === "staking") {
     document.body.style.zoom = "0.75";
     viewport.setAttribute(
