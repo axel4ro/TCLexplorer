@@ -141,8 +141,28 @@ input[type="text"] {
 }
 
 /* HIDE/SHOW SECTIONS */
-.section-page { display: none; }
-.section-page.active { display: block; }
+.section-page {
+  display: none;
+  padding-top: 25px; /* 🔥 ajustat să lase doar cât trebuie sub navigație */
+}
+.section-page.active {
+  display: block;
+}
+
+/* Token special: full screen fără padding */
+#token.fullpage {
+  position: fixed;
+  top: 60px; /* cât are nav-ul */
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  margin: 0;
+  padding: 0;  /* eliminăm paddingul */
+  z-index: 500;
+  background: var(--bg-dark);
+}
+
+
 
 
 /* Butoane */
@@ -241,8 +261,6 @@ button:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
-
-
   <!-- NAVIGATION -->
   <div class="nav-buttons">
     <button onclick="showPage('explorer')" id="btn-explorer" class="active">📊 Explorer Data</button>
@@ -253,7 +271,6 @@ button:hover { opacity: 0.9; }
 
 
   </div>
-
   <!-- Explorer -->
   <div id="explorer" class="section-page active">
     <h2>📊 TCL Explorer Data</h2>
