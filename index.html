@@ -105,8 +105,6 @@ body {
   width: 200px; /* 🔥 forțează toate la aceeași lățime */
   max-width: 90%;
 }
-
-
 /* Butoane din meniu */
 .menu-buttons button {
   width: 200px;
@@ -139,8 +137,6 @@ body {
 .menu-buttons button {
   transform-origin: center;
 }
-
-
 
 #chart.fullpage {
   position: fixed;
@@ -285,8 +281,6 @@ input[type="text"] {
   border: none;
 }
 
-
-
 /* Butoane */
 button {
   padding: 10px 20px;
@@ -402,9 +396,7 @@ button:hover { opacity: 0.9; }
   </div>
 </div>
 
-
-
-  <!-- Explorer -->
+  <!-- Token -->
   <div id="token" class="section-page active">
     <h2>🪙 Token</h2>
 
@@ -431,6 +423,26 @@ button:hover { opacity: 0.9; }
       </div>
     </div>
 	
+<!-- How to Earn TCL (Whitepaper) -->
+<div class="section">
+  <strong><span class="chip-live">📖 How to Earn TCL</span></strong>
+  <div style="margin-top:12px; border:1px solid #333; border-radius:12px; overflow:hidden; background:#161a24;">
+    <img 
+      src="https://whitepaper.thecursedland.com/~gitbook/image?url=https%3A%2F%2F1088796652-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FNfwQqA3PjlWwIAbvldOU%252Fuploads%252FVZ0W5PmUUiOq7abWcmm8%252Fearn%2520tcl.jpg%3Falt%3Dmedia%26token%3D156219ff-cec6-4bb6-8710-f8f11b8cc520&width=768&dpr=4&quality=100&sign=bbb5e8e&sv=2" 
+      alt="How to Earn TCL - Whitepaper"
+      style="width:100%; height:auto; display:block; border-radius:12px;"
+      loading="lazy"
+    />
+  </div>
+  <small style="color:#6b7280; display:block; margin-top:8px; font-size:13px;">
+    🔗 Source: 
+    <a href="https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl" 
+       target="_blank" 
+       style="color:#2ff6de; text-decoration:none; font-weight:600;">
+       The Cursed Land Whitepaper</a>
+  </small>
+</div>
+
 
   </div>
 
@@ -441,7 +453,6 @@ button:hover { opacity: 0.9; }
     style="width:100%;height:100%;border:0;">
   </iframe>
 </div>
-
 
   <!-- Calculator -->
   <div id="calculator" class="section-page">
@@ -492,8 +503,6 @@ button:hover { opacity: 0.9; }
     style="width:100%;height:100%;border:0;">
   </iframe>
 </div>
-
-
 
 <!-- Staking -->
 <div id="staking" class="section-page">
@@ -553,7 +562,6 @@ button:hover { opacity: 0.9; }
     input.value = ''; 
     document.getElementById("resultBox").innerHTML = '';
   }
-
 
   function calculate() {
     const tcl = parseNumber(getText("curTCL"));
@@ -718,9 +726,6 @@ function showEventsForDay(day) {
 
   container.innerHTML = html;
 }
-
-
-
   // ===== Data Fetch =====
   async function fetchPoolData() {
     try {
@@ -763,7 +768,6 @@ function formatTcl(val, decimals = 18) {
 
   return whole.toLocaleString("en-US");
 }
-
 
 let lastUpdateTime = null;
 
@@ -831,7 +835,6 @@ top100.forEach(r => {
 });
 
 body.innerHTML = html;
-
 
     updateLastUpdated();
 	  
@@ -923,8 +926,6 @@ function showPage(id) {
   btn.textContent = "☰ Menu";
 }
 
-
-
   // ===== On Load =====
 window.onload = function() {
 
@@ -949,7 +950,6 @@ setInterval(() => {
     showEventsForDay(currentDay);
   }
 }, 60000); // 60000ms = 1 minut
-
 
 // 🔥 Toggle pentru meniul de navigație
 document.getElementById("menuToggle").addEventListener("click", () => {
@@ -977,5 +977,3 @@ document.getElementById("menuToggle").addEventListener("click", () => {
 </script>
 </body>
 </html>
-
-
