@@ -390,6 +390,15 @@ button:hover { opacity: 0.9; }
   cursor: pointer;
 }
 
+/* Desktop: grid 3 coloane */
+@media (min-width: 769px) {
+  .token-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
 
 /* Responsive */
 @media (max-width: 768px) {
