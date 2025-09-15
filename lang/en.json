@@ -19,6 +19,8 @@
 
   "help_text": "💡 Need help? Join our <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Community</a>",
 
+
+  
   "calc_title": "🧮 Simulate Transaction",
   "calc_label_buy": "Enter amount in <b>USDC ($)</b> to buy TCL:",
   "calc_label_sell": "Enter amount in <b>TCL</b> to sell for USDC ($):",
@@ -30,5 +32,18 @@
 
   "calc_result_buy": "💱 Buy TCL with {value} USDC ($)\n💲 Estimated TCL received: {boughtTCL}\n⚖️ Average paid price: {avgPrice} USDC/TCL\n💥 Price Impact: {priceImpact}%\n📈 Estimated Increase: + {pctChange}%\n\n📊 Estimated TCL final price: {newPrice} USDC ($)\n🔄 Estimated Supply After Transaction:\n• TCL in Pool: {newTCL}\n• USDC in Pool: {newUSDC}",
 
-  "calc_result_sell": "💱 Sell {value} TCL\n💲 Estimated USDC ($) received: {receivedUSDC}\n⚖️ Average received price: {avgPrice} USDC/TCL\n💥 Price Impact: {priceImpact}%\n📉 Estimated Decrease: {pctChange}%\n\n📊 Estimated TCL final price: {newPrice} USDC ($)\n🔄 Estimated Supply After Transaction:\n• TCL in Pool: {newTCL}\n• USDC in Pool: {newUSDC}"
+  "calc_result_sell": "💱 Sell {value} TCL\n💲 Estimated USDC ($) received: {receivedUSDC}\n⚖️ Average received price: {avgPrice} USDC/TCL\n💥 Price Impact: {priceImpact}%\n📉 Estimated Decrease: {pctChange}%\n\n📊 Estimated TCL final price: {newPrice} USDC ($)\n🔄 Estimated Supply After Transaction:\n• TCL in Pool: {newTCL}\n• USDC in Pool: {newUSDC}",
+
+
+  
+  "events_title": "📅 Weekly Events",
+  "events_desc": "Data is live – synced with The Cursed Land in-game Weekly Events",
+  "events_loading": "⏳ Loading events...",
+  "events_none": "⚠️ No events scheduled.",
+  "events_error": "❌ Error loading events.",
+  "events_active": "🟢 Active Now – ends in {h}h {m}m",
+  "events_soon": "🟡 Starts in {h}h {m}m",
+  "events_later": "🟠 Starts in {h}h {m}m",
+  "events_ended": "🔴 Event Ended",
+  "events_duration": "⏱ Duration: {duration}"
 }
