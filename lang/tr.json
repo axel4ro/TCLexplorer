@@ -46,13 +46,13 @@
   "events_ended": "🔴 Etkinlik sona erdi",
   "events_duration": "⏱ Süre: {duration}",
   "days": [
-    "Pazar",
     "Pazartesi",
     "Salı",
     "Çarşamba",
     "Perşembe",
     "Cuma",
-    "Cumartesi"
+    "Cumartesi",
+    "Pazar",
   ],
   "events": {
     "Item Drop": {
