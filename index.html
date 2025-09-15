@@ -404,24 +404,19 @@ button:hover { opacity: 0.9; }
   top: 60px; /* cât are nav-ul */
   left: 0;
   width: 100%;
-  height: calc(100% - 60px);
+  height: calc(100% - 60px); /* tot spațiul sub navbar */
   margin: 0;
   padding: 0;
   z-index: 500;
   background: var(--bg-dark);
+  overflow: hidden; /* ascunde scroll-ul */
 }
 
-@media (max-width: 768px) {
-  #landerIframe.fullpage {
-    overflow: hidden;
-  }
-
-  #landerIframe.fullpage iframe {
-    width: 100% !important;    /* 🔥 full lățime */
-    height: 100% !important;   /* 🔥 full înălțime */
-    border: none;
-    transform: none !important; /* 🔥 elimină micșorarea */
-  }
+#landerIframe.fullpage iframe {
+  width: 100% !important;   /* ocupă 100% pe orizontală */
+  height: 100% !important;  /* ocupă 100% pe verticală */
+  border: none;
+  transform: none !important; /* fără micșorare */
 }
 
 
@@ -1304,4 +1299,5 @@ overlayImg?.addEventListener("wheel", e => {
 </script>
 </body>
 </html>
+
 
