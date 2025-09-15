@@ -672,17 +672,14 @@ button:hover { opacity: 0.9; }
 
 <!-- Events -->
 <div id="events" class="section-page">
-  <h2>📅 Weekly Events</h2>
-  <small style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
-    Data is live – synced with <code>The Cursed Land in-game Weekely Events</code>
-  </small>
+  <h2 data-i18n="events_title"></h2>
+  <small style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;" data-i18n="events_desc"></small>
 
-  <div id="eventContainer">
-    ⏳ Loading events...
-  </div>
+  <div id="eventContainer" data-i18n="events_loading"></div>
 
   <div style="margin-top:15px; display:flex; gap:6px; flex-wrap:wrap;" id="eventButtons"></div>
 </div>
+
 
 
 <!-- TCL Token Chart -->
@@ -884,10 +881,15 @@ async function loadEvents() {
     const res = await fetch(EVENTS_URL + "?t=" + Date.now());
     eventsData = await res.json();
     const todayIndex = new Date().getUTCDay(); // 0=Sun, 1=Mon
-    const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    currentDay = weekdays[todayIndex];
-    renderDayButtons(currentDay);
-    showEventsForDay(currentDay);
+const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+currentDay = weekdays[todayIndex];
+renderDayButtons(currentDay);
+
+
+	// 🔥 forțăm să apară direct evenimentele zilei curente
+	document.getElementById("eventContainer").innerHTML = "";
+	showEventsForDay(currentDay);
+
   } catch (err) {
     document.getElementById("eventContainer").innerHTML = "❌ Error loading events.";
     console.error("Events load error", err);
@@ -896,18 +898,26 @@ async function loadEvents() {
 
 // Butoane zile
 function renderDayButtons(activeDay) {
-  const weekdays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const baseDays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const translatedDays = translations["days"] || baseDays;
+
   let html = "";
-  weekdays.forEach(day => {
+  baseDays.forEach((day, i) => {
+    const label = translatedDays[i]; // ce afișăm pe buton
     const isActive = day === activeDay;
+
     html += `<button onclick="showEventsForDay('${day}')"
                 style="flex:1; padding:6px; border-radius:6px; border:none; cursor:pointer; font-weight:600;
                        background:${isActive ? '#28a745' : '#007bff'}; color:white;">
-                ${day}
+                ${label}
              </button>`;
   });
+
   document.getElementById("eventButtons").innerHTML = html;
 }
+
+
+
 
 // Afișare evenimente
 function showEventsForDay(day) {
@@ -915,13 +925,16 @@ function showEventsForDay(day) {
   renderDayButtons(day);
 
   const container = document.getElementById("eventContainer");
+  container.innerHTML = "";
   const events = eventsData[day] || [];
   if (events.length === 0) {
-    container.innerHTML = "<p>No events scheduled.</p>";
+    container.innerHTML = `<p>${t("events_none")}</p>`;
     return;
   }
 
-  const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+
   let now = new Date();
   let html = "";
 
@@ -930,7 +943,6 @@ function showEventsForDay(day) {
     let [eh, em] = ev.end.split(":").map(Number);
 
     let targetIndex = weekdays.indexOf(day);
-
     let targetDate = new Date(Date.UTC(
       now.getUTCFullYear(),
       now.getUTCMonth(),
@@ -952,23 +964,22 @@ function showEventsForDay(day) {
     let borderClass = "";
 
     if (now >= start && now <= end) {
-      // 🟢 Event is ACTIVE
       let diff = Math.floor((end - now) / 60000);
       let h = Math.floor(diff / 60), m = diff % 60;
-      statusText = `🟢 Active Now – ends in ${h}h ${m}m`;
+      statusText = t("events_active", { h, m });
       borderClass = "event-active";
     } else {
       let diff = Math.floor((start - now) / 60000);
       let h = Math.floor(diff / 60), m = diff % 60;
 
       if (diff <= 0) {
-        statusText = "🔴 Event Ended";
+        statusText = t("events_ended");
         borderClass = "event-expired";
       } else if (diff <= 24 * 60) {
-        statusText = `🟡 Starts in ${h}h ${m}m`;
+        statusText = t("events_soon", { h, m });
         borderClass = "event-soon";
       } else {
-        statusText = `🟠 Starts in ${h}h ${m}m`;
+        statusText = t("events_later", { h, m });
       }
     }
 
@@ -976,12 +987,16 @@ function showEventsForDay(day) {
     let durH = Math.floor(durMs / 3600000);
     let durM = (durMs % 3600000) / 60000;
 
+    // 🔥 traducere nume + descriere
+    let evName = translations["events"]?.[ev.name]?.name || ev.name;
+    let evDesc = translations["events"]?.[ev.name]?.desc || ev.description;
+
     html += `
       <div class="event-card ${borderClass}">
-        <div class="event-title">${ev.name}</div>
-        <div class="event-desc">${ev.description}</div>
+        <div class="event-title">${evName}</div>
+        <div class="event-desc">${evDesc}</div>
         <div class="event-status">
-          ${statusText} • ⏱ Duration: ${durH>0 ? durH+'h ' : ''}${durM>0 ? durM+'m' : ''}
+          ${statusText} • ${t("events_duration", { duration: (durH>0 ? durH+'h ' : '')+(durM>0 ? durM+'m' : '') })}
         </div>
       </div>`;
   });
@@ -1310,6 +1325,11 @@ function applyTranslations() {
   if (document.getElementById("resultBox").innerHTML.trim() !== "") {
     calculate();
   }
+
+  // 🔥 forțăm refresh pentru evenimente (să nu rămână pe Loading...)
+  if (currentDay) {
+    showEventsForDay(currentDay);
+  }
 }
 
 
@@ -1324,6 +1344,7 @@ window.addEventListener("DOMContentLoaded", () => {
     loadTranslations(currentLang);
   }
 });
+
 
 
 
