@@ -53,27 +53,27 @@
   ],
   "events": {
     "Item Drop": {
-      "name": "Item Drop",
-      "desc": "Pe durata evenimentului, monștrii au o mică șansă să lase mai multe iteme!"
+      "name": "Ploaie de Obiecte",
+      "desc": "Pe durata evenimentului, monștrii au șansa să lase mai multe obiecte decât de obicei!"
     },
     "Experience": {
-      "name": "Experiență",
+      "name": "Boost de Experiență",
       "desc": "Primești +20% EXP de la monștri pe durata evenimentului – farmează deștept, crești rapid!"
     },
     "Fishing Clam": {
       "name": "Scoici la Pescuit",
-      "desc": "Pe durata evenimentului, ai șanse mai mari să prinzi scoici – pescuiește cu atenție!"
+      "desc": "Pe durata evenimentului, ai șanse să prinzi scoici – pescuiește cu atenție!"
     },
     "Moonlight Treasure": {
-      "name": "Comoara Lunii",
-      "desc": "Pe durata evenimentului, monștrii au o mică șansă să lase Cufere Moonlight!"
+      "name": "Cufere Clar de Lună",
+      "desc": "În timpul evenimentului, fiecare luptă cu monștrii îți poate aduce un Cufăr Clar de Lună, plin de comori ascunse!"
     },
     "Forge Boost": {
-      "name": "Boost de Forjă",
+      "name": "Boost la Plusat",
       "desc": "Pe durata evenimentului, ai +10% șansă bonus la îmbunătățirea itemelor – doar la NPC-ul Fierar!"
     },
     "Crystals Frenzy": {
-      "name": "Frenezia Cristalelor",
+      "name": "Ploaie de Cristale",
       "desc": "Lumea este instabilă – pe durata evenimentului, cristalele apar nebunește la fiecare 5 minute!"
     }
   }
