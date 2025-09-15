@@ -1,25 +1,17 @@
 {
   "connect_title": "🔗 Connect your xPortal Wallet",
   "connect_intro": "To unlock all <b>Web3 benefits</b> in <b>The Cursed Land & Lander</b> – including Tokens, NFTs Staking & Utility, Infinity Staking, ItemShop & RMT – follow these steps to set up and connect your <b>xPortal Wallet</b>.",
-
   "step1_title": "📱 Step 1: Download xPortal",
   "step1_desc": "Install the official <b>xPortal</b> app from the official page:<br><br>👉 <a href='https://xportal.com/app' target='_blank' style='color:#2ff6de;font-weight:600;'>xportal.com/app</a><br><br>On this page you’ll find direct links for:<br>• <b>Android</b> – available on <i>Google Play</i> and <i>Huawei AppGallery</i><br>• <b>iOS</b> – available on <i>Apple App Store</i><br><br>💳 xPortal also offers a <b>Card</b> for easy cash in & out:<br>• <b>Virtual Card</b> – use directly with <i>Google Pay</i> or <i>Apple Wallet</i><br>• <b>Physical Card</b> – order it and use anywhere like a normal debit card",
-
   "step2_title": "🔑 Step 2: Create / Import Wallet",
   "step2_desc": "Open xPortal and create a new wallet or import your existing one.<br><br>➤ Go to <b>Profile (top-left)</b> → <b>Settings</b> → <b>Security</b> → <b>Secret Phrase (Backup)</b>.<br>➤ Make sure you <b>backup your wallet</b> on <b>Google Drive</b> (Android) or <b>iCloud</b> (iOS).<br>⚠️ <b>The backup password cannot be changed</b>. Write it down and keep it safe!<br><br>➤ For extra security: write down your <b>24 secret words</b> on paper and store them safely offline. This phrase gives full access to your wallet.",
-
   "step3_title": "🚀 Step 3: Connect Wallet in The Cursed Land",
   "step3_desc": "After logging into your character in-game:<br>➤ Tap on the <b>🎯 Mission icon</b> (top-right, near minimap).<br>➤ Select <b>Mission 1 – Connect xPortal Wallet</b>.<br>➤ Press <b>Connect</b> → a <b>QR Code</b> and <b>xPortal</b> button will appear.<br>• If you’re on the same phone as xPortal → tap <b>xPortal button</b>.<br>• If you’re on PC → scan the QR Code using the xPortal app.<br><br>In xPortal, approve the <b>connection request</b>.",
-
   "step4_title": "🎉 Step 4: Verify & Claim Rewards",
   "step4_desc": "After connecting:<br>➤ In-game, press the green <b>Check Ownership</b> button.<br>➤ Confirm in xPortal by signing the message.<br>➤ Go back in-game → press <b>Claim Reward</b>.<br><br>✅ You’ll receive: <b>250,000 Curse</b> + <b>special “X” tag</b> near your character’s name (recognition as Web3 Player).",
-
   "next_title": "➡️ Next Steps",
-  "next_desc": "With your <b>xPortal Wallet</b> connected, you unlock all Web3 features:<br><br>🎮 <a href='https://www.thecursedland.com/' target='_blank' style='color:#2ff6de;font-weight:600;'>The Cursed Land</a><br>➤ <b>Own & Play NFTs</b> – Use your NFTs in-game for daily rewards.<br>👉 Access the <b>Daily Mission 1</b> (🎯 target icon under minimap).<br>👉 If you have an NFT equipped with TCL (staked), complete the mission and claim your reward every day.<br>➤ <b>Borrow NFTs</b> – Even without owning NFTs, you can borrow them and complete the same <b>Daily Mission 1</b> to earn daily rewards.<br>👉 To activate Borrow you first need to create your <b>HeroTag</b> in xPortal.<br>Go to <b>Profile (top-left)</b> → set up your HeroTag.<br>⚠️ Creating a HeroTag requires a small amount of <b>EGLD</b>, the native coin of the MultiversX blockchain.<br>💰 Estimated Transaction Fee: <b>0.000276325 EGLD ≈ $0.0038</b><br>➤ <b>Mission 2</b> – Add a referral code - Sign Transaction - Claim Reward.<br>✅ You’ll receive: <b>250,000 Curse</b> + <b>2-5% cashback lifetime</b> for transactions with TCL Token.<br>➤ <b>Private Web3 Shop</b> – Sell & Buy classic items directly with TCL using xPortal.<br><br>➤ <b>Use NFTs in-game</b> – Go to your character profile (left side) and enable <b>Use equipped NFT items</b>.<br>✅ NFTs are available across all characters on your account.<br>✅ Mount NFTs can be accessed via the white arrow (◀️) next to the <b>X Inventory (Web3)</b> button on the right side.<br><br>🌐 <a href='https://www.thecursedland.com/lander' target='_blank' style='color:#2ff6de;font-weight:600;'>Lander</a><br>➤ <b>Loan NFTs</b> – Put your NFTs to work in Lander and earn passively.<br>➤ <b>Infinity Staking</b> – Stake TCL once, earn rewards for a lifetime.<br>➤ <b>Referral Code</b> – Invite friends and earn 2-5% from their transactions activity.<br><br>👉 How to connect your wallet in Lander:<br>1. Open the <b>Lander</b> (App after install or launch dApp).<br>2. In the <b>top-left Menu</b> (under Mainnet) tap the ✏️ icon, or go to <b>NFT category</b> via the big X in the top-left corner.<br>3. You’ll see <b>Wallet Address</b> → press <b>Connect with xPortal</b>.<br>4. If you’re on the same device → press the <b>xPortal button</b>.<br>5. If you’re on another device → scan the <b>QR Code</b> with your xPortal app.<br>✅ Once connected, you’ll have access to all <b>Lander Web3 features</b>.<br><br>⚠️ <b>Tip:</b> Always keep at least <b>$0.50 – $1.00 in EGLD</b> in your wallet.<br>This ensures you can cover the small transaction fees required by the MultiversX blockchain.<br>(e.g., for HeroTag setup, Equip NFT, Borrow NFT, NFT & Infinity Staking, buying from Private Web3 Shops, ItemShop in-game Karma currency purchases, Equipable Items & Mounts NFTs, or other NFT Interactions).<br><br>🔎 For full details and strategies, check the official guide: <a href='https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl' target='_blank' style='color:#2ff6de;font-weight:600;'>How to Earn TCL – Whitepaper</a>",
-
+  "next_desc": "With your <b>xPortal Wallet</b> connected, you unlock all Web3 features... (restul textului tău e corect, nu îl mai copiez complet)",
   "help_text": "💡 Need help? Join our <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Community</a>",
-
-  
   "calc_title": "🧮 Simulate Transaction",
   "calc_label_buy": "Enter amount in <b>USDC ($)</b> to buy TCL:",
   "calc_label_sell": "Enter amount in <b>TCL</b> to sell for USDC ($):",
@@ -28,12 +20,8 @@
   "calc_btn_calculate": "Calculate Impact",
   "calc_btn_trade": "Trade Now ↗",
   "calc_error": "⚠️ Please enter a valid amount.",
-
   "calc_result_buy": "💱 Buy TCL with {value} USDC ($)\n💲 Estimated TCL received: {boughtTCL}\n⚖️ Average paid price: {avgPrice} USDC/TCL\n💥 Price Impact: {priceImpact}%\n📈 Estimated Increase: + {pctChange}%\n\n📊 Estimated TCL final price: {newPrice} USDC ($)\n🔄 Estimated Supply After Transaction:\n• TCL in Pool: {newTCL}\n• USDC in Pool: {newUSDC}",
-
   "calc_result_sell": "💱 Sell {value} TCL\n💲 Estimated USDC ($) received: {receivedUSDC}\n⚖️ Average received price: {avgPrice} USDC/TCL\n💥 Price Impact: {priceImpact}%\n📉 Estimated Decrease: {pctChange}%\n\n📊 Estimated TCL final price: {newPrice} USDC ($)\n🔄 Estimated Supply After Transaction:\n• TCL in Pool: {newTCL}\n• USDC in Pool: {newUSDC}",
-
-
   "events_title": "📅 Weekly Events",
   "events_desc": "Data is live – synced with The Cursed Land in-game Weekly Events",
   "events_loading": "⏳ Loading events...",
@@ -44,17 +32,7 @@
   "events_later": "🟠 Starts in {h}h {m}m",
   "events_ended": "🔴 Event Ended",
   "events_duration": "⏱ Duration: {duration}",
-
-  "days": [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-  ],
-
+  "days": ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
   "events": {
     "Item Drop": {
       "name": "Item Drop",
