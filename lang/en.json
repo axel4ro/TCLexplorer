@@ -35,7 +35,7 @@
   "calc_result_sell": "💱 Sell {value} TCL\n💲 Estimated USDC ($) received: {receivedUSDC}\n⚖️ Average received price: {avgPrice} USDC/TCL\n💥 Price Impact: {priceImpact}%\n📉 Estimated Decrease: {pctChange}%\n\n📊 Estimated TCL final price: {newPrice} USDC ($)\n🔄 Estimated Supply After Transaction:\n• TCL in Pool: {newTCL}\n• USDC in Pool: {newUSDC}",
 
 
-  
+
   "events_title": "📅 Weekly Events",
   "events_desc": "Data is live – synced with The Cursed Land in-game Weekly Events",
   "events_loading": "⏳ Loading events...",
@@ -45,5 +45,42 @@
   "events_soon": "🟡 Starts in {h}h {m}m",
   "events_later": "🟠 Starts in {h}h {m}m",
   "events_ended": "🔴 Event Ended",
-  "events_duration": "⏱ Duration: {duration}"
+  "events_duration": "⏱ Duration: {duration}",
+
+  "days": [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ],
+
+  "events": {
+    "Item Drop": {
+      "name": "Item Drop",
+      "desc": "During the event, mobs have a small chance to drop more items!"
+    },
+    "Experience": {
+      "name": "Experience",
+      "desc": "Earn +20% EXP from monsters during the event – grind smart, level hard!"
+    },
+    "Fishing Clam": {
+      "name": "Fishing Clam",
+      "desc": "During the event, you’ll have a higher chance to catch Clams – cast wisely!"
+    },
+    "Moonlight Treasure": {
+      "name": "Moonlight Treasure",
+      "desc": "During the event, mobs have a small chance to drop Moonlight Chests!"
+    },
+    "Forge Boost": {
+      "name": "Forge Boost",
+      "desc": "During the event, enjoy a +10% bonus chance to upgrade your items – only at the Blacksmith NPC!"
+    },
+    "Crystals Frenzy": {
+      "name": "Crystals Frenzy",
+      "desc": "The world is unstable – during the event, crystals are spawning like crazy every 5 minutes!"
+    }
+  }
 }
