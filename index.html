@@ -201,17 +201,39 @@ body {
 .event-status.upcoming { border-left: 6px solid #facc15; }
 .event-expired { border-left: 6px solid #ef4444 !important; }
 
-/* Tabele */
+/* Stil pentru tabelul de staking */
 #stakingTable {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
+  border: 2px solid #444; /* grosime pe marginea tabelului */
 }
-#stakingTable th, #stakingTable td {
-  padding: 6px;
+
+#stakingTable th, 
+#stakingTable td {
+  padding: 8px;
   text-align: center;
   white-space: nowrap;
+  border-right: 1px solid #555; /* linii subțiri verticale */
 }
+
+#stakingTable th:last-child,
+#stakingTable td:last-child {
+  border-right: none; /* scoatem linia după ultima coloană */
+}
+
+#stakingTable thead tr {
+  border-bottom: 3px solid #007bff; /* linie groasă sub header */
+}
+
+#stakingTable tbody tr {
+  border-bottom: 2px solid #333; /* linii groase între rânduri */
+}
+
+#stakingTable tbody tr:last-child {
+  border-bottom: none; /* scoatem ultima linie de jos */
+}
+
 
 /* Titluri și secțiuni */
 h2 {
@@ -1103,16 +1125,21 @@ const top100 = filtered.slice(0, 100);
 
 let html = "";
 top100.forEach(r => {
-  let shortAddr = r.addr.slice(0, 6) + ".........." + r.addr.slice(-4);
   html += "<tr>" +
     "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
-    "<td style='padding:6px;'>" + shortAddr + "</td>" +
+    "<td style='padding:6px; display:flex; align-items:center; gap:6px;'>" +
+  "<span style='font-family:monospace;'>" + r.addr + "</span>" +
+  "<button onclick=\"copyAddr('" + r.addr + "', event)\" " +
+    "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>Copy</button>" +
+"</td>" +
+
     "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
     "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
     "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
     "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
   "</tr>";
 });
+
 
 body.innerHTML = html;
 
@@ -1345,8 +1372,19 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+function copyAddr(addr, event) {
+  navigator.clipboard.writeText(addr).then(() => {
+    const btn = event.target;
+    const oldText = btn.textContent;
+    btn.textContent = "✅ Copied!";
+    btn.style.background = "#10b981";
 
-
+    setTimeout(() => {
+      btn.textContent = oldText;
+      btn.style.background = "#28a745";
+    }, 2000);
+  });
+}
 
 </script>
 </body>
