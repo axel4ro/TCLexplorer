@@ -181,6 +181,14 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+/* Buton Info din card */
+.event-card button {
+  transition: background 0.2s;
+}
+.event-card button:hover {
+  background:#0b5ed7;
+}
+
 .event-title {
   font-size: 16px;
   font-weight: 700;
@@ -652,11 +660,6 @@ button:hover { opacity: 0.9; }
   </small>
 </div>
 
-<!-- Overlay pentru zoom -->
-<div id="overlay" class="overlay" onclick="closeImage()">
-  <span class="close">&times;</span>
-  <img id="overlayImg" class="overlay-img" />
-</div>
 
 
 
@@ -784,7 +787,11 @@ button:hover { opacity: 0.9; }
   <small style="display:block;margin-top:20px;color:#6b7280;" data-i18n="help_text"></small>
 </div>
 
-
+<!-- Overlay pentru zoom -->
+<div id="overlay" class="overlay" onclick="closeImage()">
+  <span class="close">&times;</span>
+  <img id="overlayImg" class="overlay-img" />
+</div>
 <script>
 function openXPortal() {
   window.open("https://xportal.com/app", "_blank");
@@ -897,20 +904,22 @@ const EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
 let eventsData = {};
 let currentDay = null;
 
-// Încarcă events din JSON
+const weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+// ziua curentă în UTC, stil european (luni = 0, duminică = 6)
+function getTodayIndex() {
+  return (new Date().getUTCDay() + 6) % 7;
+}
+
+// ===== Încarcă events din JSON =====
 async function loadEvents() {
   try {
     const res = await fetch(EVENTS_URL + "?t=" + Date.now());
     eventsData = await res.json();
-    const todayIndex = new Date().getUTCDay(); // 0=Sun, 1=Mon
-const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-currentDay = weekdays[todayIndex];
-renderDayButtons(currentDay);
 
-
-	// 🔥 forțăm să apară direct evenimentele zilei curente
-	document.getElementById("eventContainer").innerHTML = "";
-	showEventsForDay(currentDay);
+    currentDay = weekdays[getTodayIndex()];
+    renderDayButtons(currentDay);
+    showEventsForDay(currentDay);
 
   } catch (err) {
     document.getElementById("eventContainer").innerHTML = "❌ Error loading events.";
@@ -918,14 +927,13 @@ renderDayButtons(currentDay);
   }
 }
 
-// Butoane zile
+// ===== Butoane zile =====
 function renderDayButtons(activeDay) {
-  const baseDays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const translatedDays = translations["days"] || baseDays;
-
+  const translatedDays = translations["days"] || weekdays;
   let html = "";
-  baseDays.forEach((day, i) => {
-    const label = translatedDays[i]; // ce afișăm pe buton
+
+  weekdays.forEach((day, i) => {
+    const label = translatedDays[i];
     const isActive = day === activeDay;
 
     html += `<button onclick="showEventsForDay('${day}')"
@@ -938,10 +946,7 @@ function renderDayButtons(activeDay) {
   document.getElementById("eventButtons").innerHTML = html;
 }
 
-
-
-
-// Afișare evenimente
+// ===== Afișare evenimente =====
 function showEventsForDay(day) {
   currentDay = day;
   renderDayButtons(day);
@@ -949,13 +954,11 @@ function showEventsForDay(day) {
   const container = document.getElementById("eventContainer");
   container.innerHTML = "";
   const events = eventsData[day] || [];
+
   if (events.length === 0) {
     container.innerHTML = `<p>${t("events_none")}</p>`;
     return;
   }
-
-const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-
 
   let now = new Date();
   let html = "";
@@ -965,16 +968,21 @@ const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","S
     let [eh, em] = ev.end.split(":").map(Number);
 
     let targetIndex = weekdays.indexOf(day);
-    let targetDate = new Date(Date.UTC(
+    let dayOffset = (targetIndex - getTodayIndex() + 7) % 7;
+
+    let start = new Date(Date.UTC(
       now.getUTCFullYear(),
       now.getUTCMonth(),
-      now.getUTCDate() - now.getUTCDay() + targetIndex,
+      now.getUTCDate() + dayOffset,
       sh, sm
     ));
 
-    let start = new Date(targetDate);
-    let end = new Date(targetDate);
-    end.setUTCHours(eh, em, 0, 0);
+    let end = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + dayOffset,
+      eh, em
+    ));
 
     if (end <= start) end.setUTCDate(end.getUTCDate() + 1);
     if (end < now) {
@@ -982,9 +990,9 @@ const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","S
       end.setUTCDate(end.getUTCDate() + 7);
     }
 
+    // ===== Status =====
     let statusText = "";
     let borderClass = "";
-
     if (now >= start && now <= end) {
       let diff = Math.floor((end - now) / 60000);
       let h = Math.floor(diff / 60), m = diff % 60;
@@ -1005,26 +1013,39 @@ const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","S
       }
     }
 
+    // ===== Durată =====
     let durMs = end - start;
     let durH = Math.floor(durMs / 3600000);
     let durM = (durMs % 3600000) / 60000;
 
-    // 🔥 traducere nume + descriere
     let evName = translations["events"]?.[ev.name]?.name || ev.name;
     let evDesc = translations["events"]?.[ev.name]?.desc || ev.description;
+    let imageName = ev.image;
 
     html += `
-      <div class="event-card ${borderClass}">
-        <div class="event-title">${evName}</div>
-        <div class="event-desc">${evDesc}</div>
-        <div class="event-status">
-          ${statusText} • ${t("events_duration", { duration: (durH>0 ? durH+'h ' : '')+(durM>0 ? durM+'m' : '') })}
+      <div class="event-card ${borderClass}" style="position:relative;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="event-title">${evName}</div>
+            <div class="event-desc">${evDesc}</div>
+            <div class="event-status">
+              ${statusText} • ${t("events_duration", { duration: (durH>0 ? durH+'h ' : '')+(durM>0 ? durM+'m' : '') })}
+            </div>
+          </div>
+          ${ imageName ? 
+             `<button 
+                onclick="openImage('https://axel4ro.github.io/TCLexplorer/images/${imageName}')"
+                style="background:#0d6efd; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px; margin-left:8px;">
+                ℹ️ Info
+              </button>` 
+             : `` }
         </div>
       </div>`;
   });
 
   container.innerHTML = html;
 }
+
   // ===== Data Fetch =====
   async function fetchPoolData() {
     try {
@@ -1241,6 +1262,12 @@ window.onload = function() {
   fetchPoolData();
   fetchGeckoAthAtl();
   updateStakingLeaderboard();
+  const weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+// ziua curentă în UTC, stil european (luni = 0)
+function getTodayIndex() {
+  return (new Date().getUTCDay() + 6) % 7;
+}
   loadEvents(); // ✅ încarcă și events
 
   setInterval(function() {
@@ -1288,6 +1315,7 @@ function openImage(src) {
   overlayImg.src = src;
   overlayImg.style.transform = "scale(1)";
 }
+
 
 function closeImage() {
   document.getElementById("overlay").style.display = "none";
@@ -1392,4 +1420,3 @@ function copyAddr(addr, event) {
 </script>
 </body>
 </html>
-
