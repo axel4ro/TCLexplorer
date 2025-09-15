@@ -36,15 +36,53 @@
 
 
 
+ {
   "events_title": "📅 Haftalık Etkinlikler",
-  "events_desc": "Veriler canlı – The Cursed Land oyun içi Haftalık Etkinliklerle senkronize",
+  "events_desc": "Canlı veriler – The Cursed Land oyunundaki haftalık etkinliklerle senkronize",
   "events_loading": "⏳ Etkinlikler yükleniyor...",
   "events_none": "⚠️ Planlanmış etkinlik yok.",
   "events_error": "❌ Etkinlikler yüklenemedi.",
-  "events_active": "🟢 Şu anda aktif – {h}s {m}d içinde bitiyor",
-  "events_soon": "🟡 {h}s {m}d içinde başlıyor",
-  "events_later": "🟠 {h}s {m}d içinde başlıyor",
+  "events_active": "🟢 Şu anda aktif – {h}s {m}d içinde bitecek",
+  "events_soon": "🟡 {h}s {m}d içinde başlayacak",
+  "events_later": "🟠 {h}s {m}d içinde başlayacak",
   "events_ended": "🔴 Etkinlik sona erdi",
-  "events_duration": "⏱ Süre: {duration}"
+  "events_duration": "⏱ Süre: {duration}",
 
+  "days": [
+    "Pazar",
+    "Pazartesi",
+    "Salı",
+    "Çarşamba",
+    "Perşembe",
+    "Cuma",
+    "Cumartesi"
+  ],
+
+  "events": {
+    "Item Drop": {
+      "name": "Eşya Düşüşü",
+      "desc": "Etkinlik süresince yaratıkların daha fazla eşya düşürme ihtimali var!"
+    },
+    "Experience": {
+      "name": "Deneyim",
+      "desc": "Etkinlik süresince canavarlardan +%20 EXP kazan – akıllı kas, hızlı seviye atla!"
+    },
+    "Fishing Clam": {
+      "name": "Balıkçılık İstiridyesi",
+      "desc": "Etkinlik süresince istiridye yakalama şansın artar – dikkatli ol!"
+    },
+    "Moonlight Treasure": {
+      "name": "Ay Işığı Hazinesi",
+      "desc": "Etkinlik süresince yaratıkların Moonlight Sandıkları düşürme şansı var!"
+    },
+    "Forge Boost": {
+      "name": "Demirci Güçlendirmesi",
+      "desc": "Etkinlik süresince eşya geliştirme şansına +%10 bonus – sadece Demirci NPC’de!"
+    },
+    "Crystals Frenzy": {
+      "name": "Kristal Çılgınlığı",
+      "desc": "Dünya dengesiz – etkinlik boyunca her 5 dakikada çılgınca kristaller ortaya çıkıyor!"
+    }
+  }
 }
+
