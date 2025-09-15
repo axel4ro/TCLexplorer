@@ -30,6 +30,18 @@
 
   "calc_result_buy": "💱 Cumpără TCL cu {value} USDC ($)\n💲 Estimare TCL primit: {boughtTCL}\n⚖️ Preț mediu plătit: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📈 Creștere estimată: + {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}",
 
-  "calc_result_sell": "💱 Vinde {value} TCL\n💲 Estimare USDC ($) primit: {receivedUSDC}\n⚖️ Preț mediu obținut: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📉 Scădere estimată: {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}"
+  "calc_result_sell": "💱 Vinde {value} TCL\n💲 Estimare USDC ($) primit: {receivedUSDC}\n⚖️ Preț mediu obținut: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📉 Scădere estimată: {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}",
 
+  "events_title": "📅 Evenimente Săptămânale",
+  "events_desc": "Date live – sincronizate cu Evenimentele din joc - The Cursed Land",
+  "events_loading": "⏳ Se încarcă evenimentele...",
+  "events_none": "⚠️ Niciun eveniment programat.",
+  "events_error": "❌ Eroare la încărcarea evenimentelor.",
+  "events_active": "🟢 Activ acum – se termină în {h}h {m}m",
+  "events_soon": "🟡 Începe în {h}h {m}m",
+  "events_later": "🟠 Începe în {h}h {m}m",
+  "events_ended": "🔴 Eveniment încheiat",
+  "events_duration": "⏱ Durată: {duration}"
+
+  
 }
