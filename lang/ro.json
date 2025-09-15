@@ -43,13 +43,13 @@
   "events_ended": "🔴 Eveniment încheiat",
   "events_duration": "⏱ Durată: {duration}",
   "days": [
-    "Duminică",
     "Luni",
     "Marți",
     "Miercuri",
     "Joi",
     "Vineri",
-    "Sâmbătă"
+    "Sâmbătă",
+    "Duminică",
   ],
   "events": {
     "Item Drop": {
