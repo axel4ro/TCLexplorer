@@ -399,6 +399,34 @@ button:hover { opacity: 0.9; }
   }
 }
 
+#landerIframe.fullpage {
+  position: fixed;
+  top: 60px; /* cât are nav-ul */
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  margin: 0;
+  padding: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+}
+
+@media (max-width: 768px) {
+  #landerIframe.fullpage {
+    overflow: hidden;   /* ascunde scroll-ul */
+  }
+
+  #landerIframe.fullpage iframe {
+    width: 100%;              /* ocupa 100% din container */
+    height: 100%;
+    border: none;
+    transform: scale(0.85);   /* micșorare la ~85% */
+    transform-origin: top;    /* aliniere sus */
+  }
+}
+
+
+
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -457,12 +485,17 @@ button:hover { opacity: 0.9; }
 <div id="menuPanel" class="menu-panel">
   <div class="menu-buttons">
     <button onclick="showPage('token')" id="btn-token" class="active">🪙 Token</button>
+	<button onclick="showPage('connectXportal')" id="btn-connectXportal">🔗 Connect xPortal</button>
+	<button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
     <button onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
-    <button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
     <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
     <button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
     <button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
     <button onclick="showPage('events')" id="btn-events">📅 Events</button>
+	<button onclick="showPage('landerIframe')" id="btn-landerIframe">🚀 Lander</button>
+	<button onclick="openXPortal()" id="btn-xportal">📱 xPortal</button>
+
+
     <!-- poți adăuga oricâte vrei -->
   </div>
 </div>
@@ -520,7 +553,7 @@ button:hover { opacity: 0.9; }
 <div class="section">
   <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong>
   <div class="stats-row init-liq">
-	<div class="stat"><div class="stat-top"><span>Initial Price</span></div><div class="stat-value">0.006 $</div></div>
+  <div class="stat"><div class="stat-top"><span>Initial Price</span></div><div class="stat-value">0.006 $</div></div>
     <div class="stat"><div class="stat-top"><span>TCL Supply</span></div><div class="stat-value">4,000,000</div></div>
     <div class="stat"><div class="stat-top"><span>USDC Supply</span></div><div class="stat-value">25,000 $</div></div>
   </div>
@@ -639,8 +672,139 @@ button:hover { opacity: 0.9; }
     </tbody>
   </table>
 </div>
+<!-- Lander -->
+<div id="landerIframe" class="section-page">
+<iframe 
+  src="https://www.thecursedland.com/lander?mobileSite=1"
+  style="width:100%;height:100%;border:0;">
+</iframe>
+</div>
+
+<!-- Connect xPortal Tutorial -->
+<div id="connectXportal" class="section-page">
+  <h2>🔗 Connect your xPortal Wallet</h2>
+  <p style="color:#a1a1aa; font-size:15px; margin-bottom:15px;">
+    To unlock all <b>Web3 benefits</b> in <b>The Cursed Land</b> – including Tokens, NFTs, Infinity Staking, ItemShop & RMT – follow these steps to set up and connect your <b>xPortal Wallet</b>.
+  </p>
+
+  <!-- Step 1 -->
+<div class="event-card">
+  <div class="event-title">📱 Step 1: Download xPortal</div>
+  <div class="event-desc">
+    Install the official <b>xPortal</b> app from the official page:<br><br>
+    👉 <a href="https://xportal.com/app" target="_blank" style="color:#2ff6de;font-weight:600;">
+      xportal.com/app
+    </a>
+    <br><br>
+    On this page you’ll find direct links for:<br>
+    • <b>Android</b> – available on <i>Google Play</i> and <i>Huawei AppGallery</i><br>
+    • <b>iOS</b> – available on <i>Apple App Store</i>
+  </div>
+</div>
+
+
+  <!-- Step 2 -->
+  <div class="event-card">
+    <div class="event-title">🔑 Step 2: Create / Import Wallet</div>
+    <div class="event-desc">
+      Open xPortal and create a new wallet or import your existing one.  
+      <br><br>
+      ➤ Go to <b>Profile (top-left)</b> → <b>Settings</b> → <b>Security</b> → <b>Secret Phrase (Backup)</b>.  
+      <br>
+      ➤ Make sure you <b>backup your wallet</b> on <b>Google Drive</b> (Android) or <b>iCloud</b> (iOS).  
+      <br>
+      ⚠️ <b>The backup password cannot be changed</b>. Write it down and keep it safe!  
+      <br><br>
+      ➤ For extra security: write down your <b>24 secret words</b> on paper and store them safely offline. This phrase gives full access to your wallet.
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="event-card">
+    <div class="event-title">🚀 Step 3: Connect Wallet in The Cursed Land</div>
+    <div class="event-desc">
+      After logging into your character in-game:  
+      <br>
+      ➤ Tap on the <b>🎯 Mission icon</b> (top-right, near minimap).  
+      <br>
+      ➤ Select <b>Mission 1 – Connect xPortal Wallet</b>.  
+      <br>
+      ➤ Press <b>Connect</b> → a <b>QR Code</b> and <b>xPortal</b> button will appear.  
+      <br>
+      • If you’re on the same phone as xPortal → tap <b>xPortal button</b>.  
+      <br>
+      • If you’re on PC → scan the QR Code using the xPortal app.  
+      <br><br>
+      In xPortal, approve the <b>connection request</b>.
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="event-card">
+    <div class="event-title">🎉 Step 4: Verify & Claim Rewards</div>
+    <div class="event-desc">
+      After connecting:  
+      <br>
+      ➤ In-game, press the green <b>Check Ownership</b> button.  
+      <br>
+      ➤ Confirm in xPortal by signing the message.  
+      <br>
+      ➤ Go back in-game → press <b>Claim Reward</b>.  
+      <br><br>
+      ✅ You’ll receive: <b>250,000 Curse</b> + <b>special “X” tag</b> near your character’s name (recognition as Web3 Player).
+    </div>
+  </div>
+
+<!-- Next Steps -->
+<div class="event-card">
+  <div class="event-title">➡️ Next Steps</div>
+  <div class="event-desc">
+    With your <b>xPortal Wallet</b> connected, you unlock all Web3 features:  
+    <br><br>
+
+    🎮 <a href="https://www.thecursedland.com/" target="_blank" style="color:#2ff6de;font-weight:600;">
+      The Cursed Land
+    </a>
+    <br>• <b>Own & Play NFTs</b> – Use your NFTs in-game for daily rewards.  
+    <br>👉 Access the <b>Daily Mission 1</b> (🎯 target icon under minimap).  
+    <br>👉 If you have an NFT equipped with TCL (staked), complete the mission and claim your reward every day.  
+    <br>• <b>Borrow NFTs</b> – Even without owning NFTs, you can borrow them and complete the same <b>Daily Mission 1</b> to earn daily rewards.  
+    <br>• <b>Web3 ItemShop</b> – Sell classic items directly for TCL (24/7 private shop).  
+    <br><br>
+    • <b>Use NFTs in-game</b> – Go to your character profile (left side) and enable <b>Use equipped NFT items</b>.  
+    <br>✅ NFTs are available across all characters on your account.  
+    <br>✅ Mount NFTs can be accessed via the white arrow (◀️) next to the <b>X Inventory (Web3)</b> button on the right side.  
+    <br><br>
+
+    🌐 <a href="https://www.thecursedland.com/lander" target="_blank" style="color:#2ff6de;font-weight:600;">
+      Lander
+    </a>
+    <br>• <b>Loan NFTs</b> – Put your NFTs to work in Lander and earn passively.  
+    <br>• <b>Infinity Staking</b> – Stake TCL once, earn rewards for a lifetime.  
+    <br>• <b>Referral Code</b> – Invite friends and earn % from their activity.  
+    <br><br>
+
+    🔎 For full details and strategies, check the official guide:  
+    <a href="https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl" 
+       target="_blank" 
+       style="color:#2ff6de;font-weight:600;">
+       How to Earn TCL – Whitepaper
+    </a>
+  </div>
+</div>
+
+  <small style="display:block;margin-top:20px;color:#6b7280;">
+    💡 Need help? Join our <a href="https://discord.gg/thecursedland" target="_blank" style="color:#2ff6de;">Discord Community</a>.
+  </small>
+</div>
+
+
+
 
 <script>
+function openXPortal() {
+  window.open("https://xportal.com/app", "_blank");
+}
 
   let mode = 'buy';
   const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
@@ -1013,9 +1177,10 @@ function showPage(id) {
     page.classList.add('active');
 
     // fullpage pentru chart / explorer / xexchange
-    if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
-      page.classList.add('fullpage');
-    }
+if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe' || id === 'landerIframe') {
+  page.classList.add('fullpage');
+}
+
   }
 
   // zoom special pentru staking
@@ -1116,5 +1281,3 @@ overlayImg?.addEventListener("wheel", e => {
 </script>
 </body>
 </html>
-
-
