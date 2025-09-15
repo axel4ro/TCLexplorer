@@ -708,9 +708,8 @@ button:hover { opacity: 0.9; }
 <!-- Connect xPortal Tutorial -->
 <div id="connectXportal" class="section-page active">
 
-<!-- selector limbă -->
-<div style="position:absolute; top:10px; right:10px; z-index:2000;">
-<div class="lang-dropdown">
+<!-- selector limbă FIX sus dreapta -->
+<div class="lang-dropdown" style="position:fixed; top:10px; right:10px; z-index:2100;">
   <button class="lang-btn" id="currentLang">
     <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
   </button>
@@ -726,6 +725,7 @@ button:hover { opacity: 0.9; }
     </div>
   </div>
 </div>
+
 
 
   <h2 data-i18n="connect_title"></h2>
@@ -1301,3 +1301,4 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
