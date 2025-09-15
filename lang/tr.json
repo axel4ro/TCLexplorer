@@ -32,5 +32,4 @@
 
   "calc_result_sell": "💱 {value} TCL Sat\n💲 Tahmini alınan USDC ($): {receivedUSDC}\n⚖️ Alınan ortalama fiyat: {avgPrice} USDC/TCL\n💥 Fiyat Etkisi: {priceImpact}%\n📉 Tahmini Düşüş: {pctChange}%\n\n📊 İşlem sonrası tahmini TCL fiyatı: {newPrice} USDC ($)\n🔄 İşlem sonrası tahmini likidite:\n• Pool’daki TCL: {newTCL}\n• Pool’daki USDC: {newUSDC}"
 
-
 }
