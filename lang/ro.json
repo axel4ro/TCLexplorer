@@ -32,8 +32,9 @@
 
   "calc_result_sell": "💱 Vinde {value} TCL\n💲 Estimare USDC ($) primit: {receivedUSDC}\n⚖️ Preț mediu obținut: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📉 Scădere estimată: {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}",
 
+ {
   "events_title": "📅 Evenimente Săptămânale",
-  "events_desc": "Date live – sincronizate cu Evenimentele din joc - The Cursed Land",
+  "events_desc": "Date live – sincronizate cu evenimentele din joc The Cursed Land",
   "events_loading": "⏳ Se încarcă evenimentele...",
   "events_none": "⚠️ Niciun eveniment programat.",
   "events_error": "❌ Eroare la încărcarea evenimentelor.",
@@ -41,7 +42,42 @@
   "events_soon": "🟡 Începe în {h}h {m}m",
   "events_later": "🟠 Începe în {h}h {m}m",
   "events_ended": "🔴 Eveniment încheiat",
-  "events_duration": "⏱ Durată: {duration}"
+  "events_duration": "⏱ Durată: {duration}",
 
-  
+  "days": [
+    "Duminică",
+    "Luni",
+    "Marți",
+    "Miercuri",
+    "Joi",
+    "Vineri",
+    "Sâmbătă"
+  ],
+
+  "events": {
+    "Item Drop": {
+      "name": "Item Drop",
+      "desc": "Pe durata evenimentului, monștrii au o mică șansă să lase mai multe iteme!"
+    },
+    "Experience": {
+      "name": "Experiență",
+      "desc": "Primești +20% EXP de la monștri pe durata evenimentului – farmează deștept, crești rapid!"
+    },
+    "Fishing Clam": {
+      "name": "Scoici la Pescuit",
+      "desc": "Pe durata evenimentului, ai șanse mai mari să prinzi scoici – pescuiește cu atenție!"
+    },
+    "Moonlight Treasure": {
+      "name": "Comoara Lunii",
+      "desc": "Pe durata evenimentului, monștrii au o mică șansă să lase Cufere Moonlight!"
+    },
+    "Forge Boost": {
+      "name": "Boost de Forjă",
+      "desc": "Pe durata evenimentului, ai +10% șansă bonus la îmbunătățirea itemelor – doar la NPC-ul Fierar!"
+    },
+    "Crystals Frenzy": {
+      "name": "Frenezia Cristalelor",
+      "desc": "Lumea este instabilă – pe durata evenimentului, cristalele apar nebunește la fiecare 5 minute!"
+    }
+  }
 }
