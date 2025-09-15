@@ -88,24 +88,22 @@ body {
 .menu-panel::-webkit-scrollbar-thumb:hover { background: #888; }
 
 .menu-buttons {
-  display: flex;
-  flex-direction: column;  /* forțează vertical */
-  align-items: center;     /* centrează pe orizontal */
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 coloane */
+  gap: 12px 20px; /* spațiu între butoane pe rânduri și coloane */
+  justify-content: center;  /* 🔥 centrează tot grid-ul */
+  justify-items: center;    /* 🔥 centrează butoanele în celulă */
+  max-width: 450px;         /* 🔥 limitează lățimea totală */
+  margin: 0 auto;           /* 🔥 centrează pe pagină */
+  padding: 20px 0;
   max-height: 2500px;
   overflow-y: auto;
-  scroll-snap-type: y mandatory;
   scrollbar-width: none;
-  padding: 20px 0;
 }
+
 .menu-buttons::-webkit-scrollbar {
   display: none;
 }
-.menu-buttons button {
-  width: 200px; /* 🔥 forțează toate la aceeași lățime */
-  max-width: 90%;
-}
-/* Butoane din meniu */
 .menu-buttons button {
   width: 200px;
   max-width: 90%;
@@ -119,24 +117,15 @@ body {
   font-size: 18px;
   transition: transform 0.2s, opacity 0.2s;
   transform-origin: center;
-
-  /* 🔥 umbra textului */
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 
                -1px -1px 2px rgba(0, 0, 0, 0.6);
-
-  /* 🔥 umbra pe buton */
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
-
 .menu-buttons button:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6);
 }
 
-/* efect rotunjire + simulare perspectivă */
-.menu-buttons button {
-  transform-origin: center;
-}
 
 #chart.fullpage {
   position: fixed;
