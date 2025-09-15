@@ -484,8 +484,8 @@ button:hover { opacity: 0.9; }
 <!-- MENU PANEL -->
 <div id="menuPanel" class="menu-panel">
   <div class="menu-buttons">
+  	<button onclick="showPage('connectXportal')" id="btn-connectXportal">🔗 Connect xPortal</button>
     <button onclick="showPage('token')" id="btn-token" class="active">🪙 Token</button>
-	<button onclick="showPage('connectXportal')" id="btn-connectXportal">🔗 Connect xPortal</button>
 	<button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
     <button onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
     <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange</button>
@@ -501,7 +501,7 @@ button:hover { opacity: 0.9; }
 </div>
 
   <!-- Token -->
-  <div id="token" class="section-page active">
+  <div id="token" class="section-page">   <!-- ❌ fără active -->
     <h2>🪙 Token</h2>
 
 <div class="section">
@@ -681,13 +681,13 @@ button:hover { opacity: 0.9; }
 </div>
 
 <!-- Connect xPortal Tutorial -->
-<div id="connectXportal" class="section-page">
+<div id="connectXportal" class="section-page active">
   <h2>🔗 Connect your xPortal Wallet</h2>
   <p style="color:#a1a1aa; font-size:15px; margin-bottom:15px;">
     To unlock all <b>Web3 benefits</b> in <b>The Cursed Land & Lander</b> – including Tokens, NFTs Staking & Utility, Infinity Staking, ItemShop & RMT – follow these steps to set up and connect your <b>xPortal Wallet</b>.
   </p>
 
-  <!-- Step 1 -->
+<!-- Step 1 -->
 <div class="event-card">
   <div class="event-title">📱 Step 1: Download xPortal</div>
   <div class="event-desc">
@@ -699,8 +699,13 @@ button:hover { opacity: 0.9; }
     On this page you’ll find direct links for:<br>
     • <b>Android</b> – available on <i>Google Play</i> and <i>Huawei AppGallery</i><br>
     • <b>iOS</b> – available on <i>Apple App Store</i>
+    <br><br>
+    💳 xPortal also offers a <b>Card</b> for easy cash in & out:  
+    <br>• <b>Virtual Card</b> – use directly with <i>Google Pay</i> or <i>Apple Wallet</i>  
+    <br>• <b>Physical Card</b> – order it and use anywhere like a normal debit card
   </div>
 </div>
+
 
 
   <!-- Step 2 -->
@@ -768,7 +773,11 @@ button:hover { opacity: 0.9; }
     <br>• <b>Own & Play NFTs</b> – Use your NFTs in-game for daily rewards.  
     <br>👉 Access the <b>Daily Mission 1</b> (🎯 target icon under minimap).  
     <br>👉 If you have an NFT equipped with TCL (staked), complete the mission and claim your reward every day.  
-    <br>• <b>Borrow NFTs</b> – Even without owning NFTs, you can borrow them and complete the same <b>Daily Mission 1</b> to earn daily rewards.  
+	<br>• <b>Borrow NFTs</b> – Even without owning NFTs, you can borrow them and complete the same <b>Daily Mission 1</b> to earn daily rewards.  
+	<br>👉 To activate Borrow you first need to create your <b>HeroTag</b> in xPortal.  
+	<br>➤ Go to <b>Profile (top-left)</b> → set up your HeroTag.  
+	<br>⚠️ Creating a HeroTag requires a small amount of <b>EGLD</b>, the native coin of the MultiversX blockchain.  
+	<br>💰 Estimated Transaction Fee: <b>0.000276325 EGLD ≈ $0.0038</b>
     <br>• <b>Web3 ItemShop</b> – Sell classic items directly for TCL (24/7 private shop).  
     <br><br>
     • <b>Use NFTs in-game</b> – Go to your character profile (left side) and enable <b>Use equipped NFT items</b>.  
