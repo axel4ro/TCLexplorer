@@ -509,6 +509,23 @@ button:hover { opacity: 0.9; }
 <body>
 <!-- NAVIGATION -->
 <div class="nav-bar">
+<div class="lang-dropdown" style="position:fixed; top:10px; right:10px; z-index:2100;">
+  <button class="lang-btn" id="currentLang">
+    <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
+  </button>
+  <div class="lang-menu">
+    <div class="lang-option" onclick="setLang('en')">
+      <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
+    </div>
+    <div class="lang-option" onclick="setLang('ro')">
+      <img src="https://flagcdn.com/w20/ro.png" alt="RO"> Română
+    </div>
+    <div class="lang-option" onclick="setLang('tr')">
+      <img src="https://flagcdn.com/w20/tr.png" alt="TR"> Türkçe
+    </div>
+  </div>
+</div>
+
   <button id="menuToggle">☰ Menu</button>
 </div>
 
@@ -633,22 +650,25 @@ button:hover { opacity: 0.9; }
 
   <!-- Calculator -->
   <div id="calculator" class="section-page">
-    <h2>🧮 Simulate Transaction</h2>
-    <div class="row-group">
-      <div style="flex: 2;">
-        <label id="inputLabel">Enter amount in <b>USDC ($)</b> to buy TCL:</label>
-        <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" />
-      </div>
-      <div style="flex: 1; display: flex; align-items: flex-end;">
-        <button onclick="switchMode()" id="switchBtn">🔁 Switch to: Sell TCL</button>
-      </div>
-    </div>
-    <div class="action-row">
-      <button style="background-color:#28a745;" onclick="calculate()">Calculate Impact</button>
-<button class="btn-trade" onclick="showPage('xexchangeIframe')">Trade Now ↗</button>
-    </div>
-    <div class="result" id="resultBox"></div>
+  
+
+<h2 data-i18n="calc_title"></h2>
+<div class="row-group">
+  <div style="flex: 2;">
+    <label id="inputLabel" data-i18n="calc_label_buy"></label>
+    <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" />
   </div>
+  <div style="flex: 1; display: flex; align-items: flex-end;">
+    <button onclick="switchMode()" id="switchBtn" data-i18n="calc_switch_to_sell"></button>
+  </div>
+</div>
+<div class="action-row">
+  <button style="background-color:#28a745;" onclick="calculate()" data-i18n="calc_btn_calculate"></button>
+  <button class="btn-trade" onclick="showPage('xexchangeIframe')" data-i18n="calc_btn_trade"></button>
+</div>
+<div class="result" id="resultBox"></div>
+</div>
+
 
 <!-- Events -->
 <div id="events" class="section-page">
@@ -707,25 +727,6 @@ button:hover { opacity: 0.9; }
 
 <!-- Connect xPortal Tutorial -->
 <div id="connectXportal" class="section-page active">
-
-<!-- selector limbă FIX sus dreapta -->
-<div class="lang-dropdown" style="position:fixed; top:10px; right:10px; z-index:2100;">
-  <button class="lang-btn" id="currentLang">
-    <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
-  </button>
-  <div class="lang-menu">
-    <div class="lang-option" onclick="setLang('en')">
-      <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
-    </div>
-    <div class="lang-option" onclick="setLang('ro')">
-      <img src="https://flagcdn.com/w20/ro.png" alt="RO"> Română
-    </div>
-    <div class="lang-option" onclick="setLang('tr')">
-      <img src="https://flagcdn.com/w20/tr.png" alt="TR"> Türkçe
-    </div>
-  </div>
-</div>
-
 
 
   <h2 data-i18n="connect_title"></h2>
@@ -790,20 +791,36 @@ function openLander() {
   }
   function getText(id){ return (document.getElementById(id).textContent || '').trim(); }
   function setText(id, v){ document.getElementById(id).textContent = v; }
+  // helper pentru traduceri dinamice cu variabile
+function t(key, vars = {}) {
+  if (!translations[key]) return key; // fallback
+  let str = translations[key];
+  for (const [k, v] of Object.entries(vars)) {
+    str = str.replace(new RegExp(`{${k}}`, "g"), v);
+  }
+  return str;
+}
+
 
   // ===== Calculator =====
-  function switchMode() {
-    const inputLabel = document.getElementById("inputLabel");
-    const switchBtn = document.getElementById("switchBtn");
-    const input = document.getElementById("amount");
-    mode = (mode === 'buy') ? 'sell' : 'buy';
-    inputLabel.innerHTML = mode === 'buy'
-      ? 'Enter amount in <b>USDC ($)</b> to buy TCL:'
-      : 'Enter amount in <b>TCL</b> to sell for USDC ($):';
-    switchBtn.innerHTML = mode === 'buy' ? '🔁 Switch to: Sell TCL' : '🔁 Switch to: Buy TCL';
-    input.value = ''; 
-    document.getElementById("resultBox").innerHTML = '';
-  }
+function switchMode() {
+  const inputLabel = document.getElementById("inputLabel");
+  const switchBtn = document.getElementById("switchBtn");
+  const input = document.getElementById("amount");
+  mode = (mode === 'buy') ? 'sell' : 'buy';
+
+  inputLabel.innerHTML = mode === 'buy'
+    ? translations['calc_label_buy']
+    : translations['calc_label_sell'];
+
+  switchBtn.innerHTML = mode === 'buy'
+    ? translations['calc_switch_to_sell']
+    : translations['calc_switch_to_buy'];
+
+  input.value = '';
+  document.getElementById("resultBox").innerHTML = '';
+}
+
 
   function calculate() {
     const tcl = parseNumber(getText("curTCL"));
@@ -822,16 +839,17 @@ function openLander() {
       const newPrice = newUSDC / newTCL;
       const priceImpact = (avgPrice - curPrice) / avgPrice * 100;
       const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-      resultBox.innerHTML =
-        "💱 Buy TCL with " + formatNumber(value) + " USDC ($)\n" +
-        "💲 Estimated TCL received: " + formatNumber(boughtTCL) + "\n" +
-        "⚖️ Average paid price: " + avgPrice.toFixed(6) + " USDC/TCL\n" +
-        "💥 Price Impact: " + priceImpact.toFixed(2) + "%\n" +
-        "📈 Estimated Increase: + " + pctChange.toFixed(2) + "%\n\n" +
-        "📊 Estimated TCL final price: " + newPrice.toFixed(6) + " USDC ($)\n" +
-        "🔄 Estimated Supply After Transaction:\n" +
-        "• TCL in Pool: " + formatNumber(newTCL) + "\n" +
-        "• USDC in Pool: " + formatNumber(newUSDC);
+resultBox.innerHTML = t("calc_result_buy", {
+  value: formatNumber(value),
+  boughtTCL: formatNumber(boughtTCL),
+  avgPrice: avgPrice.toFixed(6),
+  priceImpact: priceImpact.toFixed(2),
+  pctChange: pctChange.toFixed(2),
+  newPrice: newPrice.toFixed(6),
+  newTCL: formatNumber(newTCL),
+  newUSDC: formatNumber(newUSDC)
+});
+
     } else if (mode === 'sell' && value > 0) {
       const newTCL = tcl + valueAfterFee;
       const newUSDC = (usdc * tcl) / newTCL;
@@ -841,17 +859,19 @@ function openLander() {
       const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
       const pctChange = ((newPrice - curPrice) / curPrice) * 100;
       resultBox.innerHTML =
-        "💱 Sell " + formatNumber(value) + " TCL\n" +
-        "💲 Estimated USDC ($) received: " + formatNumber(receivedUSDC) + "\n" +
-        "⚖️ Average received price: " + avgPrice.toFixed(6) + " USDC/TCL\n" +
-        "💥 Price Impact: " + priceImpact.toFixed(2) + "%\n" +
-        "📉 Estimated Decrease: " + pctChange.toFixed(2) + "%\n\n" +
-        "📊 Estimated TCL final price: " + newPrice.toFixed(6) + " USDC ($)\n" +
-        "🔄 Estimated Supply After Transaction:\n" +
-        "• TCL in Pool: " + formatNumber(newTCL) + "\n" +
-        "• USDC in Pool: " + formatNumber(newUSDC);
+resultBox.innerHTML = t("calc_result_sell", {
+  value: formatNumber(value),
+  receivedUSDC: formatNumber(receivedUSDC),
+  avgPrice: avgPrice.toFixed(6),
+  priceImpact: priceImpact.toFixed(2),
+  pctChange: pctChange.toFixed(2),
+  newPrice: newPrice.toFixed(6),
+  newTCL: formatNumber(newTCL),
+  newUSDC: formatNumber(newUSDC)
+});
+
     } else {
-      resultBox.innerHTML = "⚠️ Please enter a valid amount.";
+      resultBox.innerHTML = t("calc_error");
     }
   }
 const EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
@@ -1120,6 +1140,7 @@ setInterval(updateLastUpdated, 1000);
 
 // ===== Navigation =====
 const XEXCHANGE_URL = "https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d";
+const menuButtons = document.querySelector(".menu-buttons"); // 🔥 adăugat
 
 function isMobile() {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -1142,27 +1163,19 @@ function showPage(id) {
   if (page) {
     page.classList.add('active');
 
-    // fullpage pentru chart / explorer / xexchange
-if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
-  page.classList.add('fullpage');
-}
-
+    if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
+      page.classList.add('fullpage');
+    }
   }
 
   // zoom special pentru staking
   const viewport = document.querySelector("meta[name=viewport]");
   if (id === "staking") {
     document.body.style.zoom = "0.75";
-    viewport.setAttribute(
-      "content",
-      "width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
-    );
+    viewport.setAttribute("content","width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes");
   } else {
     document.body.style.zoom = "1";
-    viewport.setAttribute(
-      "content",
-      "width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes"
-    );
+    viewport.setAttribute("content","width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes");
   }
 
   // 🔥 Închidem meniul după selectare
@@ -1170,7 +1183,11 @@ if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
   const btn = document.getElementById("menuToggle");
   panel.classList.remove("open");
   btn.textContent = "☰ Menu";
+  
+  // reaplică traducerile când se schimbă pagina
+  applyTranslations();
 }
+
 
   // ===== On Load =====
 window.onload = function() {
@@ -1278,13 +1295,23 @@ async function loadTranslations(lang) {
 }
 
 function applyTranslations() {
+  const activePage = document.querySelector(".section-page.active");
+  const hasTranslations = activePage && activePage.querySelectorAll("[data-i18n]").length > 0;
+  document.querySelector(".lang-dropdown").style.display = hasTranslations ? "block" : "none";
+
+  if (!translations || Object.keys(translations).length === 0) return;
+
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
-    if (translations[key]) {
-      el.innerHTML = translations[key];
-    }
+    if (translations[key]) el.innerHTML = translations[key];
   });
+
+  // ✅ dacă avem deja rezultate, le regenerăm
+  if (document.getElementById("resultBox").innerHTML.trim() !== "") {
+    calculate();
+  }
 }
+
 
 function setLang(lang) {
   langDropdown.classList.remove('open');
@@ -1298,7 +1325,8 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+
+
 </script>
 </body>
 </html>
-
