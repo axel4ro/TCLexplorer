@@ -49,7 +49,7 @@
     "Joi",
     "Vineri",
     "Sâmbătă",
-    "Duminică",
+    "Duminică"
   ],
   "events": {
     "Item Drop": {
