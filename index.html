@@ -488,6 +488,12 @@ button:hover { opacity: 0.9; }
   display: block;
 }
 
+.highlight-row {
+  background: rgba(47,246,222,0.25) !important;
+  transition: background 0.5s ease;
+}
+
+
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -534,6 +540,8 @@ button:hover { opacity: 0.9; }
 }
 
 
+
+
   </style>
 </head>
 <body>
@@ -568,6 +576,7 @@ button:hover { opacity: 0.9; }
     <button onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
 	<button onclick="showPage('events')" id="btn-events">📅 Events</button>
 	<button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
+	<button onclick="showPage('walletCheck')" id="btn-walletCheck">🔎 Wallet Check</button>
 	<button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
     <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange ↗</button>
 	<button onclick="openLander()" id="btn-Lander">🚀 Lander ↗</button>
@@ -662,7 +671,6 @@ button:hover { opacity: 0.9; }
 
 
 
-
   </div>
 
 <!-- xExchange Trade -->
@@ -725,10 +733,21 @@ button:hover { opacity: 0.9; }
 
 <!-- Staking -->
 <div id="staking" class="section-page">
-  <h2>🏆 TCL Staking Leaderboard</h2>
+  <h2>🏆 TCL top 100 Staking - Leaderboard</h2>
   <small id="lastUpdated" style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
     ⏳ Loading update time...
   </small>
+
+<!-- 🔎 Search bar -->
+<div style="margin-bottom:12px; display:flex; gap:8px;">
+  <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
+         style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
+  <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
+</div>
+
+<!-- 🔥 mesaj sub search -->
+<div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
+
 
   <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
     <thead>
@@ -746,6 +765,9 @@ button:hover { opacity: 0.9; }
     </tbody>
   </table>
 </div>
+
+
+
 
 <!-- Connect xPortal Tutorial -->
 <div id="connectXportal" class="section-page active">
@@ -792,6 +814,29 @@ button:hover { opacity: 0.9; }
   <span class="close">&times;</span>
   <img id="overlayImg" class="overlay-img" />
 </div>
+
+<!-- Wallet Check -->
+<div id="walletCheck" class="section-page">
+  <h2>🔎 Wallet Check</h2>
+  <p style="color:#a1a1aa; font-size:15px; margin-bottom:15px;">
+    Enter your xPortal wallet address (erd1...) to see your <b>EGLD</b>, <b>TCL</b> and <b>NFTs</b>.
+  </p>
+
+  <div class="row-group">
+    <div style="flex:2;">
+      <label>Wallet Address</label>
+      <input type="text" id="walletInput" placeholder="erd1..." />
+    </div>
+    <div style="flex:1; display:flex; align-items:flex-end;">
+      <button style="background:#28a745;" onclick="checkWallet()">Check</button>
+    </div>
+  </div>
+
+  <div class="result" id="walletResult" style="margin-top:20px;">
+    ⏳ Waiting for input...
+  </div>
+</div>
+
 <script>
 function openXPortal() {
   window.open("https://xportal.com/app", "_blank");
@@ -1203,6 +1248,58 @@ function updateLastUpdated() {
 // Actualizează automat la fiecare secundă textul
 setInterval(updateLastUpdated, 1000);
 
+async function searchStaker() {
+  const input = document.getElementById("stakingSearch").value.trim();
+  const searchResult = document.getElementById("stakingSearchResult"); // container sub search
+
+  if (!input.startsWith("erd1") || input.length < 62) {
+    searchResult.innerHTML = "⚠️ Please enter a valid wallet address (erd1...)";
+    searchResult.style.color = "#f87171"; // roșu
+    return;
+  }
+
+  searchResult.innerHTML = "⏳ Searching...";
+  searchResult.style.color = "#eab308"; // galben
+
+  try {
+    const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
+    const data = await resp.json();
+
+    if (data[input]) {
+      const staker = data[input];
+      searchResult.innerHTML = `
+        ✅ Found in leaderboard!<br>
+        🏆 Rank: #${staker.rank}<br>
+        💠 Total: ${formatTcl(staker.total)}<br>
+        🔹 Infinity: ${formatTcl(staker.infinity)}<br>
+        🔹 Loan: ${formatTcl(staker.loan)}<br>
+        🔹 NFT Stake: ${formatTcl(staker.nft)}
+      `;
+      searchResult.style.color = "#10b981"; // verde
+
+      // highlight în tabel dacă e în top 100
+      const rows = document.querySelectorAll("#stakingBody tr");
+      rows.forEach(row => {
+        row.classList.remove("highlight-row");
+        const addrCell = row.querySelector("button");
+        if (addrCell && addrCell.getAttribute("onclick")?.includes(input)) {
+          row.classList.add("highlight-row");
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+
+    } else {
+      searchResult.innerHTML = "❌ Address not found in leaderboard.";
+      searchResult.style.color = "#f87171"; // roșu
+    }
+
+  } catch {
+    searchResult.innerHTML = "⚠️ Error fetching leaderboard.";
+    searchResult.style.color = "#f87171";
+  }
+}
+
+
 
 // ===== Navigation =====
 const XEXCHANGE_URL = "https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d";
@@ -1234,13 +1331,16 @@ function showPage(id) {
     }
   }
 
-  // zoom special pentru staking
+  // zoom diferit în funcție de pagină
   const viewport = document.querySelector("meta[name=viewport]");
   if (id === "staking") {
     document.body.style.zoom = "0.75";
     viewport.setAttribute("content","width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes");
+  } else if (id === "walletCheck") {
+    document.body.style.zoom = "1.0";
+    viewport.setAttribute("content","width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=yes");
   } else {
-    document.body.style.zoom = "1";
+    document.body.style.zoom = "1.0";
     viewport.setAttribute("content","width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes");
   }
 
@@ -1253,6 +1353,7 @@ function showPage(id) {
   // reaplică traducerile când se schimbă pagina
   applyTranslations();
 }
+
 
 
   // ===== On Load =====
@@ -1415,6 +1516,89 @@ function copyAddr(addr, event) {
       btn.style.background = "#28a745";
     }, 2000);
   });
+}
+
+async function checkWallet() {
+  const address = document.getElementById("walletInput").value.trim();
+  const resultBox = document.getElementById("walletResult");
+
+  if (!address.startsWith("erd1") || address.length < 62) {
+    resultBox.innerHTML = "❌ Invalid address. It should start with <code>erd1...</code>";
+    return;
+  }
+
+  resultBox.innerHTML = "⏳ Fetching wallet data...";
+
+  try {
+    // === EGLD ===
+    const egldRes = await fetch(`https://api.multiversx.com/accounts/${address}`);
+    const egldData = await egldRes.json();
+    const egld = parseFloat(egldData.balance || 0) / 1e18;
+
+    // === TCL ===
+    const TCL_IDENTIFIER = "TCL-fe459d";
+    const tclRes = await fetch(`https://api.multiversx.com/accounts/${address}/tokens/${TCL_IDENTIFIER}`);
+    const tclData = await tclRes.json();
+    const tcl = tclData.balance ? parseFloat(tclData.balance) / 1e18 : 0;
+
+    // === NFTs ===
+    const nftRes = await fetch(`https://api.multiversx.com/accounts/${address}/nfts?size=1000`);
+    const nftData = await nftRes.json();
+    const walletNfts = nftData.filter(n => n.collection.startsWith("TCL"));
+
+    // === Prices ===
+    const egldPriceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq");
+    const egldPriceData = await egldPriceRes.json();
+    const priceEGLD = parseFloat(egldPriceData.pair.priceUsd || 0);
+
+    const tclPriceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    const tclPriceData = await tclPriceRes.json();
+    const priceTCL = parseFloat(tclPriceData.pairs?.[0]?.priceUsd || 0);
+
+    // === Values ===
+    const valueEGLD = egld * priceEGLD;
+    const valueTCL = tcl * priceTCL;
+	
+    // === Leaderboard Data (Rank + Staking details) ===
+    let stakingInfo = null;
+    try {
+      const lbRes = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
+      const lbData = await lbRes.json();
+      if (lbData[address]) {
+        stakingInfo = lbData[address]; 
+      }
+    } catch (e) {
+      console.warn("⚠️ Leaderboard fetch failed", e);
+    }
+
+// === OUTPUT  ===
+resultBox.innerHTML = `
+  Wallet Address: <span style="font-family:monospace;">${address}</span>
+
+  💎 EGLD: ${egld.toFixed(4)} (~$${valueEGLD.toFixed(2)})
+  🪙 TCL: ${tcl.toFixed(2)} (~$${valueTCL.toFixed(2)})
+
+  ${stakingInfo ? `
+  🏆 TCL Staking Rank: #${stakingInfo.rank}
+     • Total: ${stakingInfo.total}
+     • Infinity: ${stakingInfo.infinity}
+     • Loan: ${stakingInfo.loan}
+     • NFT Stake: ${stakingInfo.nft}
+  ` : "🏆 Not ranked in staking leaderboard"}
+
+  🖼️ Owned NFTs: ${walletNfts.length}
+  ${walletNfts.length > 0 
+    ? walletNfts.map(n => 
+        `• ${n.name || "Unnamed NFT"}\n   (Collection: ${n.collection}, ID: ${n.identifier}${parseInt(n.balance) > 1 ? ` x${n.balance}` : ""})`
+      ).join("\n")
+    : `- None`
+  }
+`;
+
+  } catch (err) {
+    console.error("Wallet check error:", err);
+    resultBox.innerHTML = "❌ Failed to fetch wallet data. Try again later.";
+  }
 }
 
 </script>
