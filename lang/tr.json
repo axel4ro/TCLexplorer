@@ -35,8 +35,6 @@
   "calc_result_sell": "💱 {value} TCL Sat\n💲 Tahmini alınan USDC ($): {receivedUSDC}\n⚖️ Alınan ortalama fiyat: {avgPrice} USDC/TCL\n💥 Fiyat Etkisi: {priceImpact}%\n📉 Tahmini Düşüş: {pctChange}%\n\n📊 İşlem sonrası tahmini TCL fiyatı: {newPrice} USDC ($)\n🔄 İşlem sonrası tahmini likidite:\n• Pool’daki TCL: {newTCL}\n• Pool’daki USDC: {newUSDC}",
 
 
-
- {
   "events_title": "📅 Haftalık Etkinlikler",
   "events_desc": "Canlı veriler – The Cursed Land oyunundaki haftalık etkinliklerle senkronize",
   "events_loading": "⏳ Etkinlikler yükleniyor...",
@@ -47,7 +45,6 @@
   "events_later": "🟠 {h}s {m}d içinde başlayacak",
   "events_ended": "🔴 Etkinlik sona erdi",
   "events_duration": "⏱ Süre: {duration}",
-
   "days": [
     "Pazar",
     "Pazartesi",
@@ -57,7 +54,6 @@
     "Cuma",
     "Cumartesi"
   ],
-
   "events": {
     "Item Drop": {
       "name": "Eşya Düşüşü",
