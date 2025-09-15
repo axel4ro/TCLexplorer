@@ -33,7 +33,7 @@
   "calc_result_sell": "💱 Vinde {value} TCL\n💲 Estimare USDC ($) primit: {receivedUSDC}\n⚖️ Preț mediu obținut: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📉 Scădere estimată: {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}",
 
   "events_title": "📅 Evenimente Săptămânale",
-  "events_desc": "Date live – sincronizate cu evenimentele din joc The Cursed Land",
+  "events_desc": "Date live – sincronizate cu evenimentele din joc - The Cursed Land",
   "events_loading": "⏳ Se încarcă evenimentele...",
   "events_none": "⚠️ Niciun eveniment programat.",
   "events_error": "❌ Eroare la încărcarea evenimentelor.",
