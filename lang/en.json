@@ -43,7 +43,15 @@
   "events_later": "🟠 Starts in {h}h {m}m",
   "events_ended": "🔴 Event Ended",
   "events_duration": "⏱ Duration: {duration}",
-  "days": ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+ "days": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
   "events": {
     "Item Drop": {
       "name": "Item Drop",
