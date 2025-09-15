@@ -65,21 +65,23 @@ body {
   top: 48px;
   left: 0;
   width: 100%;
-  max-height: 0;             /* ascuns implicit */
   background: rgba(22,26,36,0.97);
-  overflow-y: hidden;        /* ascundem scroll-ul până se deschide */
   z-index: 1090;
-  padding: 0 10px;           /* inițial fără padding */
+  padding: 0 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  transition: max-height 0.3s ease, padding 0.3s ease;
+
+  transform: scaleY(0);          /* 🔥 ascuns */
+  transform-origin: top;         /* se deschide în jos */
+  transition: transform 0.2s ease; /* mult mai rapid decât 0.3s */
+  max-height: none;              /* eliminăm limitarea greoaie */
+  overflow-y: hidden;
 }
 
-/* când e deschis */
 .menu-panel.open {
-  max-height: 2500px;         /* cât vrei să se vadă */
-  padding: 10px;             /* apare paddingul */
-  overflow-y: auto;          /* acum e scrollabil */
+  transform: scaleY(1);          /* 🔥 se afișează */
+  overflow-y: auto;
 }
+
 
 /* scroll bar vizibil */
 .menu-panel::-webkit-scrollbar { width: 10px; }
@@ -1269,3 +1271,4 @@ overlayImg?.addEventListener("wheel", e => {
 </script>
 </body>
 </html>
+
