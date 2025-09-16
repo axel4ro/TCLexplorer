@@ -26,7 +26,6 @@ body {
   -webkit-text-size-adjust: none;
 }
 
-/* Navigația fixă sus */
 .nav-bar {
   position: fixed;
   top: 0;
@@ -35,10 +34,57 @@ body {
   z-index: 1100;
   background: #161a24;
   padding: 8px 0;
-  display: flex;
-  justify-content: center;  /* 🔥 centrează pe orizontal */
-  align-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
+
+.nav-bar-inner {
+  max-width: 1000px;  /* aceeași limită ca body */
+  margin: 0 auto;
+  padding: 0 20px;    /* aceleași margini ca body */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* 📖 Wiki stânga */
+#wikiBtn {
+  position: absolute;
+  left: 20px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #249c8c;
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  transition: transform 0.2s, opacity 0.2s;
+}
+#wikiBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* Menu centrat */
+#menuToggle {
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background: #249c8c;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+#menuToggle:hover { 
+  opacity: 0.9; 
+  transform: translateY(-2px);
+}
+
 
 #menuToggle {
   padding: 10px 18px;
@@ -419,11 +465,12 @@ button:hover { opacity: 0.9; }
 }
 
 
-/* --- stil dropdown general --- */
+
+/* 🌍 Dropdown dreapta */
 .lang-dropdown {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  right: 20px;
+  top: 8px;
   z-index: 2000;
 }
 
@@ -543,43 +590,34 @@ button:hover { opacity: 0.9; }
 <body>
 <!-- NAVIGATION -->
 <div class="nav-bar">
-<div class="lang-dropdown" style="position:fixed; top:10px; right:10px; z-index:2100;">
-  <button class="lang-btn" id="currentLang">
-    <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
-  </button>
-  <div class="lang-menu">
-    <div class="lang-option" onclick="setLang('en')">
-      <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
-    </div>
-    <div class="lang-option" onclick="setLang('ro')">
-      <img src="https://flagcdn.com/w20/ro.png" alt="RO"> Română
-    </div>
-    <div class="lang-option" onclick="setLang('tr')">
-      <img src="https://flagcdn.com/w20/tr.png" alt="TR"> Türkçe
-    </div>
-	    <div class="lang-option" onclick="setLang('de')">
-      <img src="https://flagcdn.com/w20/de.png" alt="DE"> Deutsch
-    </div>
-	    <div class="lang-option" onclick="setLang('es')">
-      <img src="https://flagcdn.com/w20/es.png" alt="ES"> Español
-    </div>
-	<div class="lang-option" onclick="setLang('fr')">
-      <img src="https://flagcdn.com/w20/fr.png" alt="FR"> Français
-    </div>
-	<div class="lang-option" onclick="setLang('it')">
-      <img src="https://flagcdn.com/w20/it.png" alt="IT"> Italiano
-    </div>
-	<div class="lang-option" onclick="setLang('pl')">
-      <img src="https://flagcdn.com/w20/pl.png" alt="PL"> Polski
-    </div>
-	<div class="lang-option" onclick="setLang('pt')">
-      <img src="https://flagcdn.com/w20/pt.png" alt="PT"> Português
+  <div class="nav-bar-inner">
+    <!-- Wiki stânga -->
+    <button onclick="openWiki()" id="wikiBtn">📖 Wiki</button>
+
+    <!-- Menu centrat -->
+    <button id="menuToggle">☰ Menu</button>
+
+    <!-- Limbă dreapta -->
+    <div class="lang-dropdown">
+      <button class="lang-btn" id="currentLang">
+        <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
+      </button>
+      <div class="lang-menu">
+        <div class="lang-option" onclick="setLang('en')"><img src="https://flagcdn.com/w20/gb.png"> English</div>
+        <div class="lang-option" onclick="setLang('ro')"><img src="https://flagcdn.com/w20/ro.png"> Română</div>
+        <div class="lang-option" onclick="setLang('tr')"><img src="https://flagcdn.com/w20/tr.png"> Türkçe</div>
+        <div class="lang-option" onclick="setLang('de')"><img src="https://flagcdn.com/w20/de.png"> Deutsch</div>
+        <div class="lang-option" onclick="setLang('es')"><img src="https://flagcdn.com/w20/es.png"> Español</div>
+        <div class="lang-option" onclick="setLang('fr')"><img src="https://flagcdn.com/w20/fr.png"> Français</div>
+        <div class="lang-option" onclick="setLang('it')"><img src="https://flagcdn.com/w20/it.png"> Italiano</div>
+        <div class="lang-option" onclick="setLang('pl')"><img src="https://flagcdn.com/w20/pl.png"> Polski</div>
+        <div class="lang-option" onclick="setLang('pt')"><img src="https://flagcdn.com/w20/pt.png"> Português</div>
+      </div>
     </div>
   </div>
 </div>
 
-  <button id="menuToggle">☰ Menu</button>
-</div>
+
 
 <!-- MENU PANEL -->
 <div id="menuPanel" class="menu-panel">
@@ -634,7 +672,7 @@ button:hover { opacity: 0.9; }
        style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
   The Cursed Land ↗
 </button>
-	
+
     <!-- poți adăuga oricâte vrei -->
   </div>
 </div>
@@ -946,6 +984,10 @@ button:hover { opacity: 0.9; }
 </div>
 
 <script>
+function openWiki() {
+  window.open("wiki.html", "_blank"); // deschide într-un tab nou
+  // sau window.location.href = "wiki.html"; // dacă vrei în aceeași fereastră
+}
 function openTCL() {
   window.open("https://www.thecursedland.com/", "_blank");
 }
