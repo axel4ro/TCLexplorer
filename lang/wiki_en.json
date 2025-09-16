@@ -1,153 +1,34 @@
 {
-  "items": [],
-  "bosses": [],
-  "materials": [
-    { "name": "Wolf Fur", "desc": "Grey Wolf, Alpha Wolf" },
-    { "name": "Wolf Claw", "desc": "Blue Wolf, Alpha Blue Wolf" },
-    { "name": "Wild Boar Tooth", "desc": "Wild Boar" },
-    { "name": "Pig Nose", "desc": "Red Wild Boar" },
-    { "name": "Bear Foot Skin", "desc": "Bear, Grizzly Bear" },
-    { "name": "Bear Gall", "desc": "Black Bear, Brown Bear" },
-    { "name": "Tiger Claw", "desc": "Tiger" },
-    { "name": "Tiger Hide", "desc": "Tiger" },
-    { "name": "White Tiger Hide", "desc": "White Tiger" },
-    { "name": "Ornament", "desc": "White Oath Archer" },
-    { "name": "Face Cream", "desc": "White Oath Archer" },
-    { "name": "White Hairband", "desc": "White Oath Archer, White Oath Soldier" },
-    { "name": "Ball", "desc": "White Oath Soldier, White Oath Commander" },
-    { "name": "Red Hairband", "desc": "White Oath General" },
-    { "name": "Black Uniform", "desc": "Black Wind Soldier, Black Wind Maniac" },
-    { "name": "Shuriken", "desc": "Savage Minion" },
-    { "name": "Savage Booty", "desc": "Savage General" },
-    { "name": "Flag", "desc": "Savage Archer" },
-    { "name": "Orc Tooth", "desc": "Black Orc, Bold Black Orc, Black Orc Giant, Bold Black Giant Orc" },
-    { "name": "Orc Amulet", "desc": "Elite Orc Sorcerer, Elite Orc, Bold Big Orc, Elite Orc General, Bold Big Orc General" },
-    { "name": "Unknown Talisman", "desc": "Chief Esoteric Arahan, Esoteric Executioner, Esoteric Arahan Fighter" },
-    { "name": "Esoteric Primer", "desc": "Dark Fanatic, High Fanatic, Dark Arahan, High Arahan" },
-    { "name": "Curse Book", "desc": "Dark Tormentor, Dark Summoner, High Arahan Fighter, High Elite Arahan" },
-    { "name": "Orc Soul Stone", "desc": "Bold Big Orc Sorcerer, Elite Orc Fighter, Bold Big Orc Fighter" },
-    { "name": "Scorpion Claw", "desc": "Scorpion" },
-    { "name": "Snake Tail", "desc": "Barbarian Snake, Snake Reaver, Black Snake" },
-    { "name": "Spider Eyes", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
-    { "name": "Spider Web", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
-    { "name": "Spider Leg", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
-    { "name": "Spider Egg", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
-    { "name": "Piece of Stone", "desc": "Clam (Fishing)" }
-  ],
-  "bonuses": {
-    "Weapon": {
-      "Vitality": [2, 4, 6, 8, 12],
-      "Intelligence": [2, 4, 6, 8, 12],
-      "Strength": [2, 4, 6, 8, 12],
-      "Dexterity": [2, 4, 6, 8, 12],
-      "Spell Speed": ["2%", "4%", "6%", "10%", "20%"],
-      "Poisoning Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Blocking Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Slowing Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Critical Hit": ["1%", "2%", "3%", "5%", "10%"],
-      "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
-      "Average Damage": ["-60 … 60"],
-      "Spell Damage": ["-30 … 30"]
+    "materials": {
+        "info": "Materials are special items dropped by monsters or fishing. They are used in crafting and missions.",
+        "list": [
+            {
+                "name": "Wolf Fur",
+                "desc": "Dropped by Grey Wolf, Alpha Wolf"
+            },
+            {
+                "name": "Bear Gall",
+                "desc": "Dropped by Black Bear, Brown Bear"
+            }
+        ]
     },
-    "Armor": {
-      "Health Max": [500, 1000, 1500, 2000],
-      "Mana Max": [10, 20, 30, 50, 80],
-      "Spell Speed": ["2%", "4%", "6%", "10%", "20%"],
-      "Absorbed by Health": ["1%", "2%", "3%", "5%", "10%"],
-      "Absorbed by Mana": ["1%", "2%", "3%", "5%", "10%"],
-      "Reflect Physical Attack": ["1%", "2%", "3%", "6%", "10%"],
-      "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
-      "Magic Resistance": ["2%", "4%", "6%", "10%", "15%"],
-      "Attack Value": [5, 10, 15, 30, 50]
-    },
-    "Bracelet": {
-      "Health Max": [500, 1000, 1500, 2000],
-      "Mana Max": [10, 20, 30, 50, 80],
-      "Absorbed by Health": ["1%", "2%", "3%", "5%", "10%"],
-      "Steal Mana": ["1%", "2%", "3%", "5%", "10%"],
-      "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
-      "Magic Resistance": ["2%", "4%", "6%", "10%", "15%"],
-      "Item Chance": ["2%", "4%", "6%", "8%", "20%"]
-    },
-    "Necklaces": {
-      "Health Max": [500, 1000, 1500, 2000],
-      "Mana Max": [200],
-      "Absorbed by Mana": ["1%", "2%", "3%", "5%", "10%"],
-      "Steal Mana": ["1%", "2%", "3%", "5%", "10%"],
-      "Health Shift": [4, 8, 12, 20, 30],
-      "Mana Shift": [4, 8, 12, 20, 30],
-      "Blocking Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Critical Hit": ["1%", "2%", "3%", "5%", "10%"],
-      "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
-      "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
-      "Exp Chance": ["2%", "4%", "6%", "8%", "20%"],
-      "Curse Chance": ["2%", "4%", "6%", "8%", "20%"]
-    },
-    "Shoes": {
-      "Health Max": [500, 1000, 1500, 2000],
-      "Mana Max": [10, 20, 30, 50, 80],
-      "Attack Speed": ["1%", "2%", "3%", "5%", "8%"],
-      "Blocking Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Slowing Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Critical Hit": ["1%", "2%", "3%", "5%", "10%"],
-      "Evading Arrow": ["2%", "4%", "6%", "10%", "15%"],
-      "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
-      "Exp Chance": ["2%", "4%", "6%", "8%", "20%"],
-      "Curse Chance": ["2%", "4%", "6%", "8%", "20%"]
-    },
-    "Shield": {
-      "Vitality": [2, 4, 6, 8, 12],
-      "Intelligence": [2, 4, 6, 8, 12],
-      "Strength": [2, 4, 6, 8, 12],
-      "Dexterity": [2, 4, 6, 8, 12],
-      "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
-      "Block Physical Attack": ["2%", "4%", "6%", "10%", "15%"],
-      "Reflect Physical Attack": ["1%", "2%", "3%", "6%", "10%"],
-      "Exp Chance": ["2%", "4%", "6%", "8%", "20%"],
-      "Curse Chance": ["2%", "4%", "6%", "8%", "20%"],
-      "Defence Against Blackouts": [],
-      "Defence Against Slowing": []
-    },
-    "Helmet": {
-      "Attack Speed": ["1%", "2%", "3%", "5%", "8%"],
-      "Absorbed by Mana": ["1%", "2%", "3%", "5%", "10%"],
-      "Health Shift": [4, 8, 12, 20, 30],
-      "Mana Shift": [4, 8, 12, 20, 30],
-      "Poisoning Chance": ["1%", "2%", "3%", "5%", "8%"],
-      "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
-      "Evading Arrow": ["2%", "4%", "6%", "10%", "15%"],
-      "Magic Resistance": ["2%", "4%", "6%", "10%", "15%"]
-    },
-    "Earrings": {
-      "Movement Speed": ["2%", "4%", "6%", "10%", "20%"],
-      "Steal Mana": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
-      "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
-      "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
-      "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
-      "Poison Resistance": ["1%", "2%", "3%", "4%", "5%"],
-      "Item Chance": ["2%", "4%", "6%", "8%", "20%"]
+    "bonuses": {
+        "info": "Bonuses give additional stats to your equipment. They vary by item type (Weapon, Armor, etc.).",
+        "categories": {
+            "Weapon": {
+                "info": "Weapons can have offensive bonuses that increase damage.",
+                "list": {
+                    "Vitality": [ 2, 4, 6, 8, 12 ],
+                    "Critical Hit": [ "1%", "2%", "3%", "5%", "10%" ]
+                }
+            },
+            "Armor": {
+                "info": "Armor bonuses improve defense and survivability.",
+                "list": {
+                    "Health Max": [ 500, 1000, 1500, 2000 ],
+                    "Sword Defence": [ "2%", "4%", "6%", "10%", "15%" ]
+                }
+            }
+        }
     }
-  }
 }
