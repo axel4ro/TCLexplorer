@@ -1,0 +1,80 @@
+{
+  "connect_title": "🔗 Conecta tu Billetera xPortal",
+  "connect_intro": "Para desbloquear todos los <b>beneficios Web3</b> en <b>The Cursed Land & Lander</b> – incluyendo Tokens, Staking y Utilidad de NFTs, Infinity Staking, ItemShop y RMT – sigue estos pasos para configurar y conectar tu <b>Billetera xPortal</b>.",
+
+  "step1_title": "📱 Paso 1: Descarga xPortal",
+  "step1_desc": "Instala la aplicación oficial <b>xPortal</b> desde la página oficial:<br><br>👉 <a href='https://xportal.com/app' target='_blank' style='color:#2ff6de;font-weight:600;'>xportal.com/app</a><br><br>En esta página encontrarás enlaces directos para:<br>• <b>Android</b> – disponible en <i>Google Play</i> y <i>Huawei AppGallery</i><br>• <b>iOS</b> – disponible en <i>Apple App Store</i><br><br>💳 xPortal también ofrece una <b>Tarjeta</b> para ingresar y retirar dinero fácilmente:<br>• <b>Tarjeta Virtual</b> – úsala directamente con <i>Google Pay</i> o <i>Apple Wallet</i><br>• <b>Tarjeta Física</b> – ordénala y úsala en cualquier lugar como una tarjeta de débito normal",
+
+  "step2_title": "🔑 Paso 2: Crear / Importar Billetera",
+  "step2_desc": "Abre xPortal y crea una nueva billetera o importa la tuya existente.<br><br>➤ Ve a <b>Perfil (arriba a la izquierda)</b> → <b>Configuración</b> → <b>Seguridad</b> → <b>Frase Secreta (Respaldo)</b>.<br>➤ Asegúrate de <b>respaldar tu billetera</b> en <b>Google Drive</b> (Android) o <b>iCloud</b> (iOS).<br>⚠️ <b>La contraseña de respaldo no se puede cambiar</b>. Escríbela y guárdala de forma segura.<br><br>➤ Para mayor seguridad: anota tus <b>24 palabras secretas</b> en papel y guárdalas de forma segura offline. Esta frase otorga acceso completo a tu billetera.",
+
+  "step3_title": "🚀 Paso 3: Conectar Billetera en The Cursed Land",
+  "step3_desc": "Después de iniciar sesión en tu personaje dentro del juego:<br>➤ Toca el <b>🎯 ícono de Misión</b> (arriba a la derecha, cerca del minimapa).<br>➤ Selecciona <b>Misión 1 – Conectar Billetera xPortal</b>.<br>➤ Presiona <b>Conectar</b> → aparecerán un <b>Código QR</b> y un botón de <b>xPortal</b>.<br>• Si estás en el mismo teléfono que xPortal → toca el <b>botón xPortal</b>.<br>• Si estás en PC → escanea el Código QR usando la aplicación xPortal.<br><br>En xPortal, aprueba la <b>solicitud de conexión</b>.",
+
+  "step4_title": "🎉 Paso 4: Verificar y Reclamar Recompensas",
+  "step4_desc": "Después de conectar:<br>➤ En el juego, presiona el botón verde <b>Verificar Propiedad</b>.<br>➤ Confirma en xPortal firmando el mensaje.<br>➤ Regresa al juego → presiona <b>Reclamar Recompensa</b>.<br><br>✅ Recibirás: <b>250,000 Curse</b> + una <b>etiqueta especial “X”</b> junto al nombre de tu personaje (reconocimiento como Jugador Web3).",
+
+  "next_title": "➡️ Próximos Pasos",
+  "next_desc": "Con tu <b>Billetera xPortal</b> conectada, desbloqueas todas las funciones Web3:<br><br>🎮 <a href='https://www.thecursedland.com/' target='_blank' style='color:#2ff6de;font-weight:600;'>The Cursed Land</a><br>➤ <b>Poseer y Jugar con NFTs</b> – Usa tus NFTs en el juego para recompensas diarias.<br>👉 Accede a la <b>Misión Diaria 1</b> (🎯 ícono bajo el minimapa).<br>👉 Si tienes un NFT equipado con TCL (en staking), completa la misión y reclama tu recompensa cada día.<br>➤ <b>Pedir Prestados NFTs</b> – Incluso sin poseer NFTs, puedes pedirlos prestados y completar la misma <b>Misión Diaria 1</b> para ganar recompensas diarias.<br>👉 Para activar el préstamo primero necesitas crear tu <b>HeroTag</b> en xPortal.<br>Ve a <b>Perfil (arriba a la izquierda)</b> → configura tu HeroTag.<br>⚠️ Crear un HeroTag requiere una pequeña cantidad de <b>EGLD</b>, la moneda nativa de la blockchain MultiversX.<br>💰 Tarifa de Transacción Estimada: <b>0.000276325 EGLD ≈ $0.0038</b><br>➤ <b>Misión 2</b> – Agregar un código de referido - Firmar Transacción - Reclamar Recompensa.<br>✅ Recibirás: <b>250,000 Curse</b> + <b>2-5% cashback de por vida</b> por transacciones con Token TCL.<br>➤ <b>Tienda Web3 Privada</b> – Compra y vende ítems clásicos directamente con TCL usando xPortal.<br><br>➤ <b>Usar NFTs en el juego</b> – Ve al perfil de tu personaje (lado izquierdo) y habilita <b>Usar ítems NFT equipados</b>.<br>✅ Los NFTs están disponibles en todos los personajes de tu cuenta.<br>✅ Los NFTs de Monturas se pueden acceder con la flecha blanca (◀️) junto al botón <b>X Inventario (Web3)</b> en el lado derecho.<br><br>🌐 <a href='https://www.thecursedland.com/lander' target='_blank' style='color:#2ff6de;font-weight:600;'>Lander</a><br>➤ <b>Prestar NFTs</b> – Pon tus NFTs a trabajar en Lander y gana pasivamente.<br>➤ <b>Infinity Staking</b> – Haz staking de TCL una vez, gana recompensas de por vida.<br>➤ <b>Código de Referido</b> – Invita amigos y gana 2-5% de sus transacciones.<br><br>👉 Cómo conectar tu billetera en Lander:<br>1. Abre <b>Lander</b> (App tras instalación o lanza dApp).<br>2. En el <b>Menú superior izquierdo</b> (debajo de Mainnet) toca el ícono ✏️ o ve a la <b>categoría NFT</b> mediante la X grande arriba a la izquierda.<br>3. Verás <b>Dirección de Billetera</b> → presiona <b>Conectar con xPortal</b>.<br>4. Si estás en el mismo dispositivo → presiona el <b>botón xPortal</b>.<br>5. Si estás en otro dispositivo → escanea el <b>Código QR</b> con tu aplicación xPortal.<br>✅ Una vez conectado, tendrás acceso a todas las <b>funciones Web3 de Lander</b>.<br><br>⚠️ <b>Consejo:</b> Mantén siempre al menos <b>$0.50 – $1.00 en EGLD</b> en tu billetera.<br>Esto asegura que puedas cubrir las pequeñas tarifas de transacción requeridas por la blockchain MultiversX.<br>(Ej.: para configurar HeroTag, equipar NFT, pedir prestado un NFT, NFT & Infinity Staking, compras en Tiendas Web3 Privadas, compras dentro del juego con Karma, Ítems Equipables y Monturas NFT u otras interacciones NFT).<br><br>🔎 Para más detalles y estrategias, revisa la guía oficial: <a href='https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl' target='_blank' style='color:#2ff6de;font-weight:600;'>Cómo Ganar TCL – Whitepaper</a>",
+
+  "help_text": "💡 ¿Necesitas ayuda? Únete a nuestra <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Comunidad en Discord</a>",
+
+  "calc_title": "🧮 Simular Transacción",
+  "calc_label_buy": "Introduce el monto en <b>USDC ($)</b> para comprar TCL:",
+  "calc_label_sell": "Introduce el monto en <b>TCL</b> para vender por USDC ($):",
+  "calc_switch_to_sell": "🔁 Cambiar a: Vender TCL",
+  "calc_switch_to_buy": "🔁 Cambiar a: Comprar TCL",
+  "calc_btn_calculate": "Calcular Impacto",
+  "calc_btn_trade": "Comerciar Ahora ↗",
+  "calc_error": "⚠️ Por favor introduce un monto válido.",
+
+  "calc_result_buy": "💱 Comprar TCL con {value} USDC ($)\n💲 TCL estimado recibido: {boughtTCL}\n⚖️ Precio promedio pagado: {avgPrice} USDC/TCL\n💥 Impacto en el precio: {priceImpact}%\n📈 Aumento estimado: + {pctChange}%\n\n📊 Precio final estimado de TCL: {newPrice} USDC ($)\n🔄 Oferta estimada después de la transacción:\n• TCL en el Pool: {newTCL}\n• USDC en el Pool: {newUSDC}",
+
+  "calc_result_sell": "💱 Vender {value} TCL\n💲 USDC ($) estimado recibido: {receivedUSDC}\n⚖️ Precio promedio recibido: {avgPrice} USDC/TCL\n💥 Impacto en el precio: {priceImpact}%\n📉 Disminución estimada: {pctChange}%\n\n📊 Precio final estimado de TCL: {newPrice} USDC ($)\n🔄 Oferta estimada después de la transacción:\n• TCL en el Pool: {newTCL}\n• USDC en el Pool: {newUSDC}",
+
+  "events_title": "📅 Eventos Semanales",
+  "events_desc": "Datos en vivo – sincronizados con los Eventos Semanales dentro del juego The Cursed Land",
+  "events_loading": "⏳ Cargando eventos...",
+  "events_none": "⚠️ No hay eventos programados.",
+  "events_error": "❌ Error al cargar eventos.",
+  "events_active": "🟢 Activo Ahora – termina en {h}h {m}m",
+  "events_soon": "🟡 Comienza en {h}h {m}m",
+  "events_later": "🟠 Comienza en {h}h {m}m",
+  "events_ended": "🔴 Evento Finalizado",
+  "events_duration": "⏱ Duración: {duration}",
+  "days": [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo"
+  ],
+  "events": {
+    "Item Drop": {
+      "name": "Caída de Ítems",
+      "desc": "Durante el evento, los monstruos tienen una pequeña probabilidad de soltar más ítems."
+    },
+    "Experience": {
+      "name": "Experiencia",
+      "desc": "Obtén +20% EXP de los monstruos durante el evento – ¡farmea inteligentemente, sube rápido!"
+    },
+    "Fishing Clam": {
+      "name": "Pesca de Almejas",
+      "desc": "Durante el evento, tendrás mayor probabilidad de pescar almejas – ¡lanza tu caña con sabiduría!"
+    },
+    "Moonlight Treasure": {
+      "name": "Tesoro de Luz de Luna",
+      "desc": "Durante el evento, los monstruos tienen una pequeña probabilidad de soltar Cofres de Luz de Luna."
+    },
+    "Forge Boost": {
+      "name": "Impulso de Forja",
+      "desc": "Durante el evento, disfruta de un +10% de probabilidad adicional para mejorar tus ítems – solo en el NPC Herrero."
+    },
+    "Crystals Frenzy": {
+      "name": "Frenesí de Cristales",
+      "desc": "El mundo es inestable – durante el evento, los cristales aparecen como locos cada 5 minutos."
+    }
+  }
+}
