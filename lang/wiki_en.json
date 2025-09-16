@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "name": "Iron Sword",
+      "desc": "A basic sword made of iron.",
+      "bonus": "+10 Attack",
+      "materials": ["Iron Ore x5", "Wood x2"]
+    },
+    {
+      "name": "Steel Armor",
+      "desc": "Strong armor forged from steel.",
+      "bonus": "+25 Defense",
+      "materials": ["Steel Ingot x10", "Leather x3"]
+    }
+  ],
+  "bosses": [
+    {
+      "name": "Fire Dragon",
+      "desc": "Breathes fire and lives in the volcano.",
+      "drops": ["Dragon Scale", "Flame Sword"]
+    }
+  ],
+  "materials": [
+    { "name": "Iron Ore", "desc": "Mined from caves." },
+    { "name": "Leather", "desc": "Dropped from beasts." }
+  ],
+  "bonuses": [
+    { "name": "Attack Bonus", "desc": "Increases damage dealt." },
+    { "name": "Defense Bonus", "desc": "Reduces incoming damage." }
+  ]
+}
