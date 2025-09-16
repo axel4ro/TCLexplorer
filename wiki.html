@@ -184,19 +184,78 @@ a:hover {
     max-width: 100%;
   }
 }
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #2ff6de;
+  background: #1e2230;
+  color: #f1f1f1;
+  cursor: pointer;
+}
+.lang-btn img { width: 20px; height: 14px; }
+
+.lang-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  margin-top: 6px;
+  background: #111827;
+  border: 1px solid #2ff6de;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  min-width: 160px;
+  z-index: 2000;
+}
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #f1f1f1;
+}
+.lang-option:hover { background: #2ff6de33; }
+.lang-dropdown.open .lang-menu { display: block; }
+
   </style>
 </head>
 <body>
-  <!-- 🔙 Header -->
-  <div class="header">
-    <div class="header-inner">
-      <a href="index.html" class="back-btn">⬅️ Back to TCL Explorer</a>
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Search in Wiki..." onkeyup="searchWiki()" />
-        <button class="search-btn" onclick="searchWiki()">Search</button>
+<!-- 🔙 Header -->
+<div class="header">
+  <div class="header-inner">
+    <a href="index.html" class="back-btn">⬅️ Back to TCL Explorer</a>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔍 Search in Wiki..." onkeyup="searchWiki()" />
+      <button class="search-btn" onclick="searchWiki()">Search</button>
+    </div>
+
+    <!-- 🌍 Dropdown pentru limbă -->
+    <div class="lang-dropdown" style="margin-left:auto; position:relative;">
+      <button class="lang-btn" id="currentLang">
+        <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
+      </button>
+      <div class="lang-menu">
+        <div class="lang-option" onclick="setLang('en')"><img src="https://flagcdn.com/w20/gb.png"> English</div>
+        <div class="lang-option" onclick="setLang('ro')"><img src="https://flagcdn.com/w20/ro.png"> Română</div>
+        <div class="lang-option" onclick="setLang('tr')"><img src="https://flagcdn.com/w20/tr.png"> Türkçe</div>
+        <div class="lang-option" onclick="setLang('de')"><img src="https://flagcdn.com/w20/de.png"> Deutsch</div>
+        <div class="lang-option" onclick="setLang('es')"><img src="https://flagcdn.com/w20/es.png"> Español</div>
+        <div class="lang-option" onclick="setLang('fr')"><img src="https://flagcdn.com/w20/fr.png"> Français</div>
+        <div class="lang-option" onclick="setLang('it')"><img src="https://flagcdn.com/w20/it.png"> Italiano</div>
+        <div class="lang-option" onclick="setLang('pl')"><img src="https://flagcdn.com/w20/pl.png"> Polski</div>
+        <div class="lang-option" onclick="setLang('pt')"><img src="https://flagcdn.com/w20/pt.png"> Português</div>
       </div>
     </div>
   </div>
+</div>
+
 
   <!-- 📖 Conținut Wiki -->
   <div class="content" id="wikiContent">
@@ -218,7 +277,7 @@ function highlightText(text, query) {
 }
 
 // Încarcă JSON
-async function loadWiki(lang = "en") {
+async function loadWiki(lang = "en", fallback = true) {
   try {
     const res = await fetch(`${WIKI_BASE_URL}/wiki_${lang}.json?t=${Date.now()}`);
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -226,8 +285,14 @@ async function loadWiki(lang = "en") {
     renderWiki(wikiData, false); // 🔥 inițial închise
   } catch (e) {
     console.error("Wiki load error", e);
-    document.getElementById("wikiContent").innerHTML =
-      `<p>❌ Failed to load Wiki data for lang: ${lang}</p>`;
+
+    if (fallback && lang !== "en") {
+      console.warn(`⚠️ Falling back to English...`);
+      setLang("en"); // schimbăm dropdown pe engleză
+    } else {
+      document.getElementById("wikiContent").innerHTML =
+        `<p>❌ Failed to load Wiki data for lang: ${lang}</p>`;
+    }
   }
 }
 
@@ -391,6 +456,91 @@ function searchWiki() {
 
   renderWiki(filtered, true); // forțăm deschidere la rezultate
 }
+
+// ===== Limbă =====
+const langDropdown = document.querySelector('.lang-dropdown');
+const currentLangBtn = document.getElementById('currentLang');
+
+currentLangBtn.addEventListener('click', () => {
+  langDropdown.classList.toggle('open');
+});
+
+function setLang(lang) {
+  langDropdown.classList.remove('open');
+  localStorage.setItem("lang", lang);
+  currentLang = lang;
+  updateLangButton(lang);
+  loadWiki(lang, true);
+}
+
+function updateLangButton(lang) {
+  let label = "English", flag = "https://flagcdn.com/w20/gb.png";
+  if (lang === "ro") { label = "Română"; flag = "https://flagcdn.com/w20/ro.png"; }
+  if (lang === "tr") { label = "Türkçe"; flag = "https://flagcdn.com/w20/tr.png"; }
+  if (lang === "de") { label = "Deutsch"; flag = "https://flagcdn.com/w20/de.png"; }
+  if (lang === "es") { label = "Español"; flag = "https://flagcdn.com/w20/es.png"; }
+  if (lang === "fr") { label = "Français"; flag = "https://flagcdn.com/w20/fr.png"; }
+  if (lang === "it") { label = "Italiano"; flag = "https://flagcdn.com/w20/it.png"; }
+  if (lang === "pl") { label = "Polski"; flag = "https://flagcdn.com/w20/pl.png"; }
+  if (lang === "pt") { label = "Português"; flag = "https://flagcdn.com/w20/pt.png"; }
+
+  currentLangBtn.innerHTML = `<img src="${flag}" alt="${lang.toUpperCase()}"> ${label}`;
+}
+// 🔹 Limbile suportate
+const LANGS = [
+  { code: "en", label: "English", flag: "gb" },
+  { code: "ro", label: "Română", flag: "ro" },
+  { code: "tr", label: "Türkçe", flag: "tr" },
+  { code: "de", label: "Deutsch", flag: "de" },
+  { code: "es", label: "Español", flag: "es" },
+  { code: "fr", label: "Français", flag: "fr" },
+  { code: "it", label: "Italiano", flag: "it" },
+  { code: "pl", label: "Polski", flag: "pl" },
+  { code: "pt", label: "Português", flag: "pt" }
+];
+
+// 🔹 Verifică dacă fișierul JSON există
+async function checkLangFile(lang) {
+  try {
+    const res = await fetch(`${WIKI_BASE_URL}/wiki_${lang}.json`, { method: "HEAD" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// 🔹 Construiește dropdown-ul dinamic
+async function buildLangDropdown() {
+  const menu = document.querySelector(".lang-menu");
+  menu.innerHTML = ""; // curățăm
+
+  for (const lang of LANGS) {
+    if (await checkLangFile(lang.code)) {
+      const option = document.createElement("div");
+      option.className = "lang-option";
+      option.innerHTML = `<img src="https://flagcdn.com/w20/${lang.flag}.png"> ${lang.label}`;
+      option.onclick = () => setLang(lang.code);
+      menu.appendChild(option);
+    }
+  }
+}
+
+
+// ===== Detectare automată la load =====
+window.addEventListener("DOMContentLoaded", async () => {
+  await buildLangDropdown(); // 🌍 construim dropdown doar cu limbile valide
+
+  if (!localStorage.getItem("lang")) {
+    let browserLang = navigator.language.toLowerCase();
+    currentLang = LANGS.find(l => browserLang.startsWith(l.code))?.code || "en";
+    localStorage.setItem("lang", currentLang);
+  } else {
+    currentLang = localStorage.getItem("lang");
+  }
+
+  updateLangButton(currentLang);
+  loadWiki(currentLang);
+});
 
 
 
