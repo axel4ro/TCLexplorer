@@ -567,16 +567,52 @@ button:hover { opacity: 0.9; }
 <div id="menuPanel" class="menu-panel">
   <div class="menu-buttons">
   	<button onclick="showPage('connectXportal')" id="btn-connectXportal">🔗 Connect xPortal</button>
-    <button onclick="showPage('token')" id="btn-token" class="active">🪙 Token</button>
-	<button onclick="showPage('calculator')" id="btn-calculator">🧮 Calculator</button>
+	
+    <button onclick="showPage('token')" id="btn-token" class="active">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" 
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  Token
+</button>
+
+    <button onclick="showPage('calculator')" id="btn-calculator" class="active">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/calculator.png" 
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  Calculator
+</button>
+
     <button onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
 	<button onclick="showPage('events')" id="btn-events">📅 Events</button>
 	<button onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
 	<button onclick="showPage('walletCheck')" id="btn-walletCheck">🔎 Wallet Check</button>
-	<button onclick="showPage('explorerIframe')" id="btn-explorerIframe">🌐 Explorer</button>
-    <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">💱 xExchange ↗</button>
-	<button onclick="openLander()" id="btn-Lander">🚀 Lander ↗</button>
-	<button onclick="openXPortal()" id="btn-xportal">📱 xPortal ↗</button>
+	
+	    <button onclick="showPage('explorerIframe')" id="btn-explorerIframe" class="active">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/EGLD.png"
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  Explorer
+</button>
+
+    <button onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe" class="active">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/exchange.png"
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  xExchange
+</button>
+	
+	
+<button onclick="openLander()" id="btn-Lander">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png"
+       alt="Lander"
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  Lander ↗
+</button>
+
+
+<button onclick="openXPortal()" id="btn-xportal">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/xPortal.png"
+       alt="Lander"
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  xPortal ↗
+</button>
+
 	
     <!-- poți adăuga oricâte vrei -->
   </div>
@@ -584,7 +620,11 @@ button:hover { opacity: 0.9; }
 
  <!-- Token -->
 <div id="token" class="section-page">   <!-- ❌ fără active -->
-  <h2>🪙 Token</h2>
+  <h2 style="display:flex; align-items:center; gap:8px;">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="TCL" style="width:28px; height:28px; border-radius:6px;">
+  TCL Token
+</h2>
+
 
   <div class="section">
     <strong><span class="chip-live">LIVE DATA</span></strong>
