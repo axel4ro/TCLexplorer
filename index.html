@@ -600,7 +600,6 @@ button:hover { opacity: 0.9; }
 	
 <button onclick="openLander()" id="btn-Lander">
   <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png"
-       alt="Lander"
        style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
   Lander ↗
 </button>
@@ -608,11 +607,15 @@ button:hover { opacity: 0.9; }
 
 <button onclick="openXPortal()" id="btn-xportal">
   <img src="https://axel4ro.github.io/TCLexplorer/images/xPortal.png"
-       alt="Lander"
        style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
   xPortal ↗
 </button>
 
+<button onclick="openTCL()" id="btn-TCL">
+  <img src="https://axel4ro.github.io/TCLexplorer/images/thecursedland.png"
+       style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
+  The Cursed Land ↗
+</button>
 	
     <!-- poți adăuga oricâte vrei -->
   </div>
@@ -925,6 +928,9 @@ button:hover { opacity: 0.9; }
 </div>
 
 <script>
+function openTCL() {
+  window.open("https://www.thecursedland.com/", "_blank");
+}
 function openXPortal() {
   window.open("https://xportal.com/app", "_blank");
 }
@@ -1623,12 +1629,31 @@ function setLang(lang) {
   loadTranslations(lang);
 }
 
-// load limba salvată la pornire
+
+// Detectează limba device-ului și setează-o automat la primul load
 window.addEventListener("DOMContentLoaded", () => {
-  if (document.querySelectorAll("[data-i18n]").length > 0) {
-    loadTranslations(currentLang);
+  // dacă nu există deja limba salvată în localStorage
+  if (!localStorage.getItem("lang")) {
+    let browserLang = navigator.language || navigator.userLanguage; 
+    browserLang = browserLang.toLowerCase();
+
+    if (browserLang.startsWith("ro")) {
+      currentLang = "ro";
+    } else if (browserLang.startsWith("tr")) {
+      currentLang = "tr";
+    } else {
+      currentLang = "en"; // fallback default
+    }
+
+    localStorage.setItem("lang", currentLang);
+  } else {
+    currentLang = localStorage.getItem("lang");
   }
+
+  // încarcă traducerile pentru limba detectată sau salvată
+  loadTranslations(currentLang);
 });
+
 
 function copyAddr(addr, event) {
   navigator.clipboard.writeText(addr).then(() => {
@@ -1730,4 +1755,3 @@ resultBox.innerHTML = `
 </script>
 </body>
 </html>
-
