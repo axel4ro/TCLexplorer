@@ -83,7 +83,6 @@ body {
   overflow-y: auto;
 }
 
-
 /* scroll bar vizibil */
 .menu-panel::-webkit-scrollbar { width: 10px; }
 .menu-panel::-webkit-scrollbar-track { background: #222; border-radius: 6px; }
@@ -147,7 +146,6 @@ body {
   border: none;
 }
 
-
 #xexchangeIframe.fullpage {
   position: fixed;
   top: 60px;
@@ -164,7 +162,6 @@ body {
   height: 100%;
   border: none;
 }
-
 
 /* Carduri evenimente */
 .event-card {
@@ -422,7 +419,6 @@ button:hover { opacity: 0.9; }
 }
 
 
-
 /* --- stil dropdown general --- */
 .lang-dropdown {
   position: absolute;
@@ -493,8 +489,6 @@ button:hover { opacity: 0.9; }
   transition: background 0.5s ease;
 }
 
-
-
 /* Responsive */
 @media (max-width: 768px) {
   body { margin: 20px 12px; }
@@ -525,12 +519,17 @@ button:hover { opacity: 0.9; }
   display: flex;
   flex-wrap: nowrap;
   gap: 16px;
+  margin-top: 24px; /* 🔥 spațiu deasupra */
 }
 
 .init-liq .stat {
   flex: 1 1 calc(33.333% - 16px);
   min-width: 0;
 }
+.section.init-liq-section {
+  margin-top: 32px; /* 🔥 spațiu vizibil între Live Data și Initial Liquidity */
+}
+
 
 /* ⚡ Suprascriem regula pe mobil doar pentru init-liq */
 @media (max-width: 768px) {
@@ -538,9 +537,6 @@ button:hover { opacity: 0.9; }
     flex-direction: row !important;
   }
 }
-
-
-
 
   </style>
 </head>
@@ -582,18 +578,22 @@ button:hover { opacity: 0.9; }
 	<button onclick="openLander()" id="btn-Lander">🚀 Lander ↗</button>
 	<button onclick="openXPortal()" id="btn-xportal">📱 xPortal ↗</button>
 	
-
-
     <!-- poți adăuga oricâte vrei -->
   </div>
 </div>
 
-  <!-- Token -->
-  <div id="token" class="section-page">   <!-- ❌ fără active -->
-    <h2>🪙 Token</h2>
+ <!-- Token -->
+<div id="token" class="section-page">   <!-- ❌ fără active -->
+  <h2>🪙 Token</h2>
 
-<div class="section">
-  <strong><span class="chip-live">LIVE DATA</span></strong>
+  <div class="section">
+    <strong><span class="chip-live">LIVE DATA</span></strong>
+    <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
+      📊 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
+    </span>
+  </div>
+
+  <!-- 🔥 Toate cardurile live -->
   <div class="stats-row token-grid">
     <div class="stat">
       <div class="stat-top">
@@ -631,23 +631,82 @@ button:hover { opacity: 0.9; }
       </div>
       <div id="curUSDC" class="stat-value">—</div>
     </div>
+    <div class="stat">
+      <div class="stat-top">
+        <span>Market Cap</span><span class="chip-live">Live</span>
+      </div>
+      <div id="marketCap" class="stat-value">—</div>
+    </div>
+		    <div class="stat">
+      <div class="stat-top">
+        <span>Burned TCL</span><span class="chip-live">Live</span>
+      </div>
+      <div id="burned" class="stat-value">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top">
+        <span>Holders</span><span class="chip-live">Live</span>
+      </div>
+      <div id="holders" class="stat-value">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top">
+        <span>Circulating Supply</span><span class="chip-live">Live</span>
+      </div>
+      <div id="circulating" class="stat-value">—</div>
+    </div>
+	<div class="stat">
+  <div class="stat-top">
+    <span>Current Supply</span><span class="chip-live">Live</span>
   </div>
-  <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
-    📊 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
-  </span>
+  <div id="currentSupply" class="stat-value">—</div>
 </div>
+	<div class="stat">
+	  <div class="stat-top">
+		<span>TCL Max Supply</span><span class="chip-live">Live</span>
+	  </div>
+	  <div id="supply" class="stat-value">—</div>
+	</div>
+	<div class="stat">
+  <div class="stat-top">
+    <span>Volume (24h)</span><span class="chip-live">Live</span>
+  </div>
+  <div id="volume24h" class="stat-value">—</div>
+</div>
+<div class="stat">
+  <div class="stat-top">
+    <span>Trades Count</span><span class="chip-live">Live</span>
+  </div>
+  <div id="tradesCount" class="stat-value">—</div>
+</div>
+	    <div class="stat">
+      <div class="stat-top">
+        <span>Transactions</span><span class="chip-live">Live</span>
+      </div>
+      <div id="transactions" class="stat-value">—</div>
+    </div>
+  </div> <!-- ✅ închis grid-ul aici -->
 
-
-<div class="section">
+  <!-- Initial Liquidity separat -->
+<div class="section init-liq-section">
   <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong>
   <div class="stats-row init-liq">
-  <div class="stat"><div class="stat-top"><span>Initial Price</span></div><div class="stat-value">0.006 $</div></div>
-    <div class="stat"><div class="stat-top"><span>TCL Supply</span></div><div class="stat-value">4,000,000</div></div>
-    <div class="stat"><div class="stat-top"><span>USDC Supply</span></div><div class="stat-value">25,000 $</div></div>
+    <div class="stat">
+      <div class="stat-top"><span>Initial Price</span></div>
+      <div class="stat-value">0.006 $</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>TCL Supply</span></div>
+      <div class="stat-value">4,000,000</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><span>USDC Supply</span></div>
+      <div class="stat-value">25,000 $</div>
+    </div>
   </div>
 </div>
 
-	
+
 <!-- How to Earn TCL (Whitepaper) -->
 <div class="section">
   <strong><span class="chip-live">📖 How to Earn TCL</span></strong>
@@ -668,9 +727,6 @@ button:hover { opacity: 0.9; }
        The Cursed Land Whitepaper</a>
   </small>
 </div>
-
-
-
   </div>
 
 <!-- xExchange Trade -->
@@ -683,8 +739,6 @@ button:hover { opacity: 0.9; }
 
   <!-- Calculator -->
   <div id="calculator" class="section-page">
-  
-
 <h2 data-i18n="calc_title"></h2>
 <div class="row-group">
   <div style="flex: 2;">
@@ -713,8 +767,6 @@ button:hover { opacity: 0.9; }
   <div style="margin-top:15px; display:flex; gap:6px; flex-wrap:wrap;" id="eventButtons"></div>
 </div>
 
-
-
 <!-- TCL Token Chart -->
 <div id="chart" class="section-page">
   <iframe 
@@ -722,7 +774,6 @@ button:hover { opacity: 0.9; }
   </iframe>
 </div>
 
-  
   <!-- Explorer MultiversX -->
 <div id="explorerIframe" class="section-page">
   <iframe 
@@ -748,7 +799,6 @@ button:hover { opacity: 0.9; }
 <!-- 🔥 mesaj sub search -->
 <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
 
-
   <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
     <thead>
       <tr style="background:#007bff;color:white;">
@@ -765,9 +815,6 @@ button:hover { opacity: 0.9; }
     </tbody>
   </table>
 </div>
-
-
-
 
 <!-- Connect xPortal Tutorial -->
 <div id="connectXportal" class="section-page active">
@@ -891,7 +938,6 @@ function switchMode() {
   input.value = '';
   document.getElementById("resultBox").innerHTML = '';
 }
-
 
   function calculate() {
     const tcl = parseNumber(getText("curTCL"));
@@ -1098,8 +1144,9 @@ function showEventsForDay(day) {
       const data = await res.json();
       const pool = data.pair;
       setText("curTCL", formatNumber(pool.liquidity.base));
-      setText("curUSDC", formatNumber(pool.liquidity.quote) + " $");
-      setText("curPrice", parseFloat(pool.priceUsd).toFixed(6) + " $");
+	  setText("curUSDC", formatNumber(pool.liquidity.quote) + " $");
+	  setText("curPrice", parseFloat(pool.priceUsd).toFixed(6) + " $");
+
 	  const change = parseFloat(pool.priceChange.h24).toFixed(2);
       const symbol = change >= 0 ? "📈 +" : "📉 ";
       setText("change24h", symbol + change + "%");
@@ -1112,11 +1159,52 @@ function showEventsForDay(day) {
       const arr = await resp.json();
       if(arr && arr.length > 0){
         const data = arr[0];
-        setText("ath", data.ath.toFixed(6) + " $");
-        setText("atl", data.atl.toFixed(6) + " $");
+		setText("ath", data.ath.toFixed(6) + " $");
+		setText("atl", data.atl.toFixed(6) + " $");
+
       }
     } catch(e){ console.error("❌ CoinGecko ATH/ATL error", e); }
   }
+
+
+// ===== MultiversX Explorer Data =====
+async function fetchExplorerData() {
+  try {
+    const res = await fetch(`${MULTIVERSX_API}/tokens/TCL-fe459d`);
+    const data = await res.json();
+    if (!data) return;
+
+    const decimals = data.decimals || 18;
+
+    // ✅ Max Supply = initialMinted
+    const maxSupply = parseFloat(data.initialMinted) / (10 ** decimals);
+
+    // ✅ Burned & Circulating
+    const burned = parseFloat(data.burnt) / (10 ** decimals);
+    const circulating = parseFloat(data.circulatingSupply) || (maxSupply - burned);
+    const currentSupply = parseFloat(data.supply) || 0;
+    const marketCap = data.marketCap || 0;
+    const holders = data.accounts || 0;
+    const transactions = data.transfers || 0;
+	const volume24h = data.totalVolume24h || 0;
+    const tradesCount = data.tradesCount || 0;
+
+// ✅ Scriem valorile cu $ la final
+setText("marketCap", formatNumber(marketCap) + " $");
+setText("holders", holders.toLocaleString());
+setText("transactions", transactions.toLocaleString());
+setText("circulating", formatNumber(circulating));
+setText("burned", formatNumber(burned));
+setText("supply", formatNumber(maxSupply));
+setText("currentSupply", formatNumber(currentSupply));
+setText("volume24h", formatNumber(volume24h) + " $");
+setText("tradesCount", tradesCount.toLocaleString());
+
+	
+  } catch (err) {
+    console.error("❌ Explorer fetch error", err);
+  }
+}
 
   // ===== Staking Leaderboard din JSON =====
 function formatTcl(val, decimals = 18) {
@@ -1207,8 +1295,6 @@ top100.forEach(r => {
     "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
   "</tr>";
 });
-
-
 
 body.innerHTML = html;
 
@@ -1354,8 +1440,6 @@ function showPage(id) {
   applyTranslations();
 }
 
-
-
   // ===== On Load =====
 window.onload = function() {
 
@@ -1386,6 +1470,10 @@ setInterval(() => {
     showEventsForDay(currentDay);
   }
 }, 60000); // 60000ms = 1 minut
+
+fetchExplorerData();
+setInterval(fetchExplorerData, 300000); // la fiecare 5 min
+
 
 // 🔥 Toggle pentru meniul de navigație
 document.getElementById("menuToggle").addEventListener("click", () => {
@@ -1434,8 +1522,6 @@ overlayImg?.addEventListener("wheel", e => {
   }
   overlayImg.style.transform = `scale(${scale})`;
 });
-
-
 
 const BASE_URL = "https://axel4ro.github.io/TCLexplorer/lang/";
 let translations = {};
