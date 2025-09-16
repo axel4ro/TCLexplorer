@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9" />
+  <title>The Cursed Land - Wiki</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #161a24;
+      color: #f1f1f1;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+.header {
+  width: 100%;
+  background: #161a24;
+  padding: 12px 0;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.header-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.back-btn {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #249c8c;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.back-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* 🔹 Search box */
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+#searchInput {
+  flex: 1;
+  max-width: 400px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #1e2230;
+  color: #fff;
+  font-size: 15px;
+}
+#searchInput:focus {
+  outline: 2px solid #2ff6de;
+}
+
+.search-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #2ff6de;
+  color: #161a24;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  transition: transform 0.2s, opacity 0.2s;
+}
+.search-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* 🔹 Conținut */
+.content {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+h1, h2 {
+  color: #2ff6de;
+  margin-bottom: 10px;
+}
+
+.card {
+  background: #1e2230;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+a {
+  color: #2ff6de;
+  text-decoration: none;
+  font-weight: 600;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.toggle {
+  background: #1e2230;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  color: #2ff6de;
+  transition: background 0.2s;
+}
+.toggle:hover {
+  background: #2a2f42;
+}
+.toggle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.toggle-header span {
+  font-size: 18px;
+  margin-left: 10px;
+  transition: transform 0.2s;
+}
+.toggle.open .toggle-header span {
+  transform: rotate(90deg);
+}
+.toggle p {
+  color: #f1f1f1;
+  margin: 6px 0 0 0;
+  font-weight: normal;
+}
+.section-content {
+  display: none;
+  padding: 10px 14px;
+}
+
+/* 🔹 Highlight la search */
+.highlight {
+  background: rgba(47,246,222,0.25);
+  color: #2ff6de;
+  font-weight: bold;
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+/* 🔹 Responsive */
+@media (max-width: 600px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-box {
+    width: 100%;
+  }
+  #searchInput {
+    max-width: 100%;
+  }
+}
+  </style>
+</head>
+<body>
+  <!-- 🔙 Header -->
+  <div class="header">
+    <div class="header-inner">
+      <a href="index.html" class="back-btn">⬅️ Back to TCL Explorer</a>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Search in Wiki..." onkeyup="searchWiki()" />
+        <button class="search-btn" onclick="searchWiki()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📖 Conținut Wiki -->
+  <div class="content" id="wikiContent">
+    <h1>📖 The Cursed Land – Wiki</h1>
+    <p>⏳ Loading data...</p>
+  </div>
+
+<script>
+let wikiData = {};
+let searchQuery = "";
+let currentLang = localStorage.getItem("lang") || "en"; 
+const WIKI_BASE_URL = "https://axel4ro.github.io/TCLexplorer/lang";
+
+// ✅ funcția highlight
+function highlightText(text, query) {
+  if (!query) return text;
+  const regex = new RegExp(`(${query})`, "gi");
+  return text.replace(regex, `<span class="highlight">$1</span>`);
+}
+
+// Încarcă JSON
+async function loadWiki(lang = "en") {
+  try {
+    const res = await fetch(`${WIKI_BASE_URL}/wiki_${lang}.json?t=${Date.now()}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    wikiData = await res.json();
+    renderWiki(wikiData, false); // 🔥 inițial închise
+  } catch (e) {
+    console.error("Wiki load error", e);
+    document.getElementById("wikiContent").innerHTML =
+      `<p>❌ Failed to load Wiki data for lang: ${lang}</p>`;
+  }
+}
+
+// 🔥 modificat renderWiki
+function renderWiki(data, forceOpen = false) {
+  const container = document.getElementById("wikiContent");
+  container.innerHTML = "<h1>📖 The Cursed Land – Wiki</h1>";
+
+  for (const [sectionName, sectionData] of Object.entries(data)) {
+    if (!sectionData) continue;
+
+    // dacă are rezultate, secțiunea se deschide
+    const sectionHasResults =
+      (sectionData.list && sectionData.list.length > 0) ||
+      (sectionData.categories && Object.keys(sectionData.categories).length > 0);
+
+    container.innerHTML += `
+      <div class="card toggle ${forceOpen && sectionHasResults ? "open" : ""}" 
+           onclick="toggleSection('${sectionName}List', this)">
+        <div class="toggle-header">
+          <h2>📂 ${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}</h2>
+          <span>${forceOpen && sectionHasResults ? "▼" : "▶"}</span>
+        </div>
+        <p>${highlightText(sectionData.info || "", searchQuery)}</p>
+      </div>
+      <div id="${sectionName}List" class="section-content" 
+           style="display:${forceOpen && sectionHasResults ? "block" : "none"}"></div>
+    `;
+
+    const secDiv = document.getElementById(`${sectionName}List`);
+
+    // Dacă are listă simplă
+    if (sectionData.list) {
+      sectionData.list.forEach(item => {
+        secDiv.innerHTML += `
+          <div class="card">
+            <h2>${highlightText(item.name, searchQuery)}</h2>
+            <p>${highlightText(item.desc, searchQuery)}</p>
+          </div>
+        `;
+      });
+    }
+
+    // Dacă are categorii (ex: bonuses)
+    if (sectionData.categories) {
+      for (const [catName, catData] of Object.entries(sectionData.categories)) {
+        const catHasResults = catData.list && Object.keys(catData.list).length > 0;
+
+        secDiv.innerHTML += `
+          <div class="card toggle ${forceOpen && catHasResults ? "open" : ""}" 
+               onclick="toggleCategory('${sectionName}-${catName}', this)">
+            <div class="toggle-header">
+              <h3>${highlightText(catName, searchQuery)}</h3>
+              <span>${forceOpen && catHasResults ? "▼" : "▶"}</span>
+            </div>
+            <p>${highlightText(catData.info, searchQuery)}</p>
+            <div id="cat-${sectionName}-${catName}" class="section-content" 
+                 style="display:${forceOpen && catHasResults ? "block" : "none"}"></div>
+          </div>
+        `;
+
+        const catDiv = document.getElementById(`cat-${sectionName}-${catName}`);
+        for (const [bonus, values] of Object.entries(catData.list)) {
+          catDiv.innerHTML += `<p><b>${highlightText(bonus, searchQuery)}:</b> ${values.join(", ")}</p>`;
+        }
+      }
+    }
+  }
+}
+
+
+
+// Toggle secțiuni
+function toggleSection(id, el) {
+  const section = document.getElementById(id);
+  if (!section) return;
+  if (section.style.display === "block") {
+    section.style.display = "none";
+    el.classList.remove("open");
+  } else {
+    section.style.display = "block";
+    el.classList.add("open");
+  }
+}
+
+function toggleCategory(cat, el) {
+  const section = document.getElementById(`cat-${cat}`);
+  if (!section) return;
+  if (section.style.display === "block") {
+    section.style.display = "none";
+    el.classList.remove("open");
+  } else {
+    section.style.display = "block";
+    el.classList.add("open");
+  }
+}
+
+
+
+// Search
+function searchWiki() {
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  searchQuery = query;
+
+  if (!query) {
+    renderWiki(wikiData, false); // default: închise
+    return;
+  }
+
+  const filtered = {};
+
+  for (const [sectionName, sectionData] of Object.entries(wikiData)) {
+    if (!sectionData) continue;
+
+    // dacă are listă simplă (races, classes, materials, etc.)
+    if (sectionData.list) {
+      const filteredList = sectionData.list.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.desc.toLowerCase().includes(query)
+      );
+
+      if (
+        sectionData.info.toLowerCase().includes(query) ||
+        filteredList.length > 0
+      ) {
+        filtered[sectionName] = {
+          info: sectionData.info,
+          list: filteredList
+        };
+      }
+    }
+
+    // dacă are categorii (ex: bonuses)
+    if (sectionData.categories) {
+      const categories = {};
+      for (const [cat, obj] of Object.entries(sectionData.categories)) {
+        const filteredList = Object.fromEntries(
+          Object.entries(obj.list).filter(([bonus, values]) =>
+            bonus.toLowerCase().includes(query) ||
+            values.some(v => v.toString().toLowerCase().includes(query))
+          )
+        );
+
+        if (
+          cat.toLowerCase().includes(query) ||
+          obj.info.toLowerCase().includes(query) ||
+          Object.keys(filteredList).length > 0
+        ) {
+          categories[cat] = { info: obj.info, list: filteredList };
+        }
+      }
+
+      if (
+        sectionData.info.toLowerCase().includes(query) ||
+        Object.keys(categories).length > 0
+      ) {
+        filtered[sectionName] = { info: sectionData.info, categories };
+      }
+    }
+  }
+
+  renderWiki(filtered, true); // forțăm deschidere la rezultate
+}
+
+
+
+// On load
+window.onload = () => loadWiki(currentLang);
+</script>
+</body>
+</html>
