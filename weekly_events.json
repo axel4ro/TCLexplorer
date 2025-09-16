@@ -7,7 +7,7 @@
       "start": "07:00",
       "end": "08:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -20,25 +20,25 @@
       "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "16:00",
       "end": "17:00",
-	     "image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
-	{
+    {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
       "name": "Moonlight Treasure",
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "18:00",
       "end": "19:00",
-		 "image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     }
   ],
   "Tuesday": [
     {
-      "emoji": "<::1370452397226197113>",
-      "name": "Fishing ",
-      "description": "During the event, you’ll have a higher chance to catch s – cast wisely!",
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
+      "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "07:00",
       "end": "08:00",
-	      "image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
     {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
@@ -46,7 +46,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "12:00",
       "end": "13:00",
-	     "image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     },
     {
       "emoji": "<:Drop:1233669863810273280>",
@@ -55,7 +55,7 @@
       "start": "16:00",
       "end": "17:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -71,7 +71,7 @@
       "start": "10:00",
       "end": "11:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -86,12 +86,12 @@
       "end": "15:00"
     },
     {
-      "emoji": "<::1370452397226197113>",
-      "name": "Fishing ",
+      "emoji": "<:Clam:1370452397226197113>",
+      "name": "Fishing Clam",
       "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "16:00",
       "end": "17:00",
-		"image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
     {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
@@ -99,7 +99,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "18:00",
       "end": "19:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     }
   ],
   "Thursday": [
@@ -109,7 +109,7 @@
       "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "07:00",
       "end": "08:00",
-		"image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
     {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
@@ -117,7 +117,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "12:00",
       "end": "13:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     },
     {
       "emoji": "<:Drop:1233669863810273280>",
@@ -126,7 +126,7 @@
       "start": "16:00",
       "end": "17:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -135,7 +135,7 @@
     }
   ],
   "Friday": [
-      {
+    {
       "emoji": "<:Drop:1233669863810273280>",
       "name": "Item Drop",
       "description": "During the event, mobs have a small chance to drop more items!",
@@ -149,7 +149,7 @@
       "start": "10:00",
       "end": "11:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -163,21 +163,21 @@
       "start": "14:00",
       "end": "15:00"
     },
-	{
+    {
       "emoji": "<:Clam:1370452397226197113>",
       "name": "Fishing Clam",
       "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "16:00",
       "end": "17:00",
-		"image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
-	{
+    {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
       "name": "Moonlight Treasure",
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "18:00",
       "end": "20:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     }
   ],
   "Saturday": [
@@ -187,7 +187,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "07:00",
       "end": "09:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     },
     {
       "emoji": "<:Upgrade:1233669907623968768>",
@@ -196,7 +196,7 @@
       "start": "10:00",
       "end": "11:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -216,7 +216,7 @@
       "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "16:00",
       "end": "17:00",
-		"image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
     {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
@@ -224,7 +224,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "18:00",
       "end": "20:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     }
   ],
   "Sunday": [
@@ -234,7 +234,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "07:00",
       "end": "09:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     },
     {
       "emoji": "<:Upgrade:1233669907623968768>",
@@ -243,7 +243,7 @@
       "start": "10:00",
       "end": "11:00"
     },
-	{
+    {
       "emoji": "<:EXP:1233669937646534668>",
       "name": "Experience",
       "description": "Earn +20% EXP from monsters during the event – grind smart, level hard!",
@@ -263,7 +263,7 @@
       "description": "During the event, you’ll have a higher chance to catch Clams – cast wisely!",
       "start": "16:00",
       "end": "17:00",
-		"image": "Drop_Clam.png"
+      "image": "Drop_Clam.png"
     },
     {
       "emoji": "<:MoonlightTreasureChest:1233669680535703552>",
@@ -271,7 +271,7 @@
       "description": "During the event, mobs have a small chance to drop Moonlight Chests!",
       "start": "18:00",
       "end": "20:00",
-		"image": "Drop_Moonlight_Treasure_Chest.jpg"
+      "image": "Drop_Moonlight_Treasure_Chest.jpg"
     }
   ]
 }
