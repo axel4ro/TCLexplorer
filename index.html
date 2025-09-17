@@ -52,20 +52,25 @@ body {
 #wikiBtn {
   position: absolute;
   left: 20px;
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 10px 18px;            /* 🔥 la fel ca Menu */
+  border-radius: 6px;
   background: #249c8c;
   color: white;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+
+  /* 🔥 umbra textului și a butonului */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+
   transition: transform 0.2s, opacity 0.2s;
 }
 #wikiBtn:hover {
   opacity: 0.9;
   transform: translateY(-2px);
 }
+
 
 /* Menu centrat */
 #menuToggle {
@@ -463,7 +468,6 @@ button:hover { opacity: 0.9; }
     gap: 16px;
   }
 }
-
 
 
 /* 🌍 Dropdown dreapta */
@@ -1833,5 +1837,3 @@ resultBox.innerHTML = `
 </script>
 </body>
 </html>
-
-
