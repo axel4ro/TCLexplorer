@@ -1445,16 +1445,16 @@ setInterval(updateLastUpdated, 1000);
 
 async function searchStaker() {
   const input = document.getElementById("stakingSearch").value.trim();
-  const searchResult = document.getElementById("stakingSearchResult"); // container sub search
+  const searchResult = document.getElementById("stakingSearchResult");
 
   if (!input.startsWith("erd1") || input.length < 62) {
     searchResult.innerHTML = "⚠️ Please enter a valid wallet address (erd1...)";
-    searchResult.style.color = "#f87171"; // roșu
+    searchResult.style.color = "#f87171";
     return;
   }
 
   searchResult.innerHTML = "⏳ Searching...";
-  searchResult.style.color = "#eab308"; // galben
+  searchResult.style.color = "#eab308";
 
   try {
     const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
@@ -1462,33 +1462,44 @@ async function searchStaker() {
 
     if (data[input]) {
       const staker = data[input];
-      searchResult.innerHTML = `
-        ✅ Found in leaderboard!<br>
-        🏆 Rank: #${staker.rank}<br>
-        💠 Total: ${formatTcl(staker.total)}<br>
-        🔹 Infinity: ${formatTcl(staker.infinity)}<br>
-        🔹 Loan: ${formatTcl(staker.loan)}<br>
-        🔹 NFT Stake: ${formatTcl(staker.nft)}
-      `;
-      searchResult.style.color = "#10b981"; // verde
 
-      // highlight în tabel dacă e în top 100
-      const rows = document.querySelectorAll("#stakingBody tr");
-      rows.forEach(row => {
-        row.classList.remove("highlight-row");
-        const addrCell = row.querySelector("button");
-        if (addrCell && addrCell.getAttribute("onclick")?.includes(input)) {
-          row.classList.add("highlight-row");
-          row.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      });
+      // leaderboard array pentru top 100
+      const leaderboardArray = Object.entries(data).map(([addr, v]) => v);
+      leaderboardArray.sort((a, b) => a.rank - b.rank);
+      const top100 = leaderboardArray.slice(0, 100);
 
+      if (staker.rank <= 100) {
+        // ✅ cazul în Top 100
+        searchResult.innerHTML = `
+          ✅ Found in Top 100!<br>
+          🏆 Rank: #${staker.rank}<br>
+          💠 Total: ${formatTcl(staker.total)}<br>
+          🔹 Infinity: ${formatTcl(staker.infinity)}<br>
+          🔹 Loan: ${formatTcl(staker.loan)}<br>
+          🔹 NFT Stake: ${formatTcl(staker.nft)}
+        `;
+        searchResult.style.color = "#10b981"; // verde
+      } else {
+        // ❌ cazul peste locul 100
+        const lastTop = top100[top100.length - 1]; // #100
+        const needMore = BigInt(lastTop.total) - BigInt(staker.total);
+
+        searchResult.innerHTML = `
+          <span style="color:#facc15;">
+          ⚠️ You need <b>${formatTcl(needMore)}</b> more TCL staked 
+          to overtake Rank #100 and enter the leaderboard! 🔥
+          </span>
+        `;
+        searchResult.style.color = "#facc15"; // galben
+      }
     } else {
+      // ❌ wallet deloc în leaderboard
       searchResult.innerHTML = "❌ Address not found in leaderboard.";
       searchResult.style.color = "#f87171"; // roșu
     }
 
-  } catch {
+  } catch (err) {
+    console.error("Leaderboard fetch error", err);
     searchResult.innerHTML = "⚠️ Error fetching leaderboard.";
     searchResult.style.color = "#f87171";
   }
@@ -1803,36 +1814,85 @@ async function checkWallet() {
     } catch (e) {
       console.warn("⚠️ Leaderboard fetch failed", e);
     }
-
 // === OUTPUT  ===
-resultBox.innerHTML = `
-  Wallet Address: <span style="font-family:monospace;">${address}</span>
+if (stakingInfo) {
+  // leaderboard array pentru top 100
+  const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
+  const data = await resp.json();
+  const leaderboardArray = Object.entries(data).map(([addr, v]) => v);
+  leaderboardArray.sort((a, b) => a.rank - b.rank);
+  const top100 = leaderboardArray.slice(0, 100);
 
-  💎 EGLD: ${egld.toFixed(4)} (~$${valueEGLD.toFixed(2)})
-  🪙 TCL: ${tcl.toFixed(2)} (~$${valueTCL.toFixed(2)})
+  if (stakingInfo.rank <= 100) {
+    // ✅ cazul în Top 100
+    resultBox.innerHTML = `
+      Wallet Address: <span style="font-family:monospace;">${address}</span>
 
-  ${stakingInfo ? `
-  🏆 TCL Staking Rank: #${stakingInfo.rank}
-     • Total: ${stakingInfo.total}
-     • Infinity: ${stakingInfo.infinity}
-     • Loan: ${stakingInfo.loan}
-     • NFT Stake: ${stakingInfo.nft}
-  ` : "🏆 Not ranked in staking leaderboard"}
+      💎 EGLD: ${egld.toFixed(4)} (~$${valueEGLD.toFixed(2)})
+      🪙 TCL: ${tcl.toFixed(2)} (~$${valueTCL.toFixed(2)})
 
-  🖼️ Owned NFTs: ${walletNfts.length}
-  ${walletNfts.length > 0 
-    ? walletNfts.map(n => 
-        `• ${n.name || "Unnamed NFT"}\n   (Collection: ${n.collection}, ID: ${n.identifier}${parseInt(n.balance) > 1 ? ` x${n.balance}` : ""})`
-      ).join("\n")
-    : `- None`
+      🏆 TCL Staking Rank: #${stakingInfo.rank}
+         • Total: ${formatTcl(stakingInfo.total)}
+         • Infinity: ${formatTcl(stakingInfo.infinity)}
+         • Loan: ${formatTcl(stakingInfo.loan)}
+         • NFT Stake: ${formatTcl(stakingInfo.nft)}
+
+      🖼️ Owned NFTs: ${walletNfts.length}
+      ${walletNfts.length > 0 
+        ? walletNfts.map(n => 
+            `• ${n.name || "Unnamed NFT"}\n   (Collection: ${n.collection}, ID: ${n.identifier}${parseInt(n.balance) > 1 ? ` x${n.balance}` : ""})`
+          ).join("\n")
+        : `- None`
+      }
+    `;
+  } else {
+    // ❌ cazul peste locul 100
+    const lastTop = top100[top100.length - 1]; // #100
+    const needMore = BigInt(lastTop.total) - BigInt(stakingInfo.total);
+
+    resultBox.innerHTML = `
+      Wallet Address: <span style="font-family:monospace;">${address}</span>
+
+      💎 EGLD: ${egld.toFixed(4)} (~$${valueEGLD.toFixed(2)})
+      🪙 TCL: ${tcl.toFixed(2)} (~$${valueTCL.toFixed(2)})
+
+      ⚠️ You need <b>${formatTcl(needMore)}</b> more TCL staked 
+      to overtake Rank #100 and enter the leaderboard! 🔥
+
+      🖼️ Owned NFTs: ${walletNfts.length}
+      ${walletNfts.length > 0 
+        ? walletNfts.map(n => 
+            `• ${n.name || "Unnamed NFT"}\n   (Collection: ${n.collection}, ID: ${n.identifier}${parseInt(n.balance) > 1 ? ` x${n.balance}` : ""})`
+          ).join("\n")
+        : `- None`
+      }
+    `;
   }
-`;
+} else {
+  // ❌ fără staking deloc
+  resultBox.innerHTML = `
+    Wallet Address: <span style="font-family:monospace;">${address}</span>
 
-  } catch (err) {
-    console.error("Wallet check error:", err);
-    resultBox.innerHTML = "❌ Failed to fetch wallet data. Try again later.";
-  }
+    💎 EGLD: ${egld.toFixed(4)} (~$${valueEGLD.toFixed(2)})
+    🪙 TCL: ${tcl.toFixed(2)} (~$${valueTCL.toFixed(2)})
+
+    🏆 Not ranked in staking leaderboard
+
+    🖼️ Owned NFTs: ${walletNfts.length}
+    ${walletNfts.length > 0 
+      ? walletNfts.map(n => 
+          `• ${n.name || "Unnamed NFT"}\n   (Collection: ${n.collection}, ID: ${n.identifier}${parseInt(n.balance) > 1 ? ` x${n.balance}` : ""})`
+        ).join("\n")
+      : `- None`
+    }
+  `;
 }
+} catch (err) {
+  console.error("Wallet check error", err);
+  resultBox.innerHTML = "⚠️ Failed to fetch wallet data.";
+}
+} // ← închide funcția checkWallet
+
 
 </script>
 </body>
