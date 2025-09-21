@@ -1334,7 +1334,7 @@ function formatTcl(val, decimals = 18) {
   return whole.toLocaleString("en-US");
 }
 
-let lastUpdateTime = null;
+
 
 async function fetchLeaderboard() {
   const body = document.getElementById("stakingBody");
@@ -1407,7 +1407,6 @@ top100.forEach(r => {
 
 body.innerHTML = html;
 
-    updateLastUpdated();
 	  
   } catch (err) {
     console.error("Leaderboard error", err);
@@ -1421,27 +1420,8 @@ body.innerHTML = html;
     fetchLeaderboard();
   }
 	
-function updateLastUpdated() {
-  if (!lastUpdateTime) return;
-  const now = new Date();
-  const diffMs = now - lastUpdateTime;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffSecs = Math.floor((diffMs % 60000) / 1000);
 
-  let text = "✅ Last update on-chain: " + lastUpdateTime.toLocaleString() + " (";
-  if (diffMins > 0) {
-    text += diffMins + " minute" + (diffMins > 1 ? "s" : "");
-  } else if (diffSecs < 10) {
-    text += "just now";
-  } else {
-    text += diffSecs + " seconds ago";
-  }
-  text += ")";
-  document.getElementById("lastUpdated").textContent = text;
-}
 
-// Actualizează automat la fiecare secundă textul
-setInterval(updateLastUpdated, 1000);
 
 async function searchStaker() {
   const input = document.getElementById("stakingSearch").value.trim();
@@ -1581,8 +1561,12 @@ function getTodayIndex() {
     const hasValue = parseNumber(document.getElementById('amount').value) > 0;
     if (hasValue) calculate();
   }, 300000);
+  
+fetchLeaderboardLastUpdate(); // ia commitul inițial
+setInterval(fetchLeaderboardLastUpdate, 2 * 60 * 1000); // verifică commit nou la 2 min
+setInterval(updateCommitRelative, 1000); // actualizează „x seconds/minutes ago” la fiecare secundă
 
-  setInterval(updateStakingLeaderboard, 2 * 60 * 1000);
+
 };
 // Auto-refresh events countdown every minute
 setInterval(() => {
@@ -1894,6 +1878,48 @@ if (stakingInfo) {
 } // ← închide funcția checkWallet
 
 
+
+
+let commitDateGlobal = null;
+
+async function fetchLeaderboardLastUpdate() {
+  const statusEl = document.getElementById("lastUpdated");
+  try {
+    const resp = await fetch("https://api.github.com/repos/axel4ro/TCLexplorer/commits?path=leaderboard.json&page=1&per_page=1");
+    const data = await resp.json();
+    if (data && data.length > 0) {
+      commitDateGlobal = new Date(data[0].commit.committer.date);
+      updateCommitRelative(); // afișăm imediat
+    } else {
+      statusEl.textContent = "⚠️ No commit history found.";
+    }
+  } catch (err) {
+    console.error("❌ Failed to fetch commit time:", err);
+    statusEl.textContent = "⚠️ Failed to fetch last update time.";
+  }
+}
+
+function updateCommitRelative() {
+  if (!commitDateGlobal) return;
+  const statusEl = document.getElementById("lastUpdated");
+  const now = new Date();
+  const diffMs = now - commitDateGlobal;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+  let relative = "";
+  if (diffMins > 0) {
+    relative = diffMins + " minute" + (diffMins > 1 ? "s" : "") + " ago";
+  } else if (diffSecs < 10) {
+    relative = "just now";
+  } else {
+    relative = diffSecs + " seconds ago";
+  }
+
+  statusEl.textContent = `✅ Last update on-chain: ${commitDateGlobal.toLocaleString()} (${relative})`;
+}
+
 </script>
 </body>
 </html>
+
