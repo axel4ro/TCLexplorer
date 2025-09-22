@@ -321,7 +321,7 @@ async function loadWiki(lang = "en", fallback = true) {
   }
 }
 
-// 🔥 modificat renderWiki
+// 🔥 versiune nouă renderWiki
 function renderWiki(data, forceOpen = false) {
   const container = document.getElementById("wikiContent");
   container.innerHTML = "<h1>📖 The Cursed Land – Wiki</h1>";
@@ -329,7 +329,6 @@ function renderWiki(data, forceOpen = false) {
   for (const [sectionName, sectionData] of Object.entries(data)) {
     if (!sectionData) continue;
 
-    // dacă are rezultate, secțiunea se deschide
     const sectionHasResults =
       (sectionData.list && sectionData.list.length > 0) ||
       (sectionData.categories && Object.keys(sectionData.categories).length > 0);
@@ -349,24 +348,53 @@ function renderWiki(data, forceOpen = false) {
 
     const secDiv = document.getElementById(`${sectionName}List`);
 
-// Dacă are listă simplă
-if (sectionData.list) {
-  sectionData.list.forEach(item => {
-    const lines = item.desc.split("\n");
-    const descHtml = "<ul class='desc-list'>" + 
-      lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") + 
-      "</ul>";
+    // ✅ LISTĂ SIMPLĂ (ex: races, classes, materials, etc.)
+    if (sectionData.list) {
+      sectionData.list.forEach(item => {
+        let descHtml = "";
 
-    secDiv.innerHTML += `
-      <div class="card">
-        <h2>${highlightText(item.name, searchQuery)}</h2>
-        ${descHtml}
-      </div>
-    `;
-  });
-} // <- asta lipsea
+        // 🔹 dacă are desc normal
+        if (item.desc) {
+          const lines = item.desc.split("\n");
+          descHtml = "<ul class='desc-list'>" +
+            lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") +
+            "</ul>";
+        }
 
-    // Dacă are categorii (ex: bonuses)
+        // 🔹 dacă are categorii (ex: Equipment Customization)
+        if (item.categories) {
+          let catHtml = "";
+          for (const [catName, catData] of Object.entries(item.categories)) {
+            const lines = catData.info.split("\n");
+            const infoHtml = "<ul class='desc-list'>" +
+              lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") +
+              "</ul>";
+
+            catHtml += `
+              <div class="card toggle" onclick="toggleCategory('${item.name}-${catName}', this)">
+                <div class="toggle-header">
+                  <h3>${highlightText(catName, searchQuery)}</h3>
+                  <span>▶</span>
+                </div>
+                <div id="cat-${item.name}-${catName}" class="section-content" style="display:none;">
+                  ${infoHtml}
+                </div>
+              </div>
+            `;
+          }
+          descHtml += catHtml;
+        }
+
+        secDiv.innerHTML += `
+          <div class="card">
+            <h2>${highlightText(item.name, searchQuery)}</h2>
+            ${descHtml}
+          </div>
+        `;
+      });
+    }
+
+    // ✅ CATEGORII DIRECTE (ex: bonuses)
     if (sectionData.categories) {
       for (const [catName, catData] of Object.entries(sectionData.categories)) {
         const catHasResults = catData.list && Object.keys(catData.list).length > 0;
@@ -392,6 +420,7 @@ if (sectionData.list) {
     }
   }
 }
+
 
 // Toggle secțiuni
 function toggleSection(id, el) {
@@ -571,6 +600,7 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
 
 
