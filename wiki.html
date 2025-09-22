@@ -369,14 +369,17 @@ function renderWiki(data, forceOpen = false) {
             const infoHtml = "<ul class='desc-list'>" +
               lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") +
               "</ul>";
-
+        
+            // 🔥 aici decidem dacă subcategoria trebuie deschisă automat
+            const isOpen = searchQuery && catData.info.toLowerCase().includes(searchQuery);
+        
             catHtml += `
-              <div class="card toggle" onclick="toggleCategory('${item.name}-${catName}', this)">
+              <div class="card toggle ${isOpen ? "open" : ""}" onclick="toggleCategory('${item.name}-${catName}', this)">
                 <div class="toggle-header">
                   <h3>${highlightText(catName, searchQuery)}</h3>
-                  <span>▶</span>
+                  <span>${isOpen ? "▼" : "▶"}</span>
                 </div>
-                <div id="cat-${item.name}-${catName}" class="section-content" style="display:none;">
+                <div id="cat-${item.name}-${catName}" class="section-content" style="display:${isOpen ? "block" : "none"};">
                   ${infoHtml}
                 </div>
               </div>
@@ -384,6 +387,7 @@ function renderWiki(data, forceOpen = false) {
           }
           descHtml += catHtml;
         }
+
 
         secDiv.innerHTML += `
           <div class="card">
@@ -632,6 +636,7 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
 
 
