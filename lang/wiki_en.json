@@ -1,30 +1,34 @@
 {
   "about": {
-    "info": "The Cursed Land is a next-generation MMORPG that blends classic Web2 gameplay with Web3 ownership. Explore, fight monsters and players, join guilds, and earn real value through blockchain.",
+    "info": "The Cursed Land is a next-gen MMORPG that combines Web2 gameplay with Web3 ownership. Enjoy classic looting, PvP/PvE combat, guilds — and earn real value through blockchain.",
     "list": [
       {
         "name": "Hybrid Economy",
-        "desc": "Play with both traditional Web2 items and Web3 NFTs. Classic items drop from monsters or quests and can be traded in-game or exchanged for Curse/TCL in Private Web3 Shops via xPortal. NFT items are on-chain assets that can be staked, traded, upgraded and backed by the TCL token."
+        "desc": "🔹 Classic Items (Web2): Looted from monsters or quests, used in combat or crafting. Tradable inside the game, sold to NPC for Curse currency, or exchanged for TCL token in Private Web3 Shops via xPortal.\n🔹 NFT Items (Web3): On-chain assets that unlock Play & Earn rewards. Stakeable, tradable, upgradeable, and backed by TCL."
       },
       {
         "name": "Ways to Earn",
-        "desc": "There are 6 main ways to earn TCL, including staking, quests, PvE/PvP, trading, referrals, and Play & Earn mechanics."
+        "desc": "🔹 6 different methods to earn TCL, including staking, quests, PvE/PvP battles, trading, referrals, and Play & Earn systems."
       },
       {
         "name": "TCL Token",
-        "desc": "The core of the game economy, used for staking, NFT minting, in-game purchases, and trading in Web3 Shops. TCL has staking rewards, burns, referrals, and a fluctuating APR."
+        "desc": "🔹 The game's core currency, used for staking, minting NFTs, in-game purchases, and trading in Web3 Shops.\n🔹 Backed by real on-chain value, with staking rewards, burns, referrals, and variable APR."
+      },
+      {
+        "name": "Ecosystem Stats (current)",
+        "desc": "🔹 34.4M TCL staked (~$110,724)\n🔹 27.2M TCL distributed as rewards (~$87,784)\n🔹 18.3M TCL burned (~$59,117)\n🔹 APR: 182% | Emission: 171.7K TCL/day (~$553)\n🔹 Referral Rewards: 885K TCL (~$2,851)\n🔹 Active Codes: 58 | Guests: 1,377"
       },
       {
         "name": "Character Progression",
-        "desc": "Current max level is 59, with plans to expand to level 100. Progress is permanent and items truly belong to the player."
+        "desc": "🔹 Current level cap: 59 (planned: 100)\n🔹 Your progress is permanent, items are truly yours, and time invested has real value.\n🔹 New maps, challenges, and higher level caps will be unlocked gradually."
       },
       {
-        "name": "Customization Systems",
-        "desc": "Equip unique Armors, Weapons, Accessories. Add crystals for effects, refine accessories, and upgrade shields for race-based defensive bonuses."
+        "name": "Equipment Customization",
+        "desc": "🔹 Armours: Unique sets for each race, customizable bonuses & crystals.\n🔹 Weapons: Swords, Daggers, Bows, Fans, Staffs — enhanced with crystals.\n🔹 Accessories: Shoes, Necklace, Bracelet, Helmet, Earrings, Shield — refinements available, shields upgraded with race-based defensive bonuses."
       },
       {
         "name": "Additional Features",
-        "desc": "Fishing, Mining, secure Player Trading, Mail & Whisper, and item display in chat. Many secrets, alliances, and new challenges await."
+        "desc": "🔹 Fishing system – catch, trade, earn\n🔹 Mining system – gather resources for crafting\n🔹 Player-to-player secure trading\n🔹 Mail & Whisper for private communication\n🔹 Item display in chat\n🔹 And much more — uncover secrets, forge alliances, and expand your adventure."
       }
     ]
   },
