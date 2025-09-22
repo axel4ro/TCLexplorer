@@ -413,7 +413,7 @@ function renderWiki(data, forceOpen = false) {
         <div class="card">
           <h2>${highlightText(item.name, searchQuery)}</h2>
           ${descHtml}
-          ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">🌐 View TCL Explorer</a>` : ""}
+          ${item.link ? `<a href="${item.link}" class="btn-link">🌐 View in TCL Explorer</a>` : ""}
           ${item.page ? `<button class="btn-link" onclick="goToPage('${item.page}')">🌐 View in Explorer</button>` : ""}
         </div>
       `;
