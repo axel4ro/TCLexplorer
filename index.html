@@ -1696,6 +1696,9 @@ function setLang(lang) {
 
 // Detectează limba device-ului și setează-o automat la primul load
 window.addEventListener("DOMContentLoaded", () => {
+  const hash = window.location.hash.replace("#", "");
+  if (hash) showPage(hash);
+
   // dacă nu există deja limba salvată în localStorage
   if (!localStorage.getItem("lang")) {
     let browserLang = navigator.language || navigator.userLanguage; 
@@ -1922,4 +1925,5 @@ function updateCommitRelative() {
 </script>
 </body>
 </html>
+
 
