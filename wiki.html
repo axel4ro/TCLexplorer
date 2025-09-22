@@ -309,6 +309,11 @@ let searchQuery = "";
 let currentLang = localStorage.getItem("lang") || "en"; 
 const WIKI_BASE_URL = "https://axel4ro.github.io/TCLexplorer/lang";
 
+  function goToPage(pageId) {
+  // deschide direct index.html cu secțiunea dorită
+  window.location.href = `index.html#${pageId}`;
+}
+
 // ✅ funcția highlight
 function highlightText(text, query) {
   if (!query) return text;
@@ -409,6 +414,7 @@ function renderWiki(data, forceOpen = false) {
           <h2>${highlightText(item.name, searchQuery)}</h2>
           ${descHtml}
           ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">🌐 View TCL Explorer</a>` : ""}
+          ${item.page ? `<button class="btn-link" onclick="goToPage('${item.page}')">🌐 View in Explorer</button>` : ""}
         </div>
       `;
       });
@@ -652,6 +658,7 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
 
 
