@@ -188,8 +188,13 @@ a:hover {
   padding: 0 2px;
   border-radius: 4px;
 }
-.desc-text {
-  white-space: pre-line;
+.desc-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 6px 0 0 0;
+}
+.desc-list li {
+  margin: 4px 0;
 }
 
 /* 🔹 Responsive */
@@ -346,15 +351,20 @@ function renderWiki(data, forceOpen = false) {
 
     // Dacă are listă simplă
     if (sectionData.list) {
-      sectionData.list.forEach(item => {
-        secDiv.innerHTML += `
-          <div class="card">
-            <h2>${highlightText(item.name, searchQuery)}</h2>
-            <p>${highlightText(item.desc, searchQuery)}</p>
-          </div>
-        `;
-      });
-    }
+sectionData.list.forEach(item => {
+  const lines = item.desc.split("\n");
+  const descHtml = "<ul class='desc-list'>" + 
+    lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") + 
+    "</ul>";
+
+  secDiv.innerHTML += `
+    <div class="card">
+      <h2>${highlightText(item.name, searchQuery)}</h2>
+      ${descHtml}
+    </div>
+  `;
+});
+
 
     // Dacă are categorii (ex: bonuses)
     if (sectionData.categories) {
@@ -561,4 +571,5 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
