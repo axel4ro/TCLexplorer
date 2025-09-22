@@ -461,12 +461,44 @@ function searchWiki() {
   for (const [sectionName, sectionData] of Object.entries(wikiData)) {
     if (!sectionData) continue;
 
-    // dacă are listă simplă (races, classes, materials, etc.)
+    // dacă are listă de iteme (about, races, classes etc.)
     if (sectionData.list) {
-      const filteredList = sectionData.list.filter(item =>
-        item.name.toLowerCase().includes(query) ||
-        item.desc.toLowerCase().includes(query)
-      );
+      const filteredList = sectionData.list.map(item => {
+        let match = false;
+
+        // verifică desc normal
+        if (item.desc && item.desc.toLowerCase().includes(query)) {
+          match = true;
+        }
+
+        // verifică numele
+        if (item.name.toLowerCase().includes(query)) {
+          match = true;
+        }
+
+        // verifică sub-categorii (ex: Equipment Customization)
+        let matchedCategories = {};
+        if (item.categories) {
+          for (const [catName, catData] of Object.entries(item.categories)) {
+            if (
+              catName.toLowerCase().includes(query) ||
+              catData.info.toLowerCase().includes(query)
+            ) {
+              match = true;
+              matchedCategories[catName] = catData;
+            }
+          }
+        }
+
+        if (match) {
+          // întoarcem itemul filtrat (inclusiv doar categoriile relevante)
+          return {
+            ...item,
+            categories: Object.keys(matchedCategories).length > 0 ? matchedCategories : item.categories
+          };
+        }
+        return null;
+      }).filter(Boolean);
 
       if (
         sectionData.info.toLowerCase().includes(query) ||
@@ -479,7 +511,7 @@ function searchWiki() {
       }
     }
 
-    // dacă are categorii (ex: bonuses)
+    // dacă are categorii direct (ex: bonuses)
     if (sectionData.categories) {
       const categories = {};
       for (const [cat, obj] of Object.entries(sectionData.categories)) {
@@ -508,7 +540,7 @@ function searchWiki() {
     }
   }
 
-  renderWiki(filtered, true); // forțăm deschidere la rezultate
+  renderWiki(filtered, true); // 🔥 forțăm deschidere la rezultate
 }
 
 // ===== Limbă =====
@@ -600,6 +632,7 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
 
 
