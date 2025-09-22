@@ -8,7 +8,7 @@
       },
       {
         "name": "Ways to Earn",
-        "desc": "🔹 6 different methods to earn TCL, including staking, quests, PvE/PvP battles, trading, referrals, and Play & Earn systems."
+        "desc": "🔹 Own NFT and Play – Receive 100% of the daily reward. Retain 66% of invested tokens (withdrawable within 24h). Requires daily gameplay. Consumes 33% for NFT acquisition/storage.\n\n🔹 Loan NFT – Earn rewards without playing. Retain 66% of invested tokens (withdrawable within 24h). Only 80% of the daily reward. Consumes 33% for NFT acquisition/storage.\n\n🔹 Borrow NFT – No initial investment. Retain 66% of invested tokens (withdrawable within 24h). Only 20% of the daily reward. Requires daily gameplay.\n\n🔹 Infinity Staking – Lifetime rewards. Earn daily rewards without play. 100% of staked TCL is irreversibly burned.\n\n🔹 Private Web3 Shop – Sell classic items for TCL directly to players via xPortal. No intermediaries. Shop open 24/7. Buyer not guaranteed.\n\n🔹 Referral Code – Earn 5% from invitee purchases. No TCL investment required. Needs 5 guests to activate. Rewards depend on invitee activity."
       },
       {
         "name": "TCL Token",
@@ -20,15 +20,29 @@
       },
       {
         "name": "Character Progression",
-        "desc": "🔹 Current level cap: 59 (planned: 100)\n🔹 Your progress is permanent, items are truly yours, and time invested has real value.\n🔹 New maps, challenges, and higher level caps will be unlocked gradually."
+        "desc": "🔹 Current level cap: 64 with full EXP (planned: 100)\n🔹 Your progress is permanent, items are truly yours, and time invested has real value.\n🔹 New maps, challenges, and higher level caps will be unlocked gradually."
       },
       {
         "name": "Equipment Customization",
-        "desc": "🔹 Armours: Unique sets for each race, customizable bonuses & crystals.\n🔹 Weapons: Swords, Daggers, Bows, Fans, Staffs — enhanced with crystals.\n🔹 Accessories: Shoes, Necklace, Bracelet, Helmet, Earrings, Shield — refinements available, shields upgraded with race-based defensive bonuses."
+        "info": "⚙️ EQUIPMENT CUSTOMIZATION SYSTEMS",
+        "categories": {
+          "🎽 Armours": {
+            "info": "Each race has its own armor sets.\nCustomize with bonuses and stats.\nAdd crystals to boost specific effects.",
+            "list": {}
+          },
+          "🗡️ Weapons": {
+            "info": "Use Swords, Daggers, Bows, Fans, Staffs.\nAdd crystals to increase damage, crit, etc.",
+            "list": {}
+          },
+          "💍 Accessories": {
+            "info": "Shoes, Necklace, Bracelet, Helmet, Earrings, Shield.\nAdd refinements to Necklace, Bracelet, Earrings.\nUpgrade special Shields to gain defensive bonuses vs. each race.",
+            "list": {}
+          }
+        }
       },
       {
         "name": "Additional Features",
-        "desc": "🔹 Fishing system – catch, trade, earn\n🔹 Mining system – gather resources for crafting\n🔹 Player-to-player secure trading\n🔹 Mail & Whisper for private communication\n🔹 Item display in chat\n🔹 And much more — uncover secrets, forge alliances, and expand your adventure."
+        "desc": "🔹 🐟 Fishing system – catch, trade, earn\n🔹 ⛏️ Mining system – gather resources for crafting\n🔹 💬 Trade system – secure, peer-to-peer\n🔹 📬 Mail & Whisper – private messages in-game\n🔹 🧾 Item display in chat – show off your loot!\n🔹 ✨ And there’s much more to discover — unlock secrets, forge alliances, and push your character to new limits."
       }
     ]
   },
