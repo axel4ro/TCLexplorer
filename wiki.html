@@ -349,22 +349,22 @@ function renderWiki(data, forceOpen = false) {
 
     const secDiv = document.getElementById(`${sectionName}List`);
 
-    // Dacă are listă simplă
-    if (sectionData.list) {
-sectionData.list.forEach(item => {
-  const lines = item.desc.split("\n");
-  const descHtml = "<ul class='desc-list'>" + 
-    lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") + 
-    "</ul>";
+// Dacă are listă simplă
+if (sectionData.list) {
+  sectionData.list.forEach(item => {
+    const lines = item.desc.split("\n");
+    const descHtml = "<ul class='desc-list'>" + 
+      lines.map(line => `<li>${highlightText(line, searchQuery)}</li>`).join("") + 
+      "</ul>";
 
-  secDiv.innerHTML += `
-    <div class="card">
-      <h2>${highlightText(item.name, searchQuery)}</h2>
-      ${descHtml}
-    </div>
-  `;
-});
-
+    secDiv.innerHTML += `
+      <div class="card">
+        <h2>${highlightText(item.name, searchQuery)}</h2>
+        ${descHtml}
+      </div>
+    `;
+  });
+} // <- asta lipsea
 
     // Dacă are categorii (ex: bonuses)
     if (sectionData.categories) {
@@ -571,5 +571,6 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
 
