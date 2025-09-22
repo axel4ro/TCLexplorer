@@ -196,7 +196,22 @@ a:hover {
 .desc-list li {
   margin: 4px 0;
 }
-
+.btn-link {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #2ff6de;
+  color: #161a24;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  transition: transform 0.2s, opacity 0.2s;
+}
+.btn-link:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
 /* 🔹 Responsive */
 @media (max-width: 600px) {
   .header-inner {
@@ -389,12 +404,13 @@ function renderWiki(data, forceOpen = false) {
         }
 
 
-        secDiv.innerHTML += `
-          <div class="card">
-            <h2>${highlightText(item.name, searchQuery)}</h2>
-            ${descHtml}
-          </div>
-        `;
+      secDiv.innerHTML += `
+        <div class="card">
+          <h2>${highlightText(item.name, searchQuery)}</h2>
+          ${descHtml}
+          ${item.link ? `<a href="${item.link}" target="_blank" class="btn-link">🌐 View TCL Explorer</a>` : ""}
+        </div>
+      `;
       });
     }
 
@@ -636,6 +652,7 @@ window.onload = () => loadWiki(currentLang);
 </script>
 </body>
 </html>
+
 
 
 
