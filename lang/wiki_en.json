@@ -1,4 +1,34 @@
 {
+  "about": {
+    "info": "The Cursed Land is a next-generation MMORPG that blends classic Web2 gameplay with Web3 ownership. Explore, fight monsters and players, join guilds, and earn real value through blockchain.",
+    "list": [
+      {
+        "name": "Hybrid Economy",
+        "desc": "Play with both traditional Web2 items and Web3 NFTs. Classic items drop from monsters or quests and can be traded in-game or exchanged for Curse/TCL in Private Web3 Shops via xPortal. NFT items are on-chain assets that can be staked, traded, upgraded and backed by the TCL token."
+      },
+      {
+        "name": "Ways to Earn",
+        "desc": "There are 6 main ways to earn TCL, including staking, quests, PvE/PvP, trading, referrals, and Play & Earn mechanics."
+      },
+      {
+        "name": "TCL Token",
+        "desc": "The core of the game economy, used for staking, NFT minting, in-game purchases, and trading in Web3 Shops. TCL has staking rewards, burns, referrals, and a fluctuating APR."
+      },
+      {
+        "name": "Character Progression",
+        "desc": "Current max level is 59, with plans to expand to level 100. Progress is permanent and items truly belong to the player."
+      },
+      {
+        "name": "Customization Systems",
+        "desc": "Equip unique Armors, Weapons, Accessories. Add crystals for effects, refine accessories, and upgrade shields for race-based defensive bonuses."
+      },
+      {
+        "name": "Additional Features",
+        "desc": "Fishing, Mining, secure Player Trading, Mail & Whisper, and item display in chat. Many secrets, alliances, and new challenges await."
+      }
+    ]
+  },
+    
     "races": {
     "info": "Races define the appearance and origin of your hero. You may choose from Humans, Beasts, and Undead (male), or Elves (female). Every race can wield any class, creating limitless strategies and unique combinations.",
     "list": [
