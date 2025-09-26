@@ -361,13 +361,6 @@ nav button.active {
   <button onclick="clearFilter()">Reset</button>
 </div>
 
-  
-  <!-- Rând 3 -->
-<div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%;">
-    <input type="text" id="searchBox" placeholder="Search by identifier..." 
-           style="flex:1; padding:7px 10px; border-radius:6px; border:1px solid #394158; background:#202840; color:#fff; font-size:14px;" 
-           onkeyup="searchNFT()" />
-  </div>
 </div>
 
 
@@ -379,6 +372,14 @@ nav button.active {
     💡 Click on a category to view its full collection. <br>
     You can then explore, filter attributes, or search by identifier.
   </p>
+  <!-- Search global pe prima pagină -->
+<div style="display:flex; justify-content:center; margin:15px 0;">
+  <input type="text" id="globalSearchBox" placeholder="🔍 Search NFT by identifier..."
+         style="width:350px; max-width:90%; padding:7px 10px; border-radius:6px;
+                border:1px solid #394158; background:#202840; color:#fff; font-size:14px;"
+         onkeyup="globalSearch()" />
+</div>
+
   <div id="collections" class="grid"></div>
   <div id="nfts" class="grid" style="display:none;"></div>
 </section>
@@ -421,16 +422,6 @@ nav button.active {
 
   <!-- ================== MARKETPLACE (cu filtre avansate) ================== -->
   <script>
-  function searchNFT() {
-  const term = document.getElementById("searchBox").value.trim().toLowerCase();
-  if (!term) {
-    renderNFTs(allNFTs);
-    return;
-  }
-  const filtered = allNFTs.filter(nft => nft.identifier.toLowerCase().includes(term));
-  renderNFTs(filtered);
-}
-
     const creators = [
       "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
       "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
@@ -852,6 +843,38 @@ async function loadBalance() {
 window.addEventListener("DOMContentLoaded", () => {
   showSection("created");
 });
+function globalSearch() {
+  const term = document.getElementById("globalSearchBox").value.trim().toLowerCase();
+  const container = document.getElementById("collections");
+  const grid = document.getElementById("nfts");
+
+  if (!term) {
+    // dacă nu există căutare → reafișăm colecțiile
+    container.style.display = "grid";
+    grid.style.display = "none";
+    document.getElementById("collections-hint").style.display = "block";
+    return;
+  }
+
+  // caută în toate NFT-urile preîncărcate
+  let results = [];
+  for (const col in allNFTsByCollection) {
+    results = results.concat(
+      allNFTsByCollection[col].filter(nft =>
+        nft.identifier.toLowerCase().includes(term)
+      )
+    );
+  }
+
+  if (results.length > 0) {
+    container.style.display = "none";
+    grid.style.display = "grid";
+    document.getElementById("collections-hint").style.display = "none";
+    renderNFTs(results);
+  } else {
+    grid.innerHTML = `<p style="color:#9ca3af; text-align:center;">⚠️ No NFTs found.</p>`;
+  }
+}
 
   </script>
 </body>
