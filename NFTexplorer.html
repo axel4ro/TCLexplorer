@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NFT Explorer</title>
+  <style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: radial-gradient(circle at top left, #0a0f1c, #050810 80%);
+  color: #f1f1f1;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* === HEADER === */
+header {
+  background: linear-gradient(90deg, #101729, #141a33);
+  padding: 18px 20px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;  /* 🔥 logo stânga, nav dreapta */
+  flex-wrap:wrap;
+  border-bottom: 1px solid #2a3347;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  color: #2ff6de;
+  text-shadow: 0 0 10px rgba(47,246,222,0.8);
+}
+
+nav {
+  display: flex;
+  gap: 10px;
+}
+
+nav button,
+button {
+  background: #2563eb; /* 🔵 Solid Blue */
+  border: none;
+  color: #fff;
+  font-weight: bold;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  transition: all 0.25s ease-in-out;
+}
+
+nav button:hover, button:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.6);
+}
+
+nav button:active, button:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+}
+
+nav button.active {
+  background: #1e40af;
+  box-shadow: 0 0 12px rgba(37,99,235,0.9);
+}
+
+/* === TOOLBAR SUB HEADER === */
+.subbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 12px 20px;
+  background: rgba(10,15,28,0.9);
+  border-top: 1px solid #2a3347;
+  border-bottom: 1px solid #2a3347;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;   /* 🔥 pe coloane, ordinea controlată de div-uri */
+  gap: 10px;
+}
+
+.subbar label { color:#9ca3af; }
+.subbar select,
+.subbar button,
+.subbar input {
+  margin: 0;
+}
+
+
+.subbar select {
+  background:#202840;
+  color:#fff;
+  border:1px solid #394158;
+  border-radius:6px;
+  padding:7px 12px;
+  font-size:14px;
+}
+
+/* === GRID === */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+  padding: 25px;
+}
+
+.card {
+  background: #151c2c;
+  border-radius: 14px;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  border: 1px solid rgba(47,246,222,0.2);
+}
+.card:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 0 15px rgba(47,246,222,0.7),
+              0 0 25px rgba(255, 78, 205, 0.5);
+  border: 1px solid #ff4ecd;
+}
+
+.card img {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.7);
+}
+
+.card h4, .card h3 {
+  margin: 10px 0 6px;
+  font-size: 16px;
+  color: #2ff6de;
+  text-shadow: 0 0 6px rgba(47,246,222,0.7);
+}
+
+.card p {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* === MODAL === */
+#modal {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  color:#fff;
+  padding:40px;
+  overflow:auto;
+  z-index:9999;
+  backdrop-filter: blur(5px);
+}
+#modal-content {
+  background:#101729;
+  border: 1px solid #2ff6de;
+  border-radius:14px;
+  padding:20px;
+  max-width:900px;
+  margin:auto;
+  position:relative;
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 0 20px rgba(47,246,222,0.7),
+              0 0 35px rgba(255,78,205,0.5);
+}
+
+.modal-left {
+  flex: 1;
+  text-align: center;
+}
+.modal-left img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.6);
+}
+.modal-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #9ca3af;
+}
+.modal-info b {
+  color: #2ff6de;
+}
+
+.modal-left .view-btn {
+  background:#2563eb;
+  color:#fff;
+  font-weight:bold;
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  display:inline-block;
+  margin-top:15px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.4);
+  transition: all 0.2s ease-in-out;
+}
+.modal-left .view-btn:hover {
+  background:#1d4ed8;
+  transform: translateY(-2px);
+}
+
+/* === ATTRIBUTES === */
+.attr-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+.attr-item {
+  background: #202840;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 15px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+  text-align: center;  /* 🔥 centrat */
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.attr-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #2ff6de;
+  font-size: 14px;
+}
+.attr-item span {
+  font-weight: bold;
+  font-size: 14px;
+  color: #f1f1f1;
+  display: block;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  nav {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  nav button {
+    flex: 1 1 auto;
+  }
+
+  .subbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .subbar input {
+    width: 100% !important;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    padding: 15px;
+    gap: 12px;
+  }
+
+  #modal-content {
+    flex-direction: column;
+    max-width: 95%;
+    padding: 15px;
+  }
+
+  .modal-right {
+    margin-top: 15px;
+  }
+
+  .attr-item {
+    font-size: 13px;
+    padding: 8px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  #modal-content {
+    max-width: 1100px;
+  }
+}
+
+.back-btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 6px;
+  background: #249c8c;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  transition: transform 0.2s, opacity 0.2s;
+}
+.back-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+  </style>
+</head>
+<body>
+<header>
+  <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">
+    
+    <!-- 🔙 Back button -->
+    <a href="index.html" class="back-btn">⬅️ Back to TCL Explorer</a>
+    
+    <!-- Tabs: Created + Balance -->
+    <button class="active" onclick="showSection('created')">🔎 Created</button>
+    <button onclick="showSection('balance')">⚖️ Balance</button>
+
+  </div>
+</header>
+
+
+
+
+  <!-- NEW: toolbar SUB header (Back + filtre) -->
+<div id="filterBar" class="subbar" style="display:none; flex-direction:column; align-items:flex-start; gap:10px;">
+  
+  <!-- Rând 1 -->
+  <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%;">
+    <button id="backBtn" class="ghost" onclick="goBack()">⬅ Back</button>
+    <label for="attrFilter">Filter by Attribute:</label>
+    <select id="attrFilter"><option value="">— All —</option></select>
+  </div>
+  
+<!-- Rând 2 -->
+<div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%;">
+  <button onclick="applyFilter('desc')">Sort 🔽</button>
+  <button onclick="applyFilter('asc')">Sort 🔼</button>
+  <button onclick="clearFilter()">Reset</button>
+</div>
+
+  
+  <!-- Rând 3 -->
+<div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%;">
+    <input type="text" id="searchBox" placeholder="Search by identifier..." 
+           style="flex:1; padding:7px 10px; border-radius:6px; border:1px solid #394158; background:#202840; color:#fff; font-size:14px;" 
+           onkeyup="searchNFT()" />
+  </div>
+</div>
+
+
+
+  <main>
+<!-- Created -->
+<section id="section-created">
+  <p id="collections-hint" style="color:#9ca3af; font-size:14px; text-align:center; margin:15px 0;">
+    💡 Click on a category to view its full collection. <br>
+    You can then explore, filter attributes, or search by identifier.
+  </p>
+  <div id="collections" class="grid"></div>
+  <div id="nfts" class="grid" style="display:none;"></div>
+</section>
+
+
+
+    <!-- Balance -->
+<section id="section-balance" style="display:none; padding:20px;">
+  <h2>💼 My Balance</h2>
+  <p style="color:#9ca3af; font-size:14px; margin-bottom:10px;">
+    Input your erd1 address <b>erd1...</b> from xPortal to check your NFTs.  
+  </p>
+  
+<label>Wallet Address (erd1...):</label><br>
+<input type="text" id="walletInput" 
+       style="width:350px; padding:7px; margin-top:6px; display:block;" />
+
+
+  <!-- 🔥 Buton global SELL chiar dacă nu s-a băgat adresă -->
+<div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+  <button onclick="loadBalance()" style="flex:0 0 auto;">
+    Load Balance
+  </button>
+  <button onclick="window.open('https://xoxno.com/profile','_blank')" style="flex:0 0 auto;">
+    💳 Sell NFTs on XOXNO
+  </button>
+</div>
+
+
+  <div id="balance-nfts" class="grid" style="margin-top:20px;"></div>
+</section>
+
+  </main>
+
+  <div id="modal" onclick="this.style.display='none'">
+    <div id="modal-content"></div>
+  </div>
+
+
+  <!-- ================== MARKETPLACE (cu filtre avansate) ================== -->
+  <script>
+  function searchNFT() {
+  const term = document.getElementById("searchBox").value.trim().toLowerCase();
+  if (!term) {
+    renderNFTs(allNFTs);
+    return;
+  }
+  const filtered = allNFTs.filter(nft => nft.identifier.toLowerCase().includes(term));
+  renderNFTs(filtered);
+}
+
+    const creators = [
+      "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
+      "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
+    ];
+
+    let currentView = "collections";
+    let allNFTs = [];
+    let forSaleList = [];
+
+    async function getCollectionImage(collection) {
+      try {
+        const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1`);
+        const data = await resp.json();
+        if (data.length > 0 && data[0].media && data[0].media[0]) return data[0].media[0].url;
+      } catch(e){ console.error("fallback image", collection, e); }
+      return "";
+    }
+
+    async function loadCollections() {
+      const container = document.getElementById("collections");
+      const nftsGrid  = document.getElementById("nfts");
+      container.style.display = "grid";
+      nftsGrid.style.display = "none";
+      document.getElementById("filterBar").style.display = "none"; // ascunde toolbar-ul
+      document.getElementById("backBtn").style.display = "none";
+
+      container.innerHTML = "Loading collections...";
+      let all = [];
+      for (const creator of creators) {
+        const resp = await fetch(`https://api.multiversx.com/collections?creator=${creator}&size=50`);
+        const data = await resp.json();
+        all = all.concat(data);
+      }
+      all = all.filter(col => !col.collection.startsWith("TCLSPONSOR"));
+
+      container.innerHTML = "";
+      for (const col of all) {
+        let image = col.assets?.pngUrl || col.assets?.svgUrl || "";
+        if (!image) image = await getCollectionImage(col.collection);
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${image}" alt="${col.collection}">
+          <h3>${col.name}</h3>
+          <p>${col.collection}</p>
+        `;
+        card.onclick = () => loadNFTs(col.collection);
+        container.appendChild(card);
+      }
+    }
+
+async function loadNFTs(collection) {
+  currentView = "nfts";
+  const list = document.getElementById("collections");
+  const grid = document.getElementById("nfts");
+  list.style.display = "none";
+  grid.style.display = "grid";
+  document.getElementById("filterBar").style.display = "flex";
+  document.getElementById("backBtn").style.display = "inline-flex";
+  // 🔥 ascunde hint-ul după ce intri într-o colecție
+  document.getElementById("collections-hint").style.display = "none";
+  grid.innerHTML = "Loading NFTs...";
+  const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1000`);
+  const data = await resp.json();
+  allNFTs = data;
+
+  // buton View on XOXNO (colecție întreagă)
+  const xoxnoLink = `https://xoxno.com/collection/${collection}`;
+  const header = document.createElement("div");
+  header.style.width = "100%";
+  header.innerHTML = `
+    <button style="margin:10px auto; display:block; background:#2ff6de; color:#161a24; 
+      font-weight:bold; padding:10px 16px; border:none; border-radius:8px; cursor:pointer;" 
+      onclick="window.open('${xoxnoLink}','_blank')">
+      🛒 View Entire Collection on XOXNO
+    </button>
+  `;
+  grid.innerHTML = "";
+  grid.appendChild(header);
+
+  // filtre
+  const attrSet = new Set();
+  data.forEach(nft => {
+    nft.metadata?.attributes?.forEach(attr => {
+      if (typeof attr.value === "string" && /\+\d+/.test(attr.value)) attrSet.add(attr.trait_type + " (+)");
+      else attrSet.add(attr.trait_type);
+    });
+  });
+  const filterSelect = document.getElementById("attrFilter");
+  filterSelect.innerHTML = `<option value="">— All —</option>`;
+  attrSet.forEach(attr => {
+    const opt = document.createElement("option");
+    opt.value = attr; opt.textContent = attr;
+    filterSelect.appendChild(opt);
+  });
+  filterSelect.onchange = () => applyInstantFilter();
+
+  renderNFTs(allNFTs);
+}
+function goBack() {
+  const collections = document.getElementById("collections");
+  const nfts = document.getElementById("nfts");
+
+  // afișează colecțiile, ascunde NFT-urile
+  collections.style.display = "grid";
+  nfts.style.display = "none";
+
+  // ascunde bara de filtre și butonul back
+  document.getElementById("filterBar").style.display = "none";
+  document.getElementById("backBtn").style.display = "none";
+    // 🔥 arată din nou hint-ul când te întorci
+  document.getElementById("collections-hint").style.display = "block";
+
+  // reset view
+  currentView = "collections";
+}
+
+
+
+async function renderNFTs(nfts) {
+  const container = document.getElementById("nfts");
+  container.innerHTML = "";
+
+  let selectedAttr = document.getElementById("attrFilter").value;
+  if (selectedAttr && selectedAttr.endsWith(" (+)")) {
+    selectedAttr = selectedAttr.replace(" (+)", "");
+  }
+
+  for (const nft of nfts) {
+    const plusAttr = nft.metadata?.attributes?.find(a => typeof a.value === "string" && /\+\d+/.test(a.value));
+    const title = plusAttr ? plusAttr.value : nft.name;
+
+    let attrValue = "";
+    if (selectedAttr) {
+      const found = nft.metadata?.attributes?.find(a => a.trait_type === selectedAttr);
+      if (found) attrValue = found.value;
+    }
+
+    const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
+
+    // 🔥 Fetch la JSON metadata real (IPFS)
+    let storageValue = "N/A";
+    try {
+      if (nft.metadata?.uri?.length) {
+        const metaUrl = nft.metadata.uri[0].replace("ipfs://", "https://the-cursed-land.myfilebase.com/ipfs/");
+        const metaResp = await fetch(metaUrl);
+        const metaData = await metaResp.json();
+        const storageAttr = metaData.attributes?.find(a => a.trait_type.toLowerCase() === "storage");
+        if (storageAttr) storageValue = storageAttr.value;
+      }
+    } catch (e) {
+      console.warn("Nu am putut încărca storage pentru", nft.identifier, e);
+    }
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
+      <h4>${title}</h4>
+      ${attrValue ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
+      <button style="margin-top:10px; background:#2ff6de; color:#161a24;
+        font-weight:bold; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;"
+        onclick="window.open('${nftLink}','_blank'); event.stopPropagation();">
+        🛒 View on XOXNO
+      </button>
+    `;
+
+    // 🔥 click pe card => deschide modal
+    card.onclick = () => showNFTDetails(nft.identifier);
+
+    container.appendChild(card);
+  }
+}
+
+
+
+
+    function applyFilter(order) {
+      let attr = document.getElementById("attrFilter").value;
+      if (!attr) { renderNFTs(allNFTs); return; }
+      if (attr.endsWith(" (+)")) attr = attr.replace(" (+)", "");
+
+      const filtered = allNFTs.filter(nft =>
+        nft.metadata?.attributes?.some(a => a.trait_type === attr)
+      );
+
+      filtered.sort((a, b) => {
+        const aA = a.metadata.attributes.find(x => x.trait_type === attr);
+        const aB = b.metadata.attributes.find(x => x.trait_type === attr);
+        const vA = parseAttrValue(aA?.value);
+        const vB = parseAttrValue(aB?.value);
+        return order === "asc" ? vA - vB : vB - vA;
+      });
+
+      renderNFTs(filtered);
+    }
+
+    function applyInstantFilter() {
+      let attr = document.getElementById("attrFilter").value;
+      if (!attr) { renderNFTs(allNFTs); return; }
+      if (attr.endsWith(" (+)")) attr = attr.replace(" (+)", "");
+
+      const filtered = allNFTs.filter(nft =>
+        nft.metadata?.attributes?.some(a => a.trait_type === attr)
+      );
+      renderNFTs(filtered);
+    }
+
+    function clearFilter() {
+      document.getElementById("attrFilter").value = "";
+      renderNFTs(allNFTs);
+    }
+
+    function parseAttrValue(val) {
+      if (!val) return 0;
+      if (typeof val === "string") {
+        const plus = val.match(/\+(\d+)/); if (plus) return parseInt(plus[1]);
+        if (val.includes("%")) return parseFloat(val.replace("%", "")) || 0;
+        const num = parseFloat(val.replace(/[^\d.-]/g, ""));
+        return isNaN(num) ? 0 : num;
+      }
+      return Number(val) || 0;
+    }
+async function showNFTDetails(identifier) {
+  const resp = await fetch(`https://api.multiversx.com/nfts/${identifier}`);
+  const nft = await resp.json();
+
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+
+  // atribute
+  let attributesHtml = "";
+  if (nft.metadata && nft.metadata.attributes) {
+    attributesHtml = `<h3>Attributes</h3><div class="attr-list">`;
+    nft.metadata.attributes.forEach(attr => {
+      let value = attr.value, color = "#fff";
+      if (typeof value === "string" && value.trim().startsWith("-")) color = "#ff4d4d";
+      else if (typeof value === "string" && value.includes("%")) color = "#2ff6de";
+      attributesHtml += `
+        <div class="attr-item">
+          <strong>${attr.trait_type}</strong>
+          <span style="color:${color}">${value}</span>
+        </div>
+      `;
+    });
+    attributesHtml += "</div>";
+  }
+
+  // link direct NFT
+  const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
+
+// 🔥 layout pe două coloane
+content.innerHTML = `
+  <div class="modal-left">
+    <h2>${nft.name}</h2>
+    <img src="${nft.media?.[0]?.url || ''}">
+    <div class="modal-info">
+      <p><b>Collection:</b> ${nft.collection}</p>
+      <p><b>Identifier:</b> ${nft.identifier}</p>
+      <p><b>Royalties:</b> ${nft.royalties/100}%</p>
+      <p><b>Nonce:</b> ${nft.nonce}</p>
+    </div>
+
+    <!-- 👇 Mutăm butonul aici, sub Nonce -->
+    <button class="view-btn" style="margin-top:15px;" 
+      onclick="window.open('${nftLink}','_blank')">
+      🛒 View on XOXNO
+    </button>
+  </div>
+
+  <div class="modal-right">
+    ${attributesHtml}
+  </div>
+`;
+
+
+  modal.style.display = "block";
+}
+
+
+function showSection(sec) {
+  document.getElementById("section-created").style.display = "none";
+  document.getElementById("section-balance").style.display = "none";
+  document.getElementById("section-" + sec).style.display = "block";
+
+  if (sec !== "created") {
+    document.getElementById("filterBar").style.display = "none";
+    document.getElementById("backBtn").style.display = "none";
+  }
+
+  if (sec === "created") loadCollections();
+
+  document.querySelectorAll("nav button").forEach(btn => btn.classList.remove("active"));
+  const activeBtn = document.querySelector(`nav button[onclick="showSection('${sec}')"]`);
+  if (activeBtn) activeBtn.classList.add("active");
+}
+
+
+
+
+
+async function loadBalance() {
+  const addr = document.getElementById("walletInput").value.trim();
+  if (!addr.startsWith("erd1")) { 
+    alert("Enter valid erd1 address"); 
+    return; 
+  }
+
+  const container = document.getElementById("balance-nfts");
+  container.innerHTML = "Loading NFTs...";
+
+  const resp = await fetch(`https://api.multiversx.com/accounts/${addr}/nfts?size=1000`);
+  const data = await resp.json();
+
+  // 🔥 filtrăm doar colecțiile TCL (numele începe cu "TCL")
+  const tclNFTs = data.filter(nft => nft.collection && nft.collection.startsWith("TCL"));
+
+  container.innerHTML = "";
+
+  if (tclNFTs.length === 0) {
+    container.innerHTML = `<p style="color:#9ca3af; font-size:14px;">⚠️ No TCL NFTs found in this wallet.</p>`;
+    return;
+  }
+
+  // ✅ afișăm doar NFT-urile TCL
+  tclNFTs.forEach(nft => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${nft.media?.[0]?.url || ''}">
+      <h4>${nft.name}</h4>
+      <p style="font-size:12px; color:#2ff6de;"><b>${nft.collection}</b></p>
+      <button onclick="window.open('https://xoxno.com/profile/${addr}/inventory','_blank')">
+        ✅ Sell on XOXNO
+      </button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+
+
+
+    function addToSale(nft) {
+      if (!forSaleList.some(n => n.identifier === nft.identifier)) {
+        forSaleList.push(nft);
+      }
+      alert(`${nft.name} added to For Sale!`);
+    }
+
+    // start cu tab-ul Created
+    loadCollections();
+  </script>
+</body>
+</html>
