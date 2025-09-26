@@ -48,30 +48,6 @@ body {
   box-sizing: border-box;
 }
 
-/* 📖 Wiki stânga */
-#wikiBtn {
-  position: absolute;
-  left: 20px;
-  padding: 10px 18px;            /* 🔥 la fel ca Menu */
-  border-radius: 6px;
-  background: #249c8c;
-  color: white;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-
-  /* 🔥 umbra textului și a butonului */
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-
-  transition: transform 0.2s, opacity 0.2s;
-}
-#wikiBtn:hover {
-  opacity: 0.9;
-  transform: translateY(-2px);
-}
-
-
 /* Menu centrat */
 #menuToggle {
   padding: 10px 18px;
@@ -595,9 +571,6 @@ button:hover { opacity: 0.9; }
 <!-- NAVIGATION -->
 <div class="nav-bar">
   <div class="nav-bar-inner">
-    <!-- Wiki stânga -->
-    <button onclick="openWiki()" id="wikiBtn">📖 Wiki</button>
-
     <!-- Menu centrat -->
     <button id="menuToggle">☰ Menu</button>
 
@@ -621,11 +594,14 @@ button:hover { opacity: 0.9; }
   </div>
 </div>
 
-
-
 <!-- MENU PANEL -->
 <div id="menuPanel" class="menu-panel">
   <div class="menu-buttons">
+
+<button onclick="openWiki()" id="btn-wiki">📖 Wiki</button>
+<button onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
+
+
   	<button onclick="showPage('connectXportal')" id="btn-connectXportal">🔗 Connect xPortal</button>
 	
     <button onclick="showPage('token')" id="btn-token" class="active">
@@ -988,6 +964,10 @@ button:hover { opacity: 0.9; }
 </div>
 
 <script>
+function openNFTs() {
+  window.location.href = "NFTs.html"; // deschide NFTs în același tab
+}
+
 function openWiki() {
   window.location.href = "wiki.html"; // deschide în același tab
 }
@@ -1925,5 +1905,3 @@ function updateCommitRelative() {
 </script>
 </body>
 </html>
-
-
