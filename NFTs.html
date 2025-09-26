@@ -70,7 +70,19 @@ nav button.active {
   transform: scale(1.02);
 }
 
+/* === FIX pentru imagine NFT în modal === */
+.modal-left img {
+  max-width: 100%;
+  max-height: 55vh;   /* 🔥 redus de la 70vh la 55vh */
+  object-fit: contain;
+}
 
+
+/* === FIX pentru container modal === */
+#modal-content {
+  max-height: 85vh;   /* 🔥 redus de la 90vh la 85vh */
+  overflow-y: auto;
+}
 
 
 /* === TOOLBAR SUB HEADER === */
@@ -436,39 +448,83 @@ nav button.active {
       return "";
     }
 
-    async function loadCollections() {
-      const container = document.getElementById("collections");
-      const nftsGrid  = document.getElementById("nfts");
-      container.style.display = "grid";
-      nftsGrid.style.display = "none";
-      document.getElementById("filterBar").style.display = "none"; // ascunde toolbar-ul
-      document.getElementById("backBtn").style.display = "none";
+// helper pt cache local
+function setCache(key, data) {
+  const payload = {
+    time: Date.now(),
+    data: data
+  };
+  localStorage.setItem(key, JSON.stringify(payload));
+}
 
-      container.innerHTML = "Loading collections...";
-      let all = [];
-      for (const creator of creators) {
+function getCache(key, maxAgeMs) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    const payload = JSON.parse(raw);
+    if (Date.now() - payload.time < maxAgeMs) {
+      return payload.data;
+    }
+  } catch(e) { console.warn("Cache invalid", key, e); }
+  return null;
+}
+
+async function loadCollections() {
+  const container = document.getElementById("collections");
+  const nftsGrid  = document.getElementById("nfts");
+  container.style.display = "grid";
+  nftsGrid.style.display = "none";
+  document.getElementById("filterBar").style.display = "none";
+  document.getElementById("backBtn").style.display = "none";
+
+  container.innerHTML = "Loading collections...";
+
+  // 🔥 verificăm cache
+  let all = getCache("collections", 5 * 60 * 1000); // 5 minute
+  if (all) {
+    console.log("Loaded collections from cache");
+  } else {
+    console.log("Fetching collections from API");
+    all = [];
+    for (const creator of creators) {
+      try {
+        await new Promise(r => setTimeout(r, 300));
         const resp = await fetch(`https://api.multiversx.com/collections?creator=${creator}&size=50`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         all = all.concat(data);
-      }
-      all = all.filter(col => !col.collection.startsWith("TCLSPONSOR"));
-
-      container.innerHTML = "";
-      for (const col of all) {
-        let image = col.assets?.pngUrl || col.assets?.svgUrl || "";
-        if (!image) image = await getCollectionImage(col.collection);
-
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <img src="${image}" alt="${col.collection}">
-          <h3>${col.name}</h3>
-          <p>${col.collection}</p>
-        `;
-        card.onclick = () => loadNFTs(col.collection);
-        container.appendChild(card);
+      } catch (err) {
+        console.error("Eroare la fetch pentru creator:", creator, err);
       }
     }
+    all = all.filter(col => !col.collection.startsWith("TCLSPONSOR"));
+    setCache("collections", all); // 🔥 salvăm în cache
+  }
+
+  container.innerHTML = "";
+  for (const col of all) {
+    let image = col.assets?.pngUrl || col.assets?.svgUrl || "";
+    if (!image) {
+      try {
+        await new Promise(r => setTimeout(r, 300));
+        image = await getCollectionImage(col.collection);
+      } catch (err) {
+        console.warn("No image for", col.collection);
+      }
+    }
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${image}" alt="${col.collection}">
+      <h3>${col.name}</h3>
+      <p>${col.collection}</p>
+    `;
+    card.onclick = () => loadNFTs(col.collection);
+    container.appendChild(card);
+  }
+}
+
 
 async function loadNFTs(collection) {
   currentView = "nfts";
@@ -478,14 +534,23 @@ async function loadNFTs(collection) {
   grid.style.display = "grid";
   document.getElementById("filterBar").style.display = "flex";
   document.getElementById("backBtn").style.display = "inline-flex";
-  // 🔥 ascunde hint-ul după ce intri într-o colecție
   document.getElementById("collections-hint").style.display = "none";
   grid.innerHTML = "Loading NFTs...";
-  const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1000`);
-  const data = await resp.json();
+
+  // 🔥 verificăm cache
+  let data = getCache("nfts_" + collection, 5 * 60 * 1000); // 5 minute
+  if (data) {
+    console.log("Loaded NFTs from cache", collection);
+  } else {
+    console.log("Fetching NFTs from API", collection);
+    const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1000`);
+    data = await resp.json();
+    setCache("nfts_" + collection, data); // 🔥 salvăm în cache
+  }
+
   allNFTs = data;
 
-  // buton View on XOXNO (colecție întreagă)
+  // buton View on XOXNO
   const xoxnoLink = `https://xoxno.com/collection/${collection}`;
   const header = document.createElement("div");
   header.style.width = "100%";
@@ -539,12 +604,14 @@ function goBack() {
 
 async function renderNFTs(nfts) {
   const container = document.getElementById("nfts");
-  container.innerHTML = "";
+  container.innerHTML = "Loading NFTs...";
 
   let selectedAttr = document.getElementById("attrFilter").value;
   if (selectedAttr && selectedAttr.endsWith(" (+)")) {
     selectedAttr = selectedAttr.replace(" (+)", "");
   }
+
+  let cardsHtml = "";
 
   for (const nft of nfts) {
     const plusAttr = nft.metadata?.attributes?.find(a => typeof a.value === "string" && /\+\d+/.test(a.value));
@@ -558,39 +625,23 @@ async function renderNFTs(nfts) {
 
     const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
 
-    // 🔥 Fetch la JSON metadata real (IPFS)
-    let storageValue = "N/A";
-    try {
-      if (nft.metadata?.uri?.length) {
-        const metaUrl = nft.metadata.uri[0].replace("ipfs://", "https://the-cursed-land.myfilebase.com/ipfs/");
-        const metaResp = await fetch(metaUrl);
-        const metaData = await metaResp.json();
-        const storageAttr = metaData.attributes?.find(a => a.trait_type.toLowerCase() === "storage");
-        if (storageAttr) storageValue = storageAttr.value;
-      }
-    } catch (e) {
-      console.warn("Nu am putut încărca storage pentru", nft.identifier, e);
-    }
-
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
-      <h4>${title}</h4>
-      ${attrValue ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
-      <button style="margin-top:10px; background:#2ff6de; color:#161a24;
-        font-weight:bold; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;"
-        onclick="window.open('${nftLink}','_blank'); event.stopPropagation();">
-        🛒 View on XOXNO
-      </button>
+    cardsHtml += `
+      <div class="card" onclick="showNFTDetails('${nft.identifier}')">
+        <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
+        <h4>${title}</h4>
+        ${attrValue ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
+        <button style="margin-top:10px; background:#2ff6de; color:#161a24;
+          font-weight:bold; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;"
+          onclick="window.open('${nftLink}','_blank'); event.stopPropagation();">
+          🛒 View on XOXNO
+        </button>
+      </div>
     `;
-
-    // 🔥 click pe card => deschide modal
-    card.onclick = () => showNFTDetails(nft.identifier);
-
-    container.appendChild(card);
   }
+
+  container.innerHTML = cardsHtml;
 }
+
 
     function applyFilter(order) {
       let attr = document.getElementById("attrFilter").value;
@@ -759,10 +810,6 @@ async function loadBalance() {
       alert(`${nft.name} added to For Sale!`);
     }
 
-    // start cu tab-ul Created
-    loadCollections();
-	
-	
 // 🔥 Activează doar "Created" imediat când se încarcă pagina
 window.addEventListener("DOMContentLoaded", () => {
   showSection("created");
