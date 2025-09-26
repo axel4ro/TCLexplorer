@@ -228,25 +228,28 @@ nav button.active {
 .attr-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
 .attr-item {
   background: #202840;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 15px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.4);
-  text-align: center;  /* 🔥 centrat */
-  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;     /* 🔥 mai mic */
+  padding: 6px 8px;       /* 🔥 mai mic */
+  font-size: 13px;        /* 🔥 redus de la 15px */
+  box-shadow: 0 0 6px rgba(0,0,0,0.3);
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.08);
 }
+
 .attr-item strong {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   color: #2ff6de;
-  font-size: 14px;
+  font-size: 12px;       /* 🔥 redus */
 }
+
 .attr-item span {
-  font-weight: bold;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 12px;       /* 🔥 redus */
   color: #f1f1f1;
   display: block;
 }
+
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
@@ -287,9 +290,12 @@ nav button.active {
     padding: 15px;
   }
 
-  .modal-right {
-    margin-top: 15px;
-  }
+.modal-right {
+  flex: 1;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 5px;
+}
 
   .attr-item {
     font-size: 13px;
