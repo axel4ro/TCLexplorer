@@ -442,8 +442,10 @@ nav button.active {
     ];
 
     let currentView = "collections";
-    let allNFTs = [];
-    let forSaleList = [];
+	let allNFTs = [];
+	let forSaleList = [];
+    let allNFTsByCollection = {}; // 🔥 aici vom ține toate NFT-urile preload
+
 
     async function getCollectionImage(collection) {
       try {
@@ -529,6 +531,31 @@ async function loadCollections() {
     card.onclick = () => loadNFTs(col.collection);
     container.appendChild(card);
   }
+
+  // 🔥 preload toate NFT-urile o singură dată
+  await preloadAllNFTs(all);
+}
+
+async function preloadAllNFTs(collections) {
+  let cache = getCache("allNFTs", 5 * 60 * 1000); // 5 minute
+  if (cache) {
+    console.log("Loaded ALL NFTs from cache");
+    allNFTsByCollection = cache;
+    return;
+  }
+
+  allNFTsByCollection = {};
+  for (const col of collections) {
+    try {
+      console.log("Fetching NFTs from API", col.collection);
+      const resp = await fetch(`https://api.multiversx.com/collections/${col.collection}/nfts?size=1000`);
+      const data = await resp.json();
+      allNFTsByCollection[col.collection] = data;
+    } catch (err) {
+      console.error("Error fetching NFTs for", col.collection, err);
+    }
+  }
+  setCache("allNFTs", allNFTsByCollection);
 }
 
 
@@ -543,16 +570,11 @@ async function loadNFTs(collection) {
   document.getElementById("collections-hint").style.display = "none";
   grid.innerHTML = "Loading NFTs...";
 
-  // 🔥 verificăm cache
-  let data = getCache("nfts_" + collection, 5 * 60 * 1000); // 5 minute
-  if (data) {
-    console.log("Loaded NFTs from cache", collection);
-  } else {
-    console.log("Fetching NFTs from API", collection);
-    const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1000`);
-    data = await resp.json();
-    setCache("nfts_" + collection, data); // 🔥 salvăm în cache
-  }
+// 🔥 direct din cache global (preloaded)
+let data = allNFTsByCollection[collection] || [];
+allNFTs = data;
+
+
 
   allNFTs = data;
 
@@ -570,22 +592,36 @@ async function loadNFTs(collection) {
   grid.innerHTML = "";
   grid.appendChild(header);
 
-  // filtre
-  const attrSet = new Set();
-  data.forEach(nft => {
-    nft.metadata?.attributes?.forEach(attr => {
-      if (typeof attr.value === "string" && /\+\d+/.test(attr.value)) attrSet.add(attr.trait_type + " (+)");
-      else attrSet.add(attr.trait_type);
-    });
+ // filtre
+const attrSet = new Set();
+data.forEach(nft => {
+  nft.metadata?.attributes?.forEach(attr => {
+    if (typeof attr.value === "string" && /\+\d+/.test(attr.value)) {
+      attrSet.add(attr.trait_type + " (+)");
+    } else {
+      attrSet.add(attr.trait_type);
+    }
   });
-  const filterSelect = document.getElementById("attrFilter");
-  filterSelect.innerHTML = `<option value="">— All —</option>`;
-  attrSet.forEach(attr => {
-    const opt = document.createElement("option");
-    opt.value = attr; opt.textContent = attr;
-    filterSelect.appendChild(opt);
-  });
-  filterSelect.onchange = () => applyInstantFilter();
+});
+
+const filterSelect = document.getElementById("attrFilter");
+filterSelect.innerHTML = ""; // 🔥 fără All
+let first = true;
+attrSet.forEach(attr => {
+  const opt = document.createElement("option");
+  opt.value = attr;
+  opt.textContent = attr;
+  if (first) { // 🔥 setăm primul ca default
+    opt.selected = true;
+    first = false;
+  }
+  filterSelect.appendChild(opt);
+});
+filterSelect.onchange = () => applyInstantFilter();
+
+// 🔥 aplicăm instant filtrul pe primul atribut
+applyInstantFilter();
+
 
   renderNFTs(allNFTs);
 }
@@ -617,7 +653,7 @@ async function renderNFTs(nfts) {
     selectedAttr = selectedAttr.replace(" (+)", "");
   }
 
-  let cardsHtml = "";
+  let cardsHtml = "";  // 🔥 construim tot aici
 
   for (const nft of nfts) {
     const plusAttr = nft.metadata?.attributes?.find(a => typeof a.value === "string" && /\+\d+/.test(a.value));
@@ -645,7 +681,8 @@ async function renderNFTs(nfts) {
     `;
   }
 
-  container.innerHTML = cardsHtml;
+  // 🔥 injectăm o singură dată
+  container.innerHTML = cardsHtml || `<p style="color:#9ca3af;">⚠️ No NFTs found.</p>`;
 }
 
 
