@@ -1935,9 +1935,25 @@ function notify(title, message) {
 }
 
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/TCLexplorer/sw.js")
+    .then(reg => console.log("✅ SW registered", reg))
+    .catch(err => console.error("❌ SW error", err));
+}
+
+// 🔔 Ceri permisiune notificări
+async function askPermission() {
+  const result = await Notification.requestPermission();
+  if (result === "granted") {
+    console.log("✅ Notifications allowed");
+  }
+}
+askPermission();
+
 </script>
 </body>
 </html>
+
 
 
 
