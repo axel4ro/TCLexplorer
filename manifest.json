@@ -1,0 +1,20 @@
+{
+  "name": "The Cursed Land Explorer",
+  "short_name": "TCL Explorer",
+  "start_url": "/TCLexplorer/index.html",
+  "display": "standalone",
+  "background_color": "#161a24",
+  "theme_color": "#249c8c",
+  "icons": [
+    {
+      "src": "images/tcl_icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "images/tcl_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
