@@ -1173,12 +1173,18 @@ function showEventsForDay(day) {
     // ===== Status =====
     let statusText = "";
     let borderClass = "";
-    if (now >= start && now <= end) {
-      let diff = Math.floor((end - now) / 60000);
-      let h = Math.floor(diff / 60), m = diff % 60;
-      statusText = t("events_active", { h, m });
-      borderClass = "event-active";
-    } else {
+if (now >= start && now <= end) {
+  let diff = Math.floor((end - now) / 60000);
+  let h = Math.floor(diff / 60), m = diff % 60;
+  statusText = t("events_active", { h, m });
+  borderClass = "event-active";
+
+  // === Trimite notificare dacă e live și nu a fost notificat înainte ===
+  if (!ev._notified) {
+    notify("🎉 Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
+    ev._notified = true; // prevenim spam la fiecare refresh
+  }
+}  else {
       let diff = Math.floor((start - now) / 60000);
       let h = Math.floor(diff / 60), m = diff % 60;
 
@@ -1901,7 +1907,25 @@ function updateCommitRelative() {
 
   statusEl.textContent = `✅ Last update on-chain: ${commitDateGlobal.toLocaleString()} (${relative})`;
 }
+// === NOTIFICĂRI DESKTOP ===
+function notify(title, message) {
+  if (!("Notification" in window)) {
+    console.log("❌ Notifications not supported by this browser.");
+    return;
+  }
+
+  if (Notification.permission === "granted") {
+    new Notification(title, { body: message, icon: "https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        new Notification(title, { body: message, icon: "https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" });
+      }
+    });
+  }
+}
 
 </script>
 </body>
 </html>
+
