@@ -5,6 +5,19 @@
   <!-- 🔥 Ajustat pentru mobile să facă zoom-out -->
   <meta name="viewport" content="width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes" />
   <title>The Cursed Land</title>
+
+	  <!-- iOS PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TCL Explorer">
+
+  <!-- Icon pentru Home Screen -->
+  <link rel="apple-touch-icon" href="images/tcl_icon.png" sizes="180x180">
+
+  <!-- Manifest pentru Android/Chrome -->
+  <link rel="manifest" href="manifest.json">
+
+  <meta name="theme-color" content="#249c8c">
   <style>
   
 :root {
@@ -567,9 +580,6 @@ button:hover { opacity: 0.9; }
 
   </style>
 </head>
-	<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#249c8c">
-
 <body>
 <!-- NAVIGATION -->
 <div class="nav-bar">
@@ -1955,8 +1965,3 @@ askPermission();
 </script>
 </body>
 </html>
-
-
-
-
-
