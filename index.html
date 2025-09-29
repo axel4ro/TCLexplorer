@@ -1080,24 +1080,25 @@ resultBox.innerHTML = t("calc_result_sell", {
       resultBox.innerHTML = t("calc_error");
     }
   }
-const EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
-let eventsData = {};
-let currentDay = null;
-
+// ===== Zile săptămână =====
 const weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
-// ziua curentă în UTC, stil european (luni = 0, duminică = 6)
+// Ziua curentă în UTC, stil european (luni = 0, duminică = 6)
 function getTodayIndex() {
   return (new Date().getUTCDay() + 6) % 7;
 }
 
 // ===== Încarcă events din JSON =====
+const EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
+let currentDay = null;
+let eventsData = {};
 async function loadEvents() {
   try {
     const res = await fetch(EVENTS_URL + "?t=" + Date.now());
     eventsData = await res.json();
 
     currentDay = weekdays[getTodayIndex()];
+    console.log("✅ Today:", currentDay); // debug
     renderDayButtons(currentDay);
     showEventsForDay(currentDay);
 
@@ -1106,6 +1107,7 @@ async function loadEvents() {
     console.error("Events load error", err);
   }
 }
+
 
 // ===== Butoane zile =====
 function renderDayButtons(activeDay) {
@@ -1533,12 +1535,7 @@ window.onload = function() {
   fetchPoolData();
   fetchGeckoAthAtl();
   updateStakingLeaderboard();
-  const weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
-// ziua curentă în UTC, stil european (luni = 0)
-function getTodayIndex() {
-  return (new Date().getUTCDay() + 6) % 7;
-}
   loadEvents(); // ✅ încarcă și events
 
   setInterval(function() {
@@ -1928,4 +1925,3 @@ function notify(title, message) {
 </script>
 </body>
 </html>
-
