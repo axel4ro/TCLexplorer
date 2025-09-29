@@ -1190,10 +1190,11 @@ function showEventsForDay(day) {
       borderClass = "event-active";
 
       // === Trimite notificare doar pe desktop
-      if (!ev._notified && !isMobile()) {
-        notify("🎉 Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
-        ev._notified = true;
-      }
+	if (!ev._notified) {
+	  notify("🎉 Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
+	  ev._notified = true;
+	}
+		
 
     } else {
       let diff = Math.floor((start - now) / 60000);
@@ -1915,22 +1916,23 @@ function updateCommitRelative() {
 }
 // === NOTIFICĂRI DESKTOP ===
 function notify(title, message) {
-  // 📱 Pe mobil => nu trimitem notificare
-  if (isMobile()) return;
-
   if (!("Notification" in window)) {
     console.log("❌ Notifications not supported by this browser.");
     return;
   }
 
-  if (Notification.permission === "granted") {
-    new Notification(title, { body: message, icon: "https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        new Notification(title, { body: message, icon: "https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" });
-      }
-    });
+  try {
+    if (Notification.permission === "granted") {
+      new Notification(title, { body: message, icon: "images/tcl_icon.png" });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          new Notification(title, { body: message, icon: "images/tcl_icon.png" });
+        }
+      });
+    }
+  } catch (err) {
+    console.error("❌ Notification error:", err);
   }
 }
 
@@ -1953,6 +1955,7 @@ askPermission();
 </script>
 </body>
 </html>
+
 
 
 
