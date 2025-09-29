@@ -1127,6 +1127,10 @@ function renderDayButtons(activeDay) {
 
   document.getElementById("eventButtons").innerHTML = html;
 }
+// ===== Detectăm device =====
+function isMobile() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
 
 // ===== Afișare evenimente =====
 function showEventsForDay(day) {
@@ -1175,18 +1179,20 @@ function showEventsForDay(day) {
     // ===== Status =====
     let statusText = "";
     let borderClass = "";
-if (now >= start && now <= end) {
-  let diff = Math.floor((end - now) / 60000);
-  let h = Math.floor(diff / 60), m = diff % 60;
-  statusText = t("events_active", { h, m });
-  borderClass = "event-active";
 
-  // === Trimite notificare dacă e live și nu a fost notificat înainte ===
-  if (!ev._notified) {
-    notify("🎉 Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
-    ev._notified = true; // prevenim spam la fiecare refresh
-  }
-}  else {
+    if (now >= start && now <= end) {
+      let diff = Math.floor((end - now) / 60000);
+      let h = Math.floor(diff / 60), m = diff % 60;
+      statusText = t("events_active", { h, m });
+      borderClass = "event-active";
+
+      // === Trimite notificare doar pe desktop
+      if (!ev._notified && !isMobile()) {
+        notify("🎉 Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
+        ev._notified = true;
+      }
+
+    } else {
       let diff = Math.floor((start - now) / 60000);
       let h = Math.floor(diff / 60), m = diff % 60;
 
@@ -1906,6 +1912,9 @@ function updateCommitRelative() {
 }
 // === NOTIFICĂRI DESKTOP ===
 function notify(title, message) {
+  // 📱 Pe mobil => nu trimitem notificare
+  if (isMobile()) return;
+
   if (!("Notification" in window)) {
     console.log("❌ Notifications not supported by this browser.");
     return;
@@ -1922,7 +1931,9 @@ function notify(title, message) {
   }
 }
 
+
 </script>
 </body>
 </html>
+
 
