@@ -1994,10 +1994,25 @@ askPermission();
 /* === INSTALL GUIDE Chrome-like === */
 let deferredPrompt = null;
 
+// 📲 Android (Chrome PWA)
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  showInstallButton("android"); // 📲 buton doar dacă e PWA disponibil
+
+  if (/android/i.test(navigator.userAgent)) {
+    showInstallButton("android");
+  }
+});
+
+// 🖥️ iOS & Windows fallback
+window.addEventListener("DOMContentLoaded", () => {
+  const ua = navigator.userAgent.toLowerCase();
+
+  if (/iphone|ipad|ipod/.test(ua)) {
+    showInstallButton("ios");
+  } else if (/win/.test(ua)) {
+    showInstallButton("windows");
+  }
 });
 
 function showInstallButton(type) {
@@ -2030,17 +2045,16 @@ function showGuide(type) {
   if (type === "ios") {
     const existing = document.getElementById("iosGuideBox");
     if (existing) {
-      // 🔥 dacă există deja -> îl eliminăm (toggle off)
-      existing.remove();
+      existing.remove(); // toggle off dacă deja e deschis
       return;
     }
 
     const guideBox = document.createElement("div");
     guideBox.id = "iosGuideBox";
 
-    // măsurăm înălțimea nav-barului pentru offset
+    // măsurăm înălțimea nav-barului
     const navBar = document.querySelector(".nav-bar");
-    const navHeight = navBar ? navBar.offsetHeight : 60; // fallback 60px
+    const navHeight = navBar ? navBar.offsetHeight : 60;
 
     guideBox.innerHTML = `
       <div style="position:relative; padding:20px; background:#161a24; border:2px solid #2ff6de;
@@ -2063,16 +2077,6 @@ function showGuide(type) {
     navBar.insertAdjacentElement("afterend", guideBox);
   }
 }
-
-// fallback la load pentru iOS/Windows
-window.addEventListener("DOMContentLoaded", () => {
-  const ua = navigator.userAgent.toLowerCase();
-  if (/iphone|ipad|ipod/.test(ua)) {
-    showInstallButton("ios");
-  } else if (/win/.test(ua)) {
-    showInstallButton("windows");
-  }
-});
 
 </script>
 </body>
