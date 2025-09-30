@@ -2027,11 +2027,14 @@ async function installPWA() {
 function showGuide(type) {
   let message = "";
   if (type === "ios") {
+    // dacă există deja, nu mai adăugăm
+    if (document.getElementById("iosGuideBox")) return;
+
     const guideBox = document.createElement("div");
     guideBox.id = "iosGuideBox";
     guideBox.innerHTML = `
       <div style="padding:20px; background:#161a24; border:2px solid #2ff6de; border-radius:14px; margin:15px; color:#f1f1f1; max-width:420px;">
-        <h3 style="margin-top:0;">🍎 Add to Home Screen (iOS)</h3>
+        <h3 style="margin-top:0;"> Add to Home Screen (iOS)</h3>
         <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
         <ol style="margin-left:20px; line-height:1.6;">
           <li>Tap <b>Share</b> <span style="font-size:18px;">⬆️</span> (bottom bar).</li>
@@ -2042,9 +2045,13 @@ function showGuide(type) {
              alt="iOS Add to Home Screen tutorial" 
              style="width:100%;border-radius:10px;margin-top:10px;">
       </div>`;
-    document.body.appendChild(guideBox);
+
+    // 🔥 inserează imediat după nav-bar
+    const navBar = document.querySelector(".nav-bar");
+    navBar.insertAdjacentElement("afterend", guideBox);
   }
 }
+
 // fallback la load pentru iOS/Windows
 window.addEventListener("DOMContentLoaded", () => {
   const ua = navigator.userAgent.toLowerCase();
@@ -2059,6 +2066,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
