@@ -1993,10 +1993,15 @@ askPermission();
 let deferredPrompt = null;
 
 window.addEventListener("beforeinstallprompt", (e) => {
+  const ua = navigator.userAgent.toLowerCase();
+  // 🔥 Ignorăm complet Windows
+  if (/win/.test(ua)) return;
+
   e.preventDefault();
   deferredPrompt = e;
-  showInstallButton("android"); // 📲 buton doar dacă e PWA disponibil
+  showInstallButton("android"); 
 });
+
 
 function showInstallButton(type) {
   const container = document.getElementById("installGuideContainer");
@@ -2080,6 +2085,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
