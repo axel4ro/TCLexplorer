@@ -2021,10 +2021,20 @@ async function installPWA() {
 function showGuide(type) {
   if (type === "ios") {
     const existing = document.getElementById("iosGuideBox");
+    const panel = document.getElementById("menuPanel");
+    const btn = document.getElementById("menuToggle");
+
     if (existing) {
-      existing.remove(); // toggle off dacă deja e deschis
+      // 🔥 dacă există deja -> îl eliminăm și redeschidem meniul
+      existing.remove();
+      panel.classList.add("open");
+      btn.textContent = "✖ Close";
       return;
     }
+
+    // 🔥 dacă nu există -> închidem meniul și afișăm ghidul
+    panel.classList.remove("open");
+    btn.textContent = "☰ Menu";
 
     const guideBox = document.createElement("div");
     guideBox.id = "iosGuideBox";
@@ -2037,7 +2047,9 @@ function showGuide(type) {
       <div style="position:relative; padding:20px; background:#161a24; border:2px solid #2ff6de;
                   border-radius:14px; margin:0; margin-top:${navHeight + 10}px;
                   color:#f1f1f1; width:100%; box-sizing:border-box;">
-        <button onclick="document.getElementById('iosGuideBox').remove()" 
+        <button onclick="document.getElementById('iosGuideBox').remove(); 
+                         document.getElementById('menuPanel').classList.add('open'); 
+                         document.getElementById('menuToggle').textContent='✖ Close';" 
                 style="position:absolute; top:10px; right:15px; background:none; border:none; color:#2ff6de; font-size:18px; cursor:pointer;">✖</button>
         <h3 style="margin:0 0 10px 0;"> Add to Home Screen (iOS)</h3>
         <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
@@ -2058,3 +2070,4 @@ function showGuide(type) {
 </script>
 </body>
 </html>
+
