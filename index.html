@@ -2025,35 +2025,38 @@ async function installPWA() {
 }
 
 function showGuide(type) {
-  let message = "";
   if (type === "ios") {
-    // dacă există deja, nu mai adăugăm
     if (document.getElementById("iosGuideBox")) return;
 
     const guideBox = document.createElement("div");
     guideBox.id = "iosGuideBox";
-guideBox.innerHTML = `
-  <div style="padding:20px; background:#161a24; border:2px solid #2ff6de; border-radius:14px; 
-              margin:15px; margin-top:20px;  /* 🔥 spațiu sub nav-bar */
-              color:#f1f1f1; max-width:420px;">
-    <h3 style="margin-top:0;"> Add to Home Screen (iOS)</h3>
-    <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
-    <ol style="margin-left:20px; line-height:1.6;">
-      <li>Tap <b>Share</b> <span style="font-size:18px;">⬆️</span> (bottom bar).</li>
-      <li>Scroll and select <b>Add to Home Screen</b>.</li>
-      <li>Confirm with <b>Add</b>.</li>
-    </ol>
-    <img src="https://axel4ro.github.io/TCLexplorer/images/ios-add.png" 
-         alt="iOS Add to Home Screen tutorial" 
-         style="width:100%;border-radius:10px;margin-top:10px;">
-  </div>`;
+    guideBox.style.position = "absolute";
+    guideBox.style.top = "100%";          // imediat sub buton
+    guideBox.style.left = "0";            // aliniat la stânga
+    guideBox.style.marginTop = "8px";     // mic spațiu între buton și ghid
+    guideBox.style.zIndex = "2000";
 
+    guideBox.innerHTML = `
+      <div style="padding:20px; background:#161a24; border:2px solid #2ff6de;
+                  border-radius:14px; color:#f1f1f1; max-width:320px;">
+        <h3 style="margin-top:0;"> Add to Home Screen (iOS)</h3>
+        <ol style="margin-left:20px; line-height:1.6;">
+          <li>Tap <b>Share</b> ⬆️ (bottom bar).</li>
+          <li>Scroll and select <b>Add to Home Screen</b>.</li>
+          <li>Confirm with <b>Add</b>.</li>
+        </ol>
+        <img src="https://axel4ro.github.io/TCLexplorer/images/ios-add.png"
+             alt="iOS Add to Home Screen tutorial"
+             style="width:100%;border-radius:10px;margin-top:10px;">
+      </div>`;
 
-    // 🔥 inserează imediat după nav-bar
-    const navBar = document.querySelector(".nav-bar");
-    navBar.insertAdjacentElement("afterend", guideBox);
+    // găsește butonul 🍎 Add
+    const btn = document.querySelector("#installGuideContainer .install-btn");
+    btn.style.position = "relative"; // ca să fie ancoră
+    btn.appendChild(guideBox);       // 🔥 inserează ghidul sub buton
   }
 }
+
 
 // fallback la load pentru iOS/Windows
 window.addEventListener("DOMContentLoaded", () => {
@@ -2069,6 +2072,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
