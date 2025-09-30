@@ -2030,16 +2030,12 @@ function showGuide(type) {
 
     const guideBox = document.createElement("div");
     guideBox.id = "iosGuideBox";
-    guideBox.style.position = "absolute";
-    guideBox.style.top = "100%";          // imediat sub buton
-    guideBox.style.left = "0";            // aliniat la stânga
-    guideBox.style.marginTop = "8px";     // mic spațiu între buton și ghid
-    guideBox.style.zIndex = "2000";
-
     guideBox.innerHTML = `
       <div style="padding:20px; background:#161a24; border:2px solid #2ff6de;
-                  border-radius:14px; color:#f1f1f1; max-width:320px;">
-        <h3 style="margin-top:0;"> Add to Home Screen (iOS)</h3>
+                  border-radius:14px; margin:0; margin-top:10px;
+                  color:#f1f1f1; width:100%; box-sizing:border-box;">
+        <h3 style="margin-top:0;">🍎 Add to Home Screen (iOS)</h3>
+        <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
         <ol style="margin-left:20px; line-height:1.6;">
           <li>Tap <b>Share</b> ⬆️ (bottom bar).</li>
           <li>Scroll and select <b>Add to Home Screen</b>.</li>
@@ -2050,12 +2046,12 @@ function showGuide(type) {
              style="width:100%;border-radius:10px;margin-top:10px;">
       </div>`;
 
-    // găsește butonul 🍎 Add
-    const btn = document.querySelector("#installGuideContainer .install-btn");
-    btn.style.position = "relative"; // ca să fie ancoră
-    btn.appendChild(guideBox);       // 🔥 inserează ghidul sub buton
+    // inserează sub bara de navigație (ca dropdown pe toată lățimea)
+    const navBar = document.querySelector(".nav-bar");
+    navBar.insertAdjacentElement("afterend", guideBox);
   }
 }
+
 
 
 // fallback la load pentru iOS/Windows
@@ -2072,6 +2068,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
