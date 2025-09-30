@@ -2006,7 +2006,7 @@ function showInstallButton(type) {
   if (type === "android") {
     btnHtml = `<button class="install-btn" onclick="installPWA()">📲 Install</button>`;
   } else if (type === "ios") {
-    btnHtml = `<button class="install-btn" onclick="showGuide('ios')">🍎 Add</button>`;
+    btnHtml = `<button class="install-btn" onclick="showGuide('ios')">📲 Add</button>`;
   } else if (type === "windows") {
     btnHtml = `<a href="https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe" target="_blank" class="install-btn">💻 Download</a>`;
   }
@@ -2026,32 +2026,43 @@ async function installPWA() {
 
 function showGuide(type) {
   if (type === "ios") {
-    if (document.getElementById("iosGuideBox")) return;
+    const existing = document.getElementById("iosGuideBox");
+    if (existing) {
+      // 🔥 dacă există deja -> îl eliminăm (toggle off)
+      existing.remove();
+      return;
+    }
 
     const guideBox = document.createElement("div");
     guideBox.id = "iosGuideBox";
-   guideBox.innerHTML = `
-  <div style="padding:20px; background:#161a24; border:2px solid #2ff6de;
-              border-radius:14px; margin:0; margin-top:70px;  /* 🔥 spațiu sub nav-bar */
-              color:#f1f1f1; width:100%; box-sizing:border-box;">
-    <h3 style="margin-top:0;">🍎 Add to Home Screen (iOS)</h3>
-    <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
-    <ol style="margin-left:20px; line-height:1.6;">
-      <li>Tap <b>Share</b> ⬆️ (bottom bar).</li>
-      <li>Scroll and select <b>Add to Home Screen</b>.</li>
-      <li>Confirm with <b>Add</b>.</li>
-    </ol>
-    <img src="https://axel4ro.github.io/TCLexplorer/images/ios-add.png"
-         alt="iOS Add to Home Screen tutorial"
-         style="width:100%;border-radius:10px;margin-top:10px;">
-  </div>`;
 
-
-    // inserează sub bara de navigație (ca dropdown pe toată lățimea)
+    // măsurăm înălțimea nav-barului pentru offset
     const navBar = document.querySelector(".nav-bar");
+    const navHeight = navBar ? navBar.offsetHeight : 60; // fallback 60px
+
+    guideBox.innerHTML = `
+      <div style="position:relative; padding:20px; background:#161a24; border:2px solid #2ff6de;
+                  border-radius:14px; margin:0; margin-top:${navHeight + 10}px;
+                  color:#f1f1f1; width:100%; box-sizing:border-box;">
+        <button onclick="document.getElementById('iosGuideBox').remove()" 
+                style="position:absolute; top:10px; right:15px; background:none; border:none; color:#2ff6de; font-size:18px; cursor:pointer;">✖</button>
+        <h3 style="margin:0 0 10px 0;"> Add to Home Screen (iOS)</h3>
+        <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
+        <ol style="margin-left:20px; line-height:1.6;">
+          <li>Tap <b>Share</b> ⬆️ (bottom bar).</li>
+          <li>Scroll and select <b>Add to Home Screen</b>.</li>
+          <li>Confirm with <b>Add</b>.</li>
+        </ol>
+        <img src="https://axel4ro.github.io/TCLexplorer/images/ios-add.png"
+             alt="iOS Add to Home Screen tutorial"
+             style="width:100%;border-radius:10px;margin-top:10px;">
+      </div>`;
+
     navBar.insertAdjacentElement("afterend", guideBox);
   }
 }
+
+
 
 
 
@@ -2069,6 +2080,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
 
