@@ -1989,53 +1989,52 @@ async function askPermission() {
 askPermission();
 
 
-function getDeviceType() {
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return "android";
-  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
-  if (/win/i.test(ua)) return "windows";
-  return "other";
+/* === INSTALL GUIDE Chrome-like === */
+let deferredPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallButton("android"); // 📲 buton doar dacă e PWA disponibil
+});
+
+function showInstallButton(type) {
+  const container = document.getElementById("installGuideContainer");
+  if (!container) return;
+
+  let btnHtml = "";
+  if (type === "android") {
+    btnHtml = `<button class="install-btn" onclick="installPWA()">📲 Install</button>`;
+  } else if (type === "ios") {
+    btnHtml = `<button class="install-btn" onclick="showGuide('ios')">🍎 Add</button>`;
+  } else if (type === "windows") {
+    btnHtml = `<a href="https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe" target="_blank" class="install-btn">💻 Download</a>`;
+  }
+  container.innerHTML = btnHtml;
 }
 
-function showInstallGuide() {
-  const container = document.getElementById("installGuideContainer");
-  let btnHtml = "";
-
-  switch (getDeviceType()) {
-    case "android":
-      btnHtml = `<button class="install-btn" onclick="showGuide('android')">📲 Install</button>`;
-      break;
-    case "ios":
-      btnHtml = `<button class="install-btn" onclick="showGuide('ios')">🍎 Add</button>`;
-      break;
-    case "windows":
-      btnHtml = `<a href="https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe" target="_blank" class="install-btn">💻 Download</a>`;
-      break;
+async function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    console.log("User choice:", choice.outcome);
+    deferredPrompt = null;
+  } else {
+    alert("👉 Open the browser menu and select 'Add to Home Screen'.");
   }
-
-  container.innerHTML = btnHtml;
 }
 
 function showGuide(type) {
   let message = "";
-  if (type === "android") {
-    message = `
-      <h3>📲 Install on Android</h3>
-      <ol>
-        <li>Open menu ⋮ (top right in browser).</li>
-        <li>Select <b>Add to Home Screen</b>.</li>
-        <li>Confirm install.</li>
-      </ol>`;
-  } else if (type === "ios") {
+  if (type === "ios") {
     message = `
       <h3>🍎 Add to Home Screen (iOS)</h3>
       <ol>
         <li>Open site in <b>Safari</b>.</li>
-        <li>Tap <b>Share</b> (⬆️ square).</li>
+        <li>Tap <b>Share</b> (⬆️ square icon).</li>
         <li>Select <b>Add to Home Screen</b>.</li>
       </ol>`;
   }
-
   if (message) {
     const guideBox = document.createElement("div");
     guideBox.innerHTML = `
@@ -2046,9 +2045,19 @@ function showGuide(type) {
   }
 }
 
-window.addEventListener("DOMContentLoaded", showInstallGuide);
+// fallback la load pentru iOS/Windows
+window.addEventListener("DOMContentLoaded", () => {
+  const ua = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) {
+    showInstallButton("ios");
+  } else if (/win/.test(ua)) {
+    showInstallButton("windows");
+  }
+});
+
 
 </script>
 </body>
 </html>
+
 
