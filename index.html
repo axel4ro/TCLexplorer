@@ -2027,24 +2027,24 @@ async function installPWA() {
 function showGuide(type) {
   let message = "";
   if (type === "ios") {
-    message = `
-      <h3>🍎 Add to Home Screen (iOS)</h3>
-      <ol>
-        <li>Open site in <b>Safari</b>.</li>
-        <li>Tap <b>Share</b> (⬆️ square icon).</li>
-        <li>Select <b>Add to Home Screen</b>.</li>
-      </ol>`;
-  }
-  if (message) {
     const guideBox = document.createElement("div");
+    guideBox.id = "iosGuideBox";
     guideBox.innerHTML = `
-      <div style="padding:15px; background:#161a24; border:1px solid #2ff6de; border-radius:12px; margin:15px; color:#f1f1f1;">
-        ${message}
+      <div style="padding:20px; background:#161a24; border:2px solid #2ff6de; border-radius:14px; margin:15px; color:#f1f1f1; max-width:420px;">
+        <h3 style="margin-top:0;">🍎 Add to Home Screen (iOS)</h3>
+        <p>Follow these steps in <b>Google Chrome / Safari</b>:</p>
+        <ol style="margin-left:20px; line-height:1.6;">
+          <li>Tap <b>Share</b> <span style="font-size:18px;">⬆️</span> (bottom bar).</li>
+          <li>Scroll and select <b>Add to Home Screen</b>.</li>
+          <li>Confirm with <b>Add</b>.</li>
+        </ol>
+        <img src="https://axel4ro.github.io/TCLexplorer/images/ios-add.png" 
+             alt="iOS Add to Home Screen tutorial" 
+             style="width:100%;border-radius:10px;margin-top:10px;">
       </div>`;
     document.body.appendChild(guideBox);
   }
 }
-
 // fallback la load pentru iOS/Windows
 window.addEventListener("DOMContentLoaded", () => {
   const ua = navigator.userAgent.toLowerCase();
@@ -2059,5 +2059,6 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
 
 
