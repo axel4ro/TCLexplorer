@@ -1521,13 +1521,8 @@ function isMobile() {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
+// 👉 Meniul se închide doar după ce selectează o pagină
 function showPage(id) {
-  // 👉 Dacă apasă pe xExchange și e pe mobil → deschide link extern
-  if (id === "xexchangeIframe" && isMobile()) {
-    window.open(XEXCHANGE_URL, "_blank");
-    return;
-  }
-
   // ascundem toate paginile
   document.querySelectorAll('.section-page').forEach(sec => {
     sec.classList.remove('active', 'fullpage');
@@ -1537,12 +1532,10 @@ function showPage(id) {
   const page = document.getElementById(id);
   if (page) {
     page.classList.add('active');
-
     if (id === 'chart' || id === 'explorerIframe' || id === 'xexchangeIframe') {
       page.classList.add('fullpage');
     }
   }
-
   // zoom diferit în funcție de pagină
   const viewport = document.querySelector("meta[name=viewport]");
   if (id === "staking") {
@@ -1555,7 +1548,8 @@ function showPage(id) {
     document.body.style.zoom = "1.0";
     viewport.setAttribute("content","width=device-width, initial-scale=0.85, minimum-scale=0.5, maximum-scale=1.0, user-scalable=yes");
   }
-
+  // 🔥 după primul click, meniu poate fi închis normal
+  firstLoad = false;
   // 🔥 Închidem meniul după selectare
   const panel = document.getElementById("menuPanel");
   const btn = document.getElementById("menuToggle");
@@ -1597,52 +1591,35 @@ setInterval(() => {
 fetchExplorerData();
 setInterval(fetchExplorerData, 300000); // la fiecare 5 min
 
-  // === Deschidem meniul imediat la primul load ===
+// === Deschidem meniul imediat la primul load ===
 document.addEventListener("DOMContentLoaded", () => {
   const panel = document.getElementById("menuPanel");
   const btn = document.getElementById("menuToggle");
 
   if (panel && btn) {
     panel.classList.add("open");
-    btn.textContent = "✖ Close";
 
-    // 🔥 ascunde toate paginile la start (nimic în spate)
+    // 🔥 nu schimbăm textul, rămâne ☰ Menu
+    btn.textContent = "☰ Menu";
+
+    // ascunde toate paginile la start (nimic în spate)
     document.querySelectorAll('.section-page').forEach(sec => {
       sec.classList.remove('active', 'fullpage');
     });
   }
 });
 
-
 // 🔥 Toggle pentru meniul de navigație
 document.getElementById("menuToggle").addEventListener("click", () => {
   const panel = document.getElementById("menuPanel");
   const btn = document.getElementById("menuToggle");
+
+  // 👉 dacă e prima încărcare și userul n-a selectat o pagină, ignorăm click
+  if (firstLoad && panel.classList.contains("open")) return;
+
   panel.classList.toggle("open");
-
-  if (panel.classList.contains("open")) {
-    btn.textContent = "✖ Close";
-
-    // ✅ punem direct Token pe centru
-    const tokenBtn = document.getElementById("btn-token");
-    if (tokenBtn) {
-      menuButtons.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-      tokenBtn.classList.add("active");
-      const offset = tokenBtn.offsetTop - (menuButtons.clientHeight / 2 - tokenBtn.clientHeight / 2);
-      menuButtons.scrollTop = offset;
-    }
-
-  } else {
-    btn.textContent = "☰ Menu";
-  }
+  btn.textContent = panel.classList.contains("open") ? "✖ Close" : "☰ Menu";
 });
-function openImage(src) {
-  const overlay = document.getElementById("overlay");
-  const overlayImg = document.getElementById("overlayImg");
-  overlay.style.display = "flex";
-  overlayImg.src = src;
-  overlayImg.style.transform = "scale(1)";
-}
 
 
 function closeImage() {
