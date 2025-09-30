@@ -935,7 +935,7 @@ button:hover { opacity: 0.9; }
 </div>
 
 <!-- Connect xPortal Tutorial -->
-<div id="connectXportal" class="section-page active">
+<div id="connectXportal" class="section-page"> <!-- ❌ fără active -->
 
 
   <h2 data-i18n="connect_title"></h2>
@@ -1309,7 +1309,6 @@ function showEventsForDay(day) {
     } catch(e){ console.error("❌ CoinGecko ATH/ATL error", e); }
   }
 
-
 // ===== MultiversX Explorer Data =====
 async function fetchExplorerData() {
   try {
@@ -1367,8 +1366,6 @@ function formatTcl(val, decimals = 18) {
 
   return whole.toLocaleString("en-US");
 }
-
-
 
 async function fetchLeaderboard() {
   const body = document.getElementById("stakingBody");
@@ -1454,9 +1451,6 @@ body.innerHTML = html;
     fetchLeaderboard();
   }
 	
-
-
-
 async function searchStaker() {
   const input = document.getElementById("stakingSearch").value.trim();
   const searchResult = document.getElementById("stakingSearchResult");
@@ -1519,8 +1513,6 @@ async function searchStaker() {
   }
 }
 
-
-
 // ===== Navigation =====
 const XEXCHANGE_URL = "https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d";
 const menuButtons = document.querySelector(".menu-buttons"); // 🔥 adăugat
@@ -1576,8 +1568,6 @@ function showPage(id) {
 
   // ===== On Load =====
 window.onload = function() {
-
-
   fetchPoolData();
   fetchGeckoAthAtl();
   updateStakingLeaderboard();
@@ -1606,6 +1596,22 @@ setInterval(() => {
 
 fetchExplorerData();
 setInterval(fetchExplorerData, 300000); // la fiecare 5 min
+
+  // === Deschidem meniul imediat la primul load ===
+document.addEventListener("DOMContentLoaded", () => {
+  const panel = document.getElementById("menuPanel");
+  const btn = document.getElementById("menuToggle");
+
+  if (panel && btn) {
+    panel.classList.add("open");
+    btn.textContent = "✖ Close";
+
+    // 🔥 ascunde toate paginile la start (nimic în spate)
+    document.querySelectorAll('.section-page').forEach(sec => {
+      sec.classList.remove('active', 'fullpage');
+    });
+  }
+});
 
 
 // 🔥 Toggle pentru meniul de navigație
@@ -1762,8 +1768,6 @@ window.addEventListener("DOMContentLoaded", () => {
   loadTranslations(currentLang);
 });
 
-
-
 function copyAddr(addr, event) {
   navigator.clipboard.writeText(addr).then(() => {
     const btn = event.target;
@@ -1910,8 +1914,6 @@ if (stakingInfo) {
 } // ← închide funcția checkWallet
 
 
-
-
 let commitDateGlobal = null;
 
 async function fetchLeaderboardLastUpdate() {
@@ -1993,15 +1995,10 @@ askPermission();
 let deferredPrompt = null;
 
 window.addEventListener("beforeinstallprompt", (e) => {
-  const ua = navigator.userAgent.toLowerCase();
-  // 🔥 Ignorăm complet Windows
-  if (/win/.test(ua)) return;
-
   e.preventDefault();
   deferredPrompt = e;
-  showInstallButton("android"); 
+  showInstallButton("android"); // 📲 buton doar dacă e PWA disponibil
 });
-
 
 function showInstallButton(type) {
   const container = document.getElementById("installGuideContainer");
@@ -2067,10 +2064,6 @@ function showGuide(type) {
   }
 }
 
-
-
-
-
 // fallback la load pentru iOS/Windows
 window.addEventListener("DOMContentLoaded", () => {
   const ua = navigator.userAgent.toLowerCase();
@@ -2081,17 +2074,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
