@@ -459,7 +459,6 @@ button:hover { opacity: 0.9; }
 }
 
 
-/* 🌍 Dropdown dreapta */
 .lang-dropdown {
   position: absolute;
   right: 20px;
@@ -519,7 +518,6 @@ button:hover { opacity: 0.9; }
 .lang-option:hover {
   background: #2ff6de33;
 }
-
 .lang-dropdown.open .lang-menu {
   display: block;
 }
@@ -596,7 +594,7 @@ button:hover { opacity: 0.9; }
 .install-btn:hover {
   background: #2ff6de33;
   text-decoration: none;   /* 🔥 se asigură că nici la hover nu apare */
-}
+
 
 
   </style>
@@ -1595,19 +1593,36 @@ setInterval(fetchExplorerData, 300000); // la fiecare 5 min
 document.addEventListener("DOMContentLoaded", () => {
   const panel = document.getElementById("menuPanel");
   const btn = document.getElementById("menuToggle");
+  const langBtn = document.getElementById("currentLang"); // butonul Language
+  const langMenu = document.querySelector(".lang-menu");  // lista cu limbile
 
   if (panel && btn) {
     panel.classList.add("open");
 
-    // 🔥 nu schimbăm textul, rămâne ☰ Menu
+    // rămâne "☰ Menu" la load
     btn.textContent = "☰ Menu";
 
-    // ascunde toate paginile la start (nimic în spate)
+    // ascundem toate paginile la start
     document.querySelectorAll('.section-page').forEach(sec => {
       sec.classList.remove('active', 'fullpage');
     });
   }
+
+  // === Click pe Language ===
+  if (langBtn && langMenu) {
+    langBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      // toggle pe lista de limbi
+      langMenu.style.display = langMenu.style.display === "block" ? "none" : "block";
+
+      // meniu principal rămâne deschis
+      panel.classList.add("open");
+      btn.textContent = "✖ Close"; // arată că e deschis
+    });
+  }
 });
+
 
 // 🔥 Toggle pentru meniul de navigație
 document.getElementById("menuToggle").addEventListener("click", () => {
@@ -1662,9 +1677,43 @@ let currentLang = localStorage.getItem("lang") || "en";
 const langDropdown = document.querySelector('.lang-dropdown');
 const currentLangBtn = document.getElementById('currentLang');
 
-currentLangBtn.addEventListener('click', () => {
-  langDropdown.classList.toggle('open');
-});
+// 🔹 Limbile suportate
+const LANGS = [
+  { code: "en", label: "English", flag: "gb" },
+  { code: "ro", label: "Română", flag: "ro" },
+  { code: "tr", label: "Türkçe", flag: "tr" },
+  { code: "de", label: "Deutsch", flag: "de" },
+  { code: "es", label: "Español", flag: "es" },
+  { code: "fr", label: "Français", flag: "fr" },
+  { code: "it", label: "Italiano", flag: "it" },
+  { code: "pl", label: "Polski", flag: "pl" },
+  { code: "pt", label: "Português", flag: "pt" }
+];
+
+// 🔹 Verifică dacă fișierul JSON există pe server
+async function checkLangFile(lang) {
+  try {
+    const res = await fetch(`${BASE_URL}${lang}.json`, { method: "HEAD" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+async function buildLangDropdown() {
+  const menu = document.querySelector(".lang-menu");
+  menu.innerHTML = ""; // curățăm complet
+
+  for (const lang of LANGS) {
+    if (await checkLangFile(lang.code)) {
+      const option = document.createElement("div");
+      option.className = "lang-option";
+      option.innerHTML = `<img src="https://flagcdn.com/w20/${lang.flag}.png"> ${lang.label}`;
+      option.onclick = () => setLang(lang.code);
+      menu.appendChild(option);
+    }
+  }
+}
+
 
 async function loadTranslations(lang) {
   try {
@@ -1694,7 +1743,9 @@ async function loadTranslations(lang) {
 function applyTranslations() {
   const activePage = document.querySelector(".section-page.active");
   const hasTranslations = activePage && activePage.querySelectorAll("[data-i18n]").length > 0;
-  document.querySelector(".lang-dropdown").style.display = hasTranslations ? "block" : "none";
+ // 🌍 butonul Language apare mereu, dar dacă nu sunt traduceri -> doar EN rămâne
+document.querySelector(".lang-dropdown").style.display = "block";
+
 
   if (!translations || Object.keys(translations).length === 0) return;
 
@@ -1722,7 +1773,8 @@ function setLang(lang) {
 
 
 // Detectează limba device-ului și setează-o automat la primul load
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+  await buildLangDropdown(); // 🌍 construim doar limbile disponibile
   const hash = window.location.hash.replace("#", "");
   if (hash) showPage(hash);
 
