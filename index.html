@@ -1621,6 +1621,21 @@ document.getElementById("menuToggle").addEventListener("click", () => {
   btn.textContent = panel.classList.contains("open") ? "✖ Close" : "☰ Menu";
 });
 
+function openImage(src) {
+  const overlay = document.getElementById("overlay");
+  const overlayImg = document.getElementById("overlayImg");
+
+  if (overlay && overlayImg) {
+    overlay.style.display = "flex"; // facem overlay-ul vizibil
+    overlayImg.src = src;           // setăm imaginea
+    overlayImg.style.transform = "scale(1)"; // reset zoom
+    scale = 1; // resetăm zoom-ul global
+  }
+}
+
+function closeImage() {
+  document.getElementById("overlay").style.display = "none";
+}
 
 function closeImage() {
   document.getElementById("overlay").style.display = "none";
@@ -2070,4 +2085,3 @@ function showGuide(type) {
 </script>
 </body>
 </html>
-
