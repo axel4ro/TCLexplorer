@@ -1484,6 +1484,10 @@ body.innerHTML = html;
 async function searchStaker() {
   const input = document.getElementById("stakingSearch").value.trim();
   const searchResult = document.getElementById("stakingSearchResult");
+  const tableBody = document.getElementById("stakingBody");
+
+  // curățăm highlight-ul anterior
+  document.querySelectorAll("#stakingBody tr").forEach(tr => tr.classList.remove("highlight-row"));
 
   if (!input.startsWith("erd1") || input.length < 62) {
     searchResult.innerHTML = "⚠️ Please enter a valid wallet address (erd1...)";
@@ -1498,16 +1502,24 @@ async function searchStaker() {
     const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
     const data = await resp.json();
 
-    if (data[input]) {
-      const staker = data[input];
+    const leaderboardArray = Object.entries(data).map(([addr, v]) => ({
+      addr,
+      rank: v.rank,
+      total: BigInt(v.total || 0),
+      infinity: BigInt(v.infinity || 0),
+      loan: BigInt(v.loan || 0),
+      nft: BigInt(v.nft || 0)
+    }));
 
-      // leaderboard array pentru top 100
-      const leaderboardArray = Object.entries(data).map(([addr, v]) => v);
-      leaderboardArray.sort((a, b) => a.rank - b.rank);
-      const top100 = leaderboardArray.slice(0, 100);
+    leaderboardArray.sort((a, b) => Number(a.rank) - Number(b.rank));
+    const top100 = leaderboardArray.slice(0, 100);
+    const lastTop = top100[top100.length - 1];
 
+    const staker = data[input];
+
+    if (staker) {
       if (staker.rank <= 100) {
-        // ✅ cazul în Top 100
+        // ✅ Found in Top 100
         searchResult.innerHTML = `
           ✅ Found in Top 100!<br>
           🏆 Rank: #${staker.rank}<br>
@@ -1516,24 +1528,35 @@ async function searchStaker() {
           🔹 Loan: ${formatTcl(staker.loan)}<br>
           🔹 NFT Stake: ${formatTcl(staker.nft)}
         `;
-        searchResult.style.color = "#10b981"; // verde
-      } else {
-        // ❌ cazul peste locul 100
-        const lastTop = top100[top100.length - 1]; // #100
-        const needMore = BigInt(lastTop.total) - BigInt(staker.total);
+        searchResult.style.color = "#10b981";
 
+        // highlight row + scroll
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+        const foundRow = rows.find(r => r.cells[0]?.textContent.trim() === String(staker.rank));
+        if (foundRow) {
+          foundRow.classList.add("highlight-row");
+          foundRow.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => foundRow.classList.remove("highlight-row"), 4000);
+        }
+      } else {
+        // 😔 Are staking dar sub top 100
+        const diff = (lastTop.total + 1n) - BigInt(staker.total || 0n);
         searchResult.innerHTML = `
-          <span style="color:#facc15;">
-          ⚠️ You need <b>${formatTcl(needMore)}</b> more TCL staked 
-          to overtake Rank #100 and enter the leaderboard! 🔥
-          </span>
+          ⚠️ Not in Top 100.<br>
+          🪙 You currently have <b>${formatTcl(staker.total)}</b> TCL staked.<br>
+          🔝 To enter the leaderboard, you need at least <b>${formatTcl(lastTop.total + 1n)}</b> TCL total.<br>
+          ➕ So you need <b style="color:#facc15;">${formatTcl(diff)}</b> more TCL to reach rank #100! 🔥
         `;
-        searchResult.style.color = "#facc15"; // galben
+        searchResult.style.color = "#facc15";
       }
     } else {
       // ❌ wallet deloc în leaderboard
-      searchResult.innerHTML = "❌ Address not found in leaderboard.";
-      searchResult.style.color = "#f87171"; // roșu
+      const needToEnter = lastTop.total + 1n;
+      searchResult.innerHTML = `
+        ⚠️ Address not found in leaderboard.<br>
+        🪙 To enter the Top 100, you need at least <b>${formatTcl(needToEnter)}</b> TCL staked. 🔥
+      `;
+      searchResult.style.color = "#f87171";
     }
 
   } catch (err) {
@@ -1542,6 +1565,7 @@ async function searchStaker() {
     searchResult.style.color = "#f87171";
   }
 }
+
 
 // ===== Navigation =====
 const XEXCHANGE_URL = "https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d";
@@ -2170,4 +2194,3 @@ document.querySelectorAll('.live-dot').forEach(dot => {
 </script>
 </body>
 </html>
-
