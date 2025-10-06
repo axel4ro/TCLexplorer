@@ -406,17 +406,6 @@ button:hover { opacity: 0.9; }
   font-weight:700;
   margin-top:6px;
 }
-.chip-live {
-  font-size:11px;
-  padding:2px 8px;
-  border-radius:999px;
-  background:#10b9811a;
-  color:#10b981;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-}
-.chip-live::before { content:"🔒"; }
 
 /* Overlay imagine fullscreen */
 .overlay {
@@ -594,6 +583,49 @@ button:hover { opacity: 0.9; }
 .install-btn:hover {
   background: #2ff6de33;
   text-decoration: none;   /* 🔥 se asigură că nici la hover nu apare */
+}
+
+
+/* === LIVE indicator corect === */
+.live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #12e193;
+  background: rgba(18,225,147,0.12);
+  padding: 3px 10px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
+.live-dot::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #12e193;
+  box-shadow: 0 0 0 rgba(47,246,222, 0.7);
+  animation: pulseDot var(--pulse-speed, 2s) infinite ease-in-out;
+}
+
+/* 💫 Puls animat */
+@keyframes pulseDot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(47,246,222, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(47,246,222, 0);
+    transform: scale(1.25);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(47,246,222, 0);
+    transform: scale(1);
+  }
+}
 
 
 
@@ -703,7 +735,7 @@ button:hover { opacity: 0.9; }
 
 
   <div class="section">
-    <strong><span class="chip-live">LIVE DATA</span></strong>
+    <strong><span class="live-dot">LIVE DATA</span></strong>
     <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
       📊 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
     </span>
@@ -713,91 +745,91 @@ button:hover { opacity: 0.9; }
   <div class="stats-row token-grid">
     <div class="stat">
       <div class="stat-top">
-        <span>Current Price</span><span class="chip-live">Live</span>
+        <span>Current Price</span><span class="live-dot">Live</span>
       </div>
       <div id="curPrice" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>24h Change</span><span class="chip-live">Live</span>
+        <span>24h Change</span><span class="live-dot">Live</span>
       </div>
       <div id="change24h" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>ATH</span><span class="chip-live">Live</span>
+        <span>ATH</span><span class="live-dot">Live</span>
       </div>
       <div id="ath" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>ATL</span><span class="chip-live">Live</span>
+        <span>ATL</span><span class="live-dot">Live</span>
       </div>
       <div id="atl" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>TCL Supply</span><span class="chip-live">Live</span>
+        <span>TCL Supply</span><span class="live-dot">Live</span>
       </div>
       <div id="curTCL" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>USDC Supply</span><span class="chip-live">Live</span>
+        <span>USDC Supply</span><span class="live-dot">Live</span>
       </div>
       <div id="curUSDC" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>Market Cap</span><span class="chip-live">Live</span>
+        <span>Market Cap</span><span class="live-dot">Live</span>
       </div>
       <div id="marketCap" class="stat-value">—</div>
     </div>
 		    <div class="stat">
       <div class="stat-top">
-        <span>Burned TCL</span><span class="chip-live">Live</span>
+        <span>Burned TCL</span><span class="live-dot">Live</span>
       </div>
       <div id="burned" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>Holders</span><span class="chip-live">Live</span>
+        <span>Holders</span><span class="live-dot">Live</span>
       </div>
       <div id="holders" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>Circulating Supply</span><span class="chip-live">Live</span>
+        <span>Circulating Supply</span><span class="live-dot">Live</span>
       </div>
       <div id="circulating" class="stat-value">—</div>
     </div>
 	<div class="stat">
   <div class="stat-top">
-    <span>Current Supply</span><span class="chip-live">Live</span>
+    <span>Current Supply</span><span class="live-dot">Live</span>
   </div>
   <div id="currentSupply" class="stat-value">—</div>
 </div>
 	<div class="stat">
 	  <div class="stat-top">
-		<span>TCL Max Supply</span><span class="chip-live">Live</span>
+		<span>TCL Max Supply</span><span class="live-dot">Live</span>
 	  </div>
 	  <div id="supply" class="stat-value">—</div>
 	</div>
 	<div class="stat">
   <div class="stat-top">
-    <span>Volume (24h)</span><span class="chip-live">Live</span>
+    <span>Volume (24h)</span><span class="live-dot">Live</span>
   </div>
   <div id="volume24h" class="stat-value">—</div>
 </div>
 <div class="stat">
   <div class="stat-top">
-    <span>Trades Count</span><span class="chip-live">Live</span>
+    <span>Trades Count</span><span class="live-dot">Live</span>
   </div>
   <div id="tradesCount" class="stat-value">—</div>
 </div>
 	    <div class="stat">
       <div class="stat-top">
-        <span>Transactions</span><span class="chip-live">Live</span>
+        <span>Transactions</span><span class="live-dot">Live</span>
       </div>
       <div id="transactions" class="stat-value">—</div>
     </div>
@@ -805,7 +837,7 @@ button:hover { opacity: 0.9; }
 
   <!-- Initial Liquidity separat -->
 <div class="section init-liq-section">
-  <strong><span class="chip-live">Initial Liquidity (Listing)</span></strong>
+  <strong><span>Initial Liquidity (Listing)</span></strong>
   <div class="stats-row init-liq">
     <div class="stat">
       <div class="stat-top"><span>Initial Price</span></div>
@@ -825,7 +857,7 @@ button:hover { opacity: 0.9; }
 
 <!-- How to Earn TCL (Whitepaper) -->
 <div class="section">
-  <strong><span class="chip-live">📖 How to Earn TCL</span></strong>
+  <strong><span class="live-dot">📖 How to Earn TCL</span></strong>
   <div style="margin-top:12px; border:1px solid #333; border-radius:12px; overflow:hidden; background:#161a24;">
     <img 
       src="https://whitepaper.thecursedland.com/~gitbook/image?url=https%3A%2F%2F1088796652-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FNfwQqA3PjlWwIAbvldOU%252Fuploads%252FVZ0W5PmUUiOq7abWcmm8%252Fearn%2520tcl.jpg%3Falt%3Dmedia%26token%3D156219ff-cec6-4bb6-8710-f8f11b8cc520&width=768&dpr=4&quality=100&sign=bbb5e8e&sv=2" 
@@ -2129,6 +2161,11 @@ function showGuide(type) {
     navBar.insertAdjacentElement("afterend", guideBox);
   }
 }
+
+document.querySelectorAll('.live-dot').forEach(dot => {
+  const random = 1.5 + Math.random(); // între 1.5s și 2.5s
+  dot.style.setProperty('--pulse-speed', `${random}s`);
+});
 
 </script>
 </body>
