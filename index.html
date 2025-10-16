@@ -626,8 +626,10 @@ button:hover { opacity: 0.9; }
     transform: scale(1);
   }
 }
-
-
+/* ✅ afișează lista de limbi când e toggled din JS */
+.lang-menu.open {
+  display: block !important;
+}
 
   </style>
 </head>
@@ -1664,20 +1666,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // === Click pe Language ===
-  if (langBtn && langMenu) {
-    langBtn.addEventListener("click", (e) => {
-      e.preventDefault();
+// === Click pe Language ===
+if (langBtn && langMenu) {
+  langBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // ❌ împiedică propagarea spre meniul principal
+    langMenu.classList.toggle("open"); // toggle elegant
+  });
+}
 
-      // toggle pe lista de limbi
-      langMenu.style.display = langMenu.style.display === "block" ? "none" : "block";
-
-      // meniu principal rămâne deschis
-      panel.classList.add("open");
-      btn.textContent = "✖ Close"; // arată că e deschis
-    });
+// Închide dropdownul când dai click în afara lui
+document.addEventListener("click", (e) => {
+  if (!langDropdown.contains(e.target)) {
+    langMenu.classList.remove("open");
   }
 });
+
 
 // 🔥 Toggle pentru meniul de navigație
 document.getElementById("menuToggle").addEventListener("click", () => {
@@ -1820,8 +1823,10 @@ document.querySelector(".lang-dropdown").style.display = "block";
 
 function setLang(lang) {
   langDropdown.classList.remove('open');
+  document.querySelector(".lang-menu").classList.remove("open"); // 🔥 închide vizual dropdownul
   loadTranslations(lang);
 }
+
 
 
 // Detectează limba device-ului și setează-o automat la primul load
@@ -2190,20 +2195,21 @@ document.querySelectorAll('.live-dot').forEach(dot => {
   const random = 1.5 + Math.random(); // între 1.5s și 2.5s
   dot.style.setProperty('--pulse-speed', `${random}s`);
 });
-<!--Start of Tawk.to Script-->
 
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/68e759567914761952cb4c66/1j73r9ujm';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
+// ✅ închide DOMContentLoaded corect
+}); 
+
+// === Tawk.to Script ===
+var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+(function() {
+  var s1 = document.createElement("script"),
+      s0 = document.getElementsByTagName("script")[0];
+  s1.async = true;
+  s1.src = "https://embed.tawk.to/68e759567914761952cb4c66/1j73r9ujm";
+  s1.charset = "UTF-8";
+  s1.setAttribute("crossorigin", "*");
+  s0.parentNode.insertBefore(s1, s0);
 })();
-<!--End of Tawk.to Script-->
-	
 </script>
 </body>
 </html>
-
