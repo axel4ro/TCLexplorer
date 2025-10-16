@@ -1648,15 +1648,13 @@ setInterval(fetchExplorerData, 300000); // la fiecare 5 min
 // === Deschidem meniul imediat la primul load ===
 document.addEventListener("DOMContentLoaded", () => {
   const panel = document.getElementById("menuPanel");
-  const btn = document.getElementById("menuToggle");
-  const langBtn = document.getElementById("currentLang"); // butonul Language
-  const langMenu = document.querySelector(".lang-menu");  // lista cu limbile
+  const menuBtn = document.getElementById("menuToggle");
+  const langBtn = document.getElementById("currentLang");
+  const langMenu = document.querySelector(".lang-menu");
 
-  if (panel && btn) {
+  if (panel && menuBtn) {
     panel.classList.add("open");
-
-    // rămâne "☰ Menu" la load
-    btn.textContent = "☰ Menu";
+    menuBtn.textContent = "☰ Menu";
 
     // ascundem toate paginile la start
     document.querySelectorAll('.section-page').forEach(sec => {
@@ -1664,20 +1662,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // === Click pe Language ===
+  // === Click pe Language (independent de meniul principal)
   if (langBtn && langMenu) {
     langBtn.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
 
-      // toggle pe lista de limbi
-      langMenu.style.display = langMenu.style.display === "block" ? "none" : "block";
+      // toggle doar dropdown-ul de limbă
+      const isOpen = langMenu.style.display === "block";
+      document.querySelectorAll(".lang-menu").forEach(m => m.style.display = "none");
+      langMenu.style.display = isOpen ? "none" : "block";
+    });
 
-      // meniu principal rămâne deschis
-      panel.classList.add("open");
-      btn.textContent = "✖ Close"; // arată că e deschis
+    // 🔥 click în afara dropdownului -> îl închide
+    document.addEventListener("click", (e) => {
+      if (!langBtn.contains(e.target) && !langMenu.contains(e.target)) {
+        langMenu.style.display = "none";
+      }
     });
   }
 });
+
 
 // 🔥 Toggle pentru meniul de navigație
 document.getElementById("menuToggle").addEventListener("click", () => {
@@ -1819,9 +1824,12 @@ document.querySelector(".lang-dropdown").style.display = "block";
 
 
 function setLang(lang) {
+  const menu = document.querySelector(".lang-menu");
+  if (menu) menu.style.display = "none"; // 🔥 închidem manual dropdownul
   langDropdown.classList.remove('open');
   loadTranslations(lang);
 }
+
 
 
 // Detectează limba device-ului și setează-o automat la primul load
