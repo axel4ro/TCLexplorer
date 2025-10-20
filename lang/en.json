@@ -19,6 +19,37 @@
 
   "help_text": "💡 Need help? Join our <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Community</a>",
 
+
+  "alpha_title": "💎 Redeem α Voucher",
+  "alpha_intro": "Exchange your in-game α Voucher for real <b>Alpha Tokens ($SN114)</b> on the <b>Bittensor Subnet Level 114</b>. Follow the steps below to create your wallet, secure it, and receive your tokens safely.",
+
+  "alpha_step1_title": "📲 Step 1: Install SubWallet",
+  "alpha_step1_desc": "Download and install <b>SubWallet</b> — available on <b>Android</b>, <b>iOS</b> and <b>Desktop</b>.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>Once installed, choose <b>Create new wallet</b>, write down your <b>Seed Phrase</b> on paper, and keep it in a safe place.<br><br>⚠️ Never share your seed phrase or password with anyone. It grants full control over your wallet.",
+
+  "alpha_step2_title": "⚙️ Step 2: Configure Network & Tokens",
+  "alpha_step2_desc": "Open <b>SubWallet</b> → go to the <b>Tokens</b> tab → tap the <b>Filter icon</b> (on the right of search).<br><br>✅ Enable <b>Show zero balance</b> so all tokens are visible.<br>✅ Under <b>Networks</b>, keep only the first <b>Bittensor (mainnet)</b> checked.<br>❌ Disable <b>Bittensor Testnet</b> and <b>Bittensor Devnet</b>.<br><br>Return to the main Tokens page and you’ll now see your wallet’s <b>TAO (Bittensor)</b> address at the top.",
+
+  "alpha_step3_title": "🧭 Step 3: Copy your TAO Address",
+  "alpha_step3_desc": "In the Tokens list, search for <b>TAO</b> or <b>Bittensor</b>.<br>The first result, <b>TAO (Bittensor)</b>, is your wallet’s main address on the Bittensor network.<br><br>Tap the address at the top to copy it — you’ll use this in the game at the <b>NPC Tao</b> to redeem your voucher.",
+
+  "alpha_step4_title": "🏦 Step 4: Redeem at NPC Tao",
+  "alpha_step4_desc": "Go to <b>NPC Tao</b> in-game → paste your <b>TAO address</b> into the Redeem field.<br>Press <b>Withdraw</b> → your first valid α Voucher will be deleted from inventory, and you’ll instantly receive <b>α Tokens ($SN114)</b> in your wallet.<br><br>⚠️ Vouchers expire in <b>7 days</b>, so redeem them before they expire.",
+
+  "alpha_step5_title": "💱 Step 5: Swap α ↔ TAO",
+  "alpha_step5_desc": "Visit <b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> and connect SubWallet.<br><br>You can swap <b>α Tokens (SN114)</b> for <b>TAO</b> or vice-versa. All transactions require a small amount of <b>TAO</b> for fees (usually less than $0.01).<br><br>Need TAO for fees? Buy it here:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
+
+  "alpha_step6_title": "💼 Step 6: Deposit / Withdraw TAO",
+  "alpha_step6_desc": "To deposit TAO to an exchange:<br>• Go to your exchange and choose <b>Deposit → TAO (Bittensor)</b> → copy the address.<br>• In SubWallet → <b>Send</b> → select <b>TAO</b> → paste the deposit address → confirm.<br><br>To withdraw from an exchange:<br>• Choose <b>Withdraw → TAO (Bittensor)</b> and paste your <b>SubWallet TAO address</b>.<br>⚠️ Always verify the network is <b>Bittensor</b> before sending.",
+
+  "alpha_step7_title": "💳 Optional: Withdraw to xPortal",
+  "alpha_step7_desc": "Prefer using xPortal? Convert your TAO into <b>EGLD</b> and withdraw it to your <b>xPortal EGLD address</b>.<br><br>• Swap TAO → EGLD<br>• Withdraw EGLD to xPortal → your funds will appear directly in your wallet or card.<br><br>Simple, fast, and cheap ⚡",
+
+  "alpha_tips_title": "🧠 Tips & Safety",
+  "alpha_tips_desc": "• Never share your seed phrase or passwords.<br>• Always test with a small amount before transferring large funds.<br>• Verify network = <b>Bittensor</b> before every transaction.<br>• If you don’t see your SN114 token, enable <b>Show zero balance</b> and search for ‘SN114’ or ‘Alpha’.<br>• If swap liquidity is low, exchange via TAO first and then swap again later.",
+
+  "alpha_help_text": "💬 Need help? Join our <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord Community</a> or check the blog guide: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
+
+
   
   "calc_title": "🧮 Simulate Transaction",
   "calc_label_buy": "Enter amount in <b>USDC ($)</b> to buy TCL:",
