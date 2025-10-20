@@ -44,13 +44,8 @@
   "alpha_step7_title": "💳 Optional: Withdraw to xPortal",
   "alpha_step7_desc": "Prefer using xPortal? Convert your TAO into <b>EGLD</b> and withdraw it to your <b>xPortal EGLD address</b>.<br><br>• Swap TAO → EGLD<br>• Withdraw EGLD to xPortal → your funds will appear directly in your wallet or card.<br><br>Simple, fast, and cheap ⚡",
 
-  "alpha_tips_title": "🧠 Tips & Safety",
-  "alpha_tips_desc": "• Never share your seed phrase or passwords.<br>• Always test with a small amount before transferring large funds.<br>• Verify network = <b>Bittensor</b> before every transaction.<br>• If you don’t see your SN114 token, enable <b>Show zero balance</b> and search for ‘SN114’ or ‘Alpha’.<br>• If swap liquidity is low, exchange via TAO first and then swap again later.",
-
   "alpha_help_text": "💬 Need help? Join our <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord Community</a> or check the blog guide: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
 
-
-  
   "calc_title": "🧮 Simulate Transaction",
   "calc_label_buy": "Enter amount in <b>USDC ($)</b> to buy TCL:",
   "calc_label_sell": "Enter amount in <b>TCL</b> to sell for USDC ($):",
