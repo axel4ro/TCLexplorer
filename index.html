@@ -627,6 +627,10 @@ button:hover { opacity: 0.9; }
   }
 }
 
+#redeemAlpha .event-card {
+  background: #111923;
+  border-left: 4px solid #2ff6de;
+}
 
 
   </style>
@@ -670,9 +674,10 @@ button:hover { opacity: 0.9; }
 <button onclick="openWiki()" id="btn-wiki">📖 Wiki</button>
 <button onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
 
+<button onclick="showPage('web3Guide')" id="btn-web3Guide">
+  ℹ️ Web3 Guides
+</button>
 
-  	<button onclick="showPage('connectXportal')" id="btn-connectXportal">🔗 Connect xPortal</button>
-	
     <button onclick="showPage('token')" id="btn-token" class="active">
   <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" 
        style="width:20px; height:20px; margin-right:6px; vertical-align:middle;">
@@ -904,6 +909,39 @@ button:hover { opacity: 0.9; }
 <div class="result" id="resultBox"></div>
 </div>
 
+<!-- 🌐 Web3 Guide -->
+<div id="web3Guide" class="section-page">
+  <h2>🌐 Web3 Guide</h2>
+  <p style="color:#a1a1aa; font-size:15px;">
+    Connect your wallet, redeem rewards and explore all Web3 integrations of The Cursed Land.
+  </p>
+
+  <!-- Connect xPortal -->
+  <div class="event-card">
+    <div class="event-title">🔗 Connect xPortal</div>
+    <div class="event-desc">
+      Learn how to connect your <b>xPortal Wallet</b> to our dApps, verify ownership and interact with TCL Web3 systems.<br><br>
+      <button onclick="showSubGuide('connectXportal')" style="background:#0d6efd;">Open Tutorial</button>
+    </div>
+  </div>
+
+  <!-- Redeem α Voucher -->
+  <div class="event-card">
+    <div class="event-title">💎 Redeem α Voucher</div>
+    <div class="event-desc">
+      Redeem your in-game <b>α Voucher</b> to receive real <b>Alpha Tokens ($SN114)</b> on the Bittensor Subnet Level 114.<br><br>
+      <button onclick="showSubGuide('redeemAlpha')" style="background:#2ff6de;color:#000;">Open Tutorial</button>
+    </div>
+  </div>
+
+  <!-- Future items -->
+  <div class="event-card">
+    <div class="event-title">🧠 More Coming Soon...</div>
+    <div class="event-desc">
+      Staking, swapping, and wallet verification for Bittensor & MultiversX in one place.
+    </div>
+  </div>
+</div>
 
 <!-- Events -->
 <div id="events" class="section-page">
@@ -1008,6 +1046,55 @@ button:hover { opacity: 0.9; }
 <div id="overlay" class="overlay" onclick="closeImage()">
   <span class="close">&times;</span>
   <img id="overlayImg" class="overlay-img" />
+</div>
+
+<!-- Redeem α Voucher -->
+<div id="redeemAlpha" class="section-page">
+  <h2 data-i18n="alpha_title"></h2>
+  <p class="event-desc" data-i18n="alpha_intro"></p>
+
+  <!-- Steps -->
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step1_title"></div>
+    <div class="event-desc" data-i18n="alpha_step1_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step2_title"></div>
+    <div class="event-desc" data-i18n="alpha_step2_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step3_title"></div>
+    <div class="event-desc" data-i18n="alpha_step3_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step4_title"></div>
+    <div class="event-desc" data-i18n="alpha_step4_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step5_title"></div>
+    <div class="event-desc" data-i18n="alpha_step5_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step6_title"></div>
+    <div class="event-desc" data-i18n="alpha_step6_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_step7_title"></div>
+    <div class="event-desc" data-i18n="alpha_step7_desc"></div>
+  </div>
+
+  <div class="event-card">
+    <div class="event-title" data-i18n="alpha_tips_title"></div>
+    <div class="event-desc" data-i18n="alpha_tips_desc"></div>
+  </div>
+
+  <small style="display:block;margin-top:20px;color:#6b7280;" data-i18n="alpha_help_text"></small>
 </div>
 
 <!-- Wallet Check -->
@@ -2207,6 +2294,17 @@ s1.charset='UTF-8';
 s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
 })();
+
+function showSubGuide(id) {
+  // Ascunde pagina Web3 Guide
+  document.getElementById("web3Guide").classList.remove("active");
+
+  // Arată pagina selectată (connectXportal sau redeemAlpha)
+  document.querySelectorAll('.section-page').forEach(sec => sec.classList.remove('active', 'fullpage'));
+  const sub = document.getElementById(id);
+  if (sub) sub.classList.add("active");
+}
+
 </script>
 </body>
 </html>
