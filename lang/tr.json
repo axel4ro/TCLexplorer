@@ -19,6 +19,20 @@
 
   "help_text": "💡 Yardıma mı ihtiyacınız var? <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Topluluğumuza</a> katılın.",
 
+  "web3_title": "🌐 Web3 Rehberleri",
+  "web3_desc": "Cüzdanını bağla, ödüllerini al ve The Cursed Land’in tüm Web3 entegrasyonlarını keşfet.",
+  
+  "web3_connect_title": "🔗 xPortal Bağlantısı",
+  "web3_connect_desc": "<b>xPortal Cüzdanını</b> nasıl bağlayacağını ve daha fazlasını öğren.",
+  "web3_connect_btn": "Eğitimi Aç",
+  
+  "web3_alpha_title": "💎 α Kuponunu Kullan",
+  "web3_alpha_desc": "Oyundaki <b>α Kuponunu</b> kullanarak Bittensor Blockchain üzerindeki Subnet Level 114’ten <b>Alpha Token ($SN114)</b> al.",
+  "web3_alpha_btn": "Eğitimi Aç",
+  
+  "web3_soon_title": "🧠 Yakında Daha Fazlası...",
+  "web3_soon_desc": "Stake etme, takas ve daha fazlası yakında geliyor.",
+
   "alpha_title": "💎 α Kuponunu Kullan",
   "alpha_intro": "Oyundaki α kuponunu <b>Bittensor Blockchain (TAO)</b> ağı üzerinde gerçek <b>Alpha Token ($SN114)</b> ile değiştir. Cüzdanını oluşturmak, güvenliğini sağlamak ve token’larını güvenli bir şekilde almak için aşağıdaki adımları izle.",
 
