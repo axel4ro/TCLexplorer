@@ -632,6 +632,112 @@ button:hover { opacity: 0.9; }
   border-left: 4px solid #2ff6de;
 }
 
+/* === GRID SPECIAL pentru Staking === */
+.staking-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
+@media (max-width: 900px) {
+  .staking-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.staking-grid .stat {
+  padding: 12px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #161a24;
+  text-align: center;
+  transition: 0.2s ease;
+}
+
+.staking-grid .stat:hover {
+  transform: translateY(-2px);
+  border-color: #2ff6de;
+}
+
+/* === Ultimul card = Calculator Button === */
+.staking-grid .calc-card {
+  cursor: pointer;
+  background: linear-gradient(135deg, #0d9488, #065f46);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: 0.25s ease;
+}
+
+.staking-grid .calc-card:hover {
+  background: linear-gradient(135deg, #14b8a6, #047857);
+  transform: translateY(-3px);
+}
+
+/* === Modal (popup) === */
+#aprModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+}
+
+#aprModal .modal-content {
+  background: #161a24;
+  border: 2px solid #2ff6de;
+  border-radius: 14px;
+  padding: 20px 28px;
+  width: 90%;
+  max-width: 400px;
+  color: #f1f1f1;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  position: relative;
+  text-align: center;
+  animation: popupFade 0.3s ease;
+}
+
+@keyframes popupFade {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+#aprModal input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 8px;
+  font-size: 16px;
+  background: #111827;
+  color: #fff;
+}
+
+#aprModal button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #2ff6de;
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#aprModal .close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: #2ff6de;
+  font-size: 22px;
+  cursor: pointer;
+}
 
   </style>
 </head>
@@ -972,6 +1078,58 @@ button:hover { opacity: 0.9; }
   <small id="lastUpdated" style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;">
     ⏳ Loading update time...
   </small>
+<!-- 🔥 TCL Rewards Stats Row (cu valori în $ și buton calculator) -->
+<div id="stakingStats" class="staking-grid">
+  <div class="stat">
+    <div class="stat-top">
+      <span>Total TCL Staked</span><span class="live-dot">Live</span>
+    </div>
+    <div id="staked" class="stat-value">—</div>
+    <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-top">
+      <span>Current Emission</span><span class="live-dot">Live</span>
+    </div>
+    <div id="emission" class="stat-value">—</div>
+    <div id="emissionUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-top">
+      <span>APR</span><span class="live-dot">Live</span>
+    </div>
+    <div id="apr" class="stat-value">—</div>
+    <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
+  </div>
+
+<div class="stat calc-card" onclick="openAprCalculator()">
+  <div class="stat-top" style="justify-content:center; color:#fff;">
+    <span>🧮 APR Calculator</span>
+  </div>
+</div>
+
+</div>
+
+<!-- 💎 APR Calculator Modal -->
+<div id="aprModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeAprCalculator()">✖</span>
+    <h3 style="margin-top:0;">APR Simulator</h3>
+    <p style="font-size:14px; color:#9ca3af;">Enter an amount of TCL to simulate new APR:</p>
+    <input 
+  type="text" 
+  id="aprInput" 
+  placeholder="e.g. 1,000,000" 
+  inputmode="numeric" 
+  style="text-align:center;" />
+
+    <button onclick="simulateApr()">Calculate</button>
+    <div id="aprResult" style="margin-top:14px; font-size:15px; color:#2ff6de;"></div>
+  </div>
+</div>
+
 
 <!-- 🔎 Search bar -->
 <div style="margin-bottom:12px; display:flex; gap:8px;">
@@ -2298,8 +2456,151 @@ function showSubGuide(id) {
   if (sub) sub.classList.add("active");
 }
 
+// === TCL Rewards Live Data (APR, Emission, Staked) ===
+const SC_ADDRESS = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+function bech32Decode(bech) {
+  bech = bech.toLowerCase();
+  const pos = bech.lastIndexOf("1");
+  const data = [];
+  for (let i = pos + 1; i < bech.length; i++) {
+    const v = CHARSET.indexOf(bech[i]);
+    if (v === -1) return null;
+    data.push(v);
+  }
+  return convertBits(data.slice(0, -6), 5, 8, false);
+}
+
+function convertBits(data, frombits, tobits, pad) {
+  let acc = 0, bits = 0, ret = [];
+  const maxv = (1 << tobits) - 1;
+  for (let value of data) {
+    if (value < 0 || (value >> frombits)) return null;
+    acc = (acc << frombits) | value;
+    bits += frombits;
+    while (bits >= tobits) {
+      bits -= tobits;
+      ret.push((acc >> bits) & maxv);
+    }
+  }
+  if (pad) {
+    if (bits > 0) ret.push((acc << (tobits - bits)) & maxv);
+  } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) return null;
+  return ret;
+}
+
+function bech32ToHex(bech) {
+  const bytes = bech32Decode(bech);
+  return bytes ? Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("") : null;
+}
+
+async function loadTCLStats() {
+  try {
+    const hexAddr = bech32ToHex(SC_ADDRESS);
+    const payload = { scAddress: SC_ADDRESS, funcName: "getRewardsData", args: [hexAddr] };
+    const res = await fetch("https://api.multiversx.com/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.returnData || !data.returnData[0]) throw new Error("No return data");
+    
+    const decoded = atob(data.returnData[0]);
+    const parts = decoded.split(" ");
+    
+    const apr = parseFloat(parts[2]).toFixed(2);
+    const totalStakedRaw = parseFloat(parts[3]);
+    const emissionRaw = parseFloat(parts[14]);
+
+    // === TCL valori
+    const totalStaked = totalStakedRaw / 1e18;
+    const emission = emissionRaw / 1e18;
+
+    // === Fetch prețul TCL live
+    const priceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    const priceData = await priceRes.json();
+    const price = parseFloat(priceData.pair?.priceUsd || 0);
+
+    // === Valori în USD
+    const stakedUsd = totalStaked * price;
+    const emissionUsd = emission * price;
+
+    // === Afișare formatată
+    document.getElementById("apr").textContent = apr + "%";
+    document.getElementById("staked").textContent = totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
+    document.getElementById("emission").textContent = emission.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
+    document.getElementById("stakedUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
+    document.getElementById("emissionUsd").textContent = "≈ " + emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
+    document.getElementById("aprUsd").textContent = ""; // APR n-are valoare în $
+  } catch (e) {
+    console.error("⚠️ Error loading TCL rewards:", e);
+    document.getElementById("apr").textContent = "Error";
+  }
+}
+
+loadTCLStats();
+setInterval(loadTCLStats, 300000); // actualizare la 5 minute
+
+function openAprCalculator() {
+  document.getElementById("aprModal").style.display = "flex";
+}
+
+function closeAprCalculator() {
+  document.getElementById("aprModal").style.display = "none";
+}
+
+// === Format input automat cu virgule ===
+const aprInput = document.getElementById("aprInput");
+
+aprInput.addEventListener("input", (e) => {
+  let value = e.target.value.replace(/,/g, ""); // eliminăm vechile virgule
+  if (value === "") return;
+  if (!/^\d+$/.test(value)) {
+    e.target.value = e.target.value.replace(/[^\d,]/g, ""); // curățăm caractere non-numerice
+    return;
+  }
+  // formatează dinamic în stil englez (1,000,000)
+  e.target.value = parseInt(value, 10).toLocaleString("en-US");
+});
+
+function simulateApr() {
+  // scoatem virgulele pentru calcul
+  const raw = aprInput.value.replace(/,/g, "");
+  const input = parseFloat(raw);
+
+  if (isNaN(input) || input <= 0) {
+    document.getElementById("aprResult").innerHTML = "⚠️ Please enter a valid TCL amount.";
+    return;
+  }
+
+  const totalStaked = parseFloat((document.getElementById("staked").textContent || "0").replace(/[^0-9.]/g, ""));
+  const aprNow = parseFloat((document.getElementById("apr").textContent || "0").replace("%", ""));
+
+  if (!totalStaked || !aprNow) {
+    document.getElementById("aprResult").innerHTML = "⚠️ Live data not loaded yet.";
+    return;
+  }
+
+  const newStaked = totalStaked + input;
+  const newApr = (aprNow * totalStaked) / newStaked;
+
+  const apr5 = newApr * 1.05;
+  const apr7 = newApr * 1.07;
+  const apr10 = newApr * 1.10;
+
+  const formattedInput = input.toLocaleString("en-US");
+
+  document.getElementById("aprResult").innerHTML = `
+    <div>💰 Simulated amount: <b>${formattedInput}</b> TCL</div><br>
+    <div>📊 New APR: <b>${newApr.toFixed(2)}%</b></div>
+    <div>🚀 With +5% boost: <b>${apr5.toFixed(2)}%</b></div>
+    <div>⚡ With +7% boost: <b>${apr7.toFixed(2)}%</b></div>
+    <div>🔥 With +10% boost: <b>${apr10.toFixed(2)}%</b></div>
+  `;
+}
+
 </script>
 </body>
 </html>
-
-
