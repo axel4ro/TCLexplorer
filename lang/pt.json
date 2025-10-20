@@ -43,9 +43,6 @@
   "alpha_step7_title": "💳 Opcional: Levantar para xPortal",
   "alpha_step7_desc": "Preferes usar o xPortal? Converte o teu TAO em <b>EGLD</b> e levanta-o para o teu <b>endereço EGLD do xPortal</b>.<br><br>• Troca TAO → EGLD<br>• Levanta EGLD para xPortal → os fundos aparecerão diretamente na tua carteira.<br><br>Simples, rápido e económico ⚡",
 
-  "alpha_tips_title": "🧠 Dicas e segurança",
-  "alpha_tips_desc": "• Nunca partilhes a tua frase secreta ou palavra-passe.<br>• Faz sempre um teste com uma pequena quantia antes de transferir grandes valores.<br>• Verifica se a rede é <b>Bittensor</b> antes de cada transação.<br>• Se não vires o teu token SN114, ativa <b>Show zero balance</b> e procura ‘SN114’ ou ‘Alpha’.<br>• Se a liquidez de troca for baixa, faz primeiro a troca através do TAO e tenta novamente mais tarde.",
-
   "alpha_help_text": "💬 Precisas de ajuda? Junta-te à nossa <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>comunidade no Discord</a> ou consulta o guia no blog: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
   
   "calc_title": "🧮 Simular Transação",
