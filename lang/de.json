@@ -43,10 +43,8 @@
   "alpha_step7_title": "💳 Optional: Auf xPortal auszahlen",
   "alpha_step7_desc": "Möchtest du lieber xPortal verwenden? Wandle dein TAO in <b>EGLD</b> um und überweise es an deine <b>xPortal-EGLD-Adresse</b>.<br><br>• Tausche TAO → EGLD<br>• Ziehe EGLD nach xPortal ab → dein Guthaben erscheint direkt in deiner Wallet.<br><br>Einfach, schnell und günstig ⚡",
 
-  "alpha_tips_title": "🧠 Tipps & Sicherheit",
-  "alpha_tips_desc": "• Teile deine Seed Phrase oder Passwörter niemals.<br>• Teste immer zuerst mit einem kleinen Betrag, bevor du größere Summen überträgst.<br>• Überprüfe vor jeder Transaktion, dass das Netzwerk <b>Bittensor</b> ist.<br>• Wenn du deinen SN114-Token nicht siehst, aktiviere <b>Show zero balance</b> und suche nach „SN114“ oder „Alpha“.<br>• Wenn die Swap-Liquidität niedrig ist, tausche zuerst über TAO und versuche es später erneut.",
-
   "alpha_help_text": "💬 Brauchst du Hilfe? Tritt unserer <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord-Community</a> bei oder lies den Blogartikel: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
+  
   "calc_title": "🧮 Transaktion simulieren",
   "calc_label_buy": "Gib den Betrag in <b>USDC ($)</b> ein, um TCL zu kaufen:",
   "calc_label_sell": "Gib den Betrag in <b>TCL</b> ein, um in USDC ($) zu verkaufen:",
