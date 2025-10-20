@@ -19,6 +19,20 @@
 
   "help_text": "💡 ¿Necesitas ayuda? Únete a nuestra <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Comunidad en Discord</a>",
 
+  "web3_title": "🌐 Guías Web3",
+  "web3_desc": "Conecta tu billetera, canjea recompensas y explora todas las integraciones Web3 de The Cursed Land.",
+  
+  "web3_connect_title": "🔗 Conectar xPortal",
+  "web3_connect_desc": "Aprende cómo conectar tu <b>xPortal Wallet</b> y mucho más.",
+  "web3_connect_btn": "Abrir tutorial",
+  
+  "web3_alpha_title": "💎 Canjear cupón α",
+  "web3_alpha_desc": "Canjea tu <b>cupón α</b> del juego para recibir <b>Alpha Tokens ($SN114)</b> del Subnet Level 114 en la blockchain de Bittensor.",
+  "web3_alpha_btn": "Abrir tutorial",
+  
+  "web3_soon_title": "🧠 Más funciones próximamente...",
+  "web3_soon_desc": "Staking, intercambio y mucho más.",
+  
   "alpha_title": "💎 Canjear cupón α",
   "alpha_intro": "Intercambia tu cupón α del juego por <b>Alpha Tokens ($SN114)</b> reales en la <b>Blockchain de Bittensor (TAO)</b>. Sigue los pasos a continuación para crear tu monedero, protegerlo y recibir tus tokens de forma segura.",
 
