@@ -911,35 +911,33 @@ button:hover { opacity: 0.9; }
 
 <!-- 🌐 Web3 Guide -->
 <div id="web3Guide" class="section-page">
-  <h2>🌐 Web3 Guides</h2>
-  <p style="color:#a1a1aa; font-size:15px;">
+  <h2 data-i18n="web3_title">🌐 Web3 Guides</h2>
+  <p data-i18n="web3_desc" style="color:#a1a1aa; font-size:15px;">
     Connect your wallet, redeem rewards and explore all Web3 integrations of The Cursed Land.
   </p>
 
   <!-- Connect xPortal -->
   <div class="event-card">
-    <div class="event-title">🔗 Connect xPortal</div>
-    <div class="event-desc">
-      Learn how to connect your <b>xPortal Wallet</b> and more.<br><br>
-      <button onclick="showSubGuide('connectXportal')" style="background:#0d6efd;">Open Tutorial</button>
+    <div class="event-title" data-i18n="web3_connect_title">🔗 Connect xPortal</div>
+    <div class="event-desc" data-i18n="web3_connect_desc">
+      Learn how to connect your <b>xPortal Wallet</b> and more.
     </div>
+    <button onclick="showSubGuide('connectXportal')" style="background:#0d6efd;" data-i18n="web3_connect_btn">Open Tutorial</button>
   </div>
 
   <!-- Redeem α Voucher -->
   <div class="event-card">
-    <div class="event-title">💎 Redeem α Voucher</div>
-    <div class="event-desc">
-      Redeem your in-game <b>α Voucher</b> to receive <b>Alpha Tokens ($SN114)</b> from Subnet Level 114 on the Bittensor Blockchain.<br><br>
-      <button onclick="showSubGuide('redeemAlpha')" style="background:#2ff6de;color:#000;">Open Tutorial</button>
+    <div class="event-title" data-i18n="web3_alpha_title">💎 Redeem α Voucher</div>
+    <div class="event-desc" data-i18n="web3_alpha_desc">
+      Redeem your in-game <b>α Voucher</b> to receive <b>Alpha Tokens ($SN114)</b> from Subnet Level 114 on the Bittensor Blockchain.
     </div>
+    <button onclick="showSubGuide('redeemAlpha')" style="background:#2ff6de;color:#000;" data-i18n="web3_alpha_btn">Open Tutorial</button>
   </div>
 
   <!-- Future items -->
   <div class="event-card">
-    <div class="event-title">🧠 More Coming Soon...</div>
-    <div class="event-desc">
-      Staking, swapping, and more.
-    </div>
+    <div class="event-title" data-i18n="web3_soon_title">🧠 More Coming Soon...</div>
+    <div class="event-desc" data-i18n="web3_soon_desc">Staking, swapping, and more.</div>
   </div>
 </div>
 
@@ -2308,6 +2306,3 @@ function showSubGuide(id) {
 </script>
 </body>
 </html>
-
-
-
