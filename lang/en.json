@@ -21,7 +21,7 @@
 
 
   "alpha_title": "💎 Redeem α Voucher",
-  "alpha_intro": "Exchange your in-game α Voucher for real <b>Alpha Tokens ($SN114)</b> on the <b>Bittensor Subnet Level 114</b>. Follow the steps below to create your wallet, secure it, and receive your tokens safely.",
+  "alpha_intro": "Exchange your in-game α Voucher for <b>Alpha Tokens ($SN114)</b> on the <b>Bittensor Blockchain</b>. Follow the steps below to create your wallet, secure it, and receive your tokens safely.",
 
   "alpha_step1_title": "📲 Step 1: Install SubWallet",
   "alpha_step1_desc": "Download and install <b>SubWallet</b> — available on <b>Android</b>, <b>iOS</b> and <b>Desktop</b>.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>Once installed, choose <b>Create new wallet</b>, write down your <b>Seed Phrase</b> on paper, and keep it in a safe place.<br><br>⚠️ Never share your seed phrase or password with anyone. It grants full control over your wallet.",
