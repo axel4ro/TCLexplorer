@@ -19,6 +19,35 @@
 
   "help_text": "💡 Besoin d’aide ? Rejoignez notre <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Communauté Discord</a>",
 
+  "alpha_title": "💎 Utiliser le bon α",
+  "alpha_intro": "Échange ton bon α du jeu contre de vrais <b>Alpha Tokens ($SN114)</b> sur la <b>blockchain Bittensor (TAO)</b>. Suis les étapes ci-dessous pour créer ton portefeuille, le sécuriser et recevoir tes tokens en toute sécurité.",
+
+  "alpha_step1_title": "📲 Étape 1 : Installer SubWallet",
+  "alpha_step1_desc": "Télécharge et installe <b>SubWallet</b> — disponible sur <b>Android</b>, <b>iOS</b> et <b>ordinateur</b>.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>Une fois installée, choisis <b>Create new wallet</b>, écris ta <b>phrase de récupération (Seed Phrase)</b> sur papier et garde-la dans un endroit sûr.<br><br>⚠️ Ne partage jamais ta phrase de récupération ni ton mot de passe avec qui que ce soit. Ils donnent un accès complet à ton portefeuille.",
+
+  "alpha_step2_title": "⚙️ Étape 2 : Configurer le réseau et les tokens",
+  "alpha_step2_desc": "Ouvre <b>SubWallet</b> → va dans l’onglet <b>Tokens</b> → appuie sur <b>l’icône de filtre</b> (à droite de la recherche).<br><br>✅ Active <b>Show zero balance</b> pour afficher tous les tokens.<br>✅ Dans <b>Networks</b>, garde uniquement coché <b>Bittensor (mainnet)</b>.<br>❌ Décoche <b>Bittensor Testnet</b> et <b>Bittensor Devnet</b>.<br><br>Retourne à la page principale des tokens et tu verras maintenant l’adresse de ton portefeuille <b>TAO (Bittensor)</b> en haut.",
+
+  "alpha_step3_title": "🧭 Étape 3 : Copier ton adresse TAO",
+  "alpha_step3_desc": "Dans la liste des tokens, recherche <b>TAO</b> ou <b>Bittensor</b>.<br>Le premier résultat, <b>TAO (Bittensor)</b>, est l’adresse principale de ton portefeuille sur le réseau Bittensor.<br><br>Appuie sur l’adresse en haut pour la copier — tu l’utiliseras dans le jeu auprès du <b>PNJ Tao</b> pour échanger ton bon.",
+
+  "alpha_step4_title": "🏦 Étape 4 : Échanger auprès du PNJ Tao",
+  "alpha_step4_desc": "Va voir le <b>PNJ Tao</b> dans le jeu → colle ton <b>adresse TAO</b> dans le champ de réclamation.<br>Appuie sur <b>Withdraw</b> → ton premier bon α valide sera supprimé de ton inventaire et tu recevras instantanément des <b>α Tokens ($SN114)</b> dans ton portefeuille.<br><br>⚠️ Les bons expirent après <b>7 jours</b>, pense donc à les utiliser avant la date limite.",
+
+  "alpha_step5_title": "💱 Étape 5 : Échanger α ↔ TAO",
+  "alpha_step5_desc": "Rends-toi sur <b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> et connecte ton SubWallet.<br><br>Tu peux échanger des <b>α Tokens (SN114)</b> contre des <b>TAO</b> ou inversement. Chaque transaction nécessite une petite quantité de <b>TAO</b> pour les frais (généralement moins de 0,01 $).<br><br>Besoin de TAO pour les frais ? Achète-les ici :<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
+
+  "alpha_step6_title": "💼 Étape 6 : Dépôt / Retrait de TAO",
+  "alpha_step6_desc": "Pour déposer des TAO sur une plateforme d’échange :<br>• Va sur ton exchange et sélectionne <b>Deposit → TAO (Bittensor)</b> → copie l’adresse.<br>• Dans SubWallet → <b>Send</b> → choisis <b>TAO</b> → colle l’adresse de dépôt → confirme.<br><br>Pour retirer depuis un exchange :<br>• Choisis <b>Withdraw → TAO (Bittensor)</b> et colle ton <b>adresse TAO SubWallet</b>.<br>⚠️ Vérifie toujours que le réseau sélectionné est <b>Bittensor</b> avant d’envoyer.",
+
+  "alpha_step7_title": "💳 Optionnel : Retirer vers xPortal",
+  "alpha_step7_desc": "Tu préfères utiliser xPortal ? Convertis tes TAO en <b>EGLD</b> et retire-les vers ton <b>adresse EGLD xPortal</b>.<br><br>• Échange TAO → EGLD<br>• Retire EGLD vers xPortal → tes fonds apparaîtront directement dans ton portefeuille.<br><br>Simple, rapide et économique ⚡",
+
+  "alpha_tips_title": "🧠 Conseils & Sécurité",
+  "alpha_tips_desc": "• Ne partage jamais ta phrase de récupération ou tes mots de passe.<br>• Fais toujours un test avec un petit montant avant de transférer une somme importante.<br>• Vérifie que le réseau est bien <b>Bittensor</b> avant chaque transaction.<br>• Si tu ne vois pas ton token SN114, active <b>Show zero balance</b> et recherche « SN114 » ou « Alpha ».<br>• Si la liquidité du swap est faible, passe d’abord par TAO, puis refais l’échange plus tard.",
+
+  "alpha_help_text": "💬 Besoin d’aide ? Rejoins notre <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>communauté Discord</a> ou consulte le guide du blog : <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
+  
   "calc_title": "🧮 Simuler une Transaction",
   "calc_label_buy": "Entrez le montant en <b>USDC ($)</b> pour acheter du TCL :",
   "calc_label_sell": "Entrez le montant en <b>TCL</b> à vendre pour obtenir des USDC ($) :",
