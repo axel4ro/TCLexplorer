@@ -19,7 +19,34 @@
 
   "help_text": "💡 Yardıma mı ihtiyacınız var? <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Topluluğumuza</a> katılın.",
 
+  "alpha_title": "💎 α Kuponunu Kullan",
+  "alpha_intro": "Oyundaki α kuponunu <b>Bittensor Blockchain (TAO)</b> ağı üzerinde gerçek <b>Alpha Token ($SN114)</b> ile değiştir. Cüzdanını oluşturmak, güvenliğini sağlamak ve token’larını güvenli bir şekilde almak için aşağıdaki adımları izle.",
 
+  "alpha_step1_title": "📲 Adım 1: SubWallet'i Yükle",
+  "alpha_step1_desc": "<b>SubWallet</b> uygulamasını indir ve yükle — <b>Android</b>, <b>iOS</b> ve <b>Masaüstü</b> için mevcuttur.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>Kurulumdan sonra <b>Create new wallet</b> seçeneğini seç, <b>Seed Phrase (Kurtarma Cümlesi)</b>’ni bir kağıda yaz ve güvenli bir yerde sakla.<br><br>⚠️ Seed Phrase veya şifreni kimseyle paylaşma. Bunlar cüzdanına tam erişim sağlar.",
+
+  "alpha_step2_title": "⚙️ Adım 2: Ağ ve Token’ları Yapılandır",
+  "alpha_step2_desc": "<b>SubWallet</b>’i aç → <b>Tokens</b> sekmesine git → sağ üstteki <b>Filtre simgesine</b> tıkla.<br><br>✅ Tüm token’ları görmek için <b>Show zero balance</b> seçeneğini etkinleştir.<br>✅ <b>Networks</b> bölümünde yalnızca ilk sıradaki <b>Bittensor (mainnet)</b> seçeneğini aktif bırak.<br>❌ <b>Bittensor Testnet</b> ve <b>Bittensor Devnet</b> seçeneklerinin işaretini kaldır.<br><br>Token ana sayfasına geri dön — artık en üstte <b>TAO (Bittensor)</b> adresini göreceksin.",
+
+  "alpha_step3_title": "🧭 Adım 3: TAO Adresini Kopyala",
+  "alpha_step3_desc": "Token listesinde <b>TAO</b> veya <b>Bittensor</b> olarak ara.<br>İlk sonuç, <b>TAO (Bittensor)</b>, Bittensor ağındaki ana cüzdan adresindir.<br><br>Adrese tıklayarak kopyala — bu adresi oyunda <b>NPC Tao</b>’ya girerek kuponunu kullanmak için gerekecek.",
+
+  "alpha_step4_title": "🏦 Adım 4: NPC Tao Üzerinden Kullan",
+  "alpha_step4_desc": "Oyunda <b>NPC Tao</b>’ya git → <b>TAO adresini</b> ‘Redeem’ (Kullan) alanına yapıştır.<br><b>Withdraw</b> tuşuna bas → geçerli ilk α kuponun envanterinden silinecek ve cüzdanına anında <b>α Token ($SN114)</b> gönderilecektir.<br><br>⚠️ Kuponlar <b>7 gün</b> içinde sona erer, bu nedenle zamanında kullanmayı unutma.",
+
+  "alpha_step5_title": "💱 Adım 5: α ↔ TAO Takası Yap",
+  "alpha_step5_desc": "<b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> adresine git ve SubWallet’ini bağla.<br><br><b>α Token (SN114)</b> ile <b>TAO</b> arasında çift yönlü takas yapabilirsin. Tüm işlemler küçük miktarda <b>TAO</b> ağ ücreti gerektirir (genellikle $0.01’den az).<br><br>Ücret için TAO mu gerekiyor? Buradan al:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
+
+  "alpha_step6_title": "💼 Adım 6: TAO Yatır / Çek",
+  "alpha_step6_desc": "TAO’yu bir borsaya yatırmak için:<br>• Borsana gir ve <b>Deposit → TAO (Bittensor)</b> seç → adresi kopyala.<br>• SubWallet → <b>Send</b> → <b>TAO</b>’yu seç → adresi yapıştır → onayla.<br><br>Bir borsadan çekmek için:<br>• <b>Withdraw → TAO (Bittensor)</b> seç ve kendi <b>SubWallet TAO adresini</b> yapıştır.<br>⚠️ Göndermeden önce her zaman ağın <b>Bittensor</b> olduğundan emin ol.",
+
+  "alpha_step7_title": "💳 Opsiyonel: xPortal’a Aktar",
+  "alpha_step7_desc": "xPortal kullanmayı mı tercih ediyorsun? TAO’larını <b>EGLD</b>’ye dönüştür ve kendi <b>xPortal EGLD adresine</b> aktar.<br><br>• TAO → EGLD takası yap<br>• EGLD’yi xPortal’a gönder → fonlar doğrudan cüzdanına aktarılır.<br><br>Basit, hızlı ve düşük maliyetli ⚡",
+
+  "alpha_tips_title": "🧠 İpuçları ve Güvenlik",
+  "alpha_tips_desc": "• Seed Phrase veya şifrelerini asla kimseyle paylaşma.<br>• Büyük miktar göndermeden önce her zaman küçük bir test işlemi yap.<br>• Her işlemden önce ağın <b>Bittensor</b> olduğundan emin ol.<br>• SN114 token’ını göremiyorsan, <b>Show zero balance</b> seçeneğini etkinleştir ve ‘SN114’ veya ‘Alpha’ olarak ara.<br>• Takas likiditesi düşükse, önce TAO üzerinden takas yap ve daha sonra tekrar dene.",
+
+  "alpha_help_text": "💬 Yardıma mı ihtiyacın var? <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord topluluğumuza</a> katıl veya blog rehberine göz at: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
   
   "calc_title": "🧮 İşlem Simülasyonu",
   "calc_label_buy": "<b>USDC ($)</b> miktarını girerek TCL satın al:",
