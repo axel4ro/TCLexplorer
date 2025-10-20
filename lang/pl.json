@@ -19,6 +19,20 @@
 
   "help_text": "💡 Potrzebujesz pomocy? Dołącz do naszej <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Społeczności Discord</a>",
 
+  "web3_title": "🌐 Przewodniki Web3",
+  "web3_desc": "Połącz swój portfel, odbierz nagrody i odkryj wszystkie integracje Web3 w The Cursed Land.",
+  
+  "web3_connect_title": "🔗 Połącz xPortal",
+  "web3_connect_desc": "Dowiedz się, jak połączyć swój <b>xPortal Wallet</b> i nie tylko.",
+  "web3_connect_btn": "Otwórz samouczek",
+  
+  "web3_alpha_title": "💎 Wykup kupon α",
+  "web3_alpha_desc": "Wykorzystaj swój <b>kupon α</b> z gry, aby otrzymać <b>Alpha Tokens ($SN114)</b> z Subnet Level 114 w sieci blockchain Bittensor.",
+  "web3_alpha_btn": "Otwórz samouczek",
+  
+  "web3_soon_title": "🧠 Wkrótce więcej...",
+  "web3_soon_desc": "Staking, wymiana i wiele więcej.",
+  
   "alpha_title": "💎 Odbierz kupon α",
   "alpha_intro": "Wymień swój kupon α z gry na prawdziwe <b>Alpha Tokens ($SN114)</b> w sieci <b>Bittensor Blockchain (TAO)</b>. Postępuj zgodnie z poniższymi krokami, aby utworzyć portfel, zabezpieczyć go i bezpiecznie otrzymać swoje tokeny.",
 
