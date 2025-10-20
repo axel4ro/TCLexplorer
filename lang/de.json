@@ -19,6 +19,20 @@
 
   "help_text": "💡 Brauchst du Hilfe? Tritt unserer <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord-Community</a> bei",
 
+  "web3_title": "🌐 Web3-Anleitungen",
+  "web3_desc": "Verbinde deine Wallet, löse Belohnungen ein und entdecke alle Web3-Integrationen von The Cursed Land.",
+  
+  "web3_connect_title": "🔗 xPortal verbinden",
+  "web3_connect_desc": "Erfahre, wie du deine <b>xPortal Wallet</b> verbindest und mehr.",
+  "web3_connect_btn": "Tutorial öffnen",
+  
+  "web3_alpha_title": "💎 α-Gutschein einlösen",
+  "web3_alpha_desc": "Löse deinen In-Game-<b>α-Gutschein</b> ein, um <b>Alpha Tokens ($SN114)</b> vom Subnet Level 114 auf der Bittensor-Blockchain zu erhalten.",
+  "web3_alpha_btn": "Tutorial öffnen",
+  
+  "web3_soon_title": "🧠 Weitere Inhalte bald verfügbar...",
+  "web3_soon_desc": "Staking, Swapping und mehr.",
+
   "alpha_title": "💎 α-Gutschein einlösen",
   "alpha_intro": "Tausche deinen In-Game-α-Gutschein gegen <b>Alpha Tokens ($SN114)</b> auf der <b>Bittensor-Blockchain (TAO)</b> ein. Folge den untenstehenden Schritten, um deine Wallet zu erstellen, sie zu sichern und deine Tokens sicher zu erhalten.",
 
