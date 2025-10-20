@@ -19,6 +19,20 @@
 
   "help_text": "💡 Precisa de ajuda? Junte-se à nossa <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Comunidade no Discord</a>",
 
+  "web3_title": "🌐 Guias Web3",
+  "web3_desc": "Conecta a tua carteira, resgata recompensas e explora todas as integrações Web3 de The Cursed Land.",
+  
+  "web3_connect_title": "🔗 Conectar xPortal",
+  "web3_connect_desc": "Aprende como conectar a tua <b>xPortal Wallet</b> e muito mais.",
+  "web3_connect_btn": "Abrir tutorial",
+  
+  "web3_alpha_title": "💎 Resgatar voucher α",
+  "web3_alpha_desc": "Resgata o teu <b>voucher α</b> do jogo para receber <b>Alpha Tokens ($SN114)</b> do Subnet Level 114 na blockchain Bittensor.",
+  "web3_alpha_btn": "Abrir tutorial",
+  
+  "web3_soon_title": "🧠 Mais em breve...",
+  "web3_soon_desc": "Staking, trocas e muito mais.",
+
   "alpha_title": "💎 Resgatar voucher α",
   "alpha_intro": "Troca o teu voucher α do jogo por <b>Alpha Tokens ($SN114)</b> reais na <b>blockchain Bittensor (TAO)</b>. Segue os passos abaixo para criar a tua carteira, protegê-la e receber os teus tokens com segurança.",
 
