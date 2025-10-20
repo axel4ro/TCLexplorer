@@ -46,7 +46,7 @@
   "alpha_step3_desc": "În lista de Tokens, caută <b>TAO</b> sau <b>Bittensor</b>.<br>Primul rezultat, <b>TAO (Bittensor)</b>, este adresa principală a portofelului tău pe rețeaua Bittensor.<br><br>Apasă pe adresă pentru a o copia — o vei folosi în joc la <b>NPC Tao</b> pentru a-ți răscumpăra voucherul.",
 
   "alpha_step4_title": "🏦 Pasul 4: Revendică la NPC Tao",
-  "alpha_step4_desc": "Mergi la <b>NPC Tao</b> în joc → lipește adresa ta <b>TAO</b> în câmpul de Revendicare.<br>Apasă <b>Withdraw</b> → primul tău voucher α valid va fi șters din inventar, iar tu vei primi instant <b>α Tokens ($SN114)</b> în portofel.<br><br>⚠️ Voucherele expiră în <b>7 zile</b>, așa că asigură-te că le răscumperi la timp.",
+  "alpha_step4_desc": "Mergi la <b>NPC Tao</b> în joc → lipește adresa ta <b>TAO</b> în câmpul de Revendicare.<br>Apasă <b>Withdraw</b> → primul tău voucher α valid va fi șters din inventar, iar tu vei primi instant <b>α Tokens ($SN114)</b> în portofel.<br><br>⚠️ Voucherele expiră în <b>7 zile</b>, așa că asigură-te că le revendici la timp.",
 
   "alpha_step5_title": "💱 Pasul 5: Schimbă α ↔ TAO",
   "alpha_step5_desc": "Accesează <b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> și conectează SubWallet.<br><br>Poți schimba <b>α Tokens (SN114)</b> în <b>TAO</b> sau invers. Toate tranzacțiile necesită o mică sumă de <b>TAO</b> pentru taxe (de obicei sub $0.01).<br><br>Ai nevoie de TAO pentru taxe? Cumpără de aici:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
