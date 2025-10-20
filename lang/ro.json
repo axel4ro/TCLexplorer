@@ -19,6 +19,35 @@
 
   "help_text": "💡 Ai nevoie de ajutor? Intră pe <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Community</a>.",
 
+  "alpha_title": "💎 Revendică voucherul α",
+  "alpha_intro": "Schimbă voucherul tău α din joc pentru <b>Alpha Tokens ($SN114)</b> pe <b>Bittensor</b>. Urmează pașii de mai jos pentru a-ți crea portofelul, a-l securiza și a primi tokenii în siguranță.",
+
+  "alpha_step1_title": "📲 Pasul 1: Instalează SubWallet",
+  "alpha_step1_desc": "Descarcă și instalează aplicația <b>SubWallet</b> — disponibilă pe <b>Android</b>, <b>iOS</b> și <b>Desktop</b>.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>După instalare, alege <b>Create new wallet</b>, notează-ți <b>Seed Phrase-ul</b> (fraza secretă) pe hârtie și păstreaz-o într-un loc sigur.<br><br>⚠️ Nu împărtăși niciodată fraza secretă sau parola cu nimeni. Ele oferă control total asupra portofelului tău.",
+
+  "alpha_step2_title": "⚙️ Pasul 2: Configurează rețeaua și tokenii",
+  "alpha_step2_desc": "Deschide <b>SubWallet</b> → mergi la fila <b>Tokens</b> → apasă pe <b>pictograma Filtru</b> (în dreapta barei de căutare).<br><br>✅ Activează opțiunea <b>Show zero balance</b> pentru a afișa toți tokenii.<br>✅ În secțiunea <b>Networks</b>, lasă bifată doar prima opțiune <b>Bittensor (mainnet)</b>.<br>❌ Debifează <b>Bittensor Testnet</b> și <b>Bittensor Devnet</b>.<br><br>Revenind la pagina principală de Tokens, vei vedea acum adresa <b>TAO (Bittensor)</b> a portofelului tău în partea de sus.",
+
+  "alpha_step3_title": "🧭 Pasul 3: Copiază adresa TAO",
+  "alpha_step3_desc": "În lista de Tokens, caută <b>TAO</b> sau <b>Bittensor</b>.<br>Primul rezultat, <b>TAO (Bittensor)</b>, este adresa principală a portofelului tău pe rețeaua Bittensor.<br><br>Apasă pe adresă pentru a o copia — o vei folosi în joc la <b>NPC Tao</b> pentru a-ți răscumpăra voucherul.",
+
+  "alpha_step4_title": "🏦 Pasul 4: Răscumpără la NPC Tao",
+  "alpha_step4_desc": "Mergi la <b>NPC Tao</b> în joc → lipește adresa ta <b>TAO</b> în câmpul de Răscumpărare.<br>Apasă <b>Withdraw</b> → primul tău voucher α valid va fi șters din inventar, iar tu vei primi instant <b>α Tokens ($SN114)</b> în portofel.<br><br>⚠️ Voucherele expiră în <b>7 zile</b>, așa că asigură-te că le răscumperi la timp.",
+
+  "alpha_step5_title": "💱 Pasul 5: Schimbă α ↔ TAO",
+  "alpha_step5_desc": "Accesează <b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> și conectează SubWallet.<br><br>Poți schimba <b>α Tokens (SN114)</b> în <b>TAO</b> sau invers. Toate tranzacțiile necesită o mică sumă de <b>TAO</b> pentru taxe (de obicei sub $0.01).<br><br>Ai nevoie de TAO pentru taxe? Cumpără de aici:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
+
+  "alpha_step6_title": "💼 Pasul 6: Depozitează / Retrage TAO",
+  "alpha_step6_desc": "Pentru a depune TAO pe un exchange:<br>• Intră pe exchange-ul tău și selectează <b>Deposit → TAO (Bittensor)</b> → copiază adresa.<br>• În SubWallet → <b>Send</b> → selectează <b>TAO</b> → lipește adresa de depozit → confirmă.<br><br>Pentru a retrage de pe un exchange:<br>• Selectează <b>Withdraw → TAO (Bittensor)</b> și lipește adresa ta <b>TAO</b> din SubWallet.<br>⚠️ Verifică mereu ca rețeaua selectată să fie <b>Bittensor</b> înainte de trimitere.",
+
+  "alpha_step7_title": "💳 Opțional: Retrage către xPortal",
+  "alpha_step7_desc": "Preferi să folosești xPortal? Convertește TAO în <b>EGLD</b> și retrage-l în <b>adresa ta EGLD din xPortal</b>.<br><br>• Schimbă TAO → EGLD<br>• Retrage EGLD către xPortal → fondurile vor apărea direct în portofel.<br><br>Simplu, rapid și ieftin ⚡",
+
+  "alpha_tips_title": "🧠 Sfaturi & Siguranță",
+  "alpha_tips_desc": "• Nu împărtăși niciodată fraza secretă (seed phrase) sau parolele.<br>• Încearcă mereu mai întâi cu o sumă mică înainte de transferuri mari.<br>• Verifică mereu ca rețeaua să fie <b>Bittensor</b> înainte de fiecare tranzacție.<br>• Dacă nu vezi tokenul SN114, activează <b>Show zero balance</b> și caută „SN114” sau „Alpha”.<br>• Dacă lichiditatea de swap este scăzută, schimbă mai întâi prin TAO și apoi repetă swap-ul mai târziu.",
+
+  "alpha_help_text": "💬 Ai nevoie de ajutor? Intră pe <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord-ul oficial</a> sau consultă ghidul pe blog: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
+ 
   "calc_title": "🧮 Simulează tranzacția",
   "calc_label_buy": "Introdu suma în <b>USDC ($)</b> pentru a cumpăra TCL:",
   "calc_label_sell": "Introdu suma în <b>TCL</b> pentru a vinde pe USDC ($):",
