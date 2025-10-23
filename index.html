@@ -595,7 +595,7 @@ button:hover { opacity: 0.9; }
   font-weight: 700;
   color: #12e193;
   background: rgba(18,225,147,0.12);
-  padding: 3px 10px;
+  padding: 6px 6px;
   border-radius: 999px;
   vertical-align: middle;
 }
@@ -967,30 +967,35 @@ button:hover { opacity: 0.9; }
   <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="TCL" style="width:28px; height:28px; border-radius:6px;">
   TCL Token
 </h2>
-
+  <div class="section">
+    <strong><span class="live-dot">LIVE DATA</span></strong>
+    <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
+      📊 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
+    </span>
+  </div>
 <!-- 🧠 TCL Sentiment + Staking Stats -->
 <div class="sentiment-row">
   <!-- 🔹 Left: Total Staked -->
   <div class="mini-stat">
     <div class="mini-top">
-      <span>Total TCL Staked</span><span class="live-dot">Live</span>
+      <span>Total TCL Staked</span><span class="live-dot"></span>
     </div>
     <div id="stakedMini" class="mini-value">—</div>
     <div id="stakedMiniUsd" class="mini-sub">≈ — $</div>
   </div>
 
   <!-- 🔸 Center: Sentiment Gauge -->
-  <div id="sentimentBox">
-    <h3>Sentiment Index</h3>
-    <canvas id="sentimentGauge" width="160" height="80"></canvas>
-    <div id="sentimentScore">--</div>
-    <div id="sentimentLabel">Loading...</div>
-  </div>
+<div id="sentimentBox">
+  <h3 data-i18n="sentiment_title">Sentiment Index</h3>
+  <canvas id="sentimentGauge" width="160" height="80"></canvas>
+  <div id="sentimentScore">--</div>
+  <div id="sentimentLabel" data-i18n="sentiment_loading">Loading...</div>
+</div>
 
   <!-- 🔹 Right: Emission/Day -->
   <div class="mini-stat">
     <div class="mini-top">
-      <span>Current Emission/Day</span><span class="live-dot">Live</span>
+      <span>Current Emission/Day</span><span class="live-dot"></span>
     </div>
     <div id="emissionMini" class="mini-value">—</div>
     <div id="emissionMiniUsd" class="mini-sub">≈ — $</div>
@@ -998,102 +1003,95 @@ button:hover { opacity: 0.9; }
 </div>
 
 
-  <div class="section">
-    <strong><span class="live-dot">LIVE DATA</span></strong>
-    <span style="font-size: 13px; color: #0d6efd; display:block; margin-top:10px;">
-      📊 Data is fetched live from the MultiversX Blockchain (DexScreener & CoinGecko)
-    </span>
-  </div>
-
   <!-- 🔥 Toate cardurile live -->
   <div class="stats-row token-grid">
     <div class="stat">
       <div class="stat-top">
-        <span>Current Price</span><span class="live-dot">Live</span>
+        <span>Current Price</span><span class="live-dot"></span>
       </div>
       <div id="curPrice" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>24h Change</span><span class="live-dot">Live</span>
+        <span>24h Change</span><span class="live-dot"></span>
       </div>
       <div id="change24h" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>ATH</span><span class="live-dot">Live</span>
+        <span>ATH</span><span class="live-dot"></span>
       </div>
       <div id="ath" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>ATL</span><span class="live-dot">Live</span>
+        <span>ATL</span><span class="live-dot"></span>
       </div>
       <div id="atl" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>TCL Supply</span><span class="live-dot">Live</span>
+        <span>TCL Supply</span><span class="live-dot"></span>
       </div>
       <div id="curTCL" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>USDC Supply</span><span class="live-dot">Live</span>
+        <span>USDC Supply</span><span class="live-dot"></span>
       </div>
       <div id="curUSDC" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>Market Cap</span><span class="live-dot">Live</span>
+        <span>Market Cap</span><span class="live-dot"></span>
       </div>
       <div id="marketCap" class="stat-value">—</div>
     </div>
 		    <div class="stat">
       <div class="stat-top">
-        <span>Burned TCL</span><span class="live-dot">Live</span>
+        <span>Burned TCL</span><span class="live-dot"></span>
       </div>
       <div id="burned" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>Holders</span><span class="live-dot">Live</span>
+        <span>Holders</span><span class="live-dot"></span>
       </div>
       <div id="holders" class="stat-value">—</div>
     </div>
     <div class="stat">
       <div class="stat-top">
-        <span>Circulating Supply</span><span class="live-dot">Live</span>
+        <span>Circulating Supply</span><span class="live-dot"></span>
       </div>
       <div id="circulating" class="stat-value">—</div>
     </div>
 	<div class="stat">
   <div class="stat-top">
-    <span>Current Supply</span><span class="live-dot">Live</span>
+    <span>Current Supply</span><span class="live-dot"></span>
   </div>
   <div id="currentSupply" class="stat-value">—</div>
 </div>
 	<div class="stat">
 	  <div class="stat-top">
-		<span>TCL Max Supply</span><span class="live-dot">Live</span>
+		<span>TCL Max Supply</span><span class="live-dot"></span>
 	  </div>
 	  <div id="supply" class="stat-value">—</div>
 	</div>
 	<div class="stat">
   <div class="stat-top">
-    <span>Volume (24h)</span><span class="live-dot">Live</span>
+    <span>Volume (24h)</span><span class="live-dot"></span>
   </div>
   <div id="volume24h" class="stat-value">—</div>
 </div>
 <div class="stat">
   <div class="stat-top">
-    <span>Trades Count</span><span class="live-dot">Live</span>
+    <span>Trades Count</span><span class="live-dot"></span>
   </div>
   <div id="tradesCount" class="stat-value">—</div>
 </div>
 	    <div class="stat">
       <div class="stat-top">
-        <span>Transactions</span><span class="live-dot">Live</span>
+        <span>Transactions</span><span class="live-dot"></span>
       </div>
       <div id="transactions" class="stat-value">—</div>
     </div>
@@ -1237,7 +1235,7 @@ button:hover { opacity: 0.9; }
 <div id="stakingStats" class="staking-grid">
   <div class="stat">
     <div class="stat-top">
-      <span>Total TCL Staked</span><span class="live-dot">Live</span>
+      <span>Total TCL Staked</span><span class="live-dot"></span>
     </div>
     <div id="staked" class="stat-value">—</div>
     <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
@@ -1245,7 +1243,7 @@ button:hover { opacity: 0.9; }
 
   <div class="stat">
     <div class="stat-top">
-      <span>Current Emission/Day</span><span class="live-dot">Live</span>
+      <span>Current Emission/Day</span><span class="live-dot"></span>
     </div>
     <div id="emission" class="stat-value">—</div>
     <div id="emissionUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
@@ -1253,7 +1251,7 @@ button:hover { opacity: 0.9; }
 
   <div class="stat">
     <div class="stat-top">
-      <span>APR</span><span class="live-dot">Live</span>
+      <span>APR</span><span class="live-dot"></span>
     </div>
     <div id="apr" class="stat-value">—</div>
     <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
@@ -2080,11 +2078,36 @@ function drawSentimentGauge(score) {
 }
 
 function sentimentLabel(score) {
-  if (score <= 24) return { text: "😱 Strong Opportunity — Bottom Levels", color: "#ef4444" };
-  if (score <= 44) return { text: "😟 Accumulation Zone — Still Undervalued", color: "#f97316" };
-  if (score <= 55) return { text: "😐 Stabilizing — Good Entry Range", color: "#facc15" };
-  if (score <= 74) return { text: "😄 Watch Closely — Momentum Building", color: "#84cc16" };
-  return { text: "🚀 Bullish Sentiment — Growth Phase Starting", color: "#22c55e" };
+  // Fallback dacă translations nu este definit
+  if (!translations || !translations['sentiment_labels']) {
+    if (score <= 24) return { text: "😱 Strong Opportunity — Bottom Levels", color: "#ef4444" };
+    if (score <= 44) return { text: "😟 Accumulation Zone — Still Undervalued", color: "#f97316" };
+    if (score <= 55) return { text: "😐 Stabilizing — Good Entry Range", color: "#facc15" };
+    if (score <= 74) return { text: "😄 Watch Closely — Momentum Building", color: "#84cc16" };
+    return { text: "🚀 Bullish Sentiment — Growth Phase Starting", color: "#22c55e" };
+  }
+
+  // Folosește traducerile dacă sunt disponibile
+  if (score <= 24) return { 
+    text: translations['sentiment_labels']['very_low'], 
+    color: "#ef4444" 
+  };
+  if (score <= 44) return { 
+    text: translations['sentiment_labels']['low'], 
+    color: "#f97316" 
+  };
+  if (score <= 55) return { 
+    text: translations['sentiment_labels']['neutral'], 
+    color: "#facc15" 
+  };
+  if (score <= 74) return { 
+    text: translations['sentiment_labels']['high'], 
+    color: "#84cc16" 
+  };
+  return { 
+    text: translations['sentiment_labels']['very_high'], 
+    color: "#22c55e" 
+  };
 }
 
 async function updateSentimentIndex() {
@@ -2155,25 +2178,25 @@ async function updateSentimentIndex() {
 
     score = Math.max(0, Math.min(100, score));
 
-	const { text, color } = sentimentLabel(score);
-	drawSentimentGauge(score);
+// 🔹 Folosește funcția sentimentLabel cu traduceri
+    const { text, color } = sentimentLabel(score);
+    drawSentimentGauge(score);
 
-	// 🔹 Efect mic de animație la scor
-	const scoreEl = document.getElementById("sentimentScore");
-	scoreEl.textContent = Math.round(score);
-	scoreEl.style.transform = "scale(1.08)";
-	setTimeout(() => (scoreEl.style.transform = "scale(1)"), 300);
+    // 🔹 Efect mic de animație la scor
+    const scoreEl = document.getElementById("sentimentScore");
+    scoreEl.textContent = Math.round(score);
+    scoreEl.style.transform = "scale(1.08)";
+    setTimeout(() => (scoreEl.style.transform = "scale(1)"), 300);
 
-	// 🔹 Actualizare text + culoare sentiment
-	const label = document.getElementById("sentimentLabel");
-	label.textContent = text;
-	label.style.color = color;
+    // 🔹 Actualizare text + culoare sentiment
+    const label = document.getElementById("sentimentLabel");
+    label.textContent = text;
+    label.style.color = color;
 
   } catch (e) {
     console.warn("Sentiment error:", e);
   }
 }
-
 updateSentimentIndex();
 setInterval(updateSentimentIndex, 5 * 60 * 1000);
 
@@ -2312,7 +2335,8 @@ async function loadTranslations(lang) {
     currentLang = lang;
     localStorage.setItem("lang", lang);
     applyTranslations();
-
+ // 🔹 Recalculează sentiment index după ce traducerile sunt încărcate
+    updateSentimentIndex();
     // 🔥 actualizează vizual dropdown-ul cu steag + text
     let label = "English", flag = "https://flagcdn.com/w20/gb.png";
     if (lang === "ro") { label = "Română"; flag = "https://flagcdn.com/w20/ro.png"; }
