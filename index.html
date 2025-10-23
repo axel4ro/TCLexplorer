@@ -208,9 +208,9 @@ body {
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 14px;
-  background: var(--card-dark);
-  color: var(--text-dark);
-  border: 1px solid #333;
+  background: #0c1320;
+  color: #0c1320);
+  border: 1px solid #2ff6de33 !important;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   transition: all 0.2s ease;
 }
@@ -223,7 +223,7 @@ body {
   transition: background 0.2s;
 }
 .event-card button:hover {
-  background:#0b5ed7;
+  background:#0c1320;
 }
 
 .event-title {
@@ -738,6 +738,127 @@ button:hover { opacity: 0.9; }
   font-size: 22px;
   cursor: pointer;
 }
+.sentiment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px auto 25px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.mini-stat {
+  background: #0c1320;
+  border: 1px solid #2ff6de33;
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  flex: 1;
+  min-width: 160px;
+  max-width: 260px;
+  box-shadow: 0 0 8px rgba(47, 246, 222, 0.08);
+}
+
+.mini-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #6b7280;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.mini-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mini-sub {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* Sentiment box fixat pe centru */
+#sentimentBox {
+  background: #0c1320;
+  border: 1px solid #2ff6de33;
+  border-radius: 12px;
+  padding: 10px 8px 14px;
+  text-align: center;
+  flex: 1;
+  max-width: 260px;
+  box-shadow: 0 0 8px rgba(47, 246, 222, 0.08);
+}
+
+#sentimentBox h3 {
+  color: #2ff6de;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#sentimentScore {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+#sentimentLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a1a1aa;
+}
+
+/* Responsivitate (mobile) */
+@media (max-width: 768px) {
+  .sentiment-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  .mini-stat, #sentimentBox {
+    max-width: 300px;
+    width: 100%;
+  }
+}
+/* === Uniformizare stil carduri principale cu cele de sus === */
+.token-grid .stat {
+  background: #0c1320 !important;
+  border: 1px solid #2ff6de33 !important;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(47, 246, 222, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.token-grid .stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(47, 246, 222, 0.15);
+}
+/* === Uniformizare și pentru Initial Liquidity === */
+.init-liq .stat {
+  background: #0c1320 !important;
+  border: 1px solid #2ff6de33 !important;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(47, 246, 222, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.init-liq .stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(47, 246, 222, 0.15);
+}
+/* === Uniformizare și pentru Top Staking Leaderboard === */
+.staking-grid .stat {
+  background: #0c1320 !important;
+  border: 1px solid #2ff6de33 !important;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(47, 246, 222, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.staking-grid .stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(47, 246, 222, 0.15);
+}
 
   </style>
 </head>
@@ -843,6 +964,35 @@ button:hover { opacity: 0.9; }
   <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="TCL" style="width:28px; height:28px; border-radius:6px;">
   TCL Token
 </h2>
+
+<!-- 🧠 TCL Sentiment + Staking Stats -->
+<div class="sentiment-row">
+  <!-- 🔹 Left: Total Staked -->
+  <div class="mini-stat">
+    <div class="mini-top">
+      <span>Total TCL Staked</span><span class="live-dot">Live</span>
+    </div>
+    <div id="stakedMini" class="mini-value">—</div>
+    <div id="stakedMiniUsd" class="mini-sub">≈ — $</div>
+  </div>
+
+  <!-- 🔸 Center: Sentiment Gauge -->
+  <div id="sentimentBox">
+    <h3>Sentiment Index</h3>
+    <canvas id="sentimentGauge" width="160" height="80"></canvas>
+    <div id="sentimentScore">--</div>
+    <div id="sentimentLabel">Loading...</div>
+  </div>
+
+  <!-- 🔹 Right: Emission/Day -->
+  <div class="mini-stat">
+    <div class="mini-top">
+      <span>Current Emission/Day</span><span class="live-dot">Live</span>
+    </div>
+    <div id="emissionMini" class="mini-value">—</div>
+    <div id="emissionMiniUsd" class="mini-sub">≈ — $</div>
+  </div>
+</div>
 
 
   <div class="section">
@@ -1057,6 +1207,8 @@ button:hover { opacity: 0.9; }
   <div style="margin-top:15px; display:flex; gap:6px; flex-wrap:wrap;" id="eventButtons"></div>
 </div>
 
+
+
 <!-- TCL Token Chart -->
 <div id="chart" class="section-page">
   <iframe 
@@ -1141,9 +1293,9 @@ button:hover { opacity: 0.9; }
 <!-- 🔥 mesaj sub search -->
 <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
 
-  <table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;">
-    <thead>
-      <tr style="background:#007bff;color:white;">
+<table id="stakingTable" style="width:100%;border-collapse:collapse;margin-top:15px;background:#0c1320;border:1px solid #2ff6de33;border-radius:12px;overflow:hidden;box-shadow:0 0 8px rgba(47,246,222,0.08);">
+  <thead>
+    <tr style="background:linear-gradient(90deg,#042030,#07374c);color:#2ff6de;">
         <th style="padding:8px; text-align:center;">Rank</th>
         <th style="padding:8px; text-align:center;">Address</th>
         <th style="padding:8px; text-align:center;">Total TCL</th>
@@ -1399,6 +1551,7 @@ function calculate() {
     resultBox.innerHTML = t("calc_error");
   }
 }
+
 // ===== Zile săptămână =====
 const weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
@@ -1894,6 +2047,100 @@ setInterval(() => {
 
 fetchExplorerData();
 setInterval(fetchExplorerData, 300000); // la fiecare 5 min
+
+
+// === TCL Sentiment Index ===
+const gauge = document.getElementById("sentimentGauge");
+const gctx = gauge.getContext("2d");
+
+function drawSentimentGauge(score) {
+  const start = Math.PI, end = 2*Math.PI;
+  const mid = start + (end - start)*(score/100);
+  gctx.clearRect(0,0,gauge.width,gauge.height);
+
+  const bg = gctx.createLinearGradient(0,0,gauge.width,0);
+  bg.addColorStop(0,"#ef4444");
+  bg.addColorStop(0.5,"#facc15");
+  bg.addColorStop(1,"#22c55e");
+
+  gctx.lineWidth = 18;
+  gctx.lineCap = "round";
+  gctx.strokeStyle = "#1f2937";
+  gctx.beginPath();
+  gctx.arc(gauge.width/2,gauge.height,70,start,end);
+  gctx.stroke();
+
+  gctx.strokeStyle = bg;
+  gctx.beginPath();
+  gctx.arc(gauge.width/2,gauge.height,70,start,mid);
+  gctx.stroke();
+}
+
+function sentimentLabel(score){
+  if(score <= 24) return {text:"😱 Strong Opportunity — Bottom Levels", color:"#ef4444"};
+  if(score <= 44) return {text:"😟 Accumulation Zone — Still Undervalued", color:"#f97316"};
+  if(score <= 55) return {text:"😐 Stabilizing — Good Entry Range", color:"#facc15"};
+  if(score <= 74) return {text:"😄 Watch Closely — Momentum Building", color:"#84cc16"};
+  return {text:"🚀 Bullish Sentiment — Growth Phase Starting", color:"#22c55e"};
+}
+
+async function updateSentimentIndex(){
+  try {
+    // 🔹 Preluăm date existente deja
+    const [dexRes, mvxRes] = await Promise.all([
+      fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff").then(r=>r.json()),
+      fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r=>r.json())
+    ]);
+
+    const pair = dexRes.pair;
+    const priceChange = parseFloat(pair.priceChange.h24) || 0;
+    const liquidity = pair.liquidity.usd || 0;
+    const volume = pair.volume.h24 || 0;
+    const holders = mvxRes.accounts || 0;
+    const txs = mvxRes.transfers || 0;
+    const circulating = mvxRes.circulatingSupply || 1;
+
+    // 🔹 Total staked
+    const hexAddr = bech32ToHex("erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk");
+    const stRes = await fetch("https://api.multiversx.com/query", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ scAddress:"erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk", funcName:"getRewardsData", args:[hexAddr] })
+    });
+    const stData = await stRes.json();
+    let stakedPct = 0;
+    if (stData.returnData && stData.returnData[0]) {
+      const decoded = atob(stData.returnData[0]);
+      const parts = decoded.split(" ");
+      const staked = parseFloat(parts[3]) / 1e18;
+      stakedPct = (staked / circulating) * 100;
+    }
+
+    // 🔹 Calcul scor
+    let score = 50;
+    score += Math.max(Math.min(priceChange,10),-10)*2.5; // ±25
+    score += Math.min(volume/100000,10); // +10
+    score += Math.min(liquidity/50000,10); // +10
+    score += Math.min(txs/2000,10); // +10
+    score += Math.min(holders/1000,10); // +10
+    score += Math.min(stakedPct/2,10); // +10 dacă >20%
+    score = Math.max(0,Math.min(100,score));
+
+    const {text,color} = sentimentLabel(score);
+    drawSentimentGauge(score);
+    document.getElementById("sentimentScore").textContent = Math.round(score);
+    const label = document.getElementById("sentimentLabel");
+    label.textContent = text;
+    label.style.color = color;
+  } catch(e) {
+    console.warn("Sentiment error:", e);
+  }
+}
+
+updateSentimentIndex();
+setInterval(updateSentimentIndex, 5*60*1000);
+
+
 
 // === Deschidem meniul imediat la primul load ===
 document.addEventListener("DOMContentLoaded", () => {
@@ -2546,6 +2793,11 @@ async function loadTCLStats() {
     document.getElementById("stakedUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
     document.getElementById("emissionUsd").textContent = "≈ " + emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
     document.getElementById("aprUsd").textContent = ""; // APR n-are valoare în $
+    document.getElementById("stakedMini").textContent = totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
+	document.getElementById("stakedMiniUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
+	document.getElementById("emissionMini").textContent = emission.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
+	document.getElementById("emissionMiniUsd").textContent = "≈ " + emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
+
   } catch (e) {
     console.error("⚠️ Error loading TCL rewards:", e);
     document.getElementById("apr").textContent = "Error";
@@ -2616,5 +2868,3 @@ function simulateApr() {
 </script>
 </body>
 </html>
-
-
