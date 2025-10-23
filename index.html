@@ -2334,9 +2334,9 @@ async function loadTranslations(lang) {
     translations = await res.json();
     currentLang = lang;
     localStorage.setItem("lang", lang);
-    applyTranslations();
- // 🔹 Recalculează sentiment index după ce traducerile sunt încărcate
+	 // 🔹 Recalculează sentiment index după ce traducerile sunt încărcate
     updateSentimentIndex();
+    applyTranslations();
     // 🔥 actualizează vizual dropdown-ul cu steag + text
     let label = "English", flag = "https://flagcdn.com/w20/gb.png";
     if (lang === "ro") { label = "Română"; flag = "https://flagcdn.com/w20/ro.png"; }
