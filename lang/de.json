@@ -1,4 +1,14 @@
 {
+  "sentiment_title": "Stimmungsindex",
+  "sentiment_loading": "Lädt...",
+  
+  "sentiment_labels": {
+    "very_low": "😱 Starke Gelegenheit — Unterste Niveaus",
+    "low": "😟 Akkumulationszone — Immer noch unterbewertet", 
+    "neutral": "😐 Stabilisierung — Guter Einstiegsbereich",
+    "high": "😄 Aufmerksam beobachten — Momentum baut sich auf",
+    "very_high": "🚀 Hausse-Stimmung — Wachstumsphase beginnt"
+  },
   "connect_title": "🔗 Verbinde deine xPortal Wallet",
   "connect_intro": "Um alle <b>Web3-Vorteile</b> in <b>The Cursed Land & Lander</b> freizuschalten – einschließlich Token, NFT-Staking & Utility, Infinity Staking, ItemShop & RMT – folge diesen Schritten, um deine <b>xPortal Wallet</b> einzurichten und zu verbinden.",
 
