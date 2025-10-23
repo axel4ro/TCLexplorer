@@ -25,6 +25,7 @@
   --text-dark: #f1f1f1;
   --card-dark: #161a24;
 }
+
 /* BODY */
 body {
   font-family: Arial, sans-serif;
@@ -861,7 +862,13 @@ button:hover { opacity: 0.9; }
 #sentimentScore {
   transition: transform 0.1s ease;
 }
-
+/* === Stil pentru last update === */
+#sentimentLastUpdate {
+  font-size: 10px !important;
+  color: #6b7280 !important;
+  margin-top: 4px !important;
+  font-weight: 500 !important;
+}
   </style>
 </head>
 <body>
@@ -2109,6 +2116,10 @@ function sentimentLabel(score) {
 }
 
 // === TCL Sentiment Index - VERSIUNE CORECTATĂ ===
+// === TCL Sentiment Index cu Last Update ===
+let lastSentimentScore = null;
+let lastSentimentUpdate = null;
+
 async function updateSentimentIndex() {
   try {
     // 🔹 Fetch toate datele necesare
@@ -2188,6 +2199,16 @@ async function updateSentimentIndex() {
 
     score = Math.max(0, Math.min(100, Math.round(score)));
 
+    // 🔹 Verifică dacă scorul s-a schimbat semnificativ
+    const hasChanged = lastSentimentScore === null || Math.abs(score - lastSentimentScore) >= 1;
+    
+    if (hasChanged) {
+      lastSentimentScore = score;
+      lastSentimentUpdate = new Date();
+      
+      console.log("🔄 Sentiment score changed:", score);
+    }
+
     // 🔹 Actualizare interfață
     const { text, color } = sentimentLabel(score);
     drawSentimentGauge(score);
@@ -2201,7 +2222,10 @@ async function updateSentimentIndex() {
     label.textContent = text;
     label.style.color = color;
 
-    console.log("✅ Sentiment updated:", score, text);
+    // 🔹 Actualizare last update
+    updateSentimentLastUpdate();
+
+    console.log("✅ Sentiment updated:", score, text, "Changed:", hasChanged);
 
   } catch (e) {
     console.error("❌ Sentiment error:", e);
@@ -2212,6 +2236,44 @@ async function updateSentimentIndex() {
   }
 }
 
+// === Actualizează afișajul "last update" ===
+function updateSentimentLastUpdate() {
+  const sentimentBox = document.getElementById("sentimentBox");
+  let updateElement = document.getElementById("sentimentLastUpdate");
+  
+  // Creează elementul dacă nu există
+  if (!updateElement) {
+    updateElement = document.createElement("div");
+    updateElement.id = "sentimentLastUpdate";
+    updateElement.style.fontSize = "10px";
+    updateElement.style.color = "#6b7280";
+    updateElement.style.marginTop = "4px";
+    sentimentBox.appendChild(updateElement);
+  }
+  
+  if (lastSentimentUpdate) {
+    const now = new Date();
+    const diffMs = now - lastSentimentUpdate;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    
+    let relative = "";
+    if (diffMins < 1) {
+      relative = "just now";
+    } else if (diffMins < 60) {
+      relative = `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+      relative = `${diffHours}h ago`;
+    } else {
+      relative = lastSentimentUpdate.toLocaleDateString();
+    }
+    
+    updateElement.textContent = `Updated: ${relative}`;
+  } else {
+    updateElement.textContent = "Updated: never";
+  }
+}
+
 // === Inițializare la încărcare ===
 document.addEventListener("DOMContentLoaded", function() {
   // Așteaptă puțin pentru a se încărca restul datelor
@@ -2219,8 +2281,10 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Actualizează la fiecare 5 minute
   setInterval(updateSentimentIndex, 5 * 60 * 1000);
+  
+  // Actualizează afișajul "x time ago" la fiecare minut
+  setInterval(updateSentimentLastUpdate, 60000);
 });
-
 
 // === Deschidem meniul imediat la primul load ===
 document.addEventListener("DOMContentLoaded", () => {
@@ -2382,9 +2446,9 @@ async function loadTranslations(lang) {
 function applyTranslations() {
   const activePage = document.querySelector(".section-page.active");
   const hasTranslations = activePage && activePage.querySelectorAll("[data-i18n]").length > 0;
- // 🌍 butonul Language apare mereu, dar dacă nu sunt traduceri -> doar EN rămâne
-document.querySelector(".lang-dropdown").style.display = "block";
-
+  
+  // 🌍 butonul Language apare mereu, dar dacă nu sunt traduceri -> doar EN rămâne
+  document.querySelector(".lang-dropdown").style.display = "block";
 
   if (!translations || Object.keys(translations).length === 0) return;
 
@@ -2401,6 +2465,12 @@ document.querySelector(".lang-dropdown").style.display = "block";
   // 🔥 forțăm refresh pentru evenimente (să nu rămână pe Loading...)
   if (currentDay) {
     showEventsForDay(currentDay);
+  }
+
+  // 🔥 ACTUALIZARE SENTIMENT INDEX când pagina token este activă
+  if (document.getElementById('token')?.classList.contains('active')) {
+    console.log("🔄 Refreshing sentiment index via applyTranslations...");
+    updateSentimentIndex();
   }
 }
 
@@ -2953,4 +3023,3 @@ function simulateApr() {
 </script>
 </body>
 </html>
-
