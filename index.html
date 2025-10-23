@@ -2023,7 +2023,6 @@ window.onload = function() {
   fetchPoolData();
   fetchGeckoAthAtl();
   updateStakingLeaderboard();
-
   loadEvents(); // ✅ încarcă și events
 
   setInterval(function() {
@@ -2110,95 +2109,118 @@ function sentimentLabel(score) {
   };
 }
 
+// === TCL Sentiment Index - VERSIUNE CORECTATĂ ===
 async function updateSentimentIndex() {
   try {
-    // 🔹 Preluăm date existente deja
-    const [dexRes, mvxRes, lockedRes] = await Promise.all([
+    // 🔹 Fetch toate datele necesare
+    const [dexRes, mvxRes] = await Promise.all([
       fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff").then(r => r.json()),
-      fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json()),
-      fetch("https://api.multiversx.com/tokens/TCL-fe459d/locked-accounts").then(r => r.json())
+      fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json())
     ]);
 
     const pair = dexRes.pair;
-    const priceChange = parseFloat(pair.priceChange.h24) || 0;
-    const liquidity = pair.liquidity.usd || 0;
-    const volume = pair.volume.h24 || 0;
+    const priceChange = parseFloat(pair.priceChange?.h24) || 0;
+    const liquidity = pair.liquidity?.usd || 0;
+    const volume = pair.volume?.h24 || 0;
+    
+    // 🔹 Date din MultiversX API
     const holders = mvxRes.accounts || 0;
     const txs = mvxRes.transfers || 0;
     const circulating = mvxRes.circulatingSupply || 1;
-
-    // 🔹 Total staked
-    const hexAddr = bech32ToHex("erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk");
-    const stRes = await fetch("https://api.multiversx.com/query", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        scAddress: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
-        funcName: "getRewardsData",
-        args: [hexAddr]
-      })
-    });
-    const stData = await stRes.json();
-    let stakedPct = 0;
-    if (stData.returnData && stData.returnData[0]) {
-      const decoded = atob(stData.returnData[0]);
-      const parts = decoded.split(" ");
-      const staked = parseFloat(parts[3]) / 1e18;
-      stakedPct = (staked / circulating) * 100;
-    }
-
-    // 🔹 Calcul locked%
-    let lockedPct = 0;
-    if (Array.isArray(lockedRes)) {
-      lockedPct = lockedRes.reduce((acc, item) => acc + (item.percentage || 0), 0);
-    }
-
-    // 🔹 Calcul scor
-    let score = 0;
+    const marketCap = mvxRes.marketCap || 0;
+    
+    // 🔹 Calcul burned
     const burned = mvxRes.burnt ? parseFloat(mvxRes.burnt) / 1e18 : 0;
     const supply = mvxRes.initialMinted ? parseFloat(mvxRes.initialMinted) / 1e18 : 1;
     const burnedPct = (burned / supply) * 100;
-    const marketCap = mvxRes.marketCap || 0;
 
-    // buySellRatio momentan îl simulăm până ai endpoint real
-    const buySellRatio = 1.2; // 1 = echilibru, >1 = mai multe cumpărări
+    // 🔹 Staking data simplificată
+    let stakedPct = 0;
+    try {
+      const hexAddr = bech32ToHex("erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk");
+      const stRes = await fetch("https://api.multiversx.com/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scAddress: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
+          funcName: "getRewardsData",
+          args: [hexAddr]
+        })
+      });
+      const stData = await stRes.json();
+      if (stData.returnData && stData.returnData[0]) {
+        const decoded = atob(stData.returnData[0]);
+        const parts = decoded.split(" ");
+        const staked = parseFloat(parts[3]) / 1e18;
+        stakedPct = (staked / circulating) * 100;
+      }
+    } catch (e) {
+      console.warn("Staking data error:", e);
+    }
 
-    // === TCL Sentiment Score v3 (cu locked din API) ===
+    // 🔹 Locked data simplificată
+    let lockedPct = 0;
+    try {
+      const lockedRes = await fetch("https://api.multiversx.com/tokens/TCL-fe459d/locked-accounts");
+      const lockedData = await lockedRes.json();
+      if (Array.isArray(lockedData)) {
+        lockedPct = lockedData.reduce((acc, item) => acc + (item.percentage || 0), 0);
+      }
+    } catch (e) {
+      console.warn("Locked data error:", e);
+    }
+
+    // 🔹 Calcul scor final
+    let score = 0; // start de la 50 (neutral)
+
+    // Adăugăm/scădem în funcție de factori
     score += Math.max(Math.min(priceChange, 10), -10) * 1.2; // ±12 din preț
-    score += Math.min(volume / 100, 5);                      // volum
+    score += Math.min(volume / 100, 5);                    // volum
     score += Math.min(liquidity / 10000, 8);                 // lichiditate
-    score += Math.min(buySellRatio * 10, 8);                 // raport cump/vânz
-    score += Math.min(holders / 1000, 6);                    // holderi
+    score += Math.min(holders / 1000, 6);                     // holderi
     score += Math.min(txs / 300000, 8);                      // tranzacții
-    score += Math.min(stakedPct / 1.0, 12);                  // staking
+    score += Math.min(stakedPct / 1, 12);                    // staking
     score += Math.min(burnedPct / 1, 8);                     // burned
-    score += Math.min(lockedPct / 2, 10);                    // locked (din API)
-    if (marketCap < 500000) score -= 3;
-    else if (marketCap < 1000000) score += 2;
+    score += Math.min(lockedPct / 2, 10);                    // locked
+    
+    // Ajustări pentru market cap
+    if (marketCap < 500000) score -= 5;
+    else if (marketCap > 1000000) score += 5;
 
-    score = Math.max(0, Math.min(100, score));
+    score = Math.max(0, Math.min(100, Math.round(score)));
 
-// 🔹 Folosește funcția sentimentLabel cu traduceri
+    // 🔹 Actualizare interfață
     const { text, color } = sentimentLabel(score);
     drawSentimentGauge(score);
 
-    // 🔹 Efect mic de animație la scor
     const scoreEl = document.getElementById("sentimentScore");
-    scoreEl.textContent = Math.round(score);
+    scoreEl.textContent = score;
     scoreEl.style.transform = "scale(1.08)";
     setTimeout(() => (scoreEl.style.transform = "scale(1)"), 300);
 
-    // 🔹 Actualizare text + culoare sentiment
     const label = document.getElementById("sentimentLabel");
     label.textContent = text;
     label.style.color = color;
 
+    console.log("✅ Sentiment updated:", score, text);
+
   } catch (e) {
-    console.warn("Sentiment error:", e);
+    console.error("❌ Sentiment error:", e);
+    // Fallback în caz de eroare
+    document.getElementById("sentimentScore").textContent = "?";
+    document.getElementById("sentimentLabel").textContent = "Data unavailable";
+    document.getElementById("sentimentLabel").style.color = "#6b7280";
   }
 }
-updateSentimentIndex();
-setInterval(updateSentimentIndex, 5 * 60 * 1000);
+
+// === Inițializare la încărcare ===
+document.addEventListener("DOMContentLoaded", function() {
+  // Așteaptă puțin pentru a se încărca restul datelor
+  setTimeout(updateSentimentIndex, 2000);
+  
+  // Actualizează la fiecare 5 minute
+  setInterval(updateSentimentIndex, 5 * 60 * 1000);
+});
 
 
 // === Deschidem meniul imediat la primul load ===
@@ -2334,19 +2356,23 @@ async function loadTranslations(lang) {
     translations = await res.json();
     currentLang = lang;
     localStorage.setItem("lang", lang);
-	 // 🔹 Recalculează sentiment index după ce traducerile sunt încărcate
-    updateSentimentIndex();
+    
+    // 🔹 Aplică traducerile imediat
     applyTranslations();
+    
+    // 🔹 Recalculează sentiment index după ce traducerile sunt încărcate
+    updateSentimentIndex();
+
     // 🔥 actualizează vizual dropdown-ul cu steag + text
     let label = "English", flag = "https://flagcdn.com/w20/gb.png";
     if (lang === "ro") { label = "Română"; flag = "https://flagcdn.com/w20/ro.png"; }
     if (lang === "tr") { label = "Türkçe"; flag = "https://flagcdn.com/w20/tr.png"; }
-	if (lang === "de") { label = "Deutsch"; flag = "https://flagcdn.com/w20/de.png"; }
-	if (lang === "es") { label = "Español"; flag = "https://flagcdn.com/w20/es.png"; }
-	if (lang === "fr") { label = "Français"; flag = "https://flagcdn.com/w20/fr.png"; }
-	if (lang === "it") { label = "Italiano"; flag = "https://flagcdn.com/w20/it.png"; }
-	if (lang === "pl") { label = "Polski"; flag = "https://flagcdn.com/w20/pl.png"; }
-	if (lang === "pt") { label = "Português"; flag = "https://flagcdn.com/w20/pt.png"; }
+    if (lang === "de") { label = "Deutsch"; flag = "https://flagcdn.com/w20/de.png"; }
+    if (lang === "es") { label = "Español"; flag = "https://flagcdn.com/w20/es.png"; }
+    if (lang === "fr") { label = "Français"; flag = "https://flagcdn.com/w20/fr.png"; }
+    if (lang === "it") { label = "Italiano"; flag = "https://flagcdn.com/w20/it.png"; }
+    if (lang === "pl") { label = "Polski"; flag = "https://flagcdn.com/w20/pl.png"; }
+    if (lang === "pt") { label = "Português"; flag = "https://flagcdn.com/w20/pt.png"; }
     currentLangBtn.innerHTML = `<img src="${flag}" alt="${lang.toUpperCase()}"> ${label}`;
 
   } catch (err) {
