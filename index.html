@@ -1316,7 +1316,7 @@ function t(key, vars = {}) {
 }
 
 
-  // ===== Calculator =====
+// ===== Calculator =====
 function switchMode() {
   const inputLabel = document.getElementById("inputLabel");
   const switchBtn = document.getElementById("switchBtn");
@@ -1335,58 +1335,70 @@ function switchMode() {
   document.getElementById("resultBox").innerHTML = '';
 }
 
-  function calculate() {
-    const tcl = parseNumber(getText("curTCL"));
-    const usdc = parseNumber(getText("curUSDC"));
-    const curPrice = parseNumber(getText("curPrice"));
-    const value = parseNumber(document.getElementById("amount").value);
-    const resultBox = document.getElementById("resultBox");
-    resultBox.innerHTML = "";
-    const feePct = 0.01, valueAfterFee = value * (1 - feePct);
+function calculate() {
+  // 🔢 helper pt formatare clară cu mii și zecimale
+  const formatNum = (num, dec = 2) => {
+    if (isNaN(num)) return "0";
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec
+    });
+  };
 
-    if (mode === 'buy' && value > 0) {
-      const newUSDC = usdc + valueAfterFee;
-      const newTCL = (tcl * usdc) / newUSDC;
-      const boughtTCL = tcl - newTCL;
-      const avgPrice = value / boughtTCL;
-      const newPrice = newUSDC / newTCL;
-      const priceImpact = (avgPrice - curPrice) / avgPrice * 100;
-      const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-resultBox.innerHTML = t("calc_result_buy", {
-  value: formatNumber(value),
-  boughtTCL: formatNumber(boughtTCL),
-  avgPrice: avgPrice.toFixed(6),
-  priceImpact: priceImpact.toFixed(2),
-  pctChange: pctChange.toFixed(2),
-  newPrice: newPrice.toFixed(6),
-  newTCL: formatNumber(newTCL),
-  newUSDC: formatNumber(newUSDC)
-});
+  const tcl = parseNumber(getText("curTCL"));
+  const usdc = parseNumber(getText("curUSDC"));
+  const curPrice = parseNumber(getText("curPrice"));
+  const value = parseNumber(document.getElementById("amount").value);
+  const resultBox = document.getElementById("resultBox");
+  resultBox.innerHTML = "";
 
-    } else if (mode === 'sell' && value > 0) {
-      const newTCL = tcl + valueAfterFee;
-      const newUSDC = (usdc * tcl) / newTCL;
-      const receivedUSDC = usdc - newUSDC;
-      const avgPrice = receivedUSDC / value;
-      const newPrice = newUSDC / newTCL;
-      const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
-      const pctChange = ((newPrice - curPrice) / curPrice) * 100;
-      resultBox.innerHTML =
-resultBox.innerHTML = t("calc_result_sell", {
-  value: formatNumber(value),
-  receivedUSDC: formatNumber(receivedUSDC),
-  avgPrice: avgPrice.toFixed(6),
-  priceImpact: priceImpact.toFixed(2),
-  pctChange: pctChange.toFixed(2),
-  newPrice: newPrice.toFixed(6),
-  newTCL: formatNumber(newTCL),
-  newUSDC: formatNumber(newUSDC)
-});
+  const feePct = 0.01;
+  const valueAfterFee = value * (1 - feePct);
 
-    } else {
-      resultBox.innerHTML = t("calc_error");
-    }
+  if (mode === 'buy' && value > 0) {
+    const newUSDC = usdc + valueAfterFee;
+    const newTCL = (tcl * usdc) / newUSDC;
+    const boughtTCL = tcl - newTCL;
+    const avgPrice = value / boughtTCL;
+    const newPrice = newUSDC / newTCL;
+    const priceImpact = (avgPrice - curPrice) / avgPrice * 100;
+    const pctChange = ((newPrice - curPrice) / curPrice) * 100;
+
+    resultBox.innerHTML = t("calc_result_buy", {
+      value: formatNumber(value),
+      boughtTCL: formatNumber(boughtTCL),
+      avgPrice: formatNum(avgPrice, 5),
+      priceImpact: formatNum(priceImpact, 2),
+      pctChange: formatNum(pctChange, 2),
+      newPrice: formatNum(newPrice, 5),
+      newTCL: formatNumber(newTCL),
+      newUSDC: formatNumber(newUSDC)
+    });
+
+  } else if (mode === 'sell' && value > 0) {
+    const newTCL = tcl + valueAfterFee;
+    const newUSDC = (usdc * tcl) / newTCL;
+    const receivedUSDC = usdc - newUSDC;
+    const avgPrice = receivedUSDC / value;
+    const newPrice = newUSDC / newTCL;
+    const priceImpact = ((curPrice - avgPrice) / curPrice) * 100;
+    const pctChange = ((newPrice - curPrice) / curPrice) * 100;
+
+    resultBox.innerHTML = t("calc_result_sell", {
+      value: formatNumber(value),
+      receivedUSDC: formatNumber(receivedUSDC),
+      avgPrice: formatNum(avgPrice, 5),
+      priceImpact: formatNum(priceImpact, 2),
+      pctChange: formatNum(pctChange, 2),
+      newPrice: formatNum(newPrice, 5),
+      newTCL: formatNumber(newTCL),
+      newUSDC: formatNumber(newUSDC)
+    });
+
+  } else {
+    resultBox.innerHTML = t("calc_error");
   }
+}
 // ===== Zile săptămână =====
 const weekdays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
@@ -2604,4 +2616,5 @@ function simulateApr() {
 </script>
 </body>
 </html>
+
 
