@@ -1,4 +1,15 @@
 {
+  "sentiment_title": "Índice de Sentimiento",
+  "sentiment_loading": "Cargando...",
+  
+  "sentiment_labels": {
+    "very_low": "😱 Oportunidad Fuerte — Niveles Mínimos",
+    "low": "😟 Zona de Acumulación — Todavía Subvalorado",
+    "neutral": "😐 Estabilizando — Rango de Entrada Bueno",
+    "high": "😄 Observar de Cerca — Momentum Construyéndose",
+    "very_high": "🚀 Sentimiento Alcista — Fase de Crecimiento Comenzando"
+  },
+  
   "connect_title": "🔗 Conecta tu Billetera xPortal",
   "connect_intro": "Para desbloquear todos los <b>beneficios Web3</b> en <b>The Cursed Land & Lander</b> – incluyendo Tokens, Staking y Utilidad de NFTs, Infinity Staking, ItemShop y RMT – sigue estos pasos para configurar y conectar tu <b>Billetera xPortal</b>.",
 
