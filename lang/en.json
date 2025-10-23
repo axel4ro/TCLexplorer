@@ -1,15 +1,14 @@
 {
-  "sentiment_title": "Sentiment Index",
-  "sentiment_loading": "Loading...",
+  "sentiment_title": "Índice de Sentimiento",
+  "sentiment_loading": "Cargando...",
   
   "sentiment_labels": {
-    "very_low": "😱 Strong Opportunity — Bottom Levels",
-    "low": "😟 Accumulation Zone — Still Undervalued", 
-    "neutral": "😐 Stabilizing — Good Entry Range",
-    "high": "😄 Watch Closely — Momentum Building",
-    "very_high": "🚀 Bullish Sentiment — Growth Phase Starting"
+    "very_low": "😱 Oportunidad Fuerte — Niveles Mínimos",
+    "low": "😟 Zona de Acumulación — Todavía Subvalorado",
+    "neutral": "😐 Estabilizando — Rango de Entrada Bueno",
+    "high": "😄 Observar de Cerca — Momentum Construyéndose",
+    "very_high": "🚀 Sentimiento Alcista — Fase de Crecimiento Comenzando"
   },
-  
   "connect_title": "🔗 Connect your xPortal Wallet",
   "connect_intro": "To unlock all <b>Web3 benefits</b> in <b>The Cursed Land & Lander</b> – including Tokens, NFTs Staking & Utility, Infinity Staking, ItemShop & RMT – follow these steps to set up and connect your <b>xPortal Wallet</b>.",
 
