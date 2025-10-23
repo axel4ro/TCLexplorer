@@ -1,4 +1,14 @@
 {
+  "sentiment_title": "Indice di Sentiment",
+  "sentiment_loading": "Caricamento...",
+  
+  "sentiment_labels": {
+    "very_low": "😱 Forte Opportunità — Livelli di Fondo",
+    "low": "😟 Zona di Accumulazione — Ancora Sottovalutato",
+    "neutral": "😐 Stabilizzazione — Buon Range di Ingresso",
+    "high": "😄 Osserva da Vicino — Momentum in Costruzione",
+    "very_high": "🚀 Sentimento Bullish — Inizio Fase di Crescita"
+  },
   "connect_title": "🔗 Collega il tuo Portafoglio xPortal",
   "connect_intro": "Per sbloccare tutti i <b>vantaggi Web3</b> in <b>The Cursed Land & Lander</b> – inclusi Token, Staking & Utilità degli NFT, Infinity Staking, ItemShop & RMT – segui questi passaggi per configurare e collegare il tuo <b>Portafoglio xPortal</b>.",
 
