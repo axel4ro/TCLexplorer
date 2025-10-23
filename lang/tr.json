@@ -1,4 +1,14 @@
 {
+  "sentiment_title": "Sentiment Endeksi",
+  "sentiment_loading": "Yükleniyor...",
+  
+  "sentiment_labels": {
+    "very_low": "😱 Güçlü Fırsat — Dip Seviyeler",
+    "low": "😟 Birikim Bölgesi — Hala Düşük Değerli",
+    "neutral": "😐 İstikrar Kazanıyor — İyi Giriş Aralığı",
+    "high": "😄 Yakından İzle — Momentum Oluşuyor",
+    "very_high": "🚀 Yükseliş Sentimenti — Büyüme Aşaması Başlıyor"
+  },
   "connect_title": "🔗 xPortal Cüzdanınızı Bağlayın",
   "connect_intro": "<b>The Cursed Land & Lander</b> içindeki tüm <b>Web3 avantajlarının</b> kilidini açmak için – Tokenler, NFT Staking & Kullanım, Infinity Staking, ItemShop & RMT dahil – <b>xPortal Cüzdanınızı</b> kurmak ve bağlamak için bu adımları izleyin.",
 
