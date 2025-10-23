@@ -859,6 +859,9 @@ button:hover { opacity: 0.9; }
   transform: translateY(-2px);
   box-shadow: 0 0 12px rgba(47, 246, 222, 0.15);
 }
+#sentimentScore {
+  transition: transform 0.1s ease;
+}
 
   </style>
 </head>
@@ -2054,42 +2057,43 @@ const gauge = document.getElementById("sentimentGauge");
 const gctx = gauge.getContext("2d");
 
 function drawSentimentGauge(score) {
-  const start = Math.PI, end = 2*Math.PI;
-  const mid = start + (end - start)*(score/100);
-  gctx.clearRect(0,0,gauge.width,gauge.height);
+  const start = Math.PI, end = 2 * Math.PI;
+  const mid = start + (end - start) * (score / 100);
+  gctx.clearRect(0, 0, gauge.width, gauge.height);
 
-  const bg = gctx.createLinearGradient(0,0,gauge.width,0);
-  bg.addColorStop(0,"#ef4444");
-  bg.addColorStop(0.5,"#facc15");
-  bg.addColorStop(1,"#22c55e");
+  const bg = gctx.createLinearGradient(0, 0, gauge.width, 0);
+  bg.addColorStop(0, "#ef4444");
+  bg.addColorStop(0.5, "#facc15");
+  bg.addColorStop(1, "#22c55e");
 
   gctx.lineWidth = 18;
   gctx.lineCap = "round";
   gctx.strokeStyle = "#1f2937";
   gctx.beginPath();
-  gctx.arc(gauge.width/2,gauge.height,70,start,end);
+  gctx.arc(gauge.width / 2, gauge.height, 70, start, end);
   gctx.stroke();
 
   gctx.strokeStyle = bg;
   gctx.beginPath();
-  gctx.arc(gauge.width/2,gauge.height,70,start,mid);
+  gctx.arc(gauge.width / 2, gauge.height, 70, start, mid);
   gctx.stroke();
 }
 
-function sentimentLabel(score){
-  if(score <= 24) return {text:"😱 Strong Opportunity — Bottom Levels", color:"#ef4444"};
-  if(score <= 44) return {text:"😟 Accumulation Zone — Still Undervalued", color:"#f97316"};
-  if(score <= 55) return {text:"😐 Stabilizing — Good Entry Range", color:"#facc15"};
-  if(score <= 74) return {text:"😄 Watch Closely — Momentum Building", color:"#84cc16"};
-  return {text:"🚀 Bullish Sentiment — Growth Phase Starting", color:"#22c55e"};
+function sentimentLabel(score) {
+  if (score <= 24) return { text: "😱 Strong Opportunity — Bottom Levels", color: "#ef4444" };
+  if (score <= 44) return { text: "😟 Accumulation Zone — Still Undervalued", color: "#f97316" };
+  if (score <= 55) return { text: "😐 Stabilizing — Good Entry Range", color: "#facc15" };
+  if (score <= 74) return { text: "😄 Watch Closely — Momentum Building", color: "#84cc16" };
+  return { text: "🚀 Bullish Sentiment — Growth Phase Starting", color: "#22c55e" };
 }
 
-async function updateSentimentIndex(){
+async function updateSentimentIndex() {
   try {
     // 🔹 Preluăm date existente deja
-    const [dexRes, mvxRes] = await Promise.all([
-      fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff").then(r=>r.json()),
-      fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r=>r.json())
+    const [dexRes, mvxRes, lockedRes] = await Promise.all([
+      fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff").then(r => r.json()),
+      fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json()),
+      fetch("https://api.multiversx.com/tokens/TCL-fe459d/locked-accounts").then(r => r.json())
     ]);
 
     const pair = dexRes.pair;
@@ -2104,8 +2108,12 @@ async function updateSentimentIndex(){
     const hexAddr = bech32ToHex("erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk");
     const stRes = await fetch("https://api.multiversx.com/query", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ scAddress:"erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk", funcName:"getRewardsData", args:[hexAddr] })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scAddress: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
+        funcName: "getRewardsData",
+        args: [hexAddr]
+      })
     });
     const stData = await stRes.json();
     let stakedPct = 0;
@@ -2116,30 +2124,58 @@ async function updateSentimentIndex(){
       stakedPct = (staked / circulating) * 100;
     }
 
-    // 🔹 Calcul scor
-    let score = 50;
-    score += Math.max(Math.min(priceChange,10),-10)*2.5; // ±25
-    score += Math.min(volume/100000,10); // +10
-    score += Math.min(liquidity/50000,10); // +10
-    score += Math.min(txs/2000,10); // +10
-    score += Math.min(holders/1000,10); // +10
-    score += Math.min(stakedPct/2,10); // +10 dacă >20%
-    score = Math.max(0,Math.min(100,score));
+    // 🔹 Calcul locked%
+    let lockedPct = 0;
+    if (Array.isArray(lockedRes)) {
+      lockedPct = lockedRes.reduce((acc, item) => acc + (item.percentage || 0), 0);
+    }
 
-    const {text,color} = sentimentLabel(score);
-    drawSentimentGauge(score);
-    document.getElementById("sentimentScore").textContent = Math.round(score);
-    const label = document.getElementById("sentimentLabel");
-    label.textContent = text;
-    label.style.color = color;
-  } catch(e) {
+    // 🔹 Calcul scor
+    let score = 0;
+    const burned = mvxRes.burnt ? parseFloat(mvxRes.burnt) / 1e18 : 0;
+    const supply = mvxRes.initialMinted ? parseFloat(mvxRes.initialMinted) / 1e18 : 1;
+    const burnedPct = (burned / supply) * 100;
+    const marketCap = mvxRes.marketCap || 0;
+
+    // buySellRatio momentan îl simulăm până ai endpoint real
+    const buySellRatio = 1.2; // 1 = echilibru, >1 = mai multe cumpărări
+
+    // === TCL Sentiment Score v3 (cu locked din API) ===
+    score += Math.max(Math.min(priceChange, 10), -10) * 1.2; // ±12 din preț
+    score += Math.min(volume / 100, 5);                      // volum
+    score += Math.min(liquidity / 10000, 8);                 // lichiditate
+    score += Math.min(buySellRatio * 10, 8);                 // raport cump/vânz
+    score += Math.min(holders / 1000, 6);                    // holderi
+    score += Math.min(txs / 300000, 8);                      // tranzacții
+    score += Math.min(stakedPct / 1.0, 12);                  // staking
+    score += Math.min(burnedPct / 1, 8);                     // burned
+    score += Math.min(lockedPct / 2, 10);                    // locked (din API)
+    if (marketCap < 500000) score -= 3;
+    else if (marketCap < 1000000) score += 2;
+
+    score = Math.max(0, Math.min(100, score));
+
+	const { text, color } = sentimentLabel(score);
+	drawSentimentGauge(score);
+
+	// 🔹 Efect mic de animație la scor
+	const scoreEl = document.getElementById("sentimentScore");
+	scoreEl.textContent = Math.round(score);
+	scoreEl.style.transform = "scale(1.08)";
+	setTimeout(() => (scoreEl.style.transform = "scale(1)"), 300);
+
+	// 🔹 Actualizare text + culoare sentiment
+	const label = document.getElementById("sentimentLabel");
+	label.textContent = text;
+	label.style.color = color;
+
+  } catch (e) {
     console.warn("Sentiment error:", e);
   }
 }
 
 updateSentimentIndex();
-setInterval(updateSentimentIndex, 5*60*1000);
-
+setInterval(updateSentimentIndex, 5 * 60 * 1000);
 
 
 // === Deschidem meniul imediat la primul load ===
