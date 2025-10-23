@@ -1,4 +1,14 @@
 {
+  "sentiment_title": "Wskaźnik Nastrojów",
+  "sentiment_loading": "Ładowanie...",
+  
+  "sentiment_labels": {
+    "very_low": "😱 Silna Okazja — Poziomy Dna",
+    "low": "😟 Strefa Akumulacji — Wciąż Niedowartościowane",
+    "neutral": "😐 Stabilizacja — Dobry Zakupowy Zakres",
+    "high": "😄 Obserwuj Bliżej — Budowanie Momentu",
+    "very_high": "🚀 Byczy Nastrój — Rozpoczyna Się Faza Wzrostu"
+  },
   "connect_title": "🔗 Połącz swój portfel xPortal",
   "connect_intro": "Aby odblokować wszystkie <b>korzyści Web3</b> w <b>The Cursed Land & Lander</b> – w tym Tokeny, Staking i użyteczność NFT, Infinity Staking, ItemShop i RMT – wykonaj te kroki, aby skonfigurować i połączyć swój <b>portfel xPortal</b>.",
 
