@@ -1,11 +1,14 @@
 {
- "sentiment_labels": {
-   "very_low": "😱 Oportunitate Puternică — Niveluri de Bază",
-   "low": "😟 Zonă de Acumulare — Încă Subevaluat",
-   "neutral": "😐 Se Stabilizează — Interval Bun de Intrare", 
-   "high": "😄 Urmărește În Apropiere — Creștere de Moment",
-   "very_high": "🚀 Sentiment Optimist — Faza de Creștere Începe"
- },
+ "sentiment_title": "Indice de Sentiment",
+  "sentiment_loading": "Se încarcă...",
+  
+  "sentiment_labels": {
+    "very_low": "😱 Oportunitate Puternică — Niveluri de Bază",
+    "low": "😟 Zonă de Acumulare — Încă Subevaluat",
+    "neutral": "😐 Se Stabilizează — Interval Bun de Intrare", 
+    "high": "😄 Urmărește În Apropiere — Creștere de Moment",
+    "very_high": "🚀 Sentiment Optimist — Faza de Creștere Începe"
+  },
 
  "connect_title": "🔗 Conectează-ți xPortal Wallet",
   "connect_intro": "Pentru a debloca toate <b>beneficiile Web3</b> în <b>The Cursed Land & Lander</b> – inclusiv Token-uri, NFT-uri (Staking & Utilitate), Infinity Staking, ItemShop & RMT – urmează acești pași pentru a seta și conecta <b>xPortal Wallet</b>.",
