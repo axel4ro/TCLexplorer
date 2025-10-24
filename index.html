@@ -2246,22 +2246,30 @@ try {
   const tokenInfo = await fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json());
   const lockedAccounts = tokenInfo?.assets?.lockedAccounts || {};
 
-  // 🧹 Filtrăm doar adrese valide erd1 și ignorăm null/undefined
+  // 🧹 Filtrăm doar adrese valide și cu minim 1 TCL
   const balances = await Promise.all(
     Object.keys(lockedAccounts)
       .filter(addr => addr && addr.startsWith("erd1"))
       .map(async addr => {
         try {
           const res = await fetch(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`);
+          if (res.status === 404) return 0; // wallet fără TCL -> skip
           if (!res.ok) return 0;
+
           const data = await res.json();
-          return parseFloat(data?.balance || 0) / 1e18;
+          const balance = parseFloat(data?.balance || 0) / 1e18;
+
+          // 🔥 skip complet dacă are sub 1 TCL
+          if (balance < 1) return 0;
+
+          return balance;
         } catch {
           return 0;
         }
       })
   );
 
+  // 🧮 Calcul locked %
   const totalLocked = balances.reduce((a, b) => a + b, 0);
   const circulating = parseFloat(tokenInfo.circulatingSupply || 1);
   lockedPct = ((totalLocked / circulating) * 100).toFixed(2);
@@ -2271,8 +2279,6 @@ try {
   console.warn("Locked data error:", e);
   lockedPct = 0;
 }
-
-
 
     // 🔹 Calcul scor final
     let score = 0; // start de la 50 (neutral)
@@ -3146,3 +3152,4 @@ function simulateApr() {
 </script>
 </body>
 </html>
+
