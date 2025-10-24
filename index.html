@@ -2241,30 +2241,48 @@ async function updateSentimentIndex() {
       console.warn("Staking data error:", e);
     }
 
-    // 🔹 Locked data simplificată
-    let lockedPct = 0;
-    try {
-      const lockedRes = await fetch("https://api.multiversx.com/tokens/TCL-fe459d/locked-accounts");
-      const lockedData = await lockedRes.json();
-      if (Array.isArray(lockedData)) {
-        lockedPct = lockedData.reduce((acc, item) => acc + (item.percentage || 0), 0);
-      }
-    } catch (e) {
-      console.warn("Locked data error:", e);
-    }
+	// 🔹 Locked data precisă din assets + verificare live a balanței
+	let lockedPct = 0;
+	try {
+	  const tokenInfo = await fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json());
+	  const lockedAccounts = tokenInfo?.assets?.lockedAccounts || {};
+
+	  const balances = await Promise.all(
+		Object.keys(lockedAccounts).map(async addr => {
+		  try {
+			const res = await fetch(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`);
+			if (!res.ok) return 0;
+			const data = await res.json();
+			return parseFloat(data?.balance || 0) / 1e18;
+		  } catch {
+			return 0;
+		  }
+		})
+	  );
+
+	  const totalLocked = balances.reduce((a, b) => a + b, 0);
+	  const circulating = parseFloat(tokenInfo.circulatingSupply || 1);
+	  lockedPct = ((totalLocked / circulating) * 100).toFixed(2);
+
+	  console.log("🔒 Locked TCL total:", totalLocked.toLocaleString(), "≈", lockedPct + "%");
+	} catch (e) {
+	  console.warn("Locked data error:", e);
+	  lockedPct = 0;
+	}
+
 
     // 🔹 Calcul scor final
     let score = 0; // start de la 50 (neutral)
 
     // Adăugăm/scădem în funcție de factori
     score += Math.max(Math.min(priceChange, 10), -10) * 1.2; // ±12 din preț
-    score += Math.min(volume / 100, 5);                    // volum
-    score += Math.min(liquidity / 10000, 8);                 // lichiditate
-    score += Math.min(holders / 1000, 6);                     // holderi
-    score += Math.min(txs / 300000, 8);                      // tranzacții
+    score += Math.min(volume / 500, 5);                    // volum
+    score += Math.min(liquidity / 500000, 8);                 // lichiditate
+    score += Math.min(holders / 5000, 6);                     // holderi
+    score += Math.min(txs / 500000, 8);                      // tranzacții
     score += Math.min(stakedPct / 1, 12);                    // staking
-    score += Math.min(burnedPct / 1, 8);                     // burned
-    score += Math.min(lockedPct / 2, 10);                    // locked
+    score += Math.min(burnedPct / 2, 10);                     // burned
+    score += Math.min(lockedPct / 1, 8);                    // locked
     
     // Ajustări pentru market cap
     if (marketCap < 500000) score -= 5;
