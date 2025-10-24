@@ -2240,35 +2240,38 @@ async function updateSentimentIndex() {
     } catch (e) {
       console.warn("Staking data error:", e);
     }
+// 🔹 Locked data precisă din assets + verificare live a balanței
+let lockedPct = 0;
+try {
+  const tokenInfo = await fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json());
+  const lockedAccounts = tokenInfo?.assets?.lockedAccounts || {};
 
-	// 🔹 Locked data precisă din assets + verificare live a balanței
-	let lockedPct = 0;
-	try {
-	  const tokenInfo = await fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json());
-	  const lockedAccounts = tokenInfo?.assets?.lockedAccounts || {};
+  // 🧹 Filtrăm doar adrese valide erd1 și ignorăm null/undefined
+  const balances = await Promise.all(
+    Object.keys(lockedAccounts)
+      .filter(addr => addr && addr.startsWith("erd1"))
+      .map(async addr => {
+        try {
+          const res = await fetch(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`);
+          if (!res.ok) return 0;
+          const data = await res.json();
+          return parseFloat(data?.balance || 0) / 1e18;
+        } catch {
+          return 0;
+        }
+      })
+  );
 
-	  const balances = await Promise.all(
-		Object.keys(lockedAccounts).map(async addr => {
-		  try {
-			const res = await fetch(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`);
-			if (!res.ok) return 0;
-			const data = await res.json();
-			return parseFloat(data?.balance || 0) / 1e18;
-		  } catch {
-			return 0;
-		  }
-		})
-	  );
+  const totalLocked = balances.reduce((a, b) => a + b, 0);
+  const circulating = parseFloat(tokenInfo.circulatingSupply || 1);
+  lockedPct = ((totalLocked / circulating) * 100).toFixed(2);
 
-	  const totalLocked = balances.reduce((a, b) => a + b, 0);
-	  const circulating = parseFloat(tokenInfo.circulatingSupply || 1);
-	  lockedPct = ((totalLocked / circulating) * 100).toFixed(2);
+  console.log("🔒 Locked TCL total:", totalLocked.toLocaleString(), "≈", lockedPct + "%");
+} catch (e) {
+  console.warn("Locked data error:", e);
+  lockedPct = 0;
+}
 
-	  console.log("🔒 Locked TCL total:", totalLocked.toLocaleString(), "≈", lockedPct + "%");
-	} catch (e) {
-	  console.warn("Locked data error:", e);
-	  lockedPct = 0;
-	}
 
 
     // 🔹 Calcul scor final
