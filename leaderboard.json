@@ -1343,11 +1343,11 @@
     "infinity": 0,
     "total": 10000000000000000000
   },
-  "erd1lfz8rxjn8mn6j8a49h0nxkcwnkg0ze52mm8grp79lrh0c5ut3p3s8k0nxa": {
+  "erd1lrmgwmldn6kvvjqh5jypl2cldyquj0eyeqh7hf0eydmlvnlpgmkqg0dhh6": {
     "rank": 193,
-    "nft": 1000000000000000000,
+    "nft": 0,
     "loan": 0,
-    "infinity": 0,
-    "total": 1000000000000000000
+    "infinity": 1066417419186711635,
+    "total": 1066417419186711635
   }
 }
