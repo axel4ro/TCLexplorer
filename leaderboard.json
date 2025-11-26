@@ -734,61 +734,61 @@
     "infinity": 20000000000000000000000,
     "total": 20000000000000000000000
   },
-  "erd1yvnhhf96dpnytldj6rm7tn4pfwlhdl360h05y0z9vn2sx5e3cm6q5l39jq": {
+  "erd1y7urudn82vv3yy6pqc3kn6mwqhv795r7z4lkjyy7ylk3x5cemsts729thj": {
     "rank": 106,
+    "nft": 0,
+    "loan": 17254000000000000524288,
+    "infinity": 2525000000000000000000,
+    "total": 19779000000000000524288
+  },
+  "erd1yvnhhf96dpnytldj6rm7tn4pfwlhdl360h05y0z9vn2sx5e3cm6q5l39jq": {
+    "rank": 107,
     "nft": 0,
     "loan": 0,
     "infinity": 19265605250739147969556,
     "total": 19265605250739147969556
   },
   "erd1jyq0yn283tw7dkh5n8hpsjpe9tmumldjeh85rrhhlyxq4xdcmknsrq6eh8": {
-    "rank": 107,
+    "rank": 108,
     "nft": 0,
     "loan": 0,
     "infinity": 18961000000000000000000,
     "total": 18961000000000000000000
   },
   "erd18zslsgavy95nz38742v76sgectpnufkagry7kqnpyhxzl3crk5gqj56hnu": {
-    "rank": 108,
+    "rank": 109,
     "nft": 0,
     "loan": 0,
     "infinity": 18819000000000000000000,
     "total": 18819000000000000000000
   },
   "erd1yuf8crfqrsgqht597pfkrntxj2hkt5hrw4seza9r52hzwjj42ygssgmn4z": {
-    "rank": 109,
+    "rank": 110,
     "nft": 4000000000000000000000,
     "loan": 0,
     "infinity": 14713182584807214276188,
     "total": 18713182584807214276188
   },
   "erd1dngw84sfyyz7x4zstwvedfslujpqqg5f2jrf0mlz3ps0k3fvex3qm7h92c": {
-    "rank": 110,
+    "rank": 111,
     "nft": 0,
     "loan": 0,
     "infinity": 18500000000000000000000,
     "total": 18500000000000000000000
   },
   "erd1rkkwmll5hl329pdwlf2w06e48q0spey00y0fza7qu3u2wynay2vqv00grg": {
-    "rank": 111,
+    "rank": 112,
     "nft": 18438000000000000000000,
     "loan": 0,
     "infinity": 0,
     "total": 18438000000000000000000
   },
   "erd19cx599h0h0nrnlmejca2cx2xnsffe9wr85qv7m58yv2ux4r93zqqvzyzjl": {
-    "rank": 112,
+    "rank": 113,
     "nft": 0,
     "loan": 17695000000000002359296,
     "infinity": 179000000000000000000,
     "total": 17874000000000002359296
-  },
-  "erd1y7urudn82vv3yy6pqc3kn6mwqhv795r7z4lkjyy7ylk3x5cemsts729thj": {
-    "rank": 113,
-    "nft": 0,
-    "loan": 17254000000000000524288,
-    "infinity": 0,
-    "total": 17254000000000000524288
   },
   "erd1vlpk8s490tnaeg7qds7a4rv9p4kfcvrnwfp8wd006p796kscwpzss42xu6": {
     "rank": 114,
