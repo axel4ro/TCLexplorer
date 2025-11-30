@@ -174,26 +174,26 @@
     "infinity": 0,
     "total": 767038000000000000000000
   },
-  "erd14vhz39e6wsrck08zqmuc0eyyu33m47xega4punlfqks0czjjnf3q37z90e": {
+  "erd1mfy3vzgesdax7vxtde6lkvytpz943tkme9k9v9rvgm9yxccwt2as7k2j6t": {
     "rank": 26,
+    "nft": 21000000000000000000000,
+    "loan": 7000000000000000000000,
+    "infinity": 691215882828412523768883,
+    "total": 719215882828412523768883
+  },
+  "erd14vhz39e6wsrck08zqmuc0eyyu33m47xega4punlfqks0czjjnf3q37z90e": {
+    "rank": 27,
     "nft": 0,
     "loan": 6486000000000000524288,
     "infinity": 704676000000000000000000,
     "total": 711162000000000000524288
   },
   "erd1ztcl4c7n98dld03k8xvftct9j0cdatrmpe7qchmpr89e9gj94qkqntx3ha": {
-    "rank": 27,
+    "rank": 28,
     "nft": 0,
     "loan": 0,
     "infinity": 700000720314680855736933,
     "total": 700000720314680855736933
-  },
-  "erd1mfy3vzgesdax7vxtde6lkvytpz943tkme9k9v9rvgm9yxccwt2as7k2j6t": {
-    "rank": 28,
-    "nft": 21000000000000000000000,
-    "loan": 7000000000000000000000,
-    "infinity": 591215882828412523768883,
-    "total": 619215882828412523768883
   },
   "erd13dvpsevtq3y0r0fvevk0qmq3etw36mqseckl8kcgz5dkdsnshjusc67j08": {
     "rank": 29,
