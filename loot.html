@@ -392,7 +392,7 @@ drops.forEach(d => {
 	html += `
 		<p>
 			<b>${d.mob}</b> —
-			Drop Chance: <b>${formatDrop(itemDrop)}</b>
+			 Drop Chance: <b>${formatDrop(finalDrop)}</b>
 		</p>
 	`;
 
@@ -513,7 +513,7 @@ function openLootTable(id, fromItemId = null) {
     for (const mobId in DATA.mobLoot) {
         if (DATA.mobLoot[mobId].some(d => d.lootTable == id)) {
             const ml = DATA.mobLoot[mobId].find(d => d.lootTable == id);
-            html += `<p><b>${mobMap[mobId]}</b> — Drop Chance: ${formatDrop(ml.dropChance)}</p>`;
+            html += `<p><b>${mobMap[mobId]}</b> —  ${formatDrop(ml.dropChance)}</p>`;
         }
     }
 
@@ -671,3 +671,4 @@ function openMonster(id) {
 
 </body>
 </html>
+
