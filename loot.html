@@ -199,21 +199,119 @@ input:focus {
 .table th {
     border-bottom: none;
 }
+/* ===== HEADER LAYOUT ===== */
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 25px;
+}
+
+/* BUTOANE SUS */
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap; /* 🔥 important pentru mobile */
+}
+
+/* TITLU SUB BUTOANE */
+.header-title {
+    margin: 0;
+    font-size: 26px;
+    color: #2ff6de;
+    font-weight: 700;
+    border-bottom: 2px solid #249c8c;
+    padding-bottom: 6px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+}
+
+/* ===== MOBILE OPTIMIZATION ===== */
+@media (max-width: 600px) {
+body {
+        padding: 10px; /* mai mic, full width vizual */
+    }
+    .header-buttons {
+        justify-content: space-between;
+    }
+
+    .header-buttons a,
+    .header-buttons button {
+        flex: 1;                 /* 🔥 se împart egal */
+        text-align: center;
+        padding: 10px 6px;
+        font-size: 14px;
+    }
+
+    .header-title {
+        font-size: 22px;
+        text-align: center;
+    }
+}
+@media (max-width: 600px) {
+
+    .section {
+        padding: 14px;
+        margin-top: 15px;
+        border-radius: 10px;
+
+        width: 100%;
+        box-sizing: border-box; /* 🔥 CRUCIAL */
+    }
+
+}
+@media (max-width: 600px) {
+
+    .row-click td {
+        padding: 16px;
+        border-radius: 14px;
+        width: 100%;
+    }
+
+    .table {
+        border-spacing: 0 10px;
+    }
+
+}
+@media (max-width: 600px) {
+
+    input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .section button {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+}
+@media (max-width: 600px) {
+
+    .header {
+        width: 100%;
+    }
+
+    .header-buttons {
+        width: 100%;
+    }
+
+}
 
 </style>
 </head>
 
 <body>
 
-<div class="title-row">
-    <a href="wiki.html" class="back-btn">⬅️ Back to Wiki</a>
-    <h1>Loot Explorer</h1>
+<div class="header">
+    <div class="header-buttons">
+        <a href="wiki.html" class="back-btn">⬅️ Back</a>
+        <button onclick="showItems()">Items</button>
+        <button onclick="showMonsters()">Monsters</button>
+    </div>
+
+    <h1 class="header-title">Loot Explorer</h1>
 </div>
 
-
-
-<button onclick="showItems()">Items</button>
-<button onclick="showMonsters()">Monsters</button>
 <!-- <button onclick="showLootTables()">Loot Tables</button>-->
 
 <div id="content"></div>
