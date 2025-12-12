@@ -2,300 +2,235 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
 <title>Loot Explorer</title>
 
 <style>
-/* ===== BACKGROUND + GLOBAL ===== */
+/* =========================
+   GLOBAL — MOBILE FIRST
+========================= */
+
+html {
+    font-size: 18px; /* 🔥 scale corect pe mobile */
+}
+
 body {
-    background: #161a24;               /* ca în Wiki */
+    background: #161a24;
     color: #f1f1f1;
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 20px;
+    padding: 8px;
     line-height: 1.6;
 }
 
-/* ===== TITLU + ALINIERE ===== */
-.title-row {
+/* =========================
+   HEADER
+========================= */
+
+.header {
     display: flex;
-    align-items: center;
-    gap: 20px;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
-.title-row h1 {
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.header-buttons a,
+.header-buttons button {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    font-size: 15px;
+}
+
+.header-title {
     margin: 0;
-    padding: 0;
-    line-height: 1;
-    font-size: 26px;
+    font-size: 24px;
     color: #2ff6de;
     font-weight: 700;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
     border-bottom: 2px solid #249c8c;
     padding-bottom: 6px;
-    position: relative;
-    top: -4px; /* perfect alignment */
+    text-align: center;
 }
 
-/* ===== BACK BUTTON + GENERAL BUTTON STYLE ===== */
-.back-btn, button {
-    display: inline-block;
-    padding: 10px 18px;
-    border-radius: 6px;
+/* =========================
+   BUTTONS
+========================= */
+
+.back-btn,
+button {
+    border-radius: 8px;
     background: #249c8c;
-    color: white;
+    color: #fff;
     font-weight: 600;
-    text-decoration: none;
     border: none;
     cursor: pointer;
-
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
     box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-
-    margin: 5px;
-    transition: 0.2s;
 }
 
-button:hover, .back-btn:hover {
+/* =========================
+   SECTION (CONTENT)
+========================= */
+
+.section {
+    background: #1e2230;
+    border: 1px solid #333;
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+/* =========================
+   LOOT TABLE CARD (Monster drops)
+========================= */
+.loot-box {
+    background: linear-gradient(180deg, #1a1f2e, #141824);
+    border: 1px solid #2a2f42;
+    border-radius: 16px;
+    padding: 18px;
+    margin: 18px 0;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+}
+
+.loot-box h3 {
+    margin: 0 0 6px 0;
+    color: #2ff6de;
+    font-size: 18px;
+}
+
+.loot-box p {
+    margin: 0 0 14px 0;
+    font-size: 14px;
     opacity: 0.9;
-    transform: translateY(-2px);
+}
+@media (max-width: 600px) {
+    .loot-box {
+        padding: 16px;
+        margin: 16px 0;
+        border-radius: 18px;
+    }
+
+    .loot-box h3 {
+        font-size: 17px;
+    }
 }
 
-/* ===== INPUT STYLE ===== */
+/* =========================
+   INPUT
+========================= */
+
 input {
-    padding: 8px 12px;
-    width: 280px;
+    width: 75%;
+    padding: 12px;
     border-radius: 8px;
     background: #1e2230;
     border: 1px solid #333;
     color: #fff;
-    margin-right: 10px;
+    font-size: 16px;
+    margin-bottom: 10px;
 }
 
-input:focus {
-    outline: 2px solid #2ff6de;
-}
+/* =========================
+   TABLE → CARD LIST
+========================= */
 
-/* ===== CONTENT SECTIONS ===== */
-.section {
-    background: #1e2230;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 20px;
-    margin-top: 20px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-}
-
-/* ===== TABLE STYLE (MATCH WIKI LOOK) ===== */
 .table {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+/* =========================
+   CARD TABLE (Items / Monsters list)
+========================= */
+.card-table th {
+    display: none;
 }
 
-.table th {
-    background: #1e2230;
-    color: #2ff6de;
-    padding: 10px;
-    border-bottom: 1px solid #333;
-    font-weight: 600;
-}
 
-.table td {
-    background: #161a24;
-    padding: 10px;
-    border-bottom: 1px solid #333;
-}
-
-.center { text-align: center; }
-.left   { text-align: left; }
-/* ===== CHENAR PENTRU FIECARE LOOT TABLE ===== */
-.loot-box {
-    background: #141824;
-    border: 1px solid #2a2f42;
-    border-radius: 10px;
-    padding: 18px;
-    margin: 25px 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-}
-
-.loot-box h3 {
-    margin: 0 0 10px 0;
-    color: #2ff6de;
-    font-size: 20px;
-}
-
-.loot-box p {
-    color: #f1f1f1;
-    margin-bottom: 15px;
-}
-/* ===== CLICKABLE ROW (WIKI STYLE) ===== */
-/* ===== CLICKABLE CARD ROW ===== */
 .row-click {
     cursor: pointer;
-    transition: 0.2s ease;
 }
 
 .row-click td {
-    background: linear-gradient(
-        180deg,
-        #1a1f2e,
-        #141824
-    );
-    border-radius: 12px;
+    background: linear-gradient(180deg, #1a1f2e, #141824);
+    border-radius: 16px;
+    padding: 18px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.04);
-    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    font-size: 16px;
 }
 
-/* spațiu între "card-uri" */
-.table tr + tr td {
-    margin-top: 10px;
-}
-
-/* hover desktop */
-.row-click:hover td {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(0,0,0,0.45);
-    border-color: rgba(47,246,222,0.35);
-}
-
-/* text + arrow */
 .row-label {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-weight: 500;
-}
-
-/* săgeata */
-.arrow {
-    color: #2ff6de;
-    font-size: 18px;
-    opacity: 0.9;
-}
-
-/* active (selectat) */
-.row-click.active td {
-    border-color: #2ff6de;
-    box-shadow: 0 0 0 1px rgba(47,246,222,0.6),
-                0 10px 28px rgba(0,0,0,0.6);
-}
-/* 🔥 REMOVE TABLE LINES FOR CARD ROWS */
-.row-click td {
-    border-bottom: none !important;
-}
-
-.table {
-    border-collapse: separate;
-    border-spacing: 0 12px; /* spațiu VERTICAL între card-uri */
-}
-
-@media (hover: none) {
-    .row-click:active td {
-        transform: scale(0.98);
-        box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-    }
-}
-.table th {
-    border-bottom: none;
-}
-/* ===== HEADER LAYOUT ===== */
-.header {
-    display: flex;
-    flex-direction: column;
     gap: 14px;
-    margin-bottom: 25px;
 }
 
-/* BUTOANE SUS */
-.header-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap; /* 🔥 important pentru mobile */
-}
-
-/* TITLU SUB BUTOANE */
-.header-title {
-    margin: 0;
-    font-size: 26px;
+.arrow {
+    font-size: 20px;
     color: #2ff6de;
-    font-weight: 700;
-    border-bottom: 2px solid #249c8c;
-    padding-bottom: 6px;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
 }
 
-/* ===== MOBILE OPTIMIZATION ===== */
-@media (max-width: 600px) {
-body {
-        padding: 10px; /* mai mic, full width vizual */
+/* =========================
+   DESKTOP OVERRIDES
+========================= */
+
+@media (min-width: 768px) {
+
+    html {
+        font-size: 16px;
     }
+
+    body {
+        padding: 20px;
+    }
+
+    .header-title {
+        text-align: left;
+        font-size: 26px;
+    }
+
     .header-buttons {
-        justify-content: space-between;
+        width: auto;
     }
 
     .header-buttons a,
     .header-buttons button {
-        flex: 1;                 /* 🔥 se împart egal */
-        text-align: center;
-        padding: 10px 6px;
+        flex: none;
+        padding: 10px 18px;
         font-size: 14px;
     }
 
-    .header-title {
-        font-size: 22px;
-        text-align: center;
-    }
-}
-@media (max-width: 600px) {
-
-    .section {
-        padding: 14px;
-        margin-top: 15px;
-        border-radius: 10px;
-
-        width: 100%;
-        box-sizing: border-box; /* 🔥 CRUCIAL */
-    }
-
-}
-@media (max-width: 600px) {
-
-    .row-click td {
-        padding: 16px;
-        border-radius: 14px;
-        width: 100%;
-    }
-
-    .table {
-        border-spacing: 0 10px;
-    }
-
-}
-@media (max-width: 600px) {
-
     input {
-        width: 100%;
-        margin-bottom: 10px;
+        width: 280px;
+        margin-bottom: 0;
     }
 
-    .section button {
-        width: 100%;
-        margin: 5px 0;
+    .table th {
+        display: table-cell;
+        color: #2ff6de;
+        padding: 10px;
     }
-
+}
+/* ===== CONTENT ACTION BUTTONS (Search / Next / Previous) ===== */
+.section button {
+    font-size: 16px;        /* 🔥 mai mare */
+    padding: 12px 18px;     /* 🔥 mai aerisit */
+    border-radius: 10px;
 }
 @media (max-width: 600px) {
-
-    .header {
-        width: 100%;
+    .section button {
+        font-size: 18px;        /* 🔥 clar vizibil */
+        padding: 14px 20px;     /* 🔥 tap-friendly */
+        border-radius: 12px;
     }
-
-    .header-buttons {
-        width: 100%;
-    }
-
 }
+
 
 </style>
 </head>
@@ -856,4 +791,3 @@ function openMonster(id) {
 
 </body>
 </html>
-
