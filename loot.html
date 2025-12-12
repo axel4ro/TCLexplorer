@@ -339,13 +339,36 @@ html += `<h3>Dropped by:</h3>`;
 
 drops.forEach(d => {
 
-    // DropChance REAL al mob-ului pentru lootTable-ul respectiv
+    // DropChance al mob-ului pentru lootTable
     const mobDrop = DATA.mobLoot[d.mobId].find(x => x.lootTable === d.table.id);
 
-    html += `
-        <p><b>${d.mob}</b> — Drop Chance: ${formatDrop(mobDrop.dropChance)}</p>
-    `;
+    // 🔥 calculăm drop-ul REAL al itemului în loot table
+    let itemDrop = 0;
+
+    let sorted = [...d.table.items].sort((a, b) => a.chance - b.chance);
+    let prev = 0;
+
+    for (const it of sorted) {
+        const rate = it.chance - prev;
+        if (it.item === id) {
+            itemDrop = rate;
+            break;
+        }
+        prev = it.chance;
+    }
+
+    // 🔥 drop final = mob × item
+    const finalDrop = (mobDrop.dropChance * itemDrop) / 100;
+
+	html += `
+		<p>
+			<b>${d.mob}</b> —
+			Drop Chance: <b>${formatDrop(itemDrop)}</b>
+		</p>
+	`;
+
 });
+
 
 
     html += `<button onclick="showItems()">Back</button></div>`;
@@ -618,4 +641,3 @@ validDrops.forEach(d => {
 
 </body>
 </html>
-
