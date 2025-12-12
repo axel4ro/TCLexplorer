@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TCL Loot Explorer</title>
+
+<style>
+body {
+    background: #0d0d0d;
+    color: #eee;
+    font-family: Arial;
+    padding: 20px;
+}
+h1 { color: #ffcc00; }
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    background: #222;
+    color: #ffcc00;
+    border: 1px solid #444;
+    cursor: pointer;
+}
+button:hover { background: #333; }
+
+input {
+    padding: 8px;
+    width: 280px;
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    margin-right: 10px;
+}
+
+.section {
+    background: #1a1a1a;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table th {
+    background: #333;
+    color: #ffcc00;
+    padding: 8px;
+}
+.table td {
+    padding: 8px;
+    border-bottom: 1px solid #444;
+}
+.center { text-align: center; }
+.left { text-align: left; }
+</style>
+</head>
+
+<body>
+
+<h1>TCL Loot Explorer</h1>
+
+
+<button onclick="showItems()">Items</button>
+<button onclick="showMonsters()">Monsters</button>
+<!-- <button onclick="showLootTables()">Loot Tables</button>-->
+
+<div id="content"></div>
+
+<script>
+let DATA = null;
+
+// State
+let itemPage = 0;
+let monsterPage = 0;
+let lootPage = 0;
+
+let itemSearch = "";
+let monsterSearch = "";
+let lootSearch = "";
+
+// Drop rate formatter
+function formatDrop(num) {
+    return (num % 1 === 0) ? `${num}%` : `${num.toFixed(1)}%`;
+}
+
+const DROP_URL = "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/data/drop.json";
+
+async function loadDropFromGitHub() {
+    try {
+        const res = await fetch(DROP_URL + "?t=" + Date.now());
+        if (!res.ok) throw new Error("HTTP Error " + res.status);
+
+        DATA = await res.json();
+<!--         console.log("drop.json loaded automatically from GitHub!");-->
+<!--         alert("drop.json loaded automatically from GitHub!");-->
+    } catch (err) {
+        console.error("Failed loading GitHub drop.json:", err);
+        alert("❌ Cannot load drop.json from GitHub! Check console for details.");
+    }
+}
+
+loadDropFromGitHub();
+
+
+/* ======================================================
+    EXCLUDED
+====================================================== */
+// === ITEMS WE DO NOT WANT TO DISPLAY AT ALL ===
+const EXCLUDED_ITEMS = [8, 9,];
+// === MONSTERS WE DO NOT WANT TO DISPLAY AT ALL ===
+const EXCLUDED_MONSTERS = [99, 100, 121, 117, 118, 120, 115, 116, 113, 114, 119, 122];
+
+
+/* ======================================================
+// === MANUAL LOOT TABLE ASSIGNMENTS ===
+====================================================== */
+// itemId : lootTableId
+const MANUAL_LOOT = {
+    1517: 228,  // Clam → loot table 228
+    1211: 51    // Moonlight Treasure Chest → loot table 51
+};
+
+/* ======================================================
+    PAGE: ITEMS
+====================================================== */
+	function showItems() {
+		if (!DATA) return alert("Load JSON first!");
+
+	const items = DATA.itemTemplates.filter(i => {
+
+		// 0. Excluded items (manual hidden)
+		if (EXCLUDED_ITEMS.includes(i.id)) return false;
+
+		const name = i.name.toLowerCase();
+		if (!name.includes(itemSearch.toLowerCase())) return false;
+
+		// 1. Loot tables care conțin itemul
+		const relevantTables = DATA.lootTables.filter(t =>
+			t.items.some(it => it.item === i.id)
+		);
+
+		// 2. Verificăm dacă vreun lootTable este folosit de un mob
+		const isUsedByMob = relevantTables.some(t =>
+			Object.values(DATA.mobLoot).some(mobDrops =>
+				mobDrops.some(d => d.lootTable === t.id)
+			)
+		);
+
+		// 3. Check manual assignment
+		const hasManualDrop = MANUAL_LOOT[i.id] !== undefined;
+
+		// 4. Include only items that have a REAL source
+		return isUsedByMob || hasManualDrop;
+	});
+// SORT items alphabetically
+items.sort((a, b) => a.name.localeCompare(b.name));
+
+
+    const perPage = 10;
+    const totalPages = Math.ceil(items.length / perPage);
+    if (itemPage >= totalPages) itemPage = 0;
+
+    let start = itemPage * perPage;
+    let end = start + perPage;
+
+    let html = `
+    <div class="section">
+    <h2>  Items (Page ${itemPage+1} / ${totalPages || 1})</h2>
+
+    <input id="itemInput" type="text" placeholder="Search item..." value="${itemSearch}">
+    <button onclick="applyItemSearch()">Search</button>
+
+    <table class="table">
+        <tr><th>Name</th><th class="center">Open</th></tr>
+    `;
+
+    items.slice(start, end).forEach(it => {
+        html += `
+        <tr>
+            <td class="left">${it.name}</td>
+            <td class="center"><button onclick="openItem(${it.id})">View</button></td>
+        </tr>`;
+    });
+
+    html += `</table>`;
+
+    if (itemPage > 0) html += `<button onclick="itemPage--; showItems()">Previous</button>`;
+    if (itemPage < totalPages - 1) html += `<button onclick="itemPage++; showItems()">Next</button>`;
+
+    html += `</div>`;
+    document.getElementById("content").innerHTML = html;
+
+    document.getElementById("itemInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") applyItemSearch();
+    });
+}
+
+function applyItemSearch() {
+    itemSearch = document.getElementById("itemInput").value;
+    itemPage = 0;
+    showItems();
+}
+
+
+function openItem(id) {
+    const item = DATA.itemTemplates.find(x => x.id === id);
+    const mobMap = Object.fromEntries(DATA.mobTemplates.map(m => [m.id, m.name]));
+
+    // loot tables that naturally drop this item
+    const lootTables = DATA.lootTables.filter(t =>
+        t.items.some(it => it.item === id)
+    );
+
+    let html = `<div class="section"><h2>  ${item.name}</h2>`;
+
+    let drops = [];
+
+    lootTables.forEach(lt => {
+        for (const mobId in DATA.mobLoot) {
+            if (DATA.mobLoot[mobId].some(d => d.lootTable === lt.id)) {
+                drops.push({
+                    mob: mobMap[mobId],
+                    table: lt,
+                    mobId: mobId
+                });
+            }
+        }
+    });
+
+	// === CASE 1: ITEM HAS NO MONSTER DROP ===
+	if (drops.length === 0) {
+
+		// Check if this item has a manually assigned loot table
+		if (MANUAL_LOOT[id]) {
+			const ltId = MANUAL_LOOT[id];
+
+			html += `
+				<p>No monster drops this item.</p>
+				<h3>Contains:</h3>
+				<p><b>${item.name}</b></p>
+
+				<button onclick="openLootTable(${ltId}, ${id})">View ${item.name} Contents</button>
+				<br><br>
+			`;
+		} else {
+			html += `<p>No monster drops this item.</p>`;
+		}
+
+		html += `<button onclick="showItems()">Back</button></div>`;
+		document.getElementById("content").innerHTML = html;
+		return;
+	}
+
+
+// === CASE 2: ITEM HAS NATURAL DROPS ===
+html += `<h3>Dropped by:</h3>`;
+
+drops.forEach(d => {
+
+    // DropChance REAL al mob-ului pentru lootTable-ul respectiv
+    const mobDrop = DATA.mobLoot[d.mobId].find(x => x.lootTable === d.table.id);
+
+    html += `
+        <p><b>${d.mob}</b> — Drop Chance: ${formatDrop(mobDrop.dropChance)}</p>
+    `;
+});
+
+
+    html += `<button onclick="showItems()">Back</button></div>`;
+    document.getElementById("content").innerHTML = html;
+}
+
+
+function assignLootToItem(id) {
+    const ltId = document.getElementById("assignLT").value;
+    openLootTable(parseInt(ltId));
+}
+
+
+/* ======================================================
+    PAGE: LOOT TABLES BROWSER
+====================================================== */
+function showLootTables() {
+    if (!DATA) return alert("Load JSON first!");
+
+    const tables = DATA.lootTables.filter(t =>
+        String(t.id).includes(lootSearch)
+    );
+
+    const perPage = 10;
+    const totalPages = Math.ceil(tables.length / perPage);
+    if (lootPage >= totalPages) lootPage = 0;
+
+    let start = lootPage * perPage;
+    let end = start + perPage;
+
+    let html = `
+    <div class="section">
+    <h2>🎲 Loot Tables (Page ${lootPage+1} / ${totalPages || 1})</h2>
+
+    <input id="lootInput" placeholder="Search loot table..." value="${lootSearch}">
+    <button onclick="applyLootSearch()">Search</button>
+
+    <table class="table">
+    <tr><th>ID</th><th class="center">Open</th></tr>
+    `;
+
+    tables.slice(start, end).forEach(t => {
+        html += `
+        <tr>
+            <td class="left">${t.id}</td>
+            <td class="center"><button onclick="openLootTable(${t.id})">View</button></td>
+        </tr>`;
+    });
+
+    html += `</table>`;
+
+    if (lootPage > 0) html += `<button onclick="lootPage--; showLootTables()">Previous</button>`;
+    if (lootPage < totalPages - 1) html += `<button onclick="lootPage++; showLootTables()">Next</button>`;
+
+    html += `</div>`;
+
+    document.getElementById("content").innerHTML = html;
+
+    document.getElementById("lootInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") applyLootSearch();
+    });
+}
+
+function applyLootSearch() {
+    lootSearch = document.getElementById("lootInput").value;
+    lootPage = 0;
+    showLootTables();
+}
+
+
+/* ======================================================
+// =====================================================================================
+//   LOOT TABLE DETAILS PAGE — CUSTOM TITLE WHEN CALLED FROM AN ITEM
+// =====================================================================================
+*/
+function openLootTable(id, fromItemId = null) {
+
+    const table = DATA.lootTables.find(t => t.id === id);
+    const itemMap = Object.fromEntries(DATA.itemTemplates.map(i => [i.id, i.name]));
+    const mobMap = Object.fromEntries(DATA.mobTemplates.map(m => [m.id, m.name]));
+
+    // Sortăm itemele după chance pentru drop rate corect
+    let sorted = [...table.items].sort((a,b)=>a.chance - b.chance);
+    sorted.forEach((x,i)=> x.dropRate = i===0 ? x.chance : x.chance - sorted[i-1].chance);
+
+    // Dacă vine dintr-un item manual, folosește numele itemului în titlu
+    let title = `🎲 Loot Table ${id}`;
+    if (fromItemId !== null) {
+        const itemName = itemMap[fromItemId];
+        title = `  ${itemName}`;
+    }
+
+    let html = `<div class="section"><h2>${title}</h2>`;
+
+    // Listă iteme din loot table
+    html += `<table class="table">
+        <tr><th>Name</th><th class="center">Min</th><th class="center">Max</th><th class="center">Drop %</th></tr>
+    `;
+
+    sorted.forEach(it => {
+        html += `
+        <tr>
+            <td class="left">${itemMap[it.item]}</td>
+            <td class="center">${it.count}</td>
+            <td class="center">${it.count_max}</td>
+            <td class="center">${formatDrop(it.dropRate)}</td>
+        </tr>`;
+    });
+
+    html += `</table><br>`;
+
+    for (const mobId in DATA.mobLoot) {
+        if (DATA.mobLoot[mobId].some(d => d.lootTable == id)) {
+            const ml = DATA.mobLoot[mobId].find(d => d.lootTable == id);
+            html += `<p><b>${mobMap[mobId]}</b> — Drop Chance: ${formatDrop(ml.dropChance)}</p>`;
+        }
+    }
+
+    html += `<button onclick="showLootTables()">Back</button></div>`;
+    document.getElementById("content").innerHTML = html;
+}
+
+
+/* ======================================================
+    MONSTERS PAGE
+====================================================== */
+function showMonsters() {
+    if (!DATA) return alert("Load JSON first!");
+
+    const mobs = DATA.mobTemplates.filter(m => {
+
+        // 0. Exclude manual
+        if (EXCLUDED_MONSTERS.includes(m.id)) return false;
+
+        // 1. Exclude monștrii fără loot în JSON
+        const mobDrops = DATA.mobLoot[m.id];
+        if (!mobDrops) return false; // monstrul NU există în mobLoot → ascuns
+
+        // 2. Exclude dacă toate drop-urile au dropChance = 0
+        const hasRealDrop = mobDrops.some(d => d.dropChance > 0);
+        if (!hasRealDrop) return false;
+
+        // 3. Search filter
+        return m.name.toLowerCase().includes(monsterSearch.toLowerCase());
+    });
+
+    // SORTARE ALFABETICĂ
+    mobs.sort((a, b) => a.name.localeCompare(b.name));
+
+    const perPage = 10;
+    const totalPages = Math.ceil(mobs.length / perPage);
+    if (monsterPage >= totalPages) monsterPage = 0;
+
+    let start = monsterPage * perPage;
+    let end = start + perPage;
+
+    let html = `
+    <div class="section">
+    <h2>  Monsters (Page ${monsterPage+1} / ${totalPages || 1})</h2>
+
+    <input id="monsterInput" placeholder="Search monster..." value="${monsterSearch}">
+    <button onclick="applyMonsterSearch()">Search</button>
+
+    <table class="table">
+        <tr><th>Name</th><th class="center">Open</th></tr>
+    `;
+
+    mobs.slice(start, end).forEach(m => {
+        html += `
+        <tr>
+            <td class="left">${m.name}</td>
+            <td class="center"><button onclick="openMonster(${m.id})">View</button></td>
+        </tr>`;
+    });
+
+    html += `</table>`;
+
+    if (monsterPage > 0) html += `<button onclick="monsterPage--;showMonsters()">Previous</button>`;
+    if (monsterPage < totalPages - 1) html += `<button onclick="monsterPage++;showMonsters()">Next</button>`;
+
+    html += `</div>`;
+
+    document.getElementById("content").innerHTML = html;
+
+    document.getElementById("monsterInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") applyMonsterSearch();
+    });
+}
+
+
+
+function applyMonsterSearch() {
+    monsterSearch = document.getElementById("monsterInput").value;
+    monsterPage = 0;
+    showMonsters();
+}
+
+
+/* ======================================================
+    MONSTER DETAILS
+====================================================== */
+function openMonster(id) {
+    const mob = DATA.mobTemplates.find(m => m.id == id);
+    const drops = DATA.mobLoot[id];
+
+    const itemMap = Object.fromEntries(DATA.itemTemplates.map(i => [i.id, i.name]));
+
+    let html = `<div class="section"><h2>  ${mob.name}</h2>`;
+
+    // 🔥 Filtrăm loot-urile cu dropChance > 0
+    const validDrops = drops.filter(d => d.dropChance > 0);
+
+    if (validDrops.length === 0) {
+        html += `<p>No loot with a drop chance > 0.</p>`;
+    }
+
+    validDrops.forEach(d => {
+        const lt = DATA.lootTables.find(t => t.id === d.lootTable);
+
+        html += `<h3>Loot Table ${d.lootTable}</h3>`;
+        html += `<p>Mob Drop Chance: <b>${formatDrop(d.dropChance)}</b></p>`;
+
+        let sorted = [...lt.items].sort((a,b)=>a.chance - b.chance);
+        sorted.forEach((x,i)=> x.dropRate = i===0 ? x.chance : x.chance - sorted[i-1].chance);
+
+        html += `<table class="table">
+        <tr><th>Name</th><th class="center">Min</th><th class="center">Max</th><th class="center">Drop %</th></tr>`;
+
+        sorted.forEach(it => {
+            html += `
+            <tr>
+                <td class="left">${itemMap[it.item]}</td>
+                <td class="center">${it.count}</td>
+                <td class="center">${it.count_max}</td>
+                <td class="center">${formatDrop(it.dropRate)}</td>
+            </tr>`;
+        });
+
+        html += `</table>`;
+    });
+
+    html += `<button onclick="showMonsters()">Back</button></div>`;
+    document.getElementById("content").innerHTML = html;
+}
+
+
+
+</script>
+
+</body>
+</html>
