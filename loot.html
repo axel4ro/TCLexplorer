@@ -349,28 +349,13 @@ if (MANUAL_LOOT[id]) {
     });
 
 	// === CASE 1: ITEM HAS NO MONSTER DROP ===
-	if (drops.length === 0) {
-
-		// Check if this item has a manually assigned loot table
-		if (MANUAL_LOOT[id]) {
-			const ltId = MANUAL_LOOT[id];
-
-			html += `
-				<p>No monster drops this item.</p>
-				<h3>Contains:</h3>
-				<p><b>${item.name}</b></p>
-
-				<button onclick="openLootTable(${ltId}, ${id})">View ${item.name} Contents</button>
-				<br><br>
-			`;
-		} else {
-			html += `<p>No monster drops this item.</p>`;
-		}
-
-		html += `<button onclick="showItems()">Back</button></div>`;
-		document.getElementById("content").innerHTML = html;
-		return;
-	}
+// === CASE 1: ITEM HAS NO MONSTER DROP ===
+if (drops.length === 0) {
+    html += `<p>No monster drops this item.</p>`;
+    html += `<button onclick="showItems()">Back</button></div>`;
+    document.getElementById("content").innerHTML = html;
+    return;
+}
 
 
 // === CASE 2: ITEM HAS NATURAL DROPS ===
