@@ -365,13 +365,12 @@ if (drops.length === 0) {
 
 // === CASE 2: ITEM HAS NATURAL DROPS ===
 html += `<h3>Dropped by:</h3>`;
-
+let shownMobs = new Set();
 drops.forEach(d => {
 
     // DropChance al mob-ului pentru lootTable
     const mobDrop = DATA.mobLoot[d.mobId].find(x => x.lootTable === d.table.id);
 
-    // 🔥 calculăm drop-ul REAL al itemului în loot table
     let itemDrop = 0;
 
     let sorted = [...d.table.items].sort((a, b) => a.chance - b.chance);
@@ -386,18 +385,24 @@ drops.forEach(d => {
         prev = it.chance;
     }
 
-    // 🔥 drop final = mob × item
-    const finalDrop = (mobDrop.dropChance * itemDrop) / 100;
+	if (itemDrop > 0 && !shownMobs.has(d.mob)) {
+		shownMobs.add(d.mob);
 
-	html += `
-		<p>
-			<b>${d.mob}</b> —
-			 Drop Chance: <b>${formatDrop(finalDrop)}</b>
-		</p>
-	`;
+		const isSingleItemTable = d.table.items.length === 1;
+
+		const displayDrop = isSingleItemTable
+			? mobDrop.dropChance        // 🔥 1 item → mob chance
+			: itemDrop;                 // 🔥 multiple items → table %
+
+		html += `
+			<p>
+				<b>${d.mob}</b> —
+				Drop Chance: <b>${formatDrop(displayDrop)}</b>
+			</p>
+		`;
+	}
 
 });
-
 
 
     html += `<button onclick="showItems()">Back</button></div>`;
@@ -513,7 +518,7 @@ function openLootTable(id, fromItemId = null) {
     for (const mobId in DATA.mobLoot) {
         if (DATA.mobLoot[mobId].some(d => d.lootTable == id)) {
             const ml = DATA.mobLoot[mobId].find(d => d.lootTable == id);
-            html += `<p><b>${mobMap[mobId]}</b> —  ${formatDrop(ml.dropChance)}</p>`;
+            html += `<p><b>${mobMap[mobId]}</b> — Drop Chance: ${formatDrop(ml.dropChance)}</p>`;
         }
     }
 
@@ -671,4 +676,3 @@ function openMonster(id) {
 
 </body>
 </html>
-
