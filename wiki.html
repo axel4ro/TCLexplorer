@@ -365,6 +365,22 @@ function renderWiki(data, forceOpen = false) {
       <div id="${sectionName}List" class="section-content" 
            style="display:${forceOpen && sectionHasResults ? "block" : "none"}"></div>
     `;
+// 🔥 INSERAT SUB SECTIUNEA CLASSES
+if (sectionName.toLowerCase() === "classes") {
+    container.innerHTML += `
+        <div class="card" onclick="window.location.href='loot.html'" 
+             style="cursor:pointer; transition:background 0.2s;">
+            <div class="toggle-header">
+                <h2>📊 Drop Chance %</h2>
+                <span>▶</span>
+            </div>
+
+            <p>
+                View all Items and Monsters item drop percentages and loot tables.
+            </p>
+        </div>
+    `;
+}
 
     const secDiv = document.getElementById(`${sectionName}List`);
 
@@ -672,12 +688,4 @@ s0.parentNode.insertBefore(s1,s0);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
 
