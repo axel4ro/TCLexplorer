@@ -128,6 +128,77 @@ input:focus {
     color: #f1f1f1;
     margin-bottom: 15px;
 }
+/* ===== CLICKABLE ROW (WIKI STYLE) ===== */
+/* ===== CLICKABLE CARD ROW ===== */
+.row-click {
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.row-click td {
+    background: linear-gradient(
+        180deg,
+        #1a1f2e,
+        #141824
+    );
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 14px 16px;
+}
+
+/* spațiu între "card-uri" */
+.table tr + tr td {
+    margin-top: 10px;
+}
+
+/* hover desktop */
+.row-click:hover td {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+    border-color: rgba(47,246,222,0.35);
+}
+
+/* text + arrow */
+.row-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+/* săgeata */
+.arrow {
+    color: #2ff6de;
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+/* active (selectat) */
+.row-click.active td {
+    border-color: #2ff6de;
+    box-shadow: 0 0 0 1px rgba(47,246,222,0.6),
+                0 10px 28px rgba(0,0,0,0.6);
+}
+/* 🔥 REMOVE TABLE LINES FOR CARD ROWS */
+.row-click td {
+    border-bottom: none !important;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0 12px; /* spațiu VERTICAL între card-uri */
+}
+
+@media (hover: none) {
+    .row-click:active td {
+        transform: scale(0.98);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+}
+.table th {
+    border-bottom: none;
+}
 
 </style>
 </head>
@@ -257,17 +328,22 @@ items.sort((a, b) => a.name.localeCompare(b.name));
     <input id="itemInput" type="text" placeholder="Search item..." value="${itemSearch}">
     <button onclick="applyItemSearch()">Search</button>
 
-    <table class="table">
-        <tr><th>Name</th><th class="center">Open</th></tr>
+	<table class="table">
+		<tr><th>Name</th></tr>
+
     `;
 
-    items.slice(start, end).forEach(it => {
-        html += `
-        <tr>
-            <td class="left">${it.name}</td>
-            <td class="center"><button onclick="openItem(${it.id})">View</button></td>
-        </tr>`;
-    });
+	items.slice(start, end).forEach(it => {
+		html += `
+<tr class="row-click" onclick="openItem(${it.id})">
+    <td class="left">
+        <span class="row-label">
+            <span class="arrow">›</span>
+            ${it.name}
+        </span>
+    </td>
+</tr>`;
+	});
 
     html += `</table>`;
 
@@ -574,18 +650,24 @@ function showMonsters() {
     <input id="monsterInput" placeholder="Search monster..." value="${monsterSearch}">
     <button onclick="applyMonsterSearch()">Search</button>
 
-    <table class="table">
-        <tr><th>Name</th><th class="center">Open</th></tr>
+	<table class="table">
+		<tr><th>Name</th></tr>
+
     `;
 
-    mobs.slice(start, end).forEach(m => {
-        html += `
-        <tr>
-            <td class="left">${m.name}</td>
-            <td class="center"><button onclick="openMonster(${m.id})">View</button></td>
-        </tr>`;
-    });
-
+	mobs.slice(start, end).forEach(m => {
+		html += `
+<tr class="row-click" onclick="openMonster(${m.id})">
+    <td class="left">
+        <span class="row-label">
+            <span class="arrow">›</span>
+            ${m.name}
+        </span>
+    </td>
+</tr>
+`;
+	});
+		
     html += `</table>`;
 
     if (monsterPage > 0) html += `<button onclick="monsterPage--;showMonsters()">Previous</button>`;
@@ -676,4 +758,3 @@ function openMonster(id) {
 
 </body>
 </html>
-
