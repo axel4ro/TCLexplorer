@@ -5,61 +5,140 @@
 <title>TCL Loot Explorer</title>
 
 <style>
+/* ===== BACKGROUND + GLOBAL ===== */
 body {
-    background: #0d0d0d;
-    color: #eee;
-    font-family: Arial;
+    background: #161a24;               /* ca în Wiki */
+    color: #f1f1f1;
+    font-family: Arial, sans-serif;
+    margin: 0;
     padding: 20px;
+    line-height: 1.6;
 }
-h1 { color: #ffcc00; }
 
-button {
-    padding: 10px 20px;
-    margin: 5px;
-    background: #222;
-    color: #ffcc00;
-    border: 1px solid #444;
+/* ===== TITLU + ALINIERE ===== */
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.title-row h1 {
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    font-size: 26px;
+    color: #2ff6de;
+    font-weight: 700;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+    border-bottom: 2px solid #249c8c;
+    padding-bottom: 6px;
+    position: relative;
+    top: -4px; /* perfect alignment */
+}
+
+/* ===== BACK BUTTON + GENERAL BUTTON STYLE ===== */
+.back-btn, button {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 6px;
+    background: #249c8c;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
     cursor: pointer;
-}
-button:hover { background: #333; }
 
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+
+    margin: 5px;
+    transition: 0.2s;
+}
+
+button:hover, .back-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* ===== INPUT STYLE ===== */
 input {
-    padding: 8px;
+    padding: 8px 12px;
     width: 280px;
-    background: #222;
+    border-radius: 8px;
+    background: #1e2230;
+    border: 1px solid #333;
     color: #fff;
-    border: 1px solid #444;
     margin-right: 10px;
 }
 
-.section {
-    background: #1a1a1a;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 8px;
+input:focus {
+    outline: 2px solid #2ff6de;
 }
 
+/* ===== CONTENT SECTIONS ===== */
+.section {
+    background: #1e2230;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+/* ===== TABLE STYLE (MATCH WIKI LOOK) ===== */
 .table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 10px;
 }
+
 .table th {
-    background: #333;
-    color: #ffcc00;
-    padding: 8px;
+    background: #1e2230;
+    color: #2ff6de;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    font-weight: 600;
 }
+
 .table td {
-    padding: 8px;
-    border-bottom: 1px solid #444;
+    background: #161a24;
+    padding: 10px;
+    border-bottom: 1px solid #333;
 }
+
 .center { text-align: center; }
-.left { text-align: left; }
+.left   { text-align: left; }
+/* ===== CHENAR PENTRU FIECARE LOOT TABLE ===== */
+.loot-box {
+    background: #141824;
+    border: 1px solid #2a2f42;
+    border-radius: 10px;
+    padding: 18px;
+    margin: 25px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+.loot-box h3 {
+    margin: 0 0 10px 0;
+    color: #2ff6de;
+    font-size: 20px;
+}
+
+.loot-box p {
+    color: #f1f1f1;
+    margin-bottom: 15px;
+}
+
 </style>
 </head>
 
 <body>
 
-<h1>TCL Loot Explorer</h1>
+<div class="title-row">
+    <a href="wiki.html" class="back-btn">⬅️ Back to Wiki</a>
+    <h1>TCL Loot Explorer</h1>
+</div>
+
 
 
 <button onclick="showItems()">Items</button>
@@ -482,36 +561,49 @@ function openMonster(id) {
         html += `<p>No loot with a drop chance > 0.</p>`;
     }
 
-    validDrops.forEach(d => {
-        const lt = DATA.lootTables.find(t => t.id === d.lootTable);
+validDrops.forEach(d => {
+    const lt = DATA.lootTables.find(t => t.id === d.lootTable);
 
-        html += `<h3>Loot Table ${d.lootTable}</h3>`;
-        html += `<p>Mob Drop Chance: <b>${formatDrop(d.dropChance)}</b></p>`;
+    html += `
+    <div class="loot-box">
 
-        let sorted = [...lt.items].sort((a,b)=>a.chance - b.chance);
-        sorted.forEach((x,i)=> x.dropRate = i===0 ? x.chance : x.chance - sorted[i-1].chance);
+        <h3>Loot Table ${d.lootTable}</h3>
+        <p>Mob Drop Chance: <b>${formatDrop(d.dropChance)}</b></p>
 
-        html += `<table class="table">
-        <tr><th>Name</th><th class="center">Min</th><th class="center">Max</th><th class="center">Drop %</th></tr>`;
-
-        sorted.forEach(it => {
-            html += `
+        <table class="table">
             <tr>
-                <td class="left">${itemMap[it.item]}</td>
-                <td class="center">${it.count}</td>
-                <td class="center">${it.count_max}</td>
-                <td class="center">${formatDrop(it.dropRate)}</td>
-            </tr>`;
-        });
+                <th>Name</th>
+                <th class="center">Min</th>
+                <th class="center">Max</th>
+                <th class="center">Drop %</th>
+            </tr>
+    `;
 
-        html += `</table>`;
+    // calculare dropRate corectă
+    let sorted = [...lt.items].sort((a,b)=>a.chance - b.chance);
+    sorted.forEach((x,i)=> x.dropRate = i===0 ? x.chance : x.chance - sorted[i-1].chance);
+
+    sorted.forEach(it => {
+        html += `
+        <tr>
+            <td class="left">${itemMap[it.item]}</td>
+            <td class="center">${it.count}</td>
+            <td class="center">${it.count_max}</td>
+            <td class="center">${formatDrop(it.dropRate)}</td>
+        </tr>
+        `;
     });
+
+    html += `
+        </table>
+    </div>
+    `;
+});
+
 
     html += `<button onclick="showMonsters()">Back</button></div>`;
     document.getElementById("content").innerHTML = html;
 }
-
-
 
 </script>
 
