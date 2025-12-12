@@ -430,7 +430,7 @@ function openLootTable(id, fromItemId = null) {
     let sorted = [...table.items].sort((a,b)=>a.chance - b.chance);
     sorted.forEach((x,i)=> x.dropRate = i===0 ? x.chance : x.chance - sorted[i-1].chance);
 
-    // Dacă vine dintr-un item manual, folosește numele itemului în titlu
+    // Titlu corect dacă vine dintr-un item
     let title = `🎲 Loot Table ${id}`;
     if (fromItemId !== null) {
         const itemName = itemMap[fromItemId];
@@ -439,7 +439,7 @@ function openLootTable(id, fromItemId = null) {
 
     let html = `<div class="section"><h2>${title}</h2>`;
 
-    // Listă iteme din loot table
+    // TABELUL CU ITEME
     html += `<table class="table">
         <tr><th>Name</th><th class="center">Min</th><th class="center">Max</th><th class="center">Drop %</th></tr>
     `;
@@ -456,6 +456,7 @@ function openLootTable(id, fromItemId = null) {
 
     html += `</table><br>`;
 
+    // MONȘTRII CARE FOLOSESC ACEASTĂ LOOT TABLE
     for (const mobId in DATA.mobLoot) {
         if (DATA.mobLoot[mobId].some(d => d.lootTable == id)) {
             const ml = DATA.mobLoot[mobId].find(d => d.lootTable == id);
@@ -463,9 +464,16 @@ function openLootTable(id, fromItemId = null) {
         }
     }
 
-    html += `<button onclick="showLootTables()">Back</button></div>`;
+    // 🔥🔥 BACK BUTTON LOGIC CORECT
+    if (fromItemId !== null) {
+        html += `<button onclick="showItems()">Back</button></div>`;
+    } else {
+        html += `<button onclick="showLootTables()">Back</button></div>`;
+    }
+
     document.getElementById("content").innerHTML = html;
 }
+
 
 
 /* ======================================================
