@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.25,
+               maximum-scale=1.25,
+               minimum-scale=1.0,
+               user-scalable=no">
 <title>Loot Explorer</title>
 
 <style>
@@ -12,7 +16,7 @@
 ========================= */
 
 html {
-    font-size: 18px; /* 🔥 scale corect pe mobile */
+    font-size: 14px; /* 🔥 scale corect pe mobile */
 }
 
 body {
@@ -429,7 +433,7 @@ if (MANUAL_LOOT[id]) {
                 <th>Name</th>
                 <th class="center">Min</th>
                 <th class="center">Max</th>
-                <th class="center">Drop %</th>
+                <th class="center">Drop%</th>
             </tr>
     `;
 
@@ -792,5 +796,3 @@ function openMonster(id) {
 
 </body>
 </html>
-
-
