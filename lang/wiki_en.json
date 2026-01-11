@@ -259,6 +259,49 @@
           "Poison Resistance": ["1%", "2%", "3%", "4%", "5%"],
           "Item Chance": ["2%", "4%", "6%", "8%", "20%"]
         }
+      },
+      "Hairstyle and Costume": {
+        "info": "Hairstyles and Costumes provide cosmetic bonuses with strict capped values to maintain game balance.",
+        "list": {
+          "Average Damage": [-15%, -1%, 1%, 15%],
+          "Spell Damage": [-10%, -1%, 1%, 10%],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%"],
+          "Attack Speed": ["1%", "2%", "3%"],
+          "Attack Value": [5, 10, 15],
+          "Critical Hit": ["1%", "2%", "3%", "5%"],
+          "Piercing Hit": ["1%", "2%", "3%", "5%"],
+          "Exp Chance": ["2%", "4%", "6%", "8%"],
+          "Health Max": [500, 1000],
+          "Movement Speed": ["2%", "4%"],
+          "Spell Speed": ["2%", "4%"],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Vitality": [2, 4, 6, 8, 12],
+          "Intelligence": [2, 4, 6, 8, 12],
+          "Strength": [2, 4, 6, 8, 12],
+          "Dexterity": [2, 4, 6, 8, 12],
+          "Health Shift": [4, 8, 12],
+          "Mana Shift": [4, 8, 12],
+          "Poisoning Chance": ["1%", "2%", "3%", "5%"],
+          "Blocking Chance": ["1%", "2%", "3%", "5%"],
+          "Slowing Chance": ["1%", "2%", "3%", "5%"],
+          "Absorbed by Health": ["1%", "2%", "3%", "5%"],
+          "Absorbed by Mana": ["1%", "2%", "3%", "5%"],
+          "Steal Mana": ["1%", "2%", "3%", "5%"],
+          "Block Physical Attack": ["2%", "4%", "6%", "10%"],
+          "Evading Arrow": ["2%", "4%", "6%", "10%"],
+          "Sword Defence": ["2%", "4%", "6%", "10%"],
+          "Dagger Defence": ["2%", "4%", "6%", "10%"],
+          "Fan Defence": ["2%", "4%", "6%", "10%"],
+          "Arrow Resistance": ["2%", "4%", "6%", "10%"],
+          "Magic Resistance": ["2%", "4%", "6%", "10%"],
+          "Reflect Physical Attack": ["1%", "2%", "3%", "5%"],
+          "Poison Resistance": ["1%", "2%", "3%", "4%", "5%"],
+          "Curse Chance": ["2%", "4%", "6%", "8%"],
+          "Item Chance": ["2%", "4%", "6%", "8%"],
+          "Defence Against Blackouts": [1],
+          "Defence Against Slowing": [1]
+        }
       }
     }
   }
