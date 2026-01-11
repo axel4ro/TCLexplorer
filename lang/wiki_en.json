@@ -137,8 +137,8 @@
           "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
           "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
           "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
-          "Average Damage": ["-60 … 60"],
-          "Spell Damage": ["-30 … 30"]
+          "Average Damage": ["-60% … 60%"],
+          "Spell Damage": ["-30% … 30%"]
         }
       },
       "Armor": {
@@ -263,8 +263,8 @@
       "Hairstyle and Costume": {
         "info": "Hairstyles and Costumes provide cosmetic bonuses with strict capped values to maintain game balance.",
         "list": {
-          "Average Damage": [-15 … 15],
-          "Spell Damage": [-10 … 10],
+          "Average Damage": ["-15% … 15%"],
+          "Spell Damage": ["-10% … 10%"],
           "Anti Half Humans": ["1%", "2%", "3%", "5%"],
           "Anti Monsters": ["2%", "4%", "6%", "10%"],
           "Attack Speed": ["1%", "2%", "3%"],
