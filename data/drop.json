@@ -6914,19 +6914,19 @@
         },
         {
             "id": 1733,
-            "name": "Red Potion (L) Pack 5"
-        },
-        {
-            "id": 1734,
             "name": "Red Potion (L) Pack 50"
         },
         {
+            "id": 1734,
+            "name": "Red Potion (L) Pack 100"
+        },
+        {
             "id": 1735,
-            "name": "Blue Potion (L) Pack 5"
+            "name": "Blue Potion (L) Pack 50"
         },
         {
             "id": 1736,
-            "name": "Blue Potion (L) Pack 50"
+            "name": "Blue Potion (L) Pack 100"
         },
         {
             "id": 1737,
@@ -11103,70 +11103,94 @@
                     "item": 1654,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 25
+                    "chance": 24
                 },
                 {
                     "item": 377,
-                    "count": 5,
-                    "count_max": 50,
-                    "chance": 45
-                },
-                {
-                    "item": 1195,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 55
+                    "count": 10,
+                    "count_max": 100,
+                    "chance": 42
                 },
                 {
                     "item": 387,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 65
-                },
-                {
-                    "item": 1148,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 75
-                },
-                {
-                    "item": 1147,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 83
+                    "chance": 52
                 },
                 {
                     "item": 1193,
                     "count": 1,
                     "count_max": 6,
-                    "chance": 90.5999985
+                    "chance": 62
                 },
                 {
                     "item": 389,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 95.5999985
+                    "chance": 72
+                },
+                {
+                    "item": 1517,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 77
+                },
+                {
+                    "item": 1148,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 82
+                },
+                {
+                    "item": 1147,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 87
+                },
+                {
+                    "item": 1195,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 92
                 },
                 {
                     "item": 1705,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 98.5999985
+                    "chance": 95
                 },
                 {
                     "item": 1435,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 99.4000015
+                    "chance": 97
+                },
+                {
+                    "item": 1741,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 98
+                },
+                {
+                    "item": 1265,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 99
                 },
                 {
                     "item": 1264,
                     "count": 1,
                     "count_max": 1,
+                    "chance": 99.5
+                },
+                {
+                    "item": 1430,
+                    "count": 1,
+                    "count_max": 1,
                     "chance": 99.9000015
                 },
                 {
-                    "item": 1141,
+                    "item": 1742,
                     "count": 1,
                     "count_max": 1,
                     "chance": 100
@@ -17449,55 +17473,67 @@
                     "chance": 55
                 },
                 {
-                    "item": 1195,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 65
-                },
-                {
                     "item": 1193,
                     "count": 1,
                     "count_max": 5,
-                    "chance": 75
-                },
-                {
-                    "item": 1265,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 84
+                    "chance": 65
                 },
                 {
                     "item": 1531,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 92.0999985
+                    "chance": 75
                 },
                 {
-                    "item": 1435,
+                    "item": 1195,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 96.0999985
+                    "chance": 83
                 },
                 {
                     "item": 1705,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 99.0999985
+                    "chance": 88
+                },
+                {
+                    "item": 1265,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 93
+                },
+                {
+                    "item": 1435,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 97
+                },
+                {
+                    "item": 1741,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 99
                 },
                 {
                     "item": 1652,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 99.4000015
+                    "chance": 99.3000031
                 },
                 {
                     "item": 1651,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 99.6999969
+                    "chance": 99.5999985
                 },
                 {
                     "item": 1650,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 99.9000015
+                },
+                {
+                    "item": 1742,
                     "count": 1,
                     "count_max": 1,
                     "chance": 100
@@ -18615,8 +18651,8 @@
             "items": [
                 {
                     "item": 1658,
-                    "count": 5,
-                    "count_max": 5,
+                    "count": 50,
+                    "count_max": 50,
                     "chance": 0
                 }
             ]
@@ -18626,8 +18662,8 @@
             "items": [
                 {
                     "item": 1658,
-                    "count": 50,
-                    "count_max": 50,
+                    "count": 100,
+                    "count_max": 100,
                     "chance": 0
                 }
             ]
@@ -18637,8 +18673,8 @@
             "items": [
                 {
                     "item": 1535,
-                    "count": 5,
-                    "count_max": 5,
+                    "count": 50,
+                    "count_max": 50,
                     "chance": 0
                 }
             ]
@@ -18648,8 +18684,8 @@
             "items": [
                 {
                     "item": 1535,
-                    "count": 50,
-                    "count_max": 50,
+                    "count": 100,
+                    "count_max": 100,
                     "chance": 0
                 }
             ]
