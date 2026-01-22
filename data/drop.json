@@ -6774,7 +6774,7 @@
         },
         {
             "id": 1698,
-            "name": "Voucher α"
+            "name": "<color=#ebc15b>Reward Paused α"
         },
         {
             "id": 1699,
@@ -6811,6 +6811,146 @@
         {
             "id": 1707,
             "name": "Fruit of Life (B)"
+        },
+        {
+            "id": 1708,
+            "name": "Bravery Cape Pack 50"
+        },
+        {
+            "id": 1709,
+            "name": "Bravery Cape Pack 100"
+        },
+        {
+            "id": 1710,
+            "name": "Bravery Cape Pack 500"
+        },
+        {
+            "id": 1711,
+            "name": "Bravery Cape Pack 1000"
+        },
+        {
+            "id": 1712,
+            "name": "Change Bonus Pack 5"
+        },
+        {
+            "id": 1713,
+            "name": "Change Bonus Pack 50"
+        },
+        {
+            "id": 1714,
+            "name": "Change Bonus Pack 100"
+        },
+        {
+            "id": 1715,
+            "name": "Change Bonus Pack 500"
+        },
+        {
+            "id": 1716,
+            "name": "Silent God Pack 5"
+        },
+        {
+            "id": 1717,
+            "name": "Silent God Pack 10"
+        },
+        {
+            "id": 1718,
+            "name": "Silent God Pack 50"
+        },
+        {
+            "id": 1719,
+            "name": "Add Bonus Pack 5"
+        },
+        {
+            "id": 1720,
+            "name": "Add Bonus Pack 10"
+        },
+        {
+            "id": 1721,
+            "name": "Add Bonus Pack 50"
+        },
+        {
+            "id": 1722,
+            "name": "Cursed Scroll Pack 5"
+        },
+        {
+            "id": 1723,
+            "name": "Cursed Scroll Pack 10"
+        },
+        {
+            "id": 1724,
+            "name": "Cursed Scroll Pack 50"
+        },
+        {
+            "id": 1725,
+            "name": "Cursed Dragon Scroll Pack 5"
+        },
+        {
+            "id": 1726,
+            "name": "Cursed Dragon Scroll Pack 10"
+        },
+        {
+            "id": 1727,
+            "name": "Cursed Stone Pack 5"
+        },
+        {
+            "id": 1728,
+            "name": "Cursed Stone Pack 10"
+        },
+        {
+            "id": 1729,
+            "name": "Green Potion (L) Pack 5"
+        },
+        {
+            "id": 1730,
+            "name": "Green Potion (L) Pack 10"
+        },
+        {
+            "id": 1731,
+            "name": "Purple Potion (L) Pack 5"
+        },
+        {
+            "id": 1732,
+            "name": "Purple Potion (L) Pack 10"
+        },
+        {
+            "id": 1733,
+            "name": "Red Potion (L) Pack 5"
+        },
+        {
+            "id": 1734,
+            "name": "Red Potion (L) Pack 50"
+        },
+        {
+            "id": 1735,
+            "name": "Blue Potion (L) Pack 5"
+        },
+        {
+            "id": 1736,
+            "name": "Blue Potion (L) Pack 50"
+        },
+        {
+            "id": 1737,
+            "name": "Dragon God Pack 5"
+        },
+        {
+            "id": 1738,
+            "name": "Dragon God Pack 10"
+        },
+        {
+            "id": 1739,
+            "name": "Dragon God Pack 50"
+        },
+        {
+            "id": 1740,
+            "name": "Starter Pack"
+        },
+        {
+            "id": 1741,
+            "name": "Cursed Dragon Scroll (B)"
+        },
+        {
+            "id": 1742,
+            "name": "Cursed Stone (B)"
         }
     ],
     "mobTemplates": [
@@ -7364,11 +7504,6 @@
         ],
         "4": [
             {
-                "lootTable": 4,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 138,
                 "dropChance": 5,
                 "count": 1
@@ -7379,22 +7514,17 @@
                 "count": 1
             },
             {
-                "lootTable": 5,
+                "lootTable": 3,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 71,
+                "lootTable": 70,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "5": [
-            {
-                "lootTable": 6,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 150,
                 "dropChance": 3,
@@ -7411,22 +7541,17 @@
                 "count": 1
             },
             {
-                "lootTable": 7,
+                "lootTable": 3,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 72,
+                "lootTable": 70,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "6": [
-            {
-                "lootTable": 8,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 151,
                 "dropChance": 3,
@@ -7443,22 +7568,17 @@
                 "count": 1
             },
             {
-                "lootTable": 9,
+                "lootTable": 3,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 73,
+                "lootTable": 70,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "7": [
-            {
-                "lootTable": 10,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 152,
                 "dropChance": 3,
@@ -7480,22 +7600,17 @@
                 "count": 1
             },
             {
-                "lootTable": 11,
+                "lootTable": 3,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 74,
+                "lootTable": 70,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "8": [
-            {
-                "lootTable": 12,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 151,
                 "dropChance": 3,
@@ -7512,22 +7627,17 @@
                 "count": 1
             },
             {
-                "lootTable": 13,
+                "lootTable": 3,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 75,
+                "lootTable": 70,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "9": [
-            {
-                "lootTable": 14,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 153,
                 "dropChance": 3,
@@ -7549,22 +7659,17 @@
                 "count": 1
             },
             {
-                "lootTable": 15,
+                "lootTable": 3,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 76,
+                "lootTable": 70,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "10": [
-            {
-                "lootTable": 16,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 154,
                 "dropChance": 3,
@@ -7586,22 +7691,17 @@
                 "count": 1
             },
             {
-                "lootTable": 17,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 77,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "11": [
-            {
-                "lootTable": 18,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 150,
                 "dropChance": 3,
@@ -7618,22 +7718,17 @@
                 "count": 1
             },
             {
-                "lootTable": 19,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 78,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "12": [
-            {
-                "lootTable": 20,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 154,
                 "dropChance": 3,
@@ -7655,22 +7750,17 @@
                 "count": 1
             },
             {
-                "lootTable": 21,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 79,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "13": [
-            {
-                "lootTable": 44,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 142,
                 "dropChance": 5,
@@ -7682,22 +7772,17 @@
                 "count": 1
             },
             {
-                "lootTable": 45,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 80,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "14": [
-            {
-                "lootTable": 54,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 156,
                 "dropChance": 3,
@@ -7719,22 +7804,17 @@
                 "count": 1
             },
             {
-                "lootTable": 55,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 81,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "15": [
-            {
-                "lootTable": 56,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 161,
                 "dropChance": 3,
@@ -7761,22 +7841,17 @@
                 "count": 1
             },
             {
-                "lootTable": 57,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 82,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "16": [
-            {
-                "lootTable": 58,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 155,
                 "dropChance": 3,
@@ -7798,22 +7873,17 @@
                 "count": 1
             },
             {
-                "lootTable": 59,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 83,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "17": [
-            {
-                "lootTable": 60,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 159,
                 "dropChance": 3,
@@ -7850,22 +7920,17 @@
                 "count": 1
             },
             {
-                "lootTable": 61,
+                "lootTable": 5,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 84,
+                "lootTable": 71,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "18": [
-            {
-                "lootTable": 62,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 155,
                 "dropChance": 3,
@@ -7887,22 +7952,17 @@
                 "count": 1
             },
             {
-                "lootTable": 63,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 85,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "19": [
-            {
-                "lootTable": 64,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 158,
                 "dropChance": 3,
@@ -7919,22 +7979,17 @@
                 "count": 1
             },
             {
-                "lootTable": 65,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 86,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "20": [
-            {
-                "lootTable": 66,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 162,
                 "dropChance": 3,
@@ -7956,22 +8011,17 @@
                 "count": 1
             },
             {
-                "lootTable": 67,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 87,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "21": [
-            {
-                "lootTable": 68,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 163,
                 "dropChance": 3,
@@ -7993,23 +8043,18 @@
                 "count": 1
             },
             {
-                "lootTable": 69,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 88,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "22": [
             {
-                "lootTable": 117,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 164,
                 "dropChance": 3,
                 "count": 1
@@ -8020,23 +8065,18 @@
                 "count": 1
             },
             {
-                "lootTable": 118,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 119,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "23": [
             {
-                "lootTable": 120,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 164,
                 "dropChance": 3,
                 "count": 1
@@ -8047,44 +8087,34 @@
                 "count": 1
             },
             {
-                "lootTable": 122,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 121,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "24": [
             {
-                "lootTable": 123,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 143,
                 "dropChance": 5,
                 "count": 1
             },
             {
-                "lootTable": 125,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 124,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "25": [
-            {
-                "lootTable": 126,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 145,
                 "dropChance": 2,
@@ -8096,44 +8126,34 @@
                 "count": 1
             },
             {
-                "lootTable": 128,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 127,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "26": [
             {
-                "lootTable": 129,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 145,
                 "dropChance": 2,
                 "count": 1
             },
             {
-                "lootTable": 131,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 130,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "27": [
-            {
-                "lootTable": 132,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 145,
                 "dropChance": 2,
@@ -8145,22 +8165,17 @@
                 "count": 1
             },
             {
-                "lootTable": 134,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 133,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "28": [
-            {
-                "lootTable": 135,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 145,
                 "dropChance": 2,
@@ -8172,12 +8187,12 @@
                 "count": 1
             },
             {
-                "lootTable": 137,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 136,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8194,12 +8209,12 @@
                 "count": 1
             },
             {
-                "lootTable": 170,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 193,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8216,12 +8231,12 @@
                 "count": 1
             },
             {
-                "lootTable": 171,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 194,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8238,12 +8253,12 @@
                 "count": 1
             },
             {
-                "lootTable": 172,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 195,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8260,12 +8275,12 @@
                 "count": 1
             },
             {
-                "lootTable": 173,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 196,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8282,12 +8297,12 @@
                 "count": 1
             },
             {
-                "lootTable": 174,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 197,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8304,12 +8319,12 @@
                 "count": 1
             },
             {
-                "lootTable": 175,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 198,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8326,12 +8341,12 @@
                 "count": 1
             },
             {
-                "lootTable": 176,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 199,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8348,12 +8363,12 @@
                 "count": 1
             },
             {
-                "lootTable": 177,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 200,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8370,12 +8385,12 @@
                 "count": 1
             },
             {
-                "lootTable": 178,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 201,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8392,12 +8407,12 @@
                 "count": 1
             },
             {
-                "lootTable": 179,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 202,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8414,12 +8429,12 @@
                 "count": 1
             },
             {
-                "lootTable": 180,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 180,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8436,12 +8451,12 @@
                 "count": 1
             },
             {
-                "lootTable": 181,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 204,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8458,12 +8473,12 @@
                 "count": 1
             },
             {
-                "lootTable": 182,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 205,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8480,12 +8495,12 @@
                 "count": 1
             },
             {
-                "lootTable": 183,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 206,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8502,12 +8517,12 @@
                 "count": 1
             },
             {
-                "lootTable": 184,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 207,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8519,12 +8534,12 @@
                 "count": 1
             },
             {
-                "lootTable": 185,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 208,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8541,12 +8556,12 @@
                 "count": 1
             },
             {
-                "lootTable": 186,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 209,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8563,12 +8578,12 @@
                 "count": 1
             },
             {
-                "lootTable": 187,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 210,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8585,12 +8600,12 @@
                 "count": 1
             },
             {
-                "lootTable": 188,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 211,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8607,12 +8622,12 @@
                 "count": 1
             },
             {
-                "lootTable": 189,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 212,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8629,12 +8644,12 @@
                 "count": 1
             },
             {
-                "lootTable": 190,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 213,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8651,12 +8666,12 @@
                 "count": 1
             },
             {
-                "lootTable": 191,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 214,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8673,22 +8688,17 @@
                 "count": 1
             },
             {
-                "lootTable": 192,
+                "lootTable": 13,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 215,
+                "lootTable": 75,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "91": [
-            {
-                "lootTable": 254,
-                "dropChance": 1,
-                "count": 1
-            },
             {
                 "lootTable": 24,
                 "dropChance": 100,
@@ -8697,22 +8707,12 @@
         ],
         "92": [
             {
-                "lootTable": 254,
-                "dropChance": 1,
-                "count": 1
-            },
-            {
                 "lootTable": 25,
                 "dropChance": 100,
                 "count": 1
             }
         ],
         "93": [
-            {
-                "lootTable": 254,
-                "dropChance": 1,
-                "count": 1
-            },
             {
                 "lootTable": 26,
                 "dropChance": 100,
@@ -8721,11 +8721,6 @@
         ],
         "94": [
             {
-                "lootTable": 254,
-                "dropChance": 1,
-                "count": 1
-            },
-            {
                 "lootTable": 110,
                 "dropChance": 100,
                 "count": 1
@@ -8733,22 +8728,12 @@
         ],
         "95": [
             {
-                "lootTable": 254,
-                "dropChance": 1,
-                "count": 1
-            },
-            {
                 "lootTable": 111,
                 "dropChance": 100,
                 "count": 1
             }
         ],
         "96": [
-            {
-                "lootTable": 254,
-                "dropChance": 1,
-                "count": 1
-            },
             {
                 "lootTable": 112,
                 "dropChance": 100,
@@ -8790,11 +8775,6 @@
         ],
         "113": [
             {
-                "lootTable": 68,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 225,
                 "dropChance": 3,
                 "count": 1
@@ -8805,23 +8785,18 @@
                 "count": 1
             },
             {
-                "lootTable": 69,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 88,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "114": [
             {
-                "lootTable": 66,
-                "dropChance": 0,
-                "count": 1
-            },
-            {
                 "lootTable": 226,
                 "dropChance": 3,
                 "count": 1
@@ -8832,22 +8807,17 @@
                 "count": 1
             },
             {
-                "lootTable": 67,
+                "lootTable": 7,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 87,
+                "lootTable": 72,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "115": [
-            {
-                "lootTable": 135,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 145,
                 "dropChance": 2,
@@ -8859,22 +8829,17 @@
                 "count": 1
             },
             {
-                "lootTable": 137,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 136,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
         ],
         "116": [
-            {
-                "lootTable": 132,
-                "dropChance": 0,
-                "count": 1
-            },
             {
                 "lootTable": 145,
                 "dropChance": 2,
@@ -8886,12 +8851,12 @@
                 "count": 1
             },
             {
-                "lootTable": 134,
+                "lootTable": 9,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 133,
+                "lootTable": 73,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8908,12 +8873,12 @@
                 "count": 1
             },
             {
-                "lootTable": 192,
+                "lootTable": 13,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 215,
+                "lootTable": 75,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8930,12 +8895,12 @@
                 "count": 1
             },
             {
-                "lootTable": 181,
+                "lootTable": 11,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 204,
+                "lootTable": 74,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8952,12 +8917,12 @@
                 "count": 1
             },
             {
-                "lootTable": 192,
+                "lootTable": 13,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 215,
+                "lootTable": 75,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8974,12 +8939,12 @@
                 "count": 1
             },
             {
-                "lootTable": 192,
+                "lootTable": 13,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 215,
+                "lootTable": 75,
                 "dropChance": 20,
                 "count": 1
             }
@@ -8996,12 +8961,12 @@
                 "count": 1
             },
             {
-                "lootTable": 192,
+                "lootTable": 13,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 215,
+                "lootTable": 75,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9060,12 +9025,12 @@
                 "count": 1
             },
             {
-                "lootTable": 230,
+                "lootTable": 13,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 229,
+                "lootTable": 75,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9097,12 +9062,12 @@
                 "count": 1
             },
             {
-                "lootTable": 232,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 231,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9119,12 +9084,12 @@
                 "count": 1
             },
             {
-                "lootTable": 234,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 233,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9156,12 +9121,12 @@
                 "count": 1
             },
             {
-                "lootTable": 236,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 235,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9178,12 +9143,12 @@
                 "count": 1
             },
             {
-                "lootTable": 238,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 237,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9215,12 +9180,12 @@
                 "count": 1
             },
             {
-                "lootTable": 240,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 239,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9237,12 +9202,12 @@
                 "count": 1
             },
             {
-                "lootTable": 242,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 241,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9259,12 +9224,12 @@
                 "count": 1
             },
             {
-                "lootTable": 244,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 243,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9296,12 +9261,12 @@
                 "count": 1
             },
             {
-                "lootTable": 246,
+                "lootTable": 15,
                 "dropChance": 20,
                 "count": 1
             },
             {
-                "lootTable": 245,
+                "lootTable": 76,
                 "dropChance": 20,
                 "count": 1
             }
@@ -9413,19 +9378,7 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
+                    "count": 1,
                     "count_max": 28,
                     "chance": 100
                 }
@@ -9477,20 +9430,8 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
-                    "count_max": 28,
+                    "count": 1,
+                    "count_max": 33,
                     "chance": 100
                 }
             ]
@@ -9511,20 +9452,8 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
-                    "count_max": 28,
+                    "count": 1,
+                    "count_max": 40,
                     "chance": 100
                 }
             ]
@@ -9611,20 +9540,8 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
-                    "count_max": 28,
+                    "count": 1,
+                    "count_max": 48,
                     "chance": 100
                 }
             ]
@@ -9675,20 +9592,8 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
-                    "count_max": 28,
+                    "count": 1,
+                    "count_max": 58,
                     "chance": 100
                 }
             ]
@@ -9799,20 +9704,8 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
-                    "count_max": 28,
+                    "count": 1,
+                    "count_max": 69,
                     "chance": 100
                 }
             ]
@@ -9935,20 +9828,8 @@
             "items": [
                 {
                     "item": 376,
-                    "count": 7,
-                    "count_max": 14,
-                    "chance": 50
-                },
-                {
-                    "item": 376,
-                    "count": 14,
-                    "count_max": 21,
-                    "chance": 90
-                },
-                {
-                    "item": 376,
-                    "count": 21,
-                    "count_max": 28,
+                    "count": 1,
+                    "count_max": 83,
                     "chance": 100
                 }
             ]
@@ -10601,8 +10482,8 @@
                 },
                 {
                     "item": 1251,
-                    "count": 25,
-                    "count_max": 25,
+                    "count": 150,
+                    "count_max": 150,
                     "chance": 0
                 }
             ]
@@ -12816,18 +12697,6 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
                     "count_max": 15,
                     "chance": 100
                 }
@@ -12839,19 +12708,7 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
-                    "count_max": 15,
+                    "count_max": 18,
                     "chance": 100
                 }
             ]
@@ -12862,19 +12719,7 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
-                    "count_max": 15,
+                    "count_max": 21,
                     "chance": 100
                 }
             ]
@@ -12885,19 +12730,7 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
-                    "count_max": 15,
+                    "count_max": 25,
                     "chance": 100
                 }
             ]
@@ -12908,19 +12741,7 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
-                    "count_max": 15,
+                    "count_max": 31,
                     "chance": 100
                 }
             ]
@@ -12931,19 +12752,7 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
-                    "count_max": 15,
+                    "count_max": 37,
                     "chance": 100
                 }
             ]
@@ -12954,19 +12763,7 @@
                 {
                     "item": 377,
                     "count": 1,
-                    "count_max": 5,
-                    "chance": 50
-                },
-                {
-                    "item": 377,
-                    "count": 5,
-                    "count_max": 10,
-                    "chance": 90
-                },
-                {
-                    "item": 377,
-                    "count": 10,
-                    "count_max": 15,
+                    "count_max": 44,
                     "chance": 100
                 }
             ]
@@ -18535,6 +18332,490 @@
                     "count": 1,
                     "count_max": 1,
                     "chance": 100
+                }
+            ]
+        },
+        {
+            "id": 263,
+            "items": [
+                {
+                    "item": 1194,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 264,
+            "items": [
+                {
+                    "item": 1194,
+                    "count": 100,
+                    "count_max": 100,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 265,
+            "items": [
+                {
+                    "item": 1194,
+                    "count": 500,
+                    "count_max": 500,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 266,
+            "items": [
+                {
+                    "item": 1194,
+                    "count": 1000,
+                    "count_max": 1000,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 267,
+            "items": [
+                {
+                    "item": 1265,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 268,
+            "items": [
+                {
+                    "item": 1265,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 269,
+            "items": [
+                {
+                    "item": 1265,
+                    "count": 100,
+                    "count_max": 100,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 270,
+            "items": [
+                {
+                    "item": 1265,
+                    "count": 500,
+                    "count_max": 500,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 271,
+            "items": [
+                {
+                    "item": 719,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 272,
+            "items": [
+                {
+                    "item": 719,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 273,
+            "items": [
+                {
+                    "item": 719,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 274,
+            "items": [
+                {
+                    "item": 1264,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 275,
+            "items": [
+                {
+                    "item": 1264,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 276,
+            "items": [
+                {
+                    "item": 1264,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 277,
+            "items": [
+                {
+                    "item": 1705,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 278,
+            "items": [
+                {
+                    "item": 1705,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 279,
+            "items": [
+                {
+                    "item": 1705,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 280,
+            "items": [
+                {
+                    "item": 1741,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 281,
+            "items": [
+                {
+                    "item": 1741,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 282,
+            "items": [
+                {
+                    "item": 1742,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 283,
+            "items": [
+                {
+                    "item": 1742,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 284,
+            "items": [
+                {
+                    "item": 1660,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 285,
+            "items": [
+                {
+                    "item": 1660,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 286,
+            "items": [
+                {
+                    "item": 1659,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 287,
+            "items": [
+                {
+                    "item": 1659,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 288,
+            "items": [
+                {
+                    "item": 1658,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 289,
+            "items": [
+                {
+                    "item": 1658,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 290,
+            "items": [
+                {
+                    "item": 1535,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 291,
+            "items": [
+                {
+                    "item": 1535,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 292,
+            "items": [
+                {
+                    "item": 1426,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                },
+                {
+                    "item": 1427,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                },
+                {
+                    "item": 1428,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                },
+                {
+                    "item": 1429,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 293,
+            "items": [
+                {
+                    "item": 1426,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                },
+                {
+                    "item": 1427,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                },
+                {
+                    "item": 1428,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                },
+                {
+                    "item": 1429,
+                    "count": 10,
+                    "count_max": 10,
+                    "chance": 0
+                }
+            ]
+        },
+        {
+            "id": 294,
+            "items": [
+                {
+                    "item": 1426,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1427,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1428,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1429,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1432,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1434,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1685,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1688,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1687,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1689,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1686,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1690,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1691,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1692,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1693,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1694,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
+                },
+                {
+                    "item": 1695,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 0
                 }
             ]
         }
