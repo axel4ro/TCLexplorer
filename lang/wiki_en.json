@@ -48,15 +48,27 @@
     ]
   },
     
-    "races": {
-    "info": "Races define the appearance and origin of your hero. You may choose from Humans, Beasts, and Undead (male), or Elves (female). Every race can wield any class, creating limitless strategies and unique combinations.",
-    "list": [
-      { "name": "Human", "desc": "Balanced and resilient, representing strength and versatility." },
-      { "name": "Beast", "desc": "Savage and instinctive, channeling primal power in combat." },
-      { "name": "Undead", "desc": "Immortal and unyielding, rising again to conquer death itself." },
-      { "name": "Elf", "desc": "Graceful and wise, masters of agility and mystical arts." }
-    ]
-  },
+"races": {
+  "info": "Races define the appearance and origin of your hero. You may choose from Humans, Beasts, and Undead (male), or Elves (female). Every race can wield any class, creating limitless strategies and unique combinations.",
+  "list": [
+    {
+      "name": "Human",
+      "desc": "Balanced and resilient, representing strength and versatility.\n\nINT: 3\nVIT: 4\nSTR: 6\nDEX: 3\n\nHealth: 600\nHealth Max: 600 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    },
+    {
+      "name": "Beast",
+      "desc": "Savage and instinctive, channeling primal power in combat.\n\nINT: 3\nVIT: 3\nSTR: 4\nDEX: 6\n\nHealth: 650\nHealth Max: 650 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    },
+    {
+      "name": "Undead",
+      "desc": "Immortal and unyielding, rising again to conquer death itself.\n\nINT: 5\nVIT: 3\nSTR: 5\nDEX: 3\n\nHealth: 650\nHealth Max: 650 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    },
+    {
+      "name": "Elf",
+      "desc": "Graceful and wise, masters of agility and mystical arts.\n\nINT: 6\nVIT: 4\nSTR: 3\nDEX: 3\n\nHealth: 700\nHealth Max: 700 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    }
+  ]
+},
 
   "classes": {
     "info": "Classes define your combat style. To unleash skills, you must equip the weapon bound to your class. However, you remain free to wield any weapon for creative battle strategies.",
