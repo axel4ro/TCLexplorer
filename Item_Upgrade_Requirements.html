@@ -1,0 +1,6778 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Item Upgrade Requirements</title>
+
+<style>
+body { font-family: Arial; background:#111; color:#eee; padding:20px }
+select { width:100%; padding:6px; margin:4px 0 }
+
+.wiki-item { background:#f3e8c9; color:#000; margin-bottom:30px; border:2px solid #6b0000 }
+.wiki-header { background:#6b0000; color:#fff; padding:6px 10px; font-weight:bold }
+.wiki-body { padding:10px }
+table {
+  border-collapse: collapse;
+  margin-top: 10px;
+  table-layout: fixed;
+  min-width: 1200px; /* 🔥 sigur pentru +0 → +9 */
+}
+
+th, td { border:1px solid #555; padding:6px; text-align:center }
+th { background:#3b2b6b; color:#fff }
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.header-buttons {
+  display:flex;
+  gap:10px;
+  margin:10px 0;
+}
+
+.header-buttons button {
+  flex:1;
+  padding:10px;
+  background:#249c8c;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.card-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:14px;
+  margin:15px 0;
+}
+
+.sub-card {
+  background:#1e2230;
+  border:1px solid #333;
+  border-radius:14px;
+  padding:16px;
+  cursor:pointer;
+  color:#2ff6de;
+}
+
+.sub-card:hover {
+  background:#20263a;
+}
+
+
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 18px 0;
+  flex-wrap: nowrap; /* 🔥 CHEIA */
+}
+
+
+.back-btn {
+  background: #249c8c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  height: 40px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;   /* 🔥 scoate underline */
+}
+
+
+.search-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  min-width: 0; /* 🔥 IMPORTANT pentru flex */
+}
+
+.search-wrap input {
+  flex: 1;
+  min-width: 0; /* 🔥 fără overflow */
+  padding: 10px;
+  border-radius: 8px;
+  background: #1e2230;
+  border: 1px solid #333;
+  color: #fff;
+  font-size: 15px;
+  height: 40px;
+}
+
+.search-wrap button {
+  padding: 0 14px;
+  background: linear-gradient(180deg, #2aa997, #249c8c);
+  color: #fff;
+  border: 1px solid #2a2f42;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+
+  height: 40px;
+  flex-shrink: 0; /* 🔥 NU se micșorează / nu urcă */
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+
+  .wiki-body {
+    padding: 8px;
+  }
+
+  th, td {
+    padding: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+}
+
+.wiki-container {
+  max-width: 1400px;     /* 🔥 ca în prima poză */
+  margin: 0 auto;       /* 🔥 CENTRARE */
+  width: 100%;
+}
+
+
+
+
+
+</style>
+</head>
+
+<body>
+<div class="wiki-container">
+<h1>Item Upgrade Requirements (Coming soon...)</h1>
+
+<div class="top-bar">
+  <a href="wiki.html" class="back-btn">⬅️ Back to WiKi</a>
+
+  <div class="search-wrap">
+    <input id="searchInput"
+       placeholder="Search by item name..."
+       oninput="handleSearchInput(this)"
+       style="width:100%;padding:10px;margin:12px 0;font-size:16px">
+    <button onclick="applySearch()">Search</button>
+  </div>
+</div>
+
+<div class="header-buttons">
+  <button onclick="openCategory('Armors')">Armors</button>
+  <button onclick="openCategory('Weapons')">Weapons</button>
+  <button onclick="openCategory('Accessories')">Accessories</button>
+</div>
+
+
+<div id="subCards"></div>
+<div id="wiki"></div>
+
+
+<script>
+function openCategory(cat) {
+  activeCategory = cat;
+  activeSub = null;
+
+  // 🔥 reset search când schimbăm categoria
+  document.getElementById("searchInput").value = "";
+
+  const box = document.getElementById("subCards");
+  const wiki = document.getElementById("wiki");
+
+  box.innerHTML = `
+    <div class="card-grid">
+      ${(subCategories[cat] || []).map(s => `
+        <div class="sub-card" onclick="openSub('${s}')">
+          ${getSubLabel(s)}
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  wiki.innerHTML = "";
+}
+
+
+function openSub(sub) {
+  activeSub = sub;
+
+  // 🔥 reset search când alegem subcategorie
+  document.getElementById("searchInput").value = "";
+
+  renderItems();
+}
+
+
+const subCategories = {
+  "Armors": [
+    "Armour",
+    "Suit",
+    "Plate",
+    "Clothing"
+  ],
+  "Weapons": [
+    "Sword",
+    "Dagger",
+    "Bow",
+    "Staff",
+    "Fan"
+  ],
+  "Accessories": [
+    "Helmet",
+    "Shield",
+    "Bracelet",
+    "Necklace",
+    "Earrings",
+    "Shoes"
+  ]
+};
+const subCategoryRace = {
+  "Armour": "Human",
+  "Suit": "Beast",
+  "Plate": "Undead",
+  "Clothing": "Elf"
+};
+function getSubLabel(name) {
+  return subCategoryRace[name]
+    ? `${name} (${subCategoryRace[name]})`
+    : name;
+}
+
+const items = [
+  {
+    "name": "Novice Armour",
+    "level": "1",
+    "category": "Armors",
+    "subCategory": "Armour",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Armour",
+    "level": "15",
+    "category": "Armors",
+    "subCategory": "Armour",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Armour",
+    "level": "25",
+    "category": "Armors",
+    "subCategory": "Armour",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Armour",
+    "level": "35",
+    "category": "Armors",
+    "subCategory": "Armour",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Armour",
+    "level": "45",
+    "category": "Armors",
+    "subCategory": "Armour",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Armour",
+    "level": "55",
+    "category": "Armors",
+    "subCategory": "Armour",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Web+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Suit",
+    "level": "1",
+    "category": "Armors",
+    "subCategory": "Suit",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Suit",
+    "level": "15",
+    "category": "Armors",
+    "subCategory": "Suit",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Suit",
+    "level": "25",
+    "category": "Armors",
+    "subCategory": "Suit",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Suit",
+    "level": "35",
+    "category": "Armors",
+    "subCategory": "Suit",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Suit",
+    "level": "45",
+    "category": "Armors",
+    "subCategory": "Suit",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Suit",
+    "level": "55",
+    "category": "Armors",
+    "subCategory": "Suit",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Web+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Plate",
+    "level": "1",
+    "category": "Armors",
+    "subCategory": "Plate",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Plate",
+    "level": "15",
+    "category": "Armors",
+    "subCategory": "Plate",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Plate",
+    "level": "25",
+    "category": "Armors",
+    "subCategory": "Plate",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Plate",
+    "level": "35",
+    "category": "Armors",
+    "subCategory": "Plate",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Plate",
+    "level": "45",
+    "category": "Armors",
+    "subCategory": "Plate",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Plate",
+    "level": "55",
+    "category": "Armors",
+    "subCategory": "Plate",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Web+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Clothing",
+    "level": "1",
+    "category": "Armors",
+    "subCategory": "Clothing",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Clothing",
+    "level": "15",
+    "category": "Armors",
+    "subCategory": "Clothing",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Clothing",
+    "level": "25",
+    "category": "Armors",
+    "subCategory": "Clothing",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Clothing",
+    "level": "35",
+    "category": "Armors",
+    "subCategory": "Clothing",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Clothing",
+    "level": "45",
+    "category": "Armors",
+    "subCategory": "Clothing",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Clothing",
+    "level": "55",
+    "category": "Armors",
+    "subCategory": "Clothing",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Web+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Sword",
+    "level": "1",
+    "category": "Weapons",
+    "subCategory": "Sword",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Sword",
+    "level": "10",
+    "category": "Weapons",
+    "subCategory": "Sword",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Sword",
+    "level": "20",
+    "category": "Weapons",
+    "subCategory": "Sword",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "1 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Sword",
+    "level": "30",
+    "category": "Weapons",
+    "subCategory": "Sword",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Sword",
+    "level": "40",
+    "category": "Weapons",
+    "subCategory": "Sword",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Sword",
+    "level": "50",
+    "category": "Weapons",
+    "subCategory": "Sword",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Dagger",
+    "level": "1",
+    "category": "Weapons",
+    "subCategory": "Dagger",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Dagger",
+    "level": "10",
+    "category": "Weapons",
+    "subCategory": "Dagger",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Dagger",
+    "level": "20",
+    "category": "Weapons",
+    "subCategory": "Dagger",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Dagger",
+    "level": "30",
+    "category": "Weapons",
+    "subCategory": "Dagger",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Dagger",
+    "level": "40",
+    "category": "Weapons",
+    "subCategory": "Dagger",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Dagger",
+    "level": "50",
+    "category": "Weapons",
+    "subCategory": "Dagger",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Bow",
+    "level": "1",
+    "category": "Weapons",
+    "subCategory": "Bow",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Bow",
+    "level": "10",
+    "category": "Weapons",
+    "subCategory": "Bow",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Bow",
+    "level": "20",
+    "category": "Weapons",
+    "subCategory": "Bow",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Bow",
+    "level": "30",
+    "category": "Weapons",
+    "subCategory": "Bow",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Bow",
+    "level": "40",
+    "category": "Weapons",
+    "subCategory": "Bow",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Bow",
+    "level": "50",
+    "category": "Weapons",
+    "subCategory": "Bow",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Staff",
+    "level": "1",
+    "category": "Weapons",
+    "subCategory": "Staff",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Staff",
+    "level": "10",
+    "category": "Weapons",
+    "subCategory": "Staff",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Staff",
+    "level": "20",
+    "category": "Weapons",
+    "subCategory": "Staff",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Staff",
+    "level": "30",
+    "category": "Weapons",
+    "subCategory": "Staff",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Staff",
+    "level": "40",
+    "category": "Weapons",
+    "subCategory": "Staff",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Staff",
+    "level": "50",
+    "category": "Weapons",
+    "subCategory": "Staff",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Fan",
+    "level": "1",
+    "category": "Weapons",
+    "subCategory": "Fan",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Fan",
+    "level": "10",
+    "category": "Weapons",
+    "subCategory": "Fan",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Fan",
+    "level": "20",
+    "category": "Weapons",
+    "subCategory": "Fan",
+    "socket": "1",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Fan",
+    "level": "30",
+    "category": "Weapons",
+    "subCategory": "Fan",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Fan",
+    "level": "40",
+    "category": "Weapons",
+    "subCategory": "Fan",
+    "socket": "2",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Fan",
+    "level": "50",
+    "category": "Weapons",
+    "subCategory": "Fan",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Helmet",
+    "level": "1",
+    "category": "Accessories",
+    "subCategory": "Helmet",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Tiger Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x White Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Helmet",
+    "level": "17",
+    "category": "Accessories",
+    "subCategory": "Helmet",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Tiger Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x White Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Helmet",
+    "level": "27",
+    "category": "Accessories",
+    "subCategory": "Helmet",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x White Hairband+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Helmet",
+    "level": "37",
+    "category": "Accessories",
+    "subCategory": "Helmet",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x White Hairband+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Savage Booty+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Helmet",
+    "level": "47",
+    "category": "Accessories",
+    "subCategory": "Helmet",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Helmet",
+    "level": "57",
+    "category": "Accessories",
+    "subCategory": "Helmet",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Curse Book+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Egg+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Shoes",
+    "level": "1",
+    "category": "Accessories",
+    "subCategory": "Shoes",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Wild Boar Tooth+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Shoes",
+    "level": "13",
+    "category": "Accessories",
+    "subCategory": "Shoes",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Wild Boar Tooth+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Shoes",
+    "level": "23",
+    "category": "Accessories",
+    "subCategory": "Shoes",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 xBear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 xTiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Shoes",
+    "level": "33",
+    "category": "Accessories",
+    "subCategory": "Shoes",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Bear Foot Skin+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Tiger Hide+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Flag+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Shoes",
+    "level": "43",
+    "category": "Accessories",
+    "subCategory": "Shoes",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Zin-Khan Shoes",
+    "level": "53",
+    "category": "Accessories",
+    "subCategory": "Shoes",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Spider Web+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Novice Shield",
+    "level": "1",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wild Boar Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Imperial Shield",
+    "level": "19",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wild Boar Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Dragon Shield",
+    "level": "29",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Lethal Shield",
+    "level": "39",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Elven Shield",
+    "level": "49",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Savage Booty+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Tiger Shield",
+    "level": "59",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Curse Book+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Lion Shield",
+    "level": "59",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Curse Book+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Silent Shield",
+    "level": "59",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Curse Book+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Falcon Shield",
+    "level": "59",
+    "category": "Accessories",
+    "subCategory": "Shield",
+    "socket": "",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Curse Book+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Wooden Bracelet",
+    "level": "1",
+    "category": "Accessories",
+    "subCategory": "Bracelet",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wild Boar Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Tiger Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x Face Cream+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Copper Bracelet",
+    "level": "16",
+    "category": "Accessories",
+    "subCategory": "Bracelet",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wild Boar Tooth+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "2 x Tiger Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x Face Cream+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Silver Bracelet",
+    "level": "26",
+    "category": "Accessories",
+    "subCategory": "Bracelet",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Wolf Claw",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ball",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Flag+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Gold Bracelet",
+    "level": "36",
+    "category": "Accessories",
+    "subCategory": "Bracelet",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Wolf Claw+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ball+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Red Hairband+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Flag+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Ebony Bracelet",
+    "level": "46",
+    "category": "Accessories",
+    "subCategory": "Bracelet",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Amulet+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Jade Bracelet",
+    "level": "56",
+    "category": "Accessories",
+    "subCategory": "Bracelet",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Spider Egg+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Spider Leg+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Snake Tail+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Scorpion Claw+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Wooden Necklace",
+    "level": "1",
+    "category": "Accessories",
+    "subCategory": "Necklace",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "1 x Ornament+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Copper Necklace",
+    "level": "14",
+    "category": "Accessories",
+    "subCategory": "Necklace",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Pig Nose+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "1 x Ornament+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x White Tiger Hide+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Silver Necklace",
+    "level": "24",
+    "category": "Accessories",
+    "subCategory": "Necklace",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Bear Gall+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "2 x Ornament+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Gold Necklace",
+    "level": "34",
+    "category": "Accessories",
+    "subCategory": "Necklace",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Ornament+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Tiger Claw+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Black Uniform+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Shuriken+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Ebony Necklace",
+    "level": "44",
+    "category": "Accessories",
+    "subCategory": "Necklace",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Orc Soul Stone",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Shuriken+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Jade Necklace",
+    "level": "54",
+    "category": "Accessories",
+    "subCategory": "Necklace",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Spider Egg+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Spider Leg+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  },
+  {
+    "name": "Wooden Earrings",
+    "level": "1",
+    "category": "Accessories",
+    "subCategory": "Earrings",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "14",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "42",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "50",
+        "item1": "2 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "60",
+        "item1": "2 x White Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Copper Earrings",
+    "level": "18",
+    "category": "Accessories",
+    "subCategory": "Earrings",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "17",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "50",
+        "item1": "2 x Wolf Fur+",
+        "item2": "-"
+      },
+      {
+        "curse": "45.000",
+        "metal": "60",
+        "item1": "1 x Bear Gall+",
+        "item2": "-"
+      },
+      {
+        "curse": "75.000",
+        "metal": "72",
+        "item1": "2 x White Hairband+",
+        "item2": "-"
+      }
+    ]
+  },
+  {
+    "name": "Silver Earrings",
+    "level": "28",
+    "category": "Accessories",
+    "subCategory": "Earrings",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "600",
+        "metal": "20",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.200",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.500",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "5.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "10.000",
+        "metal": "42",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "50",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "30.000",
+        "metal": "60",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "45.000",
+        "metal": "72",
+        "item1": "1 x Orc Soul Stone+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "75.000",
+        "metal": "86",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Gold Earrings",
+    "level": "38",
+    "category": "Accessories",
+    "subCategory": "Earrings",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "24",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "50",
+        "item1": "2 x Savage Booty+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "60",
+        "item1": "2 x Flag+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "72",
+        "item1": "2 x Esoteric Primer+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "86",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "103",
+        "item1": "2 x Curse Book+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Ebony Earrings",
+    "level": "48",
+    "category": "Accessories",
+    "subCategory": "Earrings",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "29",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "60",
+        "item1": "2 x Orc Amulet+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "72",
+        "item1": "2 x Curse Book+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "86",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x Fishbones"
+      },
+      {
+        "curse": "70.000",
+        "metal": "103",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "1 x Clam"
+      },
+      {
+        "curse": "120.000",
+        "metal": "124",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "1 x Clam"
+      }
+    ]
+  },
+  {
+    "name": "Jade Earrings",
+    "level": "58",
+    "category": "Accessories",
+    "subCategory": "Earrings",
+    "socket": "3",
+    "upgrades": [
+      {
+        "curse": "-",
+        "metal": "-",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "1.000",
+        "metal": "35",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "2.000",
+        "metal": "42",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "4.000",
+        "metal": "50",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "8.000",
+        "metal": "60",
+        "item1": "-",
+        "item2": "-"
+      },
+      {
+        "curse": "13.000",
+        "metal": "72",
+        "item1": "2 x Orc Soul Stone+",
+        "item2": "-"
+      },
+      {
+        "curse": "20.000",
+        "metal": "86",
+        "item1": "2 x Unknown Talisman+",
+        "item2": "-"
+      },
+      {
+        "curse": "40.000",
+        "metal": "103",
+        "item1": "2 x Orc Tooth+",
+        "item2": "1 x White Pearl"
+      },
+      {
+        "curse": "70.000",
+        "metal": "124",
+        "item1": "2 x Spider Web+",
+        "item2": "1 x Blue Pearl"
+      },
+      {
+        "curse": "120.000",
+        "metal": "149",
+        "item1": "2 x Spider Eyes+",
+        "item2": "1 x Red Pearl"
+      }
+    ]
+  }
+];
+let activeCategory = null;
+let activeSub = null;
+
+function applySearch() {
+  renderItems();
+}
+document.getElementById("searchInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") applySearch();
+});
+
+function goBack() {
+  // reset total
+  activeCategory = null;
+  activeSub = null;
+  document.getElementById("searchInput").value = "";
+
+  document.getElementById("subCards").innerHTML = "";
+  document.getElementById("wiki").innerHTML = "";
+}
+function handleSearchInput(input) {
+  // auto-capitalize în timp real
+  const cursor = input.selectionStart;
+  input.value = capitalizeWords(input.value);
+  input.setSelectionRange(cursor, cursor);
+
+  // live search
+  renderItems();
+}
+
+function safe(v) {
+  return (v === undefined || v === null || v === "") ? "-" : v;
+}
+function capitalizeWords(str) {
+  return str
+    .toLowerCase()
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function renderItems() {
+  const wiki = document.getElementById("wiki");
+  const q = document.getElementById("searchInput").value.toLowerCase();
+
+  wiki.innerHTML = "";
+
+  // 🔥 DACĂ există search → ignorăm categoria activă
+  const useCategoryFilter = q === "";
+
+
+  items.forEach(it => {
+  if (useCategoryFilter) {
+  if (activeCategory && it.category !== activeCategory) return;
+  if (activeSub && it.subCategory !== activeSub) return;
+}
+
+
+    if (
+      q &&
+      !it.name.toLowerCase().includes(q) &&
+      !String(it.level).includes(q)
+    ) return;
+
+    const hasItem2 = it.upgrades.some(u => safe(u.item2) !== "-");
+
+    wiki.innerHTML += `
+      <div class="wiki-item">
+        <div class="wiki-header" onclick="this.parentElement.classList.toggle('active')">
+          Level ${it.level} ${it.name}
+        </div>
+<div class="wiki-body">
+  Socket: ${safe(it.socket)}
+
+  <div class="table-wrap">
+    <table>
+      <tr>
+              <th></th>
+              ${it.upgrades.map((_, i) => `<th>+${i}</th>`).join("")}
+            </tr>
+            <tr>
+              <th>Curse</th>
+              ${it.upgrades.map(u => `<td>${safe(u.curse)}</td>`).join("")}
+            </tr>
+            <tr>
+              <th>Upgrade Metal</th>
+              ${it.upgrades.map(u => `<td>${safe(u.metal)}</td>`).join("")}
+            </tr>
+            <tr>
+              <th>Upgrade Item</th>
+              ${it.upgrades.map(u => `<td>${safe(u.item1)}</td>`).join("")}
+            </tr>
+            ${
+              hasItem2
+                ? `<tr><th>Upgrade Item 2</th>${it.upgrades
+                    .map(u => `<td>${safe(u.item2)}</td>`)
+                    .join("")}</tr>`
+                : ""
+            }
+          </table>
+        </div>
+      </div>
+    `;
+  });
+}
+
+
+</script>
+
+</body>
+</html>
