@@ -249,6 +249,41 @@ function getSubLabel(name) {
     : name;
 }
 
+
+function loadRandomCategoryAndSub() {
+  const categories = Object.keys(subCategories);
+
+  // categorie random
+  const randomCategory =
+    categories[Math.floor(Math.random() * categories.length)];
+
+  const subs = subCategories[randomCategory];
+  if (!subs || subs.length === 0) return;
+
+  // subcategorie random
+  const randomSub =
+    subs[Math.floor(Math.random() * subs.length)];
+
+  // 🔥 exact ca un click real
+  openCategory(randomCategory);
+  openSub(randomSub);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  loadRandomCategoryAndSub();
+});
+const funTexts = [
+  "Blacksmith’s Random Pick",
+  "Today’s Featured Upgrades",
+  "Forged by Chance",
+  "Random Upgrade Selection"
+];
+
+document.querySelector("h1").innerHTML =
+  `Item Upgrade Requirements (Coming soon...)
+  <br> <span style="opacity:.6;font-size:18px">${funTexts[Math.floor(Math.random() * funTexts.length)]}</span>`;
+
+
 const items = [
   {
     "name": "Novice Armour",
