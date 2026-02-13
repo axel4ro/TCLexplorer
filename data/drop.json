@@ -16294,187 +16294,187 @@
                     "item": 1402,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 4
+                    "chance": 3
                 },
                 {
                     "item": 1403,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 8
+                    "chance": 6
                 },
                 {
                     "item": 1404,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 12
+                    "chance": 9
                 },
                 {
                     "item": 1405,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 16
+                    "chance": 12
                 },
                 {
                     "item": 1406,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 20
-                },
-                {
-                    "item": 1407,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 24
+                    "chance": 15
                 },
                 {
                     "item": 1408,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 28
+                    "chance": 18
                 },
                 {
                     "item": 1409,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 32
-                },
-                {
-                    "item": 1410,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 36
-                },
-                {
-                    "item": 1411,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 40
-                },
-                {
-                    "item": 1412,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 44
+                    "chance": 21
                 },
                 {
                     "item": 1413,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 48
+                    "chance": 24
                 },
                 {
                     "item": 1414,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 52
+                    "chance": 27
+                },
+                {
+                    "item": 1407,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 30
+                },
+                {
+                    "item": 1411,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 33
+                },
+                {
+                    "item": 1412,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 36
+                },
+                {
+                    "item": 1410,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 39
                 },
                 {
                     "item": 1415,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 56
+                    "chance": 42
                 },
                 {
                     "item": 1416,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 60
+                    "chance": 45
                 },
                 {
                     "item": 1417,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 63
+                    "chance": 47
                 },
                 {
-                    "item": 1418,
+                    "item": 1759,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 65
+                    "chance": 49
                 },
                 {
                     "item": 1419,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 67
+                    "chance": 51
                 },
                 {
-                    "item": 1436,
+                    "item": 1418,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 69
+                    "chance": 53
                 },
                 {
                     "item": 1437,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 71
-                },
-                {
-                    "item": 1438,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 73
-                },
-                {
-                    "item": 1439,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 75
-                },
-                {
-                    "item": 1440,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 77
+                    "chance": 55
                 },
                 {
                     "item": 1441,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 79
+                    "chance": 57
                 },
                 {
-                    "item": 1653,
+                    "item": 1438,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 81
+                    "chance": 59
                 },
                 {
-                    "item": 1541,
+                    "item": 1440,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 83
+                    "chance": 61
                 },
                 {
-                    "item": 1540,
+                    "item": 1436,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 85
-                },
-                {
-                    "item": 1539,
-                    "count": 1,
-                    "count_max": 1,
-                    "chance": 87
+                    "chance": 63
                 },
                 {
                     "item": 1538,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 89
+                    "chance": 64
+                },
+                {
+                    "item": 1539,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 65
+                },
+                {
+                    "item": 1540,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 66
+                },
+                {
+                    "item": 1541,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 67
+                },
+                {
+                    "item": 1653,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 68
                 },
                 {
                     "item": 1537,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 91
+                    "chance": 69
                 },
                 {
                     "item": 1654,
                     "count": 1,
                     "count_max": 1,
-                    "chance": 93
+                    "chance": 76
                 }
             ]
         },
