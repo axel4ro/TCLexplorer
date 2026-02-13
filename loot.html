@@ -380,8 +380,12 @@ let lootSearch = "";
 
 // Drop rate formatter
 function formatDrop(num) {
-    return (num % 1 === 0) ? `${num}%` : `${num.toFixed(1)}%`;
+    const value = Number(num);
+    if (isNaN(value)) return "0%";
+
+    return `${parseFloat(value.toFixed(2))}%`;
 }
+
 
 const DROP_URL = "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/data/drop.json";
 
@@ -910,6 +914,7 @@ sorted.forEach(it => {
 
 </body>
 </html>
+
 
 
 
