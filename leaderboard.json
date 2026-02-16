@@ -765,9 +765,9 @@
   "erd1r6sk34klqcyu0ceh5w0g4epl9l3qgplr5g5tmhgj2saq48qdzlqqr9tf36": {
     "rank": 110,
     "nft": 0,
-    "loan": 0,
+    "loan": 1000000000000000000,
     "infinity": 10909000000000000000000,
-    "total": 10909000000000000000000
+    "total": 10910000000000000000000
   },
   "erd1032wxxe4w039732rgrcth2xy65zarzuedgwxjrz9thk9er6glxlqpgs8l3": {
     "rank": 111,
