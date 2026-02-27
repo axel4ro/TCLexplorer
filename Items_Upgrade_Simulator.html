@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blacksmith - Upgrade Simulator</title>
+
+<style>
+.header-row {
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin-bottom:20px;
+    flex-wrap:nowrap;
+}
+
+.header-row h1 {
+    margin:0;
+	text-align:center;
+    font-size:16px;        /* mai mic */
+    font-weight:600;
+    white-space:nowrap;    /* NU mai rupe pe 2 randuri */
+}
+
+.back-btn {
+    padding:6px 12px;
+    font-size:13px;
+    border-radius:6px;
+}
+.header-row {
+    justify-content:flex-start;
+}
+body {
+    background:#111827;
+    color:#f3f4f6;
+    font-family:Arial, sans-serif;
+    padding:20px;
+}
+
+.container {
+    max-width:650px;
+    margin:auto;
+    background:#1f2937;
+    padding:25px;
+    border-radius:12px;
+}
+
+h1 {
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.input-wrapper {
+    text-align:center;
+    margin-bottom:20px;
+}
+
+#items {
+    width:120px;
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    font-size:16px;
+    text-align:center;
+    background:#0f172a;
+    color:white;
+}
+
+/* =========================
+   EVENT TOGGLE
+========================= */
+
+.event-toggle {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#0f172a;
+    padding:12px;
+    border-radius:10px;
+    cursor:pointer;
+    user-select:none;
+    border:2px solid transparent;
+    transition:all 0.25s ease;
+
+    animation:eventPulse 4s infinite ease-in-out;
+}
+
+.event-toggle:hover {
+    transform:translateY(-3px) scale(1.03);
+    border:2px solid #3b82f6;
+    box-shadow:0 10px 25px rgba(59,130,246,0.35);
+}
+
+.event-toggle.active {
+    background:#0f172a;
+    border:2px solid #22c55e;
+    box-shadow:0 0 15px rgba(34,197,94,0.6);
+    animation:none; /* stop pulse when active */
+}
+
+.toggle-indicator {
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:#6b7280;
+    transition:all 0.3s ease;
+    animation:dotPulse 3s infinite ease-in-out;
+}
+
+.event-toggle.active .toggle-indicator {
+    background:#22c55e;
+    box-shadow:0 0 8px #22c55e;
+    animation:none;
+}
+
+/* =========================
+   RESULT BOX
+========================= */
+
+.result {
+    margin-top:25px;
+    background:#0f172a;
+    padding:20px;
+    border-radius:10px;
+    line-height:1.6;
+}
+
+.result-line {
+    display:grid;
+    grid-template-columns: 50px 120px 30px 1fr;
+    align-items:center;
+    padding:6px 0;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    font-size:14px;
+}
+
+.result-line {
+    padding-left:10px;
+}
+.upgrade-level {
+    font-weight:bold;
+    color:#60a5fa;
+    min-width:40px;
+}
+
+.chance {
+    color:#cbd5e1;
+}
+
+.arrow {
+    opacity:0.5;
+}
+
+.average {
+    color:#22c55e;
+}
+
+/* Level Colors */
+.plus-1 { color:#22c55e; }
+.plus-2 { color:#84cc16; }
+.plus-3 { color:#eab308; }
+.plus-4 { color:#f97316; }
+.plus-5 { color:#ef4444; }
+.plus-6 {
+    color:#b91c1c;
+    text-shadow:0 0 6px rgba(185,28,28,0.6);
+}
+
+/* Danger row styling */
+.danger-row {
+    background:rgba(185,28,28,0.06);
+    border-left:3px solid #b91c1c;
+}
+
+.back-btn {
+  display: inline-block;
+  padding: 10px 18px;             /* la fel ca Wiki/Menu */
+  border-radius: 6px;
+  background: #249c8c;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  /* 🔥 umbra textului și a butonului */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.back-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+
+
+/* =========================
+   IMPORTANT BUTTON
+========================= */
+
+.upgrade-info-btn {
+    margin-top:20px;
+    padding:12px;
+    border-radius:8px;
+    background:#7c3aed;
+    text-align:center;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+    box-shadow:0 0 10px rgba(124,58,237,0.4);
+
+    animation:glowPulse 2.5s infinite ease-in-out,
+              softPulse 4s infinite ease-in-out;
+}
+
+.upgrade-info-btn:hover {
+    background:#8b5cf6;
+    transform:translateY(-2px);
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.75);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+
+.modal-content {
+    background:#1f2937;
+    padding:25px;
+    border-radius:12px;
+    max-width:600px;
+    width:90%;
+    max-height:80vh;
+    overflow-y:auto;
+    position:relative;
+}
+
+.close-btn {
+    position:absolute;
+    top:10px;
+    right:15px;
+    cursor:pointer;
+    font-size:20px;
+    font-weight:bold;
+    color:#f87171;
+}
+
+.upgrade-info-btn {
+    margin-top:25px;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes eventPulse {
+    0% { transform:scale(1); }
+    50% { transform:scale(1.02); }
+    100% { transform:scale(1); }
+}
+
+@keyframes dotPulse {
+    0% { box-shadow:0 0 0px rgba(59,130,246,0.4); }
+    50% { box-shadow:0 0 10px rgba(59,130,246,0.8); }
+    100% { box-shadow:0 0 0px rgba(59,130,246,0.4); }
+}
+
+@keyframes glowPulse {
+    0% { box-shadow:0 0 0px rgba(124,58,237,0.4); }
+    50% { box-shadow:0 0 20px rgba(124,58,237,0.9); }
+    100% { box-shadow:0 0 0px rgba(124,58,237,0.4); }
+}
+
+@keyframes softPulse {
+    0% { transform:scale(1); }
+    50% { transform:scale(1.02); }
+    100% { transform:scale(1); }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<div class="header-row">
+<a href="index.html" class="back-btn">⬅️ Back to WiKi</a>
+    <h1>Blacksmith - Upgrade Simulator</h1>
+    
+</div>
+
+    <div class="input-wrapper">
+        <label>Number of Items:</label><br>
+        <input type="number" id="items" value="10" min="1" oninput="simulate()">
+		<br></br>
+		<div style="font-size:12px; opacity:0.6;">
+             How many items the upgrade starts with +0.
+      </div>
+    </div>
+    <div id="eventToggle" class="event-toggle" onclick="toggleEvent()">
+        <div class="toggle-indicator"></div>
+        <div>Blacksmith - Upgrade Event (+10% chance)</div>
+    </div>
+
+    <div class="result" id="output"></div>
+
+<div class="upgrade-info-btn" onclick="openModal()">
+    ⚠ IMPORTANT: Protect Your High-Level Items (+7 to +9)
+</div>
+</div>
+
+<!-- POPUP -->
+<div class="modal" id="upgradeModal">
+    <div class="modal-content">
+        <div class="close-btn" onclick="closeModal()">✖</div>
+        <h2>Important Upgrade Information</h2>
+
+        <p>For +7, +8 and +9 upgrades — especially for items with bonuses, crystals or finishes — it is strongly recommended to use special upgrade items.</p>
+
+        <hr>
+
+        <h3>Blessing Scroll</h3>
+        <p>Prevents destruction. On failure: -1 upgrade level. Cooldown applied.</p>
+
+        <h3>Cursed Scroll (B)</h3>
+        <p>Prevents destruction. On failure: -1 upgrade level. No cooldown.</p>
+
+        <h3>Scroll of the Dragon</h3>
+        <p>Prevents destruction. +10% success chance. On failure: -1 upgrade level. Cooldown applied.</p>
+
+        <h3>Cursed Dragon Scroll (B)</h3>
+        <p>Prevents destruction. +10% success chance. On failure: -1 upgrade level. No cooldown.</p>
+
+        <h3>Magic Stone</h3>
+        <p>Prevents destruction. Upgrade level unchanged on failure. Cooldown applied.</p>
+
+        <h3>Cursed Stone (B)</h3>
+        <p>Prevents destruction. Upgrade level unchanged on failure. No cooldown.</p>
+
+        <hr>
+
+        <p>
+		These special upgrade items can be obtained in multiple ways:
+		<br><br>
+		• Trading with other players (via Trade system) using Curse or other materials  
+		<br>
+		• Private Shops (purchased with Curse or TCL token)  
+		<br>
+		• In-game Events & Activities  
+		<br>
+		• ItemShop (purchased with Karma)
+		</p>
+    </div>
+</div>
+
+<script>
+const baseChances = [0.9,0.8,0.7,0.6,0.5,0.4];
+let eventActive = false;
+
+function toggleEvent(){
+    eventActive = !eventActive;
+    document.getElementById("eventToggle").classList.toggle("active");
+    simulate();
+}
+
+function simulate(){
+    let items = parseInt(document.getElementById("items").value) || 0;
+    let output = "<h3>Expected Results:</h3>";
+    let currentItems = items;
+
+	for(let i=0;i<baseChances.length;i++){
+
+		let chance = eventActive ? baseChances[i] + 0.10 : baseChances[i];
+		if(chance > 1) chance = 1;
+
+		currentItems *= chance;
+
+		let displayValue = Math.round(currentItems);
+		let itemLabel = displayValue === 1 ? "item" : "items";
+
+		let dangerClass = (i === 5) ? " danger-row" : ""; // +6 only
+
+		output += `
+		<div class="result-line${dangerClass}">
+			<span class="upgrade-level plus-${i+1}">+${i+1}</span>
+			<span class="chance">Chance: ${Math.round(chance*100)}%</span>
+			<span class="arrow">→</span>
+			<span class="average">On average: ${displayValue} ${itemLabel}</span>
+		</div>
+		`;
+	}
+
+    document.getElementById("output").innerHTML = output;
+
+    randomizePulseDelay();
+}
+
+function randomizePulseDelay(){
+    const eventBtn = document.getElementById("eventToggle");
+    const infoBtn = document.querySelector(".upgrade-info-btn");
+
+    if(eventBtn){
+        eventBtn.style.animationDelay = Math.random()*3 + "s";
+    }
+    if(infoBtn){
+        infoBtn.style.animationDelay = Math.random()*2 + "s";
+    }
+}
+
+function openModal(){
+    document.getElementById("upgradeModal").style.display="flex";
+}
+
+function closeModal(){
+    document.getElementById("upgradeModal").style.display="none";
+}
+
+window.addEventListener("load", function(){
+    simulate();
+});
+</script>
+
+</body>
+</html>
