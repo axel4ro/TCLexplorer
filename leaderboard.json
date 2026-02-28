@@ -993,8 +993,15 @@
     "infinity": 72000000000000000000,
     "total": 72000000000000000000
   },
-  "erd1vgvpnnkm465wzy2pe8yf7z4ufwpjqysd9656v88hd4mug6n4ypjsneahd9": {
+  "erd122yadmug9wrvdxpuam40zeaq6ftp3aurgnhy693cp9rveqehj6csgzgy5a": {
     "rank": 143,
+    "nft": 0,
+    "loan": 31000000000000000000,
+    "infinity": 0,
+    "total": 31000000000000000000
+  },
+  "erd1vgvpnnkm465wzy2pe8yf7z4ufwpjqysd9656v88hd4mug6n4ypjsneahd9": {
+    "rank": 144,
     "nft": 0,
     "loan": 0,
     "infinity": 31000000000000000000,
