@@ -4522,7 +4522,7 @@
         },
         {
             "id": 1132,
-            "name": "Lucky Medal"
+            "name": "Lucky Medal 7 days"
         },
         {
             "id": 1133,
@@ -5722,7 +5722,7 @@
         },
         {
             "id": 1433,
-            "name": "Lucky Medal (B)"
+            "name": "Lucky Medal 7 days (B)"
         },
         {
             "id": 1434,
@@ -6774,7 +6774,7 @@
         },
         {
             "id": 1698,
-            "name": "<color=#ebc15b>Reward Paused ÃŽÂ±"
+            "name": "<color=#ebc15b>Reward Paused α"
         },
         {
             "id": 1699,
@@ -7075,6 +7075,14 @@
         {
             "id": 1773,
             "name": "Gold Treasure Chest+"
+        },
+        {
+            "id": 1774,
+            "name": "Thief Glove 7 days (B)"
+        },
+        {
+            "id": 1775,
+            "name": "Spider Queen Box"
         }
     ],
     "mobTemplates": [
@@ -9761,19 +9769,9 @@
         ],
         "135": [
             {
-                "lootTable": 146,
-                "dropChance": 20,
-                "count": 1
-            },
-            {
-                "lootTable": 13,
-                "dropChance": 20,
-                "count": 1
-            },
-            {
-                "lootTable": 75,
-                "dropChance": 20,
-                "count": 1
+                "lootTable": 327,
+                "dropChance": 100,
+                "count": 2
             }
         ]
     },
@@ -19911,6 +19909,304 @@
             "items": [
                 {
                     "item": 1772,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 100
+                }
+            ]
+        },
+        {
+            "id": 326,
+            "items": [
+                {
+                    "item": 1737,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 4
+                },
+                {
+                    "item": 1194,
+                    "count": 25,
+                    "count_max": 50,
+                    "chance": 8
+                },
+                {
+                    "item": 1432,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 12
+                },
+                {
+                    "item": 1431,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 16
+                },
+                {
+                    "item": 1211,
+                    "count": 50,
+                    "count_max": 50,
+                    "chance": 20
+                },
+                {
+                    "item": 1517,
+                    "count": 25,
+                    "count_max": 25,
+                    "chance": 24
+                },
+                {
+                    "item": 541,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 26
+                },
+                {
+                    "item": 663,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 28
+                },
+                {
+                    "item": 740,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 30
+                },
+                {
+                    "item": 591,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 32
+                },
+                {
+                    "item": 366,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 34
+                },
+                {
+                    "item": 441,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 36
+                },
+                {
+                    "item": 1572,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 38
+                },
+                {
+                    "item": 840,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 40
+                },
+                {
+                    "item": 66,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 42
+                },
+                {
+                    "item": 1582,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 44
+                },
+                {
+                    "item": 1592,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 46
+                },
+                {
+                    "item": 1542,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 48
+                },
+                {
+                    "item": 1562,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 50
+                },
+                {
+                    "item": 1552,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 52
+                },
+                {
+                    "item": 1309,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 54
+                },
+                {
+                    "item": 1602,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 56
+                },
+                {
+                    "item": 1620,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 58
+                },
+                {
+                    "item": 1630,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 60
+                },
+                {
+                    "item": 1640,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 62
+                },
+                {
+                    "item": 544,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 64
+                },
+                {
+                    "item": 666,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 66
+                },
+                {
+                    "item": 743,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 68
+                },
+                {
+                    "item": 594,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 70
+                },
+                {
+                    "item": 843,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 72
+                },
+                {
+                    "item": 69,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 74
+                },
+                {
+                    "item": 369,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 76
+                },
+                {
+                    "item": 444,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 78
+                },
+                {
+                    "item": 1575,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 80
+                },
+                {
+                    "item": 1585,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 82
+                },
+                {
+                    "item": 1595,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 84
+                },
+                {
+                    "item": 1545,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 86
+                },
+                {
+                    "item": 1565,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 88
+                },
+                {
+                    "item": 1555,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 90
+                },
+                {
+                    "item": 1315,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 92
+                },
+                {
+                    "item": 1605,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 94
+                },
+                {
+                    "item": 1623,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 96
+                },
+                {
+                    "item": 1633,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 98
+                },
+                {
+                    "item": 1643,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 100
+                }
+            ]
+        },
+        {
+            "id": 327,
+            "items": [
+                {
+                    "item": 1775,
+                    "count": 1,
+                    "count_max": 1,
+                    "chance": 25
+                },
+                {
+                    "item": 1773,
+                    "count": 5,
+                    "count_max": 5,
+                    "chance": 40
+                },
+                {
+                    "item": 719,
+                    "count": 2,
+                    "count_max": 2,
+                    "chance": 60
+                },
+                {
+                    "item": 1655,
                     "count": 1,
                     "count_max": 1,
                     "chance": 100
