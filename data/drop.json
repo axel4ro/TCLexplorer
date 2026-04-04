@@ -7083,6 +7083,18 @@
         {
             "id": 1775,
             "name": "Spider Queen Box"
+        },
+        {
+            "id": 1776,
+            "name": "Rabbit Mask"
+        },
+        {
+            "id": 1777,
+            "name": "Cursed Stone"
+        },
+        {
+            "id": 1778,
+            "name": "Cursed Dragon Scroll"
         }
     ],
     "mobTemplates": [
@@ -11651,37 +11663,37 @@
                     "chance": 87
                 },
                 {
-                    "item": 1195,
+                    "item": 1138,
                     "count": 1,
                     "count_max": 1,
                     "chance": 92
                 },
                 {
-                    "item": 1705,
+                    "item": 1704,
                     "count": 1,
                     "count_max": 1,
                     "chance": 95
                 },
                 {
-                    "item": 1435,
+                    "item": 1139,
                     "count": 1,
                     "count_max": 1,
                     "chance": 97
                 },
                 {
-                    "item": 1741,
+                    "item": 1778,
                     "count": 1,
                     "count_max": 1,
                     "chance": 98
                 },
                 {
-                    "item": 1265,
+                    "item": 9,
                     "count": 1,
                     "count_max": 1,
                     "chance": 99
                 },
                 {
-                    "item": 1264,
+                    "item": 8,
                     "count": 1,
                     "count_max": 1,
                     "chance": 99.5
@@ -11693,7 +11705,7 @@
                     "chance": 99.9000015
                 },
                 {
-                    "item": 1742,
+                    "item": 1777,
                     "count": 1,
                     "count_max": 1,
                     "chance": 100
@@ -18024,31 +18036,31 @@
                     "chance": 75
                 },
                 {
-                    "item": 1195,
+                    "item": 1138,
                     "count": 1,
                     "count_max": 1,
                     "chance": 83
                 },
                 {
-                    "item": 1705,
+                    "item": 1704,
                     "count": 1,
                     "count_max": 1,
                     "chance": 88
                 },
                 {
-                    "item": 1265,
+                    "item": 9,
                     "count": 1,
                     "count_max": 1,
                     "chance": 93
                 },
                 {
-                    "item": 1435,
+                    "item": 1139,
                     "count": 1,
                     "count_max": 1,
                     "chance": 97
                 },
                 {
-                    "item": 1741,
+                    "item": 1778,
                     "count": 1,
                     "count_max": 1,
                     "chance": 99
@@ -18072,7 +18084,7 @@
                     "chance": 99.9000015
                 },
                 {
-                    "item": 1742,
+                    "item": 1777,
                     "count": 1,
                     "count_max": 1,
                     "chance": 100
