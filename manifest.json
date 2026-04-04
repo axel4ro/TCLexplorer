@@ -3,8 +3,8 @@
   "short_name": "TCL Explorer",
   "start_url": "/TCLexplorer/index.html",
   "display": "standalone",
-  "background_color": "#161a24",
-  "theme_color": "#249c8c",
+  "background_color": "#07080c",
+  "theme_color": "#0c0e14",
   "icons": [
     {
       "src": "images/tcl_icon.png",

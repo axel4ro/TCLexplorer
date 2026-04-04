@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NFT Explorer</title>
+  <meta name="theme-color" content="#0c0e14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css" />
   <style>
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
@@ -325,9 +330,33 @@ nav button.active {
   transform: translateY(-2px);
 }
 
+body.page-sub {
+  background: var(--bg-void) !important;
+  color: var(--text) !important;
+  font-family: var(--font-ui), 'Segoe UI', Arial, sans-serif;
+}
+.page-sub header {
+  background: linear-gradient(90deg, #12151f, #181c28) !important;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.page-sub h1 { font-family: var(--font-display), sans-serif; color: var(--accent) !important; text-shadow: none; }
+.page-sub .back-btn {
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+}
+.page-sub nav button {
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+}
+.page-sub nav button.active {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 12px rgba(0, 232, 204, 0.35) !important;
+}
+.page-sub .card {
+  border-color: var(--border-subtle) !important;
+}
+
   </style>
 </head>
-<body>
+<body class="page-sub">
 <header>
   <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%;">
     <nav>
