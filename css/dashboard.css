@@ -251,15 +251,7 @@ body.sidebar-desktop .app-content {
 }
 
 .app-page-title {
-  flex: 1;
-  margin: 0;
-  min-width: 0;
-  font-family: var(--font-display);
-  font-size: clamp(0.85rem, 2.5vw, 1.05rem);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--text);
-  text-transform: uppercase;
+  display: none;
 }
 
 .app-topbar-right {
@@ -378,6 +370,14 @@ body.sidebar-desktop .section-page.fullpage {
   height: 100%;
   border: none;
   display: block;
+}
+
+#internalPageFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #0b0d12;
 }
 
 #dexscreener-embed {
@@ -506,21 +506,138 @@ body.sidebar-desktop .section-page.fullpage {
   }
 }
 
-.sentiment-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  margin: 16px auto 22px;
+.token-overview-row {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.4fr) minmax(260px, 0.9fr);
   gap: 14px;
-  flex-wrap: wrap;
+  margin: 16px auto 22px;
+  align-items: stretch;
 }
 
-.mini-stat,
+.token-accordion-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.token-accordion-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px 20px !important;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle) !important;
+  background: linear-gradient(135deg, rgba(18, 21, 31, 0.98), rgba(12, 18, 30, 0.96)) !important;
+  color: var(--text) !important;
+  text-align: left;
+  box-shadow: var(--shadow-panel);
+}
+
+.token-accordion-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 232, 204, 0.35) !important;
+}
+
+.token-accordion-card.active {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.24), rgba(0, 232, 204, 0.18)) !important;
+  border-color: rgba(0, 232, 204, 0.45) !important;
+}
+
+.token-accordion-card__title {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  line-height: 1.3;
+}
+
+.token-accordion-card__hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.token-accordion-card__icon {
+  margin-top: 2px;
+  color: var(--accent);
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.token-accordion-card.active .token-accordion-card__icon {
+  transform: rotate(180deg);
+}
+
+.token-accordion-section {
+  display: none;
+  animation: fadeIn 0.22s var(--ease);
+}
+
+.token-accordion-section.active {
+  display: block;
+}
+
+.token-overview-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  padding: 16px 18px;
+}
+
+.token-overview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.token-overview-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  color: var(--accent);
+}
+
+.token-overview-note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.init-liq-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.init-liq-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.init-liq-item span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+.init-liq-item strong {
+  color: var(--text);
+  font-size: 1.05rem;
+}
+
+.sentiment-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #sentimentBox {
-  flex: 1;
-  min-width: 160px;
-  max-width: 320px;
-  padding: 12px 14px;
+  width: 100%;
   text-align: center;
 }
 
@@ -547,26 +664,52 @@ body.sidebar-desktop .section-page.fullpage {
   color: var(--text-muted);
 }
 
-.init-liq {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.init-liq .stat {
-  flex: 1 1 calc(33.333% - 14px);
-  min-width: 140px;
-}
-
 .section {
   margin-bottom: 22px;
+}
+
+.calculator-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.calculator-action-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px 22px !important;
+  border-radius: 16px;
+  border: 1px solid rgba(168, 85, 247, 0.45) !important;
+  background: linear-gradient(135deg, rgba(94, 43, 165, 0.38), rgba(12, 71, 88, 0.42)) !important;
+  color: #fff !important;
+  text-align: left;
+  box-shadow: var(--shadow-panel);
+}
+
+.calculator-action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(168, 85, 247, 0.2);
+}
+
+.calculator-action-card__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.calculator-action-card__desc {
+  color: rgba(232, 237, 245, 0.82);
+  font-size: 0.86rem;
+  line-height: 1.45;
 }
 
 /* Staking */
 .staking-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -581,6 +724,12 @@ body.sidebar-desktop .section-page.fullpage {
   flex-direction: column;
   justify-content: center;
   min-height: 88px;
+}
+
+.staking-grid .calc-card .stat-top span {
+  text-align: center;
+  width: 100%;
+  color: #fff;
 }
 
 .staking-grid .calc-card:hover {
@@ -670,10 +819,90 @@ body.sidebar-desktop .section-page.fullpage {
   color: var(--accent);
 }
 
+/* EXP table */
+.exp-table-panel {
+  background: linear-gradient(180deg, rgba(12, 14, 20, 0.96), rgba(10, 16, 26, 0.96));
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+
+.exp-table-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(90deg, rgba(11, 18, 32, 0.95), rgba(10, 31, 42, 0.9));
+}
+
+.exp-table-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: #00e0ff;
+}
+
+.exp-table-header p {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.exp-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.exp-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 320px;
+  background: #0b1220;
+}
+
+.exp-table th {
+  padding: 15px 18px;
+  text-align: left;
+  font-weight: 600;
+  color: #00e0ff;
+  background: #0f1a2e;
+}
+
+.exp-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.exp-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.exp-table tbody tr:hover {
+  background: rgba(0, 255, 255, 0.05);
+}
+
+.exp-level {
+  color: #a3adc2;
+}
+
+.exp-value {
+  color: #00ff9d;
+  font-weight: 700;
+}
+
+.exp-table-empty {
+  color: var(--text-muted);
+  text-align: center;
+}
+
 /* Calculator cards */
 .calc-layout {
   display: grid;
   gap: 16px;
+}
+
+.modal-calc-layout {
+  margin-top: 16px;
 }
 
 @media (min-width: 900px) {
@@ -917,6 +1146,17 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   padding: 16px;
 }
 
+#transactionCalcModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
 #aprModal .modal-content {
   background: var(--bg-panel);
   border: 1px solid rgba(0, 232, 204, 0.35);
@@ -930,7 +1170,28 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   text-align: center;
 }
 
+#transactionCalcModal .modal-content {
+  background: var(--bg-panel);
+  border: 1px solid rgba(0, 232, 204, 0.35);
+  border-radius: 14px;
+  padding: 22px 24px;
+  width: 100%;
+  max-width: 920px;
+  color: var(--text);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
 #aprModal .close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  color: var(--accent);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+#transactionCalcModal .close {
   position: absolute;
   top: 12px;
   right: 14px;
@@ -1026,14 +1287,13 @@ a {
 
 /* Mobile portrait */
 @media (max-width: 767px) {
-  .sentiment-row {
-    flex-direction: column;
-    align-items: stretch;
+  .token-accordion-nav,
+  .calculator-action-grid {
+    grid-template-columns: 1fr;
   }
 
-  .mini-stat,
-  #sentimentBox {
-    max-width: none;
+  .token-overview-row {
+    grid-template-columns: 1fr;
   }
 
   .app-main {
@@ -1044,8 +1304,8 @@ a {
     flex-direction: column;
   }
 
-  .init-liq {
-    flex-direction: column;
+  .init-liq-overview-grid {
+    grid-template-columns: 1fr;
   }
 }
 
