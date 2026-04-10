@@ -363,30 +363,34 @@
       </div>
     </div>
 
-    <div style="margin-bottom:12px; display:flex; gap:8px;">
-      <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
-            style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
-      <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
-    </div>
+    <div class="staking-scale-shell" id="stakingScaleShell">
+      <div class="staking-scale-root" id="stakingScaleRoot">
+        <div class="staking-search-row">
+          <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
+                style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
+          <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
+        </div>
 
-    <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
+        <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
 
-    <div class="staking-table-wrap">
-      <table id="stakingTable">
-        <thead>
-          <tr>
-            <th style="padding:8px; text-align:center;">Rank</th>
-            <th style="padding:8px; text-align:center;">Address</th>
-            <th style="padding:8px; text-align:center;">Total TCL</th>
-            <th style="padding:8px; text-align:center;">NFT</th>
-            <th style="padding:8px; text-align:center;">Loan</th>
-            <th style="padding:8px; text-align:center;">Infinity</th>
-          </tr>
-        </thead>
-        <tbody id="stakingBody">
-          <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
-        </tbody>
-      </table>
+        <div class="staking-table-wrap">
+          <table id="stakingTable">
+            <thead>
+              <tr>
+                <th style="padding:8px; text-align:center;">Rank</th>
+                <th style="padding:8px; text-align:center;">Address</th>
+                <th style="padding:8px; text-align:center;">Total TCL</th>
+                <th style="padding:8px; text-align:center;">NFT</th>
+                <th style="padding:8px; text-align:center;">Loan</th>
+                <th style="padding:8px; text-align:center;">Infinity</th>
+              </tr>
+            </thead>
+            <tbody id="stakingBody">
+              <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1078,9 +1082,11 @@ body.innerHTML = html;
   } catch (err) {
     console.error("Leaderboard error", err);
     statusEl.textContent = "❌ Error loading leaderboard";
-    body.innerHTML =
+  body.innerHTML =
       '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
   }
+
+  requestAnimationFrame(applyStakingPortraitScale);
 }
 
   function updateStakingLeaderboard() {
@@ -1170,6 +1176,8 @@ async function searchStaker() {
     searchResult.innerHTML = "⚠️ Error fetching leaderboard.";
     searchResult.style.color = "#f87171";
   }
+
+  requestAnimationFrame(applyStakingPortraitScale);
 }
 
 
@@ -1199,6 +1207,8 @@ const internalPageState = {
   navId: ""
 };
 
+const STAKING_SCALE_WIDTH = 980;
+
 function setSidebarOpen(open) {
   document.body.classList.toggle("sidebar-open", open);
   const t = document.getElementById("sidebarToggle");
@@ -1208,6 +1218,32 @@ function setSidebarOpen(open) {
 function closeSidebarMobile() {
   if (window.matchMedia("(min-width: 1024px)").matches) return;
   setSidebarOpen(false);
+}
+
+function applyStakingPortraitScale() {
+  const shell = document.getElementById("stakingScaleShell");
+  const root = document.getElementById("stakingScaleRoot");
+
+  if (!shell || !root) return;
+
+  if (window.innerWidth > 768) {
+    shell.style.height = "";
+    root.style.position = "";
+    root.style.left = "";
+    root.style.width = "";
+    root.style.transform = "";
+    return;
+  }
+
+  const availableWidth = Math.max(window.innerWidth - 12, 320);
+  const scale = Math.min(1, availableWidth / STAKING_SCALE_WIDTH);
+  const scaledHeight = root.scrollHeight * scale;
+
+  root.style.position = "absolute";
+  root.style.left = "50%";
+  root.style.width = STAKING_SCALE_WIDTH + "px";
+  root.style.transform = `translateX(-50%) scale(${scale})`;
+  shell.style.height = Math.ceil(scaledHeight) + "px";
 }
 
 function showPage(id) {
@@ -1246,6 +1282,8 @@ function showPage(id) {
   if (id === "token") {
     ensureTokenAccordionState();
   }
+
+  requestAnimationFrame(applyStakingPortraitScale);
 }
 
 function setTokenAccordion(sectionId) {
@@ -1285,6 +1323,8 @@ function openInternalPage(src, title, options = {}) {
 
   showPage("internalPage");
 }
+
+window.addEventListener("resize", applyStakingPortraitScale);
 
 const EXP_TABLE_DATA = [
   [2, 300], [3, 800], [4, 1500], [5, 2500], [6, 4300], [7, 7200], [8, 11000], [9, 17000],
