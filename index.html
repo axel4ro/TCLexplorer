@@ -363,16 +363,16 @@
       </div>
     </div>
 
+    <div class="staking-search-row">
+      <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
+            style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
+      <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
+    </div>
+
+    <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
+
     <div class="staking-scale-shell" id="stakingScaleShell">
       <div class="staking-scale-root" id="stakingScaleRoot">
-        <div class="staking-search-row">
-          <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
-                style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
-          <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
-        </div>
-
-        <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
-
         <div class="staking-table-wrap">
           <table id="stakingTable">
             <thead>
@@ -1230,6 +1230,7 @@ function applyStakingPortraitScale() {
     shell.style.height = "";
     root.style.position = "";
     root.style.left = "";
+    root.style.top = "";
     root.style.width = "";
     root.style.transform = "";
     return;
@@ -1241,9 +1242,10 @@ function applyStakingPortraitScale() {
 
   root.style.position = "absolute";
   root.style.left = "50%";
+  root.style.top = "0";
   root.style.width = STAKING_SCALE_WIDTH + "px";
   root.style.transform = `translateX(-50%) scale(${scale})`;
-  shell.style.height = Math.ceil(scaledHeight) + "px";
+  shell.style.height = Math.ceil(root.getBoundingClientRect().height || scaledHeight) + "px";
 }
 
 function showPage(id) {
