@@ -117,28 +117,7 @@
   </div>
 
   <div id="tokenOverviewSection" class="token-accordion-section active">
-    <div class="token-overview-row">
-      <div class="token-overview-panel init-liq-panel">
-        <div class="token-overview-head">
-          <h3>Initial Liquidity</h3>
-          <span class="token-overview-note">Listing snapshot</span>
-        </div>
-        <div class="init-liq-overview-grid">
-          <div class="init-liq-item">
-            <span>Initial Price</span>
-            <strong>0.006 $</strong>
-          </div>
-          <div class="init-liq-item">
-            <span>TCL Supply</span>
-            <strong>4,000,000</strong>
-          </div>
-          <div class="init-liq-item">
-            <span>USDC Supply</span>
-            <strong>25,000 $</strong>
-          </div>
-        </div>
-      </div>
-
+    <div class="token-overview-row token-overview-row--single">
       <div class="token-overview-panel sentiment-panel">
         <div id="sentimentBox">
           <h3 data-i18n="sentiment_title">Sentiment Index</h3>
@@ -241,7 +220,34 @@
       </div>
       <div id="transactions" class="stat-value">—</div>
     </div>
+    <div class="stat">
+      <div class="stat-top">
+        <span>APR</span><span class="live-dot"></span>
+      </div>
+      <div id="aprOverview" class="stat-value">—</div>
+    </div>
   </div> <!-- ✅ închis grid-ul aici -->
+
+  <div class="token-overview-panel init-liq-panel">
+    <div class="token-overview-head">
+      <h3>Initial Liquidity</h3>
+      <span class="token-overview-note">Listing snapshot</span>
+    </div>
+    <div class="init-liq-overview-grid">
+      <div class="init-liq-item">
+        <span>Initial Price</span>
+        <strong>0.006 $</strong>
+      </div>
+      <div class="init-liq-item">
+        <span>TCL Supply</span>
+        <strong>4,000,000</strong>
+      </div>
+      <div class="init-liq-item">
+        <span>USDC Supply</span>
+        <strong>25,000 $</strong>
+      </div>
+    </div>
+  </div>
   
   <!-- How to Earn TCL (Whitepaper) -->
   <div class="section">
@@ -2290,6 +2296,8 @@ async function loadTCLStats() {
 
     // === Afișare formatată
     document.getElementById("apr").textContent = apr + "%";
+    const aprOverviewEl = document.getElementById("aprOverview");
+    if (aprOverviewEl) aprOverviewEl.textContent = apr + "%";
     document.getElementById("staked").textContent = totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
     document.getElementById("emission").textContent = emission.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
     document.getElementById("stakedUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
@@ -2299,6 +2307,8 @@ async function loadTCLStats() {
   } catch (e) {
     console.error("⚠️ Error loading TCL rewards:", e);
     document.getElementById("apr").textContent = "Error";
+    const aprOverviewEl = document.getElementById("aprOverview");
+    if (aprOverviewEl) aprOverviewEl.textContent = "Error";
   }
 }
 
