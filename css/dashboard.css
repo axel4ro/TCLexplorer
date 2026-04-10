@@ -790,6 +790,24 @@ body.sidebar-desktop .section-page.fullpage {
   transform: translateY(-1px);
 }
 
+.staking-scale-shell {
+  width: 100%;
+}
+
+.staking-scale-root {
+  width: 100%;
+}
+
+.staking-search-row {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.staking-search-row button {
+  flex-shrink: 0;
+}
+
 /* Table staking — horizontal scroll on small screens */
 .staking-table-wrap {
   width: 100%;
@@ -817,6 +835,35 @@ body.sidebar-desktop .section-page.fullpage {
 #stakingTable thead tr {
   background: linear-gradient(90deg, rgba(0, 232, 204, 0.12), rgba(168, 85, 247, 0.1));
   color: var(--accent);
+}
+
+@media (max-width: 768px) {
+  .staking-scale-shell {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .staking-scale-root {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 980px;
+    max-width: none;
+    transform-origin: top center;
+  }
+
+  .staking-search-row {
+    flex-wrap: nowrap;
+  }
+
+  .staking-table-wrap {
+    overflow: hidden;
+  }
+
+  #stakingTable {
+    min-width: 0;
+  }
 }
 
 /* EXP table */
