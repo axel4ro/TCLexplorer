@@ -1,0 +1,320 @@
+{
+  "about": {
+    "info": "The Cursed Land is a next-gen MMORPG that combines Web2 gameplay with Web3 ownership. Enjoy classic looting, PvP/PvE combat, guilds — and earn real value through blockchain.",
+    "list": [
+      {
+        "name": "Hybrid Economy",
+        "desc": "🔹 Classic Items (Web2): Looted from monsters or quests, used in combat or crafting. Tradable inside the game, sold to NPC for Curse currency, or exchanged for TCL token in Private Web3 Shops via xPortal.\n🔹 NFT Items (Web3): On-chain assets that unlock Play & Earn rewards. Stakeable, tradable, upgradeable, and backed by TCL."
+      },
+      {
+        "name": "Ways to Earn",
+        "desc": "🔹 Own NFT and Play – Receive 100% of the daily reward. Retain 66% of invested tokens (withdrawable within 24h). Requires daily gameplay. Consumes 33% for NFT acquisition/storage.\n\n🔹 Loan NFT – Earn rewards without playing. Retain 66% of invested tokens (withdrawable within 24h). Only 80% of the daily reward. Consumes 33% for NFT acquisition/storage.\n\n🔹 Borrow NFT – No initial investment. Retain 66% of invested tokens (withdrawable within 24h). Only 20% of the daily reward. Requires daily gameplay.\n\n🔹 Infinity Staking – Lifetime rewards. Earn daily rewards without play. 100% of staked TCL is irreversibly burned.\n\n🔹 Private Web3 Shop – Sell classic items for TCL directly to players via xPortal. No intermediaries. Shop open 24/7. Buyer not guaranteed.\n\n🔹 Referral Code – Earn 5% from invitee purchases. No TCL investment required. Needs 5 guests to activate. Rewards depend on invitee activity."
+      },
+      {
+        "name": "TCL Token",
+        "desc": "🔹 The game's core currency, used for staking, minting NFTs, in-game purchases, and trading in Web3 Shops.\n🔹 Backed by real on-chain value, with staking rewards, burns, referrals, and variable APR."
+      },
+      {
+        "name": "Ecosystem Stats (current)",
+        "desc": "🔹 Live dashboard with current price, supply, burns, rewards, volume and holders.\n🔹 Track real-time stats of the TCL token economy directly on-chain.",
+        "link": "https://axel4ro.github.io/TCLexplorer/index.html#token"
+      },
+      {
+        "name": "Character Progression",
+        "desc": "🔹 Current level cap: 64 with full EXP (planned: 100)\n🔹 Your progress is permanent, items are truly yours, and time invested has real value.\n🔹 New maps, challenges, and higher level caps will be unlocked gradually."
+      },
+      {
+        "name": "Equipment Customization",
+        "info": "⚙️ EQUIPMENT CUSTOMIZATION SYSTEMS",
+        "categories": {
+          "🎽 Armours": {
+            "info": "Each race has its own armor sets.\nCustomize with bonuses and stats.\nAdd crystals to boost specific effects.",
+            "list": {}
+          },
+          "🗡️ Weapons": {
+            "info": "Use Swords, Daggers, Bows, Fans, Staffs.\nAdd crystals to increase damage, crit, etc.",
+            "list": {}
+          },
+          "💍 Accessories": {
+            "info": "Shoes, Necklace, Bracelet, Helmet, Earrings, Shield.\nAdd refinements to Necklace, Bracelet, Earrings.\nUpgrade special Shields to gain defensive bonuses vs. each race.",
+            "list": {}
+          }
+        }
+      },
+      {
+        "name": "Additional Features",
+        "desc": "🔹 🐟 Fishing system – catch, trade, earn\n🔹 ⛏️ Mining system – gather resources for crafting\n🔹 💬 Trade system – secure, peer-to-peer\n🔹 📬 Mail & Whisper – private messages in-game\n🔹 🧾 Item display in chat – show off your loot!\n🔹 ✨ And there’s much more to discover — unlock secrets, forge alliances, and push your character to new limits."
+      }
+    ]
+  },
+    
+"races": {
+  "info": "Races define the appearance and origin of your hero. You may choose from Humans, Beasts, and Undead (male), or Elves (female). Every race can wield any class, creating limitless strategies and unique combinations.",
+  "list": [
+    {
+      "name": "Human",
+      "desc": "Balanced and resilient, representing strength and versatility.\n\nINT: 3\nVIT: 4\nSTR: 6\nDEX: 3\n\nHealth: 600\nHealth Max: 600 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    },
+    {
+      "name": "Beast",
+      "desc": "Savage and instinctive, channeling primal power in combat.\n\nINT: 3\nVIT: 3\nSTR: 4\nDEX: 6\n\nHealth: 650\nHealth Max: 650 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    },
+    {
+      "name": "Undead",
+      "desc": "Immortal and unyielding, rising again to conquer death itself.\n\nINT: 5\nVIT: 3\nSTR: 5\nDEX: 3\n\nHealth: 650\nHealth Max: 650 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    },
+    {
+      "name": "Elf",
+      "desc": "Graceful and wise, masters of agility and mystical arts.\n\nINT: 6\nVIT: 4\nSTR: 3\nDEX: 3\n\nHealth: 700\nHealth Max: 700 (+40 / level)\nMana: 200\nMana Max: 200 (+20 / level)"
+    }
+  ]
+},
+
+  "classes": {
+    "info": "Classes define your combat style. To unleash skills, you must equip the weapon bound to your class. However, you remain free to wield any weapon for creative battle strategies.",
+    "list": [
+      {
+        "name": "Assassin",
+        "desc": "Specializes in Daggers. Deadly, fast, and precise. Requires Daggers for skills, but can wield any weapon."
+      },
+      {
+        "name": "Shaman",
+        "desc": "Harnesses a Fan. Brings mystic power and support. Fan required for skills, but other weapons are possible."
+      },
+      {
+        "name": "Hunter",
+        "desc": "Master of the Bow. Strikes enemies from afar. Requires Bow for skills, but versatile with any weapon."
+      },
+      {
+        "name": "Warrior (In Development)",
+        "desc": "Will wield the Sword. A frontline fighter built for raw strength and resilience."
+      },
+      {
+        "name": "Wizard (In Development)",
+        "desc": "Will command a Staff. A bearer of ancient magic, channeling devastating spells."
+      }
+    ]
+  },
+  "materials": {
+    "info": "Daily Materials are special items dropped by monsters or obtained from fishing. They are used for Daily Mission 1.",
+    "list": [
+      { "name": "Wolf Fur", "desc": "Grey Wolf, Alpha Wolf" },
+      { "name": "Wolf Claw", "desc": "Blue Wolf, Alpha Blue Wolf" },
+      { "name": "Wild Boar Tooth", "desc": "Wild Boar" },
+      { "name": "Pig Nose", "desc": "Red Wild Boar" },
+      { "name": "Bear Foot Skin", "desc": "Bear, Grizzly Bear" },
+      { "name": "Bear Gall", "desc": "Black Bear, Brown Bear" },
+      { "name": "Tiger Claw", "desc": "Tiger" },
+      { "name": "Tiger Hide", "desc": "Tiger" },
+      { "name": "White Tiger Hide", "desc": "White Tiger" },
+      { "name": "Ornament", "desc": "White Oath Archer" },
+      { "name": "Face Cream", "desc": "White Oath Archer" },
+      { "name": "White Hairband", "desc": "White Oath Archer, White Oath Soldier" },
+      { "name": "Ball", "desc": "White Oath Soldier, White Oath Commander" },
+      { "name": "Red Hairband", "desc": "White Oath General" },
+      { "name": "Black Uniform", "desc": "Black Wind Soldier, Black Wind Maniac" },
+      { "name": "Shuriken", "desc": "Savage Minion" },
+      { "name": "Savage Booty", "desc": "Savage General" },
+      { "name": "Flag", "desc": "Savage Archer" },
+      { "name": "Orc Tooth", "desc": "Black Orc, Bold Black Orc, Black Orc Giant, Bold Black Giant Orc" },
+      { "name": "Orc Amulet", "desc": "Elite Orc Sorcerer, Elite Orc, Bold Big Orc, Elite Orc General, Bold Big Orc General" },
+      { "name": "Unknown Talisman", "desc": "Chief Esoteric Arahan, Esoteric Executioner, Esoteric Arahan Fighter" },
+      { "name": "Esoteric Primer", "desc": "Dark Fanatic, High Fanatic, Dark Arahan, High Arahan" },
+      { "name": "Curse Book", "desc": "Dark Tormentor, Dark Summoner, High Arahan Fighter, High Elite Arahan" },
+      { "name": "Orc Soul Stone", "desc": "Bold Big Orc Sorcerer, Elite Orc Fighter, Bold Big Orc Fighter" },
+      { "name": "Scorpion Claw", "desc": "Scorpion" },
+      { "name": "Snake Tail", "desc": "Barbarian Snake, Snake Reaver, Black Snake" },
+      { "name": "Spider Eyes", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
+      { "name": "Spider Web", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
+      { "name": "Spider Leg", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
+      { "name": "Spider Egg", "desc": "Small Poison Spider, Deadly Poison Spider, Red Deadly Poison Spider, Black Spider, Soldier Poison Spider" },
+      { "name": "Piece of Stone", "desc": "Clam (Fishing)" }
+    ]
+  },
+  "bonuses": {
+    "info": "Bonuses give additional stats to your equipment. They vary by item type (Weapon, Armor, etc.).",
+    "categories": {
+      "Weapon": {
+        "info": "Weapons can have offensive bonuses that increase damage.",
+        "list": {
+          "Vitality": [2, 4, 6, 8, 12],
+          "Intelligence": [2, 4, 6, 8, 12],
+          "Strength": [2, 4, 6, 8, 12],
+          "Dexterity": [2, 4, 6, 8, 12],
+          "Spell Speed": ["2%", "4%", "6%", "10%", "20%"],
+          "Poisoning Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Blocking Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Slowing Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Critical Hit": ["1%", "2%", "3%", "5%", "10%"],
+          "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
+          "Average Damage": ["-60% … 60%"],
+          "Spell Damage": ["-30% … 30%"]
+        }
+      },
+      "Armor": {
+        "info": "Armor bonuses improve defense and survivability.",
+        "list": {
+          "Health Max": [500, 1000, 1500, 2000],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Spell Speed": ["2%", "4%", "6%", "10%", "20%"],
+          "Absorbed by Health": ["1%", "2%", "3%", "5%", "10%"],
+          "Absorbed by Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Reflect Physical Attack": ["1%", "2%", "3%", "6%", "10%"],
+          "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
+          "Magic Resistance": ["2%", "4%", "6%", "10%", "15%"],
+          "Attack Value": [5, 10, 15, 30, 50]
+        }
+      },
+      "Bracelet": {
+        "info": "Bracelets grant mixed bonuses with survivability and utility.",
+        "list": {
+          "Health Max": [500, 1000, 1500, 2000],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Absorbed by Health": ["1%", "2%", "3%", "5%", "10%"],
+          "Steal Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
+          "Magic Resistance": ["2%", "4%", "6%", "10%", "15%"],
+          "Item Chance": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Necklaces": {
+        "info": "Necklaces can shift stats between HP and MP while giving resistances.",
+        "list": {
+          "Health Max": [500, 1000, 1500, 2000],
+          "Mana Max": [200],
+          "Absorbed by Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Steal Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Health Shift": [4, 8, 12, 20, 30],
+          "Mana Shift": [4, 8, 12, 20, 30],
+          "Blocking Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Critical Hit": ["1%", "2%", "3%", "5%", "10%"],
+          "Piercing Hit": ["1%", "2%", "3%", "5%", "10%"],
+          "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
+          "Exp Chance": ["2%", "4%", "6%", "8%", "20%"],
+          "Curse Chance": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Shoes": {
+        "info": "Shoes increase mobility and can add offensive or defensive stats.",
+        "list": {
+          "Health Max": [500, 1000, 1500, 2000],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Attack Speed": ["1%", "2%", "3%", "5%", "8%"],
+          "Blocking Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Slowing Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Critical Hit": ["1%", "2%", "3%", "5%", "10%"],
+          "Evading Arrow": ["2%", "4%", "6%", "10%", "15%"],
+          "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
+          "Exp Chance": ["2%", "4%", "6%", "8%", "20%"],
+          "Curse Chance": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Shield": {
+        "info": "Shields provide survivability and resistances against control.",
+        "list": {
+          "Vitality": [2, 4, 6, 8, 12],
+          "Intelligence": [2, 4, 6, 8, 12],
+          "Strength": [2, 4, 6, 8, 12],
+          "Dexterity": [2, 4, 6, 8, 12],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
+          "Block Physical Attack": ["2%", "4%", "6%", "10%", "15%"],
+          "Reflect Physical Attack": ["1%", "2%", "3%", "6%", "10%"],
+          "Exp Chance": ["2%", "4%", "6%", "8%", "20%"],
+          "Curse Chance": ["2%", "4%", "6%", "8%", "20%"],
+          "Defence Against Blackouts": [],
+          "Defence Against Slowing": []
+        }
+      },
+      "Helmet": {
+        "info": "Helmets add utility and resistances while boosting combat stats.",
+        "list": {
+          "Attack Speed": ["1%", "2%", "3%", "5%", "8%"],
+          "Absorbed by Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Health Shift": [4, 8, 12, 20, 30],
+          "Mana Shift": [4, 8, 12, 20, 30],
+          "Poisoning Chance": ["1%", "2%", "3%", "5%", "8%"],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
+          "Evading Arrow": ["2%", "4%", "6%", "10%", "15%"],
+          "Magic Resistance": ["2%", "4%", "6%", "10%", "15%"]
+        }
+      },
+      "Earrings": {
+        "info": "Earrings grant utility, mana regen and item drop chance.",
+        "list": {
+          "Movement Speed": ["2%", "4%", "6%", "10%", "20%"],
+          "Steal Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%", "20%"],
+          "Sword Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Dagger Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Fan Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Staff Defence": ["2%", "4%", "6%", "10%", "15%"],
+          "Arrow Resistance": ["2%", "4%", "6%", "10%", "15%"],
+          "Poison Resistance": ["1%", "2%", "3%", "4%", "5%"],
+          "Item Chance": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Hairstyle and Costume": {
+        "info": "Hairstyles and Costumes provide cosmetic bonuses with strict capped values to maintain game balance.",
+        "list": {
+          "Average Damage": ["-15% … 15%"],
+          "Spell Damage": ["-10% … 10%"],
+          "Anti Half Humans": ["1%", "2%", "3%", "5%"],
+          "Anti Monsters": ["2%", "4%", "6%", "10%"],
+          "Attack Speed": ["1%", "2%", "3%"],
+          "Attack Value": [5, 10, 15],
+          "Critical Hit": ["1%", "2%", "3%", "5%"],
+          "Piercing Hit": ["1%", "2%", "3%", "5%"],
+          "Exp Chance": ["2%", "4%", "6%", "8%"],
+          "Health Max": [500, 1000],
+          "Movement Speed": ["2%", "4%"],
+          "Spell Speed": ["2%", "4%"],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Vitality": [2, 4, 6, 8, 12],
+          "Intelligence": [2, 4, 6, 8, 12],
+          "Strength": [2, 4, 6, 8, 12],
+          "Dexterity": [2, 4, 6, 8, 12],
+          "Health Shift": [4, 8, 12],
+          "Mana Shift": [4, 8, 12],
+          "Poisoning Chance": ["1%", "2%", "3%", "5%"],
+          "Blocking Chance": ["1%", "2%", "3%", "5%"],
+          "Slowing Chance": ["1%", "2%", "3%", "5%"],
+          "Absorbed by Health": ["1%", "2%", "3%", "5%"],
+          "Absorbed by Mana": ["1%", "2%", "3%", "5%"],
+          "Steal Mana": ["1%", "2%", "3%", "5%"],
+          "Block Physical Attack": ["2%", "4%", "6%", "10%"],
+          "Evading Arrow": ["2%", "4%", "6%", "10%"],
+          "Sword Defence": ["2%", "4%", "6%", "10%"],
+          "Dagger Defence": ["2%", "4%", "6%", "10%"],
+          "Fan Defence": ["2%", "4%", "6%", "10%"],
+          "Arrow Resistance": ["2%", "4%", "6%", "10%"],
+          "Magic Resistance": ["2%", "4%", "6%", "10%"],
+          "Reflect Physical Attack": ["1%", "2%", "3%", "5%"],
+          "Poison Resistance": ["1%", "2%", "3%", "4%", "5%"],
+          "Curse Chance": ["2%", "4%", "6%", "8%"],
+          "Item Chance": ["2%", "4%", "6%", "8%"],
+          "Defence Against Blackouts": [1],
+          "Defence Against Slowing": [1]
+        }
+      }
+    }
+  }
+}

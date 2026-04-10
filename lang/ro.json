@@ -1,74 +1,53 @@
 {
   "sentiment_title": "Indice de Sentiment",
   "sentiment_loading": "Se încarcă...",
-  
   "sentiment_labels": {
     "very_low": "😱 Oportunitate Puternică — Niveluri de Bază",
-    "low": "😟 Zonă de Acumulare — Încă Subevaluat", 
+    "low": "😟 Zonă de Acumulare — Încă Subevaluat",
     "neutral": "😐 Se Stabilizează — Interval Bun de Intrare",
     "high": "😄 Urmărește În Apropiere — Creștere de Moment",
     "very_high": "🚀 Sentiment Optimist — Faza de Creștere Începe"
   },
- "connect_title": "🔗 Conectează-ți xPortal Wallet",
+  "connect_title": "🔗 Conectează-ți xPortal Wallet",
   "connect_intro": "Pentru a debloca toate <b>beneficiile Web3</b> în <b>The Cursed Land & Lander</b> – inclusiv Token-uri, NFT-uri (Staking & Utilitate), Infinity Staking, ItemShop & RMT – urmează acești pași pentru a seta și conecta <b>xPortal Wallet</b>.",
-
   "step1_title": "📱 Pasul 1: Descarcă xPortal",
   "step1_desc": "Instalează aplicația oficială <b>xPortal</b> de pe pagina oficială:<br><br>👉 <a href='https://xportal.com/app' target='_blank' style='color:#2ff6de;font-weight:600;'>xportal.com/app</a><br><br>Pe această pagină găsești linkuri directe pentru:<br>• <b>Android</b> – disponibilă pe <i>Google Play</i> și <i>Huawei AppGallery</i><br>• <b>iOS</b> – disponibilă pe <i>Apple App Store</i><br><br>💳 xPortal oferă și un <b>Card</b> pentru cash-in & cash-out rapid:<br>• <b>Card Virtual</b> – folosit direct cu <i>Google Pay</i> sau <i>Apple Wallet</i><br>• <b>Card Fizic</b> – îl poți comanda și folosi oriunde ca un card bancar normal",
-
   "step2_title": "🔑 Pasul 2: Creează / Importă Wallet",
   "step2_desc": "Deschide xPortal și creează un nou wallet sau importă unul existent.<br><br>➤ Mergi la <b>Profil (stânga sus)</b> → <b>Setări</b> → <b>Securitate</b> → <b>Fraza Secretă (Backup)</b>.<br>➤ Asigură-te că faci <b>backup la wallet</b> pe <b>Google Drive</b> (Android) sau <b>iCloud</b> (iOS).<br>⚠️ <b>Parola de backup nu poate fi schimbată</b>. Noteaz-o și păstreaz-o în siguranță!<br><br>➤ Pentru extra siguranță: scrie cele <b>24 de cuvinte secrete</b> pe hârtie și păstrează-le offline. Această frază oferă acces complet la wallet.",
-
   "step3_title": "🚀 Pasul 3: Conectează Wallet-ul în The Cursed Land",
   "step3_desc": "După ce te-ai logat în joc:<br>➤ Apasă pe <b>🎯 pictograma Mission</b> (dreapta sus, lângă minimap).<br>➤ Selectează <b>Mission 1 – Connect xPortal Wallet</b>.<br>➤ Apasă <b>Connect</b> → va apărea un <b>QR Code</b> și un buton <b>xPortal</b>.<br>• Dacă ești pe același telefon cu xPortal → apasă pe <b>butonul xPortal</b>.<br>• Dacă ești pe PC → scanează QR Code-ul cu aplicația xPortal.<br><br>În xPortal, aprobă <b>cererea de conectare</b>.",
-
   "step4_title": "🎉 Pasul 4: Verifică & Revendică Recompensa",
   "step4_desc": "După conectare:<br>➤ În joc, apasă pe butonul verde <b>Check Ownership</b>.<br>➤ Confirmă în xPortal prin semnarea mesajului.<br>➤ Întoarce-te în joc → apasă pe <b>Revendică Recompensa</b>.<br><br>✅ Vei primi: <b>250,000 Curse</b> + <b>tag-ul special „X”</b> lângă numele personajului (recunoaștere ca Web3 Player).",
-
   "next_title": "➡️ Pașii următori",
   "next_desc": "Cu <b>xPortal Wallet</b> conectat, deblochezi toate funcționalitățile Web3:<br><br>🎮 <a href='https://www.thecursedland.com/' target='_blank' style='color:#2ff6de;font-weight:600;'>The Cursed Land</a><br>➤ <b>Deține & Joacă cu NFT-uri</b> – Folosește NFT-urile tale în joc pentru recompense zilnice.<br>👉 Accesează <b>Daily Mission 1</b> (pictograma 🎯 sub minimap).<br>👉 Dacă ai un NFT echipat cu TCL (staked), completează misiunea și revendică recompensa zilnic.<br>➤ <b>Împrumută NFT-uri</b> – Chiar și fără NFT-uri, poți împrumuta și completa aceeași <b>Daily Mission 1</b> pentru a câștiga recompense.<br>👉 Pentru a activa Borrow trebuie mai întâi să creezi <b>HeroTag</b> în xPortal.<br>Mergi la <b>Profil (stânga sus)</b> → creează HeroTag.<br>⚠️ Crearea HeroTag-ului necesită o mică sumă de <b>EGLD</b>, moneda nativă a blockchainului MultiversX.<br>💰 Taxă estimată tranzacție: <b>0.000276325 EGLD ≈ $0.0038</b><br>➤ <b>Mission 2</b> – Adaugă un cod de referință - Semnează tranzacția - Revendică Recompensa.<br>✅ Vei primi: <b>250,000 Curse</b> + <b>2-5% cashback pe viață</b> pentru tranzacțiile cu TCL Token.<br>➤ <b>Magazin Web3 Privat</b> – Vinde & cumpără iteme clasice direct cu TCL folosind xPortal.<br><br>➤ <b>Folosește NFT-uri în joc</b> – Mergi la profilul personajului (stânga) și activează <b>Use equipped NFT items</b>.<br>✅ NFT-urile sunt disponibile pe toate personajele contului.<br>✅ Mount NFT-urile pot fi accesate prin săgeata albă (◀️) de lângă butonul <b>X Inventory (Web3)</b> din partea dreaptă.<br><br>🌐 <a href='https://www.thecursedland.com/lander' target='_blank' style='color:#2ff6de;font-weight:600;'>Lander</a><br>➤ <b>Împrumută NFT-uri</b> – Pune NFT-urile tale la muncă în Lander și câștigă pasiv.<br>➤ <b>Infinity Staking</b> – Stake TCL o dată și câștigă recompense pe viață.<br>➤ <b>Cod de referință</b> – Invită prieteni și câștigă 2-5% din activitatea lor de tranzacții.<br><br>👉 Cum îți conectezi wallet-ul în Lander:<br>1. Deschide <b>Lander</b> (App instalat sau dApp).<br>2. În <b>meniul din stânga sus</b> (sub Mainnet) apasă pe ✏️ sau mergi la categoria <b>NFT</b> din colțul stânga sus.<br>3. Vei vedea <b>Wallet Address</b> → apasă <b>Connect with xPortal</b>.<br>4. Dacă ești pe același dispozitiv → apasă pe <b>butonul xPortal</b>.<br>5. Dacă ești pe alt dispozitiv → scanează <b>QR Code</b> cu aplicația xPortal.<br>✅ Odată conectat, ai acces la toate funcționalitățile <b>Lander Web3</b>.<br><br>⚠️ <b>Sfat:</b> Păstrează mereu minim <b>$0.50 – $1.00 în EGLD</b> în wallet.<br>Asta asigură că poți acoperi micile taxe de tranzacție ale blockchainului MultiversX.<br>(ex.: pentru HeroTag, echipare NFT, împrumut NFT, NFT & Infinity Staking, cumpărături din Magazine Web3 Private, ItemShop în joc cu Karma, Iteme echipabile & Mount-uri NFT).<br><br>🔎 Pentru detalii complete și strategii, consultă ghidul oficial: <a href='https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl' target='_blank' style='color:#2ff6de;font-weight:600;'>Cum să câștigi TCL – Whitepaper</a>",
-
   "help_text": "💡 Ai nevoie de ajutor? Intră pe <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Community</a>.",
- 
   "web3_title": "🌐 Ghiduri Web3",
   "web3_desc": "Conectează-ți portofelul, revendică recompense și explorează toate integrările Web3 din The Cursed Land.",
-  
   "web3_connect_title": "🔗 Conectează xPortal",
   "web3_connect_desc": "Află cum să conectezi <b>xPortal Wallet</b> și multe altele.",
   "web3_connect_btn": "Deschide Tutorialul",
-  
   "web3_alpha_title": "💎 Revendică Voucherul α",
   "web3_alpha_desc": "Revendică voucherul tău din joc pentru a primi <b>Alpha Tokens ($SN114)</b> de la Subnet Level 114 pe Blockchain-ul Bittensor.",
   "web3_alpha_btn": "Deschide Tutorialul",
-  
   "web3_soon_title": "🧠 Mai multe în curând...",
   "web3_soon_desc": "Staking, swap și multe altele.",
-
   "alpha_title": "💎 Revendică voucherul α",
   "alpha_intro": "Schimbă voucherul tău α din joc pentru <b>Alpha Tokens ($SN114)</b> pe <b>Bittensor Blockchain</b>. Urmează pașii de mai jos pentru a-ți crea portofelul, a-l securiza și a primi tokenii în siguranță.",
-
   "alpha_step1_title": "📲 Pasul 1: Instalează SubWallet",
   "alpha_step1_desc": "Descarcă și instalează aplicația <b>SubWallet</b> — disponibilă pe <b>Android</b>, <b>iOS</b> și <b>Desktop</b>.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>După instalare, alege <b>Create new wallet</b>, notează-ți <b>Seed Phrase-ul</b> (fraza secretă) pe hârtie și păstreaz-o într-un loc sigur.<br><br>⚠️ Nu împărtăși niciodată fraza secretă sau parola cu nimeni. Ele oferă control total asupra portofelului tău.",
-
   "alpha_step2_title": "⚙️ Pasul 2: Configurează rețeaua și tokenii",
   "alpha_step2_desc": "Deschide <b>SubWallet</b> → mergi la fila <b>Tokens</b> → apasă pe <b>pictograma Filtru</b> (în dreapta barei de căutare).<br><br>✅ Activează opțiunea <b>Show zero balance</b> pentru a afișa toți tokenii.<br>✅ În secțiunea <b>Networks</b>, lasă bifată doar prima opțiune <b>Bittensor (mainnet)</b>.<br>❌ Debifează <b>Bittensor Testnet</b> și <b>Bittensor Devnet</b>.<br><br>Revenind la pagina principală de Tokens, vei vedea acum adresa <b>TAO (Bittensor)</b> a portofelului tău în partea de sus.",
-
   "alpha_step3_title": "🧭 Pasul 3: Copiază adresa TAO",
   "alpha_step3_desc": "În lista de Tokens, caută <b>TAO</b> sau <b>Bittensor</b>.<br>Primul rezultat, <b>TAO (Bittensor)</b>, este adresa principală a portofelului tău pe rețeaua Bittensor.<br><br>Apasă pe adresă pentru a o copia — o vei folosi în joc la <b>NPC Tao</b> pentru a-ți răscumpăra voucherul.",
-
   "alpha_step4_title": "🏦 Pasul 4: Revendică la NPC Tao",
   "alpha_step4_desc": "Mergi la <b>NPC Tao</b> în joc → lipește adresa ta <b>TAO</b> în câmpul de Revendicare.<br>Apasă <b>Withdraw</b> → primul tău voucher α valid va fi șters din inventar, iar tu vei primi instant <b>α Tokens ($SN114)</b> în portofel.<br><br>⚠️ Voucherele expiră în <b>7 zile</b>, așa că asigură-te că le revendici la timp.",
-
   "alpha_step5_title": "💱 Pasul 5: Schimbă α ↔ TAO",
   "alpha_step5_desc": "Accesează <b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> și conectează SubWallet.<br><br>Poți schimba <b>α Tokens (SN114)</b> în <b>TAO</b> sau invers. Toate tranzacțiile necesită o mică sumă de <b>TAO</b> pentru taxe (de obicei sub $0.01).<br><br>Ai nevoie de TAO pentru taxe? Cumpără de aici:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
-
   "alpha_step6_title": "💼 Pasul 6: Depozitează / Retrage TAO",
   "alpha_step6_desc": "Pentru a depune TAO pe un exchange:<br>• Intră pe exchange-ul tău și selectează <b>Deposit → TAO (Bittensor)</b> → copiază adresa.<br>• În SubWallet → <b>Send</b> → selectează <b>TAO</b> → lipește adresa de depozit → confirmă.<br><br>Pentru a retrage de pe un exchange:<br>• Selectează <b>Withdraw → TAO (Bittensor)</b> și lipește adresa ta <b>TAO</b> din SubWallet.<br>⚠️ Verifică mereu ca rețeaua selectată să fie <b>Bittensor</b> înainte de trimitere.",
-
   "alpha_step7_title": "💳 Opțional: Retrage către xPortal",
   "alpha_step7_desc": "Preferi să folosești xPortal? Convertește TAO în <b>EGLD</b> și retrage-l în <b>adresa ta EGLD din xPortal</b>.<br><br>• Schimbă TAO → EGLD<br>• Retrage EGLD către xPortal → fondurile vor apărea direct în portofel.<br><br>Simplu, rapid și ieftin ⚡",
-
   "alpha_help_text": "💬 Ai nevoie de ajutor? Intră pe <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord-ul oficial</a> sau consultă ghidul pe blog: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
- 
   "calc_title": "🧮 Simulează tranzacția",
   "calc_label_buy": "Introdu suma în <b>USDC ($)</b> pentru a cumpăra TCL:",
   "calc_label_sell": "Introdu suma în <b>TCL</b> pentru a vinde pe USDC ($):",
@@ -77,11 +56,8 @@
   "calc_btn_calculate": "Calculează impactul",
   "calc_btn_trade": "Tranzacționează acum ↗",
   "calc_error": "⚠️ Te rugăm să introduci o sumă validă.",
-
   "calc_result_buy": "💱 Cumpără TCL cu {value} USDC ($)\n💲 Estimare TCL primit: {boughtTCL}\n⚖️ Preț mediu plătit: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📈 Creștere estimată: + {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}",
-
   "calc_result_sell": "💱 Vinde {value} TCL\n💲 Estimare USDC ($) primit: {receivedUSDC}\n⚖️ Preț mediu obținut: {avgPrice} USDC/TCL\n💥 Impact asupra prețului: {priceImpact}%\n📉 Scădere estimată: {pctChange}%\n\n📊 Preț TCL estimat după tranzacție: {newPrice} USDC ($)\n🔄 Lichiditate estimată după tranzacție:\n• TCL în Pool: {newTCL}\n• USDC în Pool: {newUSDC}",
-
   "events_title": "📅 Evenimente Săptămânale",
   "events_desc": "Date live – sincronizate cu evenimentele din joc - The Cursed Land",
   "events_loading": "⏳ Se încarcă evenimentele...",
@@ -126,5 +102,48 @@
       "name": "Ploaie de Cristale",
       "desc": "Lumea este instabilă – pe durata evenimentului, cristalele apar nebunește la fiecare 5 minute!"
     }
-  }
+  },
+  "token_overview_title": "📊 Token TCL",
+  "token_overview_hint": "Apasă pentru a vedea statisticile tokenului și sentimentul",
+  "token_calculators_title": "🧮 Calculator Simulare Tranzacție și Reward Staking",
+  "token_calculators_hint": "Apasă pentru a deschide calculatoarele",
+  "token_staking_title": "🏆 Top Staking",
+  "token_staking_hint": "Apasă pentru a vedea leaderboard-ul și recompensele pool-ului",
+  "token_initial_liquidity": "Lichiditate Inițială",
+  "token_listing_snapshot": "Snapshot la listare",
+  "token_calculator_transaction_title": "🧮 Simulator Tranzacții",
+  "token_calculator_transaction_desc": "Simulează impactul unei cumpărări sau vânzări în pool-ul TCL/USDC folosind rezervele live.",
+  "token_calculator_apr_title": "🧮 Calculator APR și Recompense",
+  "token_calculator_apr_desc": "Estimează recompensele TCL zilnice, săptămânale, lunare și anuale pe baza APR-ului.",
+  "token_modal_apr_title": "Calculator",
+  "token_modal_apr_intro": "Introdu o cantitate de TCL pentru simulare:",
+  "token_modal_apr_placeholder": "ex. 1,000,000",
+  "top_staking_title": "🏆 Top 100 Staking",
+  "top_staking_desc": "Leaderboard și recompensele live ale pool-ului în același dashboard TCL.",
+  "staking_search_placeholder": "Introdu adresa wallet-ului (erd1...)",
+  "common_search": "Caută",
+  "wiki_title": "📖 The Cursed Land – Wiki",
+  "wiki_desc": "Clase, rase, bonusuri, iteme — caută sau navighează prin secțiunile de mai jos. Limba urmează selecția din aplicație.",
+  "wiki_search_placeholder": "🔍 Caută în Wiki...",
+  "wiki_loading": "⏳ Se încarcă wiki…",
+  "wiki_failed_load": "Nu s-au putut încărca datele Wiki pentru limba:",
+  "wiki_view_in_tcl_explorer": "Vezi în TCL Explorer",
+  "wiki_view_in_explorer": "Vezi în Explorer",
+  "wiki_opened_from_explorer": "Deschis din Wiki în TCL Explorer.",
+  "wiki_special_item_bonus_title": "Bonus Iteme și Upgrade",
+  "wiki_special_item_bonus_desc": "Vezi toate bonusurile și materialele necesare pentru upgrade-ul itemelor.",
+  "wiki_special_blacksmith_title": "Blacksmith - Simulator Upgrade %",
+  "wiki_special_blacksmith_desc": "Testează strategia de upgrade și calculează rezultatele înainte să îți riști itemele.",
+  "wiki_special_drop_title": "Șansă Drop %",
+  "wiki_special_drop_desc": "Vezi toate itemele și monștrii — procente de drop și loot tables.",
+  "wiki_section_about": "Despre",
+  "wiki_section_races": "Rase",
+  "wiki_section_classes": "Clase",
+  "wiki_section_materials": "Materiale",
+  "wiki_section_bonuses": "Bonusuri",
+  "events_local_time": "Orele de mai jos sunt afișate în fusul tău local ({timezone}).",
+  "events_today": "Astăzi",
+  "events_starts_label": "Începe",
+  "events_ends_label": "Se termină",
+  "events_next_run_label": "Următoarea rulare"
 }

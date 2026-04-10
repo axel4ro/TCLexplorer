@@ -1,0 +1,411 @@
+{
+  "about": {
+    "info": "The Cursed Land este un MMORPG next-gen care combină gameplay-ul Web2 cu proprietatea Web3. Bucură-te de loot clasic, combat PvP/PvE, guilduri și câștigă valoare reală prin blockchain.",
+    "list": [
+      {
+        "name": "Economie Hibridă",
+        "desc": "🔹 Iteme Clasice (Web2): Obținute de la monștri sau din questuri, folosite în luptă ori crafting. Pot fi tranzacționate în joc, vândute la NPC pentru moneda Curse sau schimbate pe token TCL în Magazinele Private Web3 prin xPortal.\n🔹 Iteme NFT (Web3): Active on-chain care deblochează recompense Play & Earn. Pot fi staked, tranzacționate, upgrade-ate și sunt susținute de TCL."
+      },
+      {
+        "name": "Modalități de Câștig",
+        "desc": "🔹 Deții NFT și te joci – Primești 100% din recompensa zilnică. Păstrezi 66% din tokenii investiți (retragere posibilă în 24h). Necesită gameplay zilnic. 33% se consumă pentru achiziția/stocarea NFT-ului.\n\n🔹 Împrumuți NFT – Câștigi recompense fără să joci. Păstrezi 66% din tokenii investiți (retragere posibilă în 24h). Primești doar 80% din recompensa zilnică. 33% se consumă pentru achiziția/stocarea NFT-ului.\n\n🔹 Folosești NFT împrumutat – Nu ai nevoie de investiție inițială. Păstrezi 66% din tokenii investiți (retragere posibilă în 24h). Primești doar 20% din recompensa zilnică. Necesită gameplay zilnic.\n\n🔹 Infinity Staking – Recompense pe viață. Câștigi recompense zilnice fără să joci. 100% din TCL-ul staked este ars ireversibil.\n\n🔹 Magazin Web3 Privat – Vinzi iteme clasice direct altor jucători pentru TCL prin xPortal. Fără intermediari. Magazinul este deschis 24/7. Cumpărătorul nu este garantat.\n\n🔹 Cod de Referral – Câștigi 5% din cumpărăturile persoanelor invitate. Nu necesită investiție în TCL. Ai nevoie de 5 invitați pentru activare. Recompensele depind de activitatea celor invitați."
+      },
+      {
+        "name": "TCL Token",
+        "desc": "🔹 Moneda principală a jocului, folosită pentru staking, mintarea NFT-urilor, achiziții în joc și tranzacționare în Magazinele Web3.\n🔹 Susținută de valoare reală on-chain, cu recompense din staking, burn-uri, referral-uri și APR variabil."
+      },
+      {
+        "name": "Statistici Ecosistem (curente)",
+        "desc": "🔹 Dashboard live cu prețul curent, supply, burn-uri, recompense, volum și holders.\n🔹 Urmărește în timp real statisticile economiei TCL direct on-chain.",
+        "link": "https://axel4ro.github.io/TCLexplorer/index.html#token"
+      },
+      {
+        "name": "Progresia Personajului",
+        "desc": "🔹 Nivel maxim curent: 64 cu EXP complet (planificat: 100)\n🔹 Progresul tău este permanent, itemele îți aparțin cu adevărat, iar timpul investit are valoare reală.\n🔹 Hărți noi, provocări noi și niveluri mai mari vor fi deblocate treptat."
+      },
+      {
+        "name": "Personalizarea Echipamentului",
+        "info": "⚙️ SISTEME DE PERSONALIZARE A ECHIPAMENTULUI",
+        "categories": {
+          "🎽 Armuri": {
+            "info": "Fiecare rasă are propriile seturi de armuri.\nPersonalizează-le cu bonusuri și statistici.\nAdaugă cristale pentru a amplifica efectele dorite.",
+            "list": {}
+          },
+          "🗡️ Arme": {
+            "info": "Folosește Săbii, Pumnale, Arcuri, Evantaie și Toiege.\nAdaugă cristale pentru a crește damage-ul, criticul și alte efecte.",
+            "list": {}
+          },
+          "💍 Accesorii": {
+            "info": "Pantofi, Colier, Brățară, Coif, Cercei și Scut.\nAdaugă refinements pe Colier, Brățară și Cercei.\nUpgradează scuturile speciale pentru a obține bonusuri defensive împotriva fiecărei rase.",
+            "list": {}
+          }
+        }
+      },
+      {
+        "name": "Funcționalități Suplimentare",
+        "desc": "🔹 🐟 Sistem de Pescuit – prinde, schimbă, câștigă\n🔹 ⛏️ Sistem de Mining – adună resurse pentru crafting\n🔹 💬 Sistem de Trade – sigur, direct între jucători\n🔹 📬 Mail & Whisper – mesaje private în joc\n🔹 🧾 Afișare iteme în chat – arată-ți loot-ul!\n🔹 ✨ Și mai sunt multe de descoperit — deblochează secrete, formează alianțe și împinge-ți personajul la limite noi."
+      }
+    ]
+  },
+  "races": {
+    "info": "Rasele definesc aspectul și originea eroului tău. Poți alege dintre Oameni, Bestii și Ne-morți (masculin) sau Elfi (feminin). Fiecare rasă poate folosi orice clasă, creând strategii nelimitate și combinații unice.",
+    "list": [
+      {
+        "name": "Om",
+        "desc": "Echilibrat și rezistent, reprezentând forța și versatilitatea.\n\nINT: 3\nVIT: 4\nSTR: 6\nDEX: 3\n\nViață: 600\nViață Max: 600 (+40 / nivel)\nMana: 200\nMana Max: 200 (+20 / nivel)"
+      },
+      {
+        "name": "Bestie",
+        "desc": "Sălbatic și instinctiv, canalizând puterea primordială în luptă.\n\nINT: 3\nVIT: 3\nSTR: 4\nDEX: 6\n\nViață: 650\nViață Max: 650 (+40 / nivel)\nMana: 200\nMana Max: 200 (+20 / nivel)"
+      },
+      {
+        "name": "Ne-mort",
+        "desc": "Nemuritor și neclintit, ridicându-se din nou pentru a cuceri însăși moartea.\n\nINT: 5\nVIT: 3\nSTR: 5\nDEX: 3\n\nViață: 650\nViață Max: 650 (+40 / nivel)\nMana: 200\nMana Max: 200 (+20 / nivel)"
+      },
+      {
+        "name": "Elf",
+        "desc": "Grațios și înțelept, maestru al agilității și artelor mistice.\n\nINT: 6\nVIT: 4\nSTR: 3\nDEX: 3\n\nViață: 700\nViață Max: 700 (+40 / nivel)\nMana: 200\nMana Max: 200 (+20 / nivel)"
+      }
+    ]
+  },
+  "classes": {
+    "info": "Clasele definesc stilul tău de luptă. Pentru a activa skill-urile, trebuie să echipezi arma specifică clasei tale. Totuși, rămâi liber să folosești orice armă pentru strategii creative de luptă.",
+    "list": [
+      {
+        "name": "Asasin",
+        "desc": "Specializat pe Pumnale. Mortal, rapid și precis. Necesită Pumnale pentru skill-uri, dar poate folosi orice armă."
+      },
+      {
+        "name": "Șaman",
+        "desc": "Folosește Evantaiul. Aduce putere mistică și suport. Evantaiul este necesar pentru skill-uri, dar sunt posibile și alte arme."
+      },
+      {
+        "name": "Vânător",
+        "desc": "Maestru al Arcului. Lovește inamicii de la distanță. Necesită Arc pentru skill-uri, dar rămâne versatil cu orice armă."
+      },
+      {
+        "name": "Războinic (în dezvoltare)",
+        "desc": "Va mânui Sabia. Un luptător de primă linie construit pentru forță brută și rezistență."
+      },
+      {
+        "name": "Vrăjitor (în dezvoltare)",
+        "desc": "Va comanda un Toiag. Un purtător al magiei antice, capabil să canalizeze vrăji devastatoare."
+      }
+    ]
+  },
+  "materials": {
+    "info": "Materialele Zilnice sunt iteme speciale obținute de la monștri sau prin pescuit. Ele sunt folosite pentru Daily Mission 1.",
+    "list": [
+      {
+        "name": "Blană de Lup",
+        "desc": "Lup Cenușiu, Lup Alfa"
+      },
+      {
+        "name": "Gheară de Lup",
+        "desc": "Lup Albastru, Lup Albastru Alfa"
+      },
+      {
+        "name": "Colț de Mistreț",
+        "desc": "Mistreț"
+      },
+      {
+        "name": "Rât de Porc",
+        "desc": "Mistreț Roșu"
+      },
+      {
+        "name": "Piele de Labă de Urs",
+        "desc": "Urs, Urs Grizzly"
+      },
+      {
+        "name": "Fiere de Urs",
+        "desc": "Urs Negru, Urs Brun"
+      },
+      {
+        "name": "Gheară de Tigru",
+        "desc": "Tigru"
+      },
+      {
+        "name": "Blană de Tigru",
+        "desc": "Tigru"
+      },
+      {
+        "name": "Blană de Tigru Alb",
+        "desc": "Tigru Alb"
+      },
+      {
+        "name": "Ornament",
+        "desc": "Arcaș White Oath"
+      },
+      {
+        "name": "Cremă de Față",
+        "desc": "Arcaș White Oath"
+      },
+      {
+        "name": "Bentiță Albă",
+        "desc": "Arcaș White Oath, Soldat White Oath"
+      },
+      {
+        "name": "Minge",
+        "desc": "Soldat White Oath, Comandant White Oath"
+      },
+      {
+        "name": "Bentiță Roșie",
+        "desc": "General White Oath"
+      },
+      {
+        "name": "Uniformă Neagră",
+        "desc": "Soldat Black Wind, Maniac Black Wind"
+      },
+      {
+        "name": "Shuriken",
+        "desc": "Minion Sălbatic"
+      },
+      {
+        "name": "Pradă Sălbatică",
+        "desc": "General Sălbatic"
+      },
+      {
+        "name": "Steag",
+        "desc": "Arcaș Sălbatic"
+      },
+      {
+        "name": "Dinți de Orc",
+        "desc": "Orc Negru, Orc Negru Curajos, Uriaș Orc Negru, Uriaș Orc Negru Curajos"
+      },
+      {
+        "name": "Amuletă de Orc",
+        "desc": "Vrăjitor Orc de Elită, Orc de Elită, Orc Mare Curajos, General Orc de Elită, General Orc Mare Curajos"
+      },
+      {
+        "name": "Talisman Necunoscut",
+        "desc": "Șef Esoteric Arahan, Călău Esoteric, Luptător Esoteric Arahan"
+      },
+      {
+        "name": "Manual Esoteric",
+        "desc": "Fanatic Întunecat, Fanatic Superior, Arahan Întunecat, Arahan Superior"
+      },
+      {
+        "name": "Carte a Blestemului",
+        "desc": "Tormentor Întunecat, Invocator Întunecat, Luptător Arahan Superior, Arahan de Elită Superioară"
+      },
+      {
+        "name": "Piatra Sufletului de Orc",
+        "desc": "Vrăjitor Orc Mare Curajos, Luptător Orc de Elită, Luptător Orc Mare Curajos"
+      },
+      {
+        "name": "Gheară de Scorpion",
+        "desc": "Scorpion"
+      },
+      {
+        "name": "Coada Șarpelui",
+        "desc": "Șarpe Barbar, Șarpe Reaver, Șarpe Negru"
+      },
+      {
+        "name": "Ochii Păianjenului",
+        "desc": "Păianjen Mic Otrăvitor, Păianjen Otrăvitor Mortal, Păianjen Otrăvitor Roșu Mortal, Păianjen Negru, Păianjen Otrăvitor Soldat"
+      },
+      {
+        "name": "Pânză de Păianjen",
+        "desc": "Păianjen Mic Otrăvitor, Păianjen Otrăvitor Mortal, Păianjen Otrăvitor Roșu Mortal, Păianjen Negru, Păianjen Otrăvitor Soldat"
+      },
+      {
+        "name": "Picior de Păianjen",
+        "desc": "Păianjen Mic Otrăvitor, Păianjen Otrăvitor Mortal, Păianjen Otrăvitor Roșu Mortal, Păianjen Negru, Păianjen Otrăvitor Soldat"
+      },
+      {
+        "name": "Ou de Păianjen",
+        "desc": "Păianjen Mic Otrăvitor, Păianjen Otrăvitor Mortal, Păianjen Otrăvitor Roșu Mortal, Păianjen Negru, Păianjen Otrăvitor Soldat"
+      },
+      {
+        "name": "Bucată de Piatră",
+        "desc": "Scoică (Pescuit)"
+      }
+    ]
+  },
+  "bonuses": {
+    "info": "Bonusurile oferă statistici suplimentare echipamentului tău. Acestea diferă în funcție de tipul itemului (Armă, Armură etc.).",
+    "categories": {
+      "Armă": {
+        "info": "Armele pot avea bonusuri ofensive care cresc damage-ul.",
+        "list": {
+          "Vitalitate": [2, 4, 6, 8, 12],
+          "Inteligență": [2, 4, 6, 8, 12],
+          "Forță": [2, 4, 6, 8, 12],
+          "Dexteritate": [2, 4, 6, 8, 12],
+          "Viteză Vrăji": ["2%", "4%", "6%", "10%", "20%"],
+          "Șansă de Otrăvire": ["1%", "2%", "3%", "5%", "8%"],
+          "Șansă de Blocare": ["1%", "2%", "3%", "5%", "8%"],
+          "Șansă de Încetinire": ["1%", "2%", "3%", "5%", "8%"],
+          "Lovitură Critică": ["1%", "2%", "3%", "5%", "10%"],
+          "Lovitură Pătrunzătoare": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Semioameni": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monștri": ["2%", "4%", "6%", "10%", "20%"],
+          "Damage Mediu": ["-60% … 60%"],
+          "Damage Vrăji": ["-30% … 30%"]
+        }
+      },
+      "Armură": {
+        "info": "Bonusurile de armură îmbunătățesc apărarea și supraviețuirea.",
+        "list": {
+          "Viață Max": [500, 1000, 1500, 2000],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Viteză Vrăji": ["2%", "4%", "6%", "10%", "20%"],
+          "Absorbit de Viață": ["1%", "2%", "3%", "5%", "10%"],
+          "Absorbit de Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Reflectare Atac Fizic": ["1%", "2%", "3%", "6%", "10%"],
+          "Apărare Sabie": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Pumnal": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Evantai": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Toiag": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență la Săgeți": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență Magică": ["2%", "4%", "6%", "10%", "15%"],
+          "Valoare Atac": [5, 10, 15, 30, 50]
+        }
+      },
+      "Brățară": {
+        "info": "Brățările oferă bonusuri mixte pentru supraviețuire și utilitate.",
+        "list": {
+          "Viață Max": [500, 1000, 1500, 2000],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Absorbit de Viață": ["1%", "2%", "3%", "5%", "10%"],
+          "Furt Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Lovitură Pătrunzătoare": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Semioameni": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monștri": ["2%", "4%", "6%", "10%", "20%"],
+          "Rezistență Magică": ["2%", "4%", "6%", "10%", "15%"],
+          "Șansă Item": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Coliere": {
+        "info": "Colierele pot muta statistici între HP și MP, oferind și rezistențe.",
+        "list": {
+          "Viață Max": [500, 1000, 1500, 2000],
+          "Mana Max": [200],
+          "Absorbit de Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Furt Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Shift Viață": [4, 8, 12, 20, 30],
+          "Shift Mana": [4, 8, 12, 20, 30],
+          "Șansă de Blocare": ["1%", "2%", "3%", "5%", "8%"],
+          "Lovitură Critică": ["1%", "2%", "3%", "5%", "10%"],
+          "Lovitură Pătrunzătoare": ["1%", "2%", "3%", "5%", "10%"],
+          "Apărare Sabie": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Pumnal": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Evantai": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Toiag": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență la Săgeți": ["2%", "4%", "6%", "10%", "15%"],
+          "Șansă EXP": ["2%", "4%", "6%", "8%", "20%"],
+          "Șansă Curse": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Pantofi": {
+        "info": "Pantofii cresc mobilitatea și pot adăuga statistici ofensive sau defensive.",
+        "list": {
+          "Viață Max": [500, 1000, 1500, 2000],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Viteză Atac": ["1%", "2%", "3%", "5%", "8%"],
+          "Șansă de Blocare": ["1%", "2%", "3%", "5%", "8%"],
+          "Șansă de Încetinire": ["1%", "2%", "3%", "5%", "8%"],
+          "Lovitură Critică": ["1%", "2%", "3%", "5%", "10%"],
+          "Evitare Săgeți": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Sabie": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Pumnal": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Evantai": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Toiag": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență la Săgeți": ["2%", "4%", "6%", "10%", "15%"],
+          "Șansă EXP": ["2%", "4%", "6%", "8%", "20%"],
+          "Șansă Curse": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Scut": {
+        "info": "Scuturile oferă supraviețuire și rezistențe împotriva efectelor de control.",
+        "list": {
+          "Vitalitate": [2, 4, 6, 8, 12],
+          "Inteligență": [2, 4, 6, 8, 12],
+          "Forță": [2, 4, 6, 8, 12],
+          "Dexteritate": [2, 4, 6, 8, 12],
+          "Anti Semioameni": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monștri": ["2%", "4%", "6%", "10%", "20%"],
+          "Blocare Atac Fizic": ["2%", "4%", "6%", "10%", "15%"],
+          "Reflectare Atac Fizic": ["1%", "2%", "3%", "6%", "10%"],
+          "Șansă EXP": ["2%", "4%", "6%", "8%", "20%"],
+          "Șansă Curse": ["2%", "4%", "6%", "8%", "20%"],
+          "Apărare împotriva Leșinului": [],
+          "Apărare împotriva Încetinirii": []
+        }
+      },
+      "Coif": {
+        "info": "Coifurile adaugă utilitate și rezistențe, crescând totodată performanța în luptă.",
+        "list": {
+          "Viteză Atac": ["1%", "2%", "3%", "5%", "8%"],
+          "Absorbit de Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Shift Viață": [4, 8, 12, 20, 30],
+          "Shift Mana": [4, 8, 12, 20, 30],
+          "Șansă de Otrăvire": ["1%", "2%", "3%", "5%", "8%"],
+          "Anti Semioameni": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monștri": ["2%", "4%", "6%", "10%", "20%"],
+          "Evitare Săgeți": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență Magică": ["2%", "4%", "6%", "10%", "15%"]
+        }
+      },
+      "Cercei": {
+        "info": "Cerceii oferă utilitate, regenerare de mana și șansă de drop pentru iteme.",
+        "list": {
+          "Viteză Mișcare": ["2%", "4%", "6%", "10%", "20%"],
+          "Furt Mana": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Semioameni": ["1%", "2%", "3%", "5%", "10%"],
+          "Anti Monștri": ["2%", "4%", "6%", "10%", "20%"],
+          "Apărare Sabie": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Pumnal": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Evantai": ["2%", "4%", "6%", "10%", "15%"],
+          "Apărare Toiag": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență la Săgeți": ["2%", "4%", "6%", "10%", "15%"],
+          "Rezistență la Otravă": ["1%", "2%", "3%", "4%", "5%"],
+          "Șansă Item": ["2%", "4%", "6%", "8%", "20%"]
+        }
+      },
+      "Coafură și Costum": {
+        "info": "Coafurile și costumele oferă bonusuri cosmetice, cu valori limitate strict pentru a păstra echilibrul jocului.",
+        "list": {
+          "Damage Mediu": ["-15% … 15%"],
+          "Damage Vrăji": ["-10% … 10%"],
+          "Anti Semioameni": ["1%", "2%", "3%", "5%"],
+          "Anti Monștri": ["2%", "4%", "6%", "10%"],
+          "Viteză Atac": ["1%", "2%", "3%"],
+          "Valoare Atac": [5, 10, 15],
+          "Lovitură Critică": ["1%", "2%", "3%", "5%"],
+          "Lovitură Pătrunzătoare": ["1%", "2%", "3%", "5%"],
+          "Șansă EXP": ["2%", "4%", "6%", "8%"],
+          "Viață Max": [500, 1000],
+          "Viteză Mișcare": ["2%", "4%"],
+          "Viteză Vrăji": ["2%", "4%"],
+          "Mana Max": [10, 20, 30, 50, 80],
+          "Vitalitate": [2, 4, 6, 8, 12],
+          "Inteligență": [2, 4, 6, 8, 12],
+          "Forță": [2, 4, 6, 8, 12],
+          "Dexteritate": [2, 4, 6, 8, 12],
+          "Shift Viață": [4, 8, 12],
+          "Shift Mana": [4, 8, 12],
+          "Șansă de Otrăvire": ["1%", "2%", "3%", "5%"],
+          "Șansă de Blocare": ["1%", "2%", "3%", "5%"],
+          "Șansă de Încetinire": ["1%", "2%", "3%", "5%"],
+          "Absorbit de Viață": ["1%", "2%", "3%", "5%"],
+          "Absorbit de Mana": ["1%", "2%", "3%", "5%"],
+          "Furt Mana": ["1%", "2%", "3%", "5%"],
+          "Blocare Atac Fizic": ["2%", "4%", "6%", "10%"],
+          "Evitare Săgeți": ["2%", "4%", "6%", "10%"],
+          "Apărare Sabie": ["2%", "4%", "6%", "10%"],
+          "Apărare Pumnal": ["2%", "4%", "6%", "10%"],
+          "Apărare Evantai": ["2%", "4%", "6%", "10%"],
+          "Rezistență la Săgeți": ["2%", "4%", "6%", "10%"],
+          "Rezistență Magică": ["2%", "4%", "6%", "10%"],
+          "Reflectare Atac Fizic": ["1%", "2%", "3%", "5%"],
+          "Rezistență la Otravă": ["1%", "2%", "3%", "4%", "5%"],
+          "Șansă Curse": ["2%", "4%", "6%", "8%"],
+          "Șansă Item": ["2%", "4%", "6%", "8%"],
+          "Apărare împotriva Leșinului": [1],
+          "Apărare împotriva Încetinirii": [1]
+        }
+      }
+    }
+  }
+}

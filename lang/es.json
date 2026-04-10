@@ -1,7 +1,6 @@
 {
   "sentiment_title": "Índice de Sentimiento",
   "sentiment_loading": "Cargando...",
-  
   "sentiment_labels": {
     "very_low": "😱 Oportunidad Fuerte — Niveles Mínimos",
     "low": "😟 Zona de Acumulación — Todavía Subvalorado",
@@ -9,67 +8,46 @@
     "high": "😄 Observar de Cerca — Momentum Construyéndose",
     "very_high": "🚀 Sentimiento Alcista — Fase de Crecimiento Comenzando"
   },
-  
   "connect_title": "🔗 Conecta tu Billetera xPortal",
   "connect_intro": "Para desbloquear todos los <b>beneficios Web3</b> en <b>The Cursed Land & Lander</b> – incluyendo Tokens, Staking y Utilidad de NFTs, Infinity Staking, ItemShop y RMT – sigue estos pasos para configurar y conectar tu <b>Billetera xPortal</b>.",
-
   "step1_title": "📱 Paso 1: Descarga xPortal",
   "step1_desc": "Instala la aplicación oficial <b>xPortal</b> desde la página oficial:<br><br>👉 <a href='https://xportal.com/app' target='_blank' style='color:#2ff6de;font-weight:600;'>xportal.com/app</a><br><br>En esta página encontrarás enlaces directos para:<br>• <b>Android</b> – disponible en <i>Google Play</i> y <i>Huawei AppGallery</i><br>• <b>iOS</b> – disponible en <i>Apple App Store</i><br><br>💳 xPortal también ofrece una <b>Tarjeta</b> para ingresar y retirar dinero fácilmente:<br>• <b>Tarjeta Virtual</b> – úsala directamente con <i>Google Pay</i> o <i>Apple Wallet</i><br>• <b>Tarjeta Física</b> – ordénala y úsala en cualquier lugar como una tarjeta de débito normal",
-
   "step2_title": "🔑 Paso 2: Crear / Importar Billetera",
   "step2_desc": "Abre xPortal y crea una nueva billetera o importa la tuya existente.<br><br>➤ Ve a <b>Perfil (arriba a la izquierda)</b> → <b>Configuración</b> → <b>Seguridad</b> → <b>Frase Secreta (Respaldo)</b>.<br>➤ Asegúrate de <b>respaldar tu billetera</b> en <b>Google Drive</b> (Android) o <b>iCloud</b> (iOS).<br>⚠️ <b>La contraseña de respaldo no se puede cambiar</b>. Escríbela y guárdala de forma segura.<br><br>➤ Para mayor seguridad: anota tus <b>24 palabras secretas</b> en papel y guárdalas de forma segura offline. Esta frase otorga acceso completo a tu billetera.",
-
   "step3_title": "🚀 Paso 3: Conectar Billetera en The Cursed Land",
   "step3_desc": "Después de iniciar sesión en tu personaje dentro del juego:<br>➤ Toca el <b>🎯 ícono de Misión</b> (arriba a la derecha, cerca del minimapa).<br>➤ Selecciona <b>Misión 1 – Conectar Billetera xPortal</b>.<br>➤ Presiona <b>Conectar</b> → aparecerán un <b>Código QR</b> y un botón de <b>xPortal</b>.<br>• Si estás en el mismo teléfono que xPortal → toca el <b>botón xPortal</b>.<br>• Si estás en PC → escanea el Código QR usando la aplicación xPortal.<br><br>En xPortal, aprueba la <b>solicitud de conexión</b>.",
-
   "step4_title": "🎉 Paso 4: Verificar y Reclamar Recompensas",
   "step4_desc": "Después de conectar:<br>➤ En el juego, presiona el botón verde <b>Verificar Propiedad</b>.<br>➤ Confirma en xPortal firmando el mensaje.<br>➤ Regresa al juego → presiona <b>Reclamar Recompensa</b>.<br><br>✅ Recibirás: <b>250,000 Curse</b> + una <b>etiqueta especial “X”</b> junto al nombre de tu personaje (reconocimiento como Jugador Web3).",
-
   "next_title": "➡️ Próximos Pasos",
   "next_desc": "Con tu <b>Billetera xPortal</b> conectada, desbloqueas todas las funciones Web3:<br><br>🎮 <a href='https://www.thecursedland.com/' target='_blank' style='color:#2ff6de;font-weight:600;'>The Cursed Land</a><br>➤ <b>Poseer y Jugar con NFTs</b> – Usa tus NFTs en el juego para recompensas diarias.<br>👉 Accede a la <b>Misión Diaria 1</b> (🎯 ícono bajo el minimapa).<br>👉 Si tienes un NFT equipado con TCL (en staking), completa la misión y reclama tu recompensa cada día.<br>➤ <b>Pedir Prestados NFTs</b> – Incluso sin poseer NFTs, puedes pedirlos prestados y completar la misma <b>Misión Diaria 1</b> para ganar recompensas diarias.<br>👉 Para activar el préstamo primero necesitas crear tu <b>HeroTag</b> en xPortal.<br>Ve a <b>Perfil (arriba a la izquierda)</b> → configura tu HeroTag.<br>⚠️ Crear un HeroTag requiere una pequeña cantidad de <b>EGLD</b>, la moneda nativa de la blockchain MultiversX.<br>💰 Tarifa de Transacción Estimada: <b>0.000276325 EGLD ≈ $0.0038</b><br>➤ <b>Misión 2</b> – Agregar un código de referido - Firmar Transacción - Reclamar Recompensa.<br>✅ Recibirás: <b>250,000 Curse</b> + <b>2-5% cashback de por vida</b> por transacciones con Token TCL.<br>➤ <b>Tienda Web3 Privada</b> – Compra y vende ítems clásicos directamente con TCL usando xPortal.<br><br>➤ <b>Usar NFTs en el juego</b> – Ve al perfil de tu personaje (lado izquierdo) y habilita <b>Usar ítems NFT equipados</b>.<br>✅ Los NFTs están disponibles en todos los personajes de tu cuenta.<br>✅ Los NFTs de Monturas se pueden acceder con la flecha blanca (◀️) junto al botón <b>X Inventario (Web3)</b> en el lado derecho.<br><br>🌐 <a href='https://www.thecursedland.com/lander' target='_blank' style='color:#2ff6de;font-weight:600;'>Lander</a><br>➤ <b>Prestar NFTs</b> – Pon tus NFTs a trabajar en Lander y gana pasivamente.<br>➤ <b>Infinity Staking</b> – Haz staking de TCL una vez, gana recompensas de por vida.<br>➤ <b>Código de Referido</b> – Invita amigos y gana 2-5% de sus transacciones.<br><br>👉 Cómo conectar tu billetera en Lander:<br>1. Abre <b>Lander</b> (App tras instalación o lanza dApp).<br>2. En el <b>Menú superior izquierdo</b> (debajo de Mainnet) toca el ícono ✏️ o ve a la <b>categoría NFT</b> mediante la X grande arriba a la izquierda.<br>3. Verás <b>Dirección de Billetera</b> → presiona <b>Conectar con xPortal</b>.<br>4. Si estás en el mismo dispositivo → presiona el <b>botón xPortal</b>.<br>5. Si estás en otro dispositivo → escanea el <b>Código QR</b> con tu aplicación xPortal.<br>✅ Una vez conectado, tendrás acceso a todas las <b>funciones Web3 de Lander</b>.<br><br>⚠️ <b>Consejo:</b> Mantén siempre al menos <b>$0.50 – $1.00 en EGLD</b> en tu billetera.<br>Esto asegura que puedas cubrir las pequeñas tarifas de transacción requeridas por la blockchain MultiversX.<br>(Ej.: para configurar HeroTag, equipar NFT, pedir prestado un NFT, NFT & Infinity Staking, compras en Tiendas Web3 Privadas, compras dentro del juego con Karma, Ítems Equipables y Monturas NFT u otras interacciones NFT).<br><br>🔎 Para más detalles y estrategias, revisa la guía oficial: <a href='https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl' target='_blank' style='color:#2ff6de;font-weight:600;'>Cómo Ganar TCL – Whitepaper</a>",
-
   "help_text": "💡 ¿Necesitas ayuda? Únete a nuestra <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Comunidad en Discord</a>",
-
   "web3_title": "🌐 Guías Web3",
   "web3_desc": "Conecta tu billetera, canjea recompensas y explora todas las integraciones Web3 de The Cursed Land.",
-  
   "web3_connect_title": "🔗 Conectar xPortal",
   "web3_connect_desc": "Aprende cómo conectar tu <b>xPortal Wallet</b> y mucho más.",
   "web3_connect_btn": "Abrir tutorial",
-  
   "web3_alpha_title": "💎 Canjear cupón α",
   "web3_alpha_desc": "Canjea tu <b>cupón α</b> del juego para recibir <b>Alpha Tokens ($SN114)</b> del Subnet Level 114 en la blockchain de Bittensor.",
   "web3_alpha_btn": "Abrir tutorial",
-  
   "web3_soon_title": "🧠 Más funciones próximamente...",
   "web3_soon_desc": "Staking, intercambio y mucho más.",
-  
   "alpha_title": "💎 Canjear cupón α",
   "alpha_intro": "Intercambia tu cupón α del juego por <b>Alpha Tokens ($SN114)</b> reales en la <b>Blockchain de Bittensor (TAO)</b>. Sigue los pasos a continuación para crear tu monedero, protegerlo y recibir tus tokens de forma segura.",
-
   "alpha_step1_title": "📲 Paso 1: Instalar SubWallet",
   "alpha_step1_desc": "Descarga e instala <b>SubWallet</b> — disponible para <b>Android</b>, <b>iOS</b> y <b>Desktop</b>.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>Una vez instalada, selecciona <b>Create new wallet</b>, escribe tu <b>frase semilla</b> en papel y guárdala en un lugar seguro.<br><br>⚠️ Nunca compartas tu frase semilla ni tu contraseña con nadie. Dan acceso completo a tu monedero.",
-
   "alpha_step2_title": "⚙️ Paso 2: Configurar red y tokens",
   "alpha_step2_desc": "Abre <b>SubWallet</b> → ve a la pestaña <b>Tokens</b> → pulsa el <b>icono de filtro</b> (a la derecha del buscador).<br><br>✅ Activa <b>Show zero balance</b> para mostrar todos los tokens.<br>✅ En <b>Networks</b>, deja marcada solo la primera opción <b>Bittensor (mainnet)</b>.<br>❌ Desactiva <b>Bittensor Testnet</b> y <b>Bittensor Devnet</b>.<br><br>Vuelve a la página principal de Tokens y verás la dirección <b>TAO (Bittensor)</b> de tu monedero en la parte superior.",
-
   "alpha_step3_title": "🧭 Paso 3: Copiar tu dirección TAO",
   "alpha_step3_desc": "En la lista de tokens, busca <b>TAO</b> o <b>Bittensor</b>.<br>El primer resultado, <b>TAO (Bittensor)</b>, es la dirección principal de tu monedero en la red Bittensor.<br><br>Pulsa la dirección en la parte superior para copiarla — la usarás en el juego con el <b>NPC Tao</b> para canjear tu cupón.",
-
   "alpha_step4_title": "🏦 Paso 4: Canjear en el NPC Tao",
   "alpha_step4_desc": "En el juego, dirígete al <b>NPC Tao</b> → pega tu <b>dirección TAO</b> en el campo de canje.<br>Pulsa <b>Withdraw</b> → tu primer cupón α válido se eliminará del inventario y recibirás instantáneamente <b>α Tokens ($SN114)</b> en tu monedero.<br><br>⚠️ Los cupones caducan en <b>7 días</b>, así que canjéalos a tiempo.",
-
   "alpha_step5_title": "💱 Paso 5: Intercambiar α ↔ TAO",
   "alpha_step5_desc": "Visita <b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> y conecta tu SubWallet.<br><br>Puedes intercambiar <b>α Tokens (SN114)</b> por <b>TAO</b> o viceversa. Todas las transacciones requieren una pequeña cantidad de <b>TAO</b> como tarifa (normalmente menos de $0.01).<br><br>¿Necesitas TAO para las tarifas? Cómpralo aquí:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
-
   "alpha_step6_title": "💼 Paso 6: Depositar / Retirar TAO",
   "alpha_step6_desc": "Para depositar TAO en un exchange:<br>• Entra a tu exchange y selecciona <b>Deposit → TAO (Bittensor)</b> → copia la dirección.<br>• En SubWallet → <b>Send</b> → selecciona <b>TAO</b> → pega la dirección de depósito → confirma.<br><br>Para retirar desde un exchange:<br>• Selecciona <b>Withdraw → TAO (Bittensor)</b> y pega tu <b>dirección TAO</b> de SubWallet.<br>⚠️ Verifica siempre que la red seleccionada sea <b>Bittensor</b> antes de enviar.",
-
   "alpha_step7_title": "💳 Opcional: Retirar a xPortal",
   "alpha_step7_desc": "¿Prefieres usar xPortal? Convierte tu TAO en <b>EGLD</b> y retíralo a tu <b>dirección EGLD de xPortal</b>.<br><br>• Intercambia TAO → EGLD<br>• Retira EGLD a xPortal → los fondos aparecerán directamente en tu monedero.<br><br>Simple, rápido y económico ⚡",
-
   "alpha_help_text": "💬 ¿Necesitas ayuda? Únete a nuestra <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>comunidad de Discord</a> o consulta la guía en el blog: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
-  
   "calc_title": "🧮 Simular Transacción",
   "calc_label_buy": "Introduce el monto en <b>USDC ($)</b> para comprar TCL:",
   "calc_label_sell": "Introduce el monto en <b>TCL</b> para vender por USDC ($):",
@@ -78,11 +56,8 @@
   "calc_btn_calculate": "Calcular Impacto",
   "calc_btn_trade": "Comerciar Ahora ↗",
   "calc_error": "⚠️ Por favor introduce un monto válido.",
-
   "calc_result_buy": "💱 Comprar TCL con {value} USDC ($)\n💲 TCL estimado recibido: {boughtTCL}\n⚖️ Precio promedio pagado: {avgPrice} USDC/TCL\n💥 Impacto en el precio: {priceImpact}%\n📈 Aumento estimado: + {pctChange}%\n\n📊 Precio final estimado de TCL: {newPrice} USDC ($)\n🔄 Oferta estimada después de la transacción:\n• TCL en el Pool: {newTCL}\n• USDC en el Pool: {newUSDC}",
-
   "calc_result_sell": "💱 Vender {value} TCL\n💲 USDC ($) estimado recibido: {receivedUSDC}\n⚖️ Precio promedio recibido: {avgPrice} USDC/TCL\n💥 Impacto en el precio: {priceImpact}%\n📉 Disminución estimada: {pctChange}%\n\n📊 Precio final estimado de TCL: {newPrice} USDC ($)\n🔄 Oferta estimada después de la transacción:\n• TCL en el Pool: {newTCL}\n• USDC en el Pool: {newUSDC}",
-
   "events_title": "📅 Eventos Semanales",
   "events_desc": "Datos en vivo – sincronizados con los Eventos Semanales dentro del juego The Cursed Land",
   "events_loading": "⏳ Cargando eventos...",
@@ -127,5 +102,48 @@
       "name": "Frenesí de Cristales",
       "desc": "El mundo es inestable – durante el evento, los cristales aparecen como locos cada 5 minutos."
     }
-  }
+  },
+  "token_overview_title": "📊 Token TCL",
+  "token_overview_hint": "Pulsa para ver estadísticas del token y sentimiento",
+  "token_calculators_title": "🧮 Calculadora de Simulación de Transacción y Recompensa de Staking",
+  "token_calculators_hint": "Pulsa para abrir las calculadoras",
+  "token_staking_title": "🏆 Top Staking",
+  "token_staking_hint": "Pulsa para ver el leaderboard y las recompensas del pool",
+  "token_initial_liquidity": "Liquidez Inicial",
+  "token_listing_snapshot": "Instantánea del listing",
+  "token_calculator_transaction_title": "🧮 Simulador de Transacciones",
+  "token_calculator_transaction_desc": "Simula el impacto de compra o venta en el pool TCL/USDC usando reservas en vivo.",
+  "token_calculator_apr_title": "🧮 Calculadora APR y Recompensas",
+  "token_calculator_apr_desc": "Estima recompensas TCL diarias, semanales, mensuales y anuales según el APR.",
+  "token_modal_apr_title": "Calculadora",
+  "token_modal_apr_intro": "Introduce una cantidad de TCL para simular:",
+  "token_modal_apr_placeholder": "p. ej. 1,000,000",
+  "top_staking_title": "🏆 Top 100 Staking",
+  "top_staking_desc": "Clasificación y recompensas en vivo del pool en el mismo panel TCL.",
+  "staking_search_placeholder": "Introduce la dirección de la wallet (erd1...)",
+  "common_search": "Buscar",
+  "wiki_title": "📖 The Cursed Land – Wiki",
+  "wiki_desc": "Clases, razas, bonificaciones y objetos — busca o explora las secciones de abajo. El idioma coincide con tu selección en la app.",
+  "wiki_search_placeholder": "🔍 Buscar en Wiki...",
+  "wiki_loading": "⏳ Cargando wiki…",
+  "wiki_failed_load": "No se pudieron cargar los datos del Wiki para el idioma:",
+  "wiki_view_in_tcl_explorer": "Ver en TCL Explorer",
+  "wiki_view_in_explorer": "Ver en Explorer",
+  "wiki_opened_from_explorer": "Abierto desde Wiki dentro de TCL Explorer.",
+  "wiki_special_item_bonus_title": "Bonos de Objetos y Mejora",
+  "wiki_special_item_bonus_desc": "Ver todas las bonificaciones y materiales necesarios para mejorar objetos.",
+  "wiki_special_blacksmith_title": "Blacksmith - Simulador de Mejora %",
+  "wiki_special_blacksmith_desc": "Prueba tu estrategia de mejora y calcula los resultados antes de arriesgar tus objetos.",
+  "wiki_special_drop_title": "Probabilidad de Drop %",
+  "wiki_special_drop_desc": "Ver todos los objetos y monstruos — porcentajes de drop y tablas de botín.",
+  "wiki_section_about": "Acerca de",
+  "wiki_section_races": "Razas",
+  "wiki_section_classes": "Clases",
+  "wiki_section_materials": "Materiales",
+  "wiki_section_bonuses": "Bonificaciones",
+  "events_local_time": "Las horas mostradas abajo están en tu hora local ({timezone}).",
+  "events_today": "Hoy",
+  "events_starts_label": "Empieza",
+  "events_ends_label": "Termina",
+  "events_next_run_label": "Próxima vez"
 }

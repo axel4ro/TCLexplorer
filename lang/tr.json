@@ -1,7 +1,6 @@
 {
   "sentiment_title": "Sentiment Endeksi",
   "sentiment_loading": "Yükleniyor...",
-  
   "sentiment_labels": {
     "very_low": "😱 Güçlü Fırsat — Dip Seviyeler",
     "low": "😟 Birikim Bölgesi — Hala Düşük Değerli",
@@ -11,64 +10,44 @@
   },
   "connect_title": "🔗 xPortal Cüzdanınızı Bağlayın",
   "connect_intro": "<b>The Cursed Land & Lander</b> içindeki tüm <b>Web3 avantajlarının</b> kilidini açmak için – Tokenler, NFT Staking & Kullanım, Infinity Staking, ItemShop & RMT dahil – <b>xPortal Cüzdanınızı</b> kurmak ve bağlamak için bu adımları izleyin.",
-
   "step1_title": "📱 Adım 1: xPortal’ı İndir",
   "step1_desc": "Resmî <b>xPortal</b> uygulamasını resmî sayfadan yükleyin:<br><br>👉 <a href='https://xportal.com/app' target='_blank' style='color:#2ff6de;font-weight:600;'>xportal.com/app</a><br><br>Bu sayfada doğrudan bağlantıları bulacaksınız:<br>• <b>Android</b> – <i>Google Play</i> ve <i>Huawei AppGallery</i>’de mevcut<br>• <b>iOS</b> – <i>Apple App Store</i>’da mevcut<br><br>💳 xPortal ayrıca kolay para yatırma & çekme için bir <b>Kart</b> sunar:<br>• <b>Sanal Kart</b> – doğrudan <i>Google Pay</i> veya <i>Apple Wallet</i> ile kullanın<br>• <b>Fiziksel Kart</b> – sipariş edin ve herhangi bir yerde normal banka kartı gibi kullanın",
-
   "step2_title": "🔑 Adım 2: Cüzdan Oluştur / İçe Aktar",
   "step2_desc": "xPortal’ı açın ve yeni bir cüzdan oluşturun veya mevcut cüzdanınızı içe aktarın.<br><br>➤ <b>Profil (sol üst)</b> → <b>Ayarlar</b> → <b>Güvenlik</b> → <b>Gizli İfade (Yedekleme)</b> yoluna gidin.<br>➤ Cüzdanınızı <b>Google Drive</b> (Android) veya <b>iCloud</b> (iOS) üzerinde yedeklediğinizden emin olun.<br>⚠️ <b>Yedekleme parolası değiştirilemez</b>. Onu yazın ve güvenli bir yerde saklayın!<br><br>➤ Ek güvenlik için: <b>24 gizli kelimenizi</b> kağıda yazın ve çevrimdışı güvenli bir yerde saklayın. Bu ifade cüzdanınıza tam erişim sağlar.",
-
   "step3_title": "🚀 Adım 3: The Cursed Land’de Cüzdanı Bağla",
   "step3_desc": "Oyunda karakterinize giriş yaptıktan sonra:<br>➤ <b>🎯 Görev simgesine</b> (sağ üstte, minimap yanında) dokunun.<br>➤ <b>Görev 1 – xPortal Cüzdanı Bağla</b>’yı seçin.<br>➤ <b>Bağlan</b>’a basın → bir <b>QR Kodu</b> ve <b>xPortal</b> butonu görünecek.<br>• Aynı telefondaysanız → <b>xPortal butonuna</b> dokunun.<br>• Bilgisayardaysanız → QR Kodunu xPortal uygulamasıyla tarayın.<br><br>xPortal’da <b>bağlantı isteğini</b> onaylayın.",
-
   "step4_title": "🎉 Adım 4: Doğrula & Ödülleri Al",
   "step4_desc": "Bağlandıktan sonra:<br>➤ Oyunda yeşil <b>Sahipliği Kontrol Et</b> butonuna basın.<br>➤ Mesajı imzalayarak xPortal’da onaylayın.<br>➤ Oyuna geri dönün → <b>Ödülü Al</b>’a basın.<br><br>✅ Şunları alacaksınız: <b>250,000 Curse</b> + karakter adınızın yanında özel <b>“X” etiketi</b> (Web3 Oyuncusu tanıması).",
-
   "next_title": "➡️ Sonraki Adımlar",
   "next_desc": "Bağlı bir <b>xPortal Cüzdanı</b> ile tüm Web3 özelliklerinin kilidini açarsınız:<br><br>🎮 <a href='https://www.thecursedland.com/' target='_blank' style='color:#2ff6de;font-weight:600;'>The Cursed Land</a><br>➤ <b>NFT Sahip Ol & Oyna</b> – NFT’lerinizi oyunda günlük ödüller için kullanın.<br>👉 <b>Günlük Görev 1</b>’e (🎯 simgesi minimap altında) erişin.<br>👉 TCL ile stake edilmiş bir NFT’niz varsa, görevi tamamlayın ve her gün ödülünüzü alın.<br>➤ <b>NFT Ödünç Al</b> – NFT’niz olmasa bile ödünç alabilir ve aynı <b>Günlük Görev 1</b>’i tamamlayarak günlük ödüller kazanabilirsiniz.<br>👉 Borrow’u etkinleştirmek için önce xPortal’da bir <b>HeroTag</b> oluşturmanız gerekir.<br><b>Profil (sol üst)</b> → HeroTag oluştur.<br>⚠️ HeroTag oluşturmak küçük miktarda <b>EGLD</b> gerektirir, MultiversX blockchain’in yerel coini.<br>💰 Tahmini İşlem Ücreti: <b>0.000276325 EGLD ≈ $0.0038</b><br>➤ <b>Görev 2</b> – Bir referans kodu ekle - İşlemi imzala - Ödülü al.<br>✅ Şunları alacaksınız: <b>250,000 Curse</b> + <b>%2-5 ömür boyu cashback</b> TCL Token işlemleri için.<br>➤ <b>Özel Web3 Mağazası</b> – Klasik itemleri xPortal kullanarak doğrudan TCL ile al/sat.<br><br>➤ <b>NFT’leri oyunda kullan</b> – Karakter profilinize gidin (sol taraf) ve <b>Ekipli NFT itemlerini kullan</b>’ı etkinleştirin.<br>✅ NFT’ler hesabınızdaki tüm karakterlerde kullanılabilir.<br>✅ Mount NFT’lere sağdaki <b>X Inventory (Web3)</b> butonunun yanındaki beyaz ok (◀️) ile erişilebilir.<br><br>🌐 <a href='https://www.thecursedland.com/lander' target='_blank' style='color:#2ff6de;font-weight:600;'>Lander</a><br>➤ <b>NFT Kirala</b> – NFT’lerinizi Lander’da çalıştırın ve pasif gelir elde edin.<br>➤ <b>Infinity Staking</b> – TCL’yi bir kez stake edin, ömür boyu ödüller kazanın.<br>➤ <b>Referans Kodu</b> – Arkadaşlarınızı davet edin ve işlemlerinden %2-5 kazanın.<br><br>👉 Lander’da cüzdanınızı nasıl bağlayacağınız:<br>1. <b>Lander</b>’ı açın (App veya dApp).<br>2. <b>Sol üst Menü</b>’de (Mainnet altında) ✏️ simgesine dokunun veya sol üstteki büyük X ile <b>NFT kategorisine</b> gidin.<br>3. <b>Cüzdan Adresi</b>’ni göreceksiniz → <b>xPortal ile Bağlan</b>’a basın.<br>4. Aynı cihazdaysanız → <b>xPortal butonuna</b> basın.<br>5. Başka bir cihazdaysanız → QR Kodu xPortal uygulamanızla tarayın.<br>✅ Bağlandıktan sonra tüm <b>Lander Web3 özelliklerine</b> erişiminiz olacak.<br><br>⚠️ <b>İpucu:</b> Cüzdanınızda her zaman en az <b>$0.50 – $1.00 EGLD</b> bulundurun.<br>Bu, MultiversX blockchain’deki küçük işlem ücretlerini karşılamanızı sağlar.<br>(ör. HeroTag oluşturma, NFT Ekip etme, NFT Kiralama, NFT & Infinity Staking, Özel Web3 Mağazaları’ndan alışveriş, oyunda Karma ile ItemShop, Ekipman & Mount NFT’leri).<br><br>🔎 Tam ayrıntılar ve stratejiler için resmi kılavuzu kontrol edin: <a href='https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl' target='_blank' style='color:#2ff6de;font-weight:600;'>TCL Kazanma Kılavuzu – Whitepaper</a>",
-
   "help_text": "💡 Yardıma mı ihtiyacınız var? <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;'>Discord Topluluğumuza</a> katılın.",
-
   "web3_title": "🌐 Web3 Rehberleri",
   "web3_desc": "Cüzdanını bağla, ödüllerini al ve The Cursed Land’in tüm Web3 entegrasyonlarını keşfet.",
-  
   "web3_connect_title": "🔗 xPortal Bağlantısı",
   "web3_connect_desc": "<b>xPortal Cüzdanını</b> nasıl bağlayacağını ve daha fazlasını öğren.",
   "web3_connect_btn": "Eğitimi Aç",
-  
   "web3_alpha_title": "💎 α Kuponunu Kullan",
   "web3_alpha_desc": "Oyundaki <b>α Kuponunu</b> kullanarak Bittensor Blockchain üzerindeki Subnet Level 114’ten <b>Alpha Token ($SN114)</b> al.",
   "web3_alpha_btn": "Eğitimi Aç",
-  
   "web3_soon_title": "🧠 Yakında Daha Fazlası...",
   "web3_soon_desc": "Stake etme, takas ve daha fazlası yakında geliyor.",
-
   "alpha_title": "💎 α Kuponunu Kullan",
   "alpha_intro": "Oyundaki α kuponunu <b>Bittensor Blockchain (TAO)</b> ağı üzerinde gerçek <b>Alpha Token ($SN114)</b> ile değiştir. Cüzdanını oluşturmak, güvenliğini sağlamak ve token’larını güvenli bir şekilde almak için aşağıdaki adımları izle.",
-
   "alpha_step1_title": "📲 Adım 1: SubWallet'i Yükle",
   "alpha_step1_desc": "<b>SubWallet</b> uygulamasını indir ve yükle — <b>Android</b>, <b>iOS</b> ve <b>Masaüstü</b> için mevcuttur.<br><br>👉 <a href='https://www.subwallet.app/' target='_blank' style='color:#2ff6de;font-weight:600;'>subwallet.app</a><br><br>Kurulumdan sonra <b>Create new wallet</b> seçeneğini seç, <b>Seed Phrase (Kurtarma Cümlesi)</b>’ni bir kağıda yaz ve güvenli bir yerde sakla.<br><br>⚠️ Seed Phrase veya şifreni kimseyle paylaşma. Bunlar cüzdanına tam erişim sağlar.",
-
   "alpha_step2_title": "⚙️ Adım 2: Ağ ve Token’ları Yapılandır",
   "alpha_step2_desc": "<b>SubWallet</b>’i aç → <b>Tokens</b> sekmesine git → sağ üstteki <b>Filtre simgesine</b> tıkla.<br><br>✅ Tüm token’ları görmek için <b>Show zero balance</b> seçeneğini etkinleştir.<br>✅ <b>Networks</b> bölümünde yalnızca ilk sıradaki <b>Bittensor (mainnet)</b> seçeneğini aktif bırak.<br>❌ <b>Bittensor Testnet</b> ve <b>Bittensor Devnet</b> seçeneklerinin işaretini kaldır.<br><br>Token ana sayfasına geri dön — artık en üstte <b>TAO (Bittensor)</b> adresini göreceksin.",
-
   "alpha_step3_title": "🧭 Adım 3: TAO Adresini Kopyala",
   "alpha_step3_desc": "Token listesinde <b>TAO</b> veya <b>Bittensor</b> olarak ara.<br>İlk sonuç, <b>TAO (Bittensor)</b>, Bittensor ağındaki ana cüzdan adresindir.<br><br>Adrese tıklayarak kopyala — bu adresi oyunda <b>NPC Tao</b>’ya girerek kuponunu kullanmak için gerekecek.",
-
   "alpha_step4_title": "🏦 Adım 4: NPC Tao Üzerinden Kullan",
   "alpha_step4_desc": "Oyunda <b>NPC Tao</b>’ya git → <b>TAO adresini</b> ‘Redeem’ (Kullan) alanına yapıştır.<br><b>Withdraw</b> tuşuna bas → geçerli ilk α kuponun envanterinden silinecek ve cüzdanına anında <b>α Token ($SN114)</b> gönderilecektir.<br><br>⚠️ Kuponlar <b>7 gün</b> içinde sona erer, bu nedenle zamanında kullanmayı unutma.",
-
   "alpha_step5_title": "💱 Adım 5: α ↔ TAO Takası Yap",
   "alpha_step5_desc": "<b><a href='https://taostats.io/swap' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/swap</a></b> adresine git ve SubWallet’ini bağla.<br><br><b>α Token (SN114)</b> ile <b>TAO</b> arasında çift yönlü takas yapabilirsin. Tüm işlemler küçük miktarda <b>TAO</b> ağ ücreti gerektirir (genellikle $0.01’den az).<br><br>Ücret için TAO mu gerekiyor? Buradan al:<br>👉 <a href='https://taostats.io/buy' target='_blank' style='color:#2ff6de;font-weight:600;'>taostats.io/buy</a>",
-
   "alpha_step6_title": "💼 Adım 6: TAO Yatır / Çek",
   "alpha_step6_desc": "TAO’yu bir borsaya yatırmak için:<br>• Borsana gir ve <b>Deposit → TAO (Bittensor)</b> seç → adresi kopyala.<br>• SubWallet → <b>Send</b> → <b>TAO</b>’yu seç → adresi yapıştır → onayla.<br><br>Bir borsadan çekmek için:<br>• <b>Withdraw → TAO (Bittensor)</b> seç ve kendi <b>SubWallet TAO adresini</b> yapıştır.<br>⚠️ Göndermeden önce her zaman ağın <b>Bittensor</b> olduğundan emin ol.",
-
   "alpha_step7_title": "💳 Opsiyonel: xPortal’a Aktar",
   "alpha_step7_desc": "xPortal kullanmayı mı tercih ediyorsun? TAO’larını <b>EGLD</b>’ye dönüştür ve kendi <b>xPortal EGLD adresine</b> aktar.<br><br>• TAO → EGLD takası yap<br>• EGLD’yi xPortal’a gönder → fonlar doğrudan cüzdanına aktarılır.<br><br>Basit, hızlı ve düşük maliyetli ⚡",
-
   "alpha_help_text": "💬 Yardıma mı ihtiyacın var? <a href='https://discord.gg/thecursedland' target='_blank' style='color:#2ff6de;font-weight:600;'>Discord topluluğumuza</a> katıl veya blog rehberine göz at: <a href='https://blog.thecursedland.com/fortune-of-tao-daily-activity-rewards-top-100-be32baa0149d' target='_blank' style='color:#2ff6de;font-weight:600;'>Fortune of Tao</a>",
-  
   "calc_title": "🧮 İşlem Simülasyonu",
   "calc_label_buy": "<b>USDC ($)</b> miktarını girerek TCL satın al:",
   "calc_label_sell": "<b>TCL</b> miktarını girerek USDC ($) sat:",
@@ -77,12 +56,8 @@
   "calc_btn_calculate": "Etkiyi Hesapla",
   "calc_btn_trade": "Şimdi İşlem Yap ↗",
   "calc_error": "⚠️ Lütfen geçerli bir miktar girin.",
-
   "calc_result_buy": "💱 {value} USDC ($) ile TCL Al\n💲 Tahmini alınan TCL: {boughtTCL}\n⚖️ Ödenen ortalama fiyat: {avgPrice} USDC/TCL\n💥 Fiyat Etkisi: {priceImpact}%\n📈 Tahmini Artış: + {pctChange}%\n\n📊 İşlem sonrası tahmini TCL fiyatı: {newPrice} USDC ($)\n🔄 İşlem sonrası tahmini likidite:\n• Pool’daki TCL: {newTCL}\n• Pool’daki USDC: {newUSDC}",
-
   "calc_result_sell": "💱 {value} TCL Sat\n💲 Tahmini alınan USDC ($): {receivedUSDC}\n⚖️ Alınan ortalama fiyat: {avgPrice} USDC/TCL\n💥 Fiyat Etkisi: {priceImpact}%\n📉 Tahmini Düşüş: {pctChange}%\n\n📊 İşlem sonrası tahmini TCL fiyatı: {newPrice} USDC ($)\n🔄 İşlem sonrası tahmini likidite:\n• Pool’daki TCL: {newTCL}\n• Pool’daki USDC: {newUSDC}",
-
-
   "events_title": "📅 Haftalık Etkinlikler",
   "events_desc": "Canlı veriler – The Cursed Land oyunundaki haftalık etkinliklerle senkronize",
   "events_loading": "⏳ Etkinlikler yükleniyor...",
@@ -127,6 +102,48 @@
       "name": "Kristal Çılgınlığı",
       "desc": "Dünya dengesiz – etkinlik boyunca her 5 dakikada çılgınca kristaller ortaya çıkıyor!"
     }
-  }
+  },
+  "token_overview_title": "📊 TCL Token",
+  "token_overview_hint": "Token istatistiklerini ve duyarlılığı görmek için dokun",
+  "token_calculators_title": "🧮 İşlem Simülasyonu ve Staking Ödülü Hesaplayıcısı",
+  "token_calculators_hint": "Hesaplayıcıları açmak için dokun",
+  "token_staking_title": "🏆 En İyi Staking",
+  "token_staking_hint": "Lider tablosunu ve havuz ödüllerini görmek için dokun",
+  "token_initial_liquidity": "İlk Likidite",
+  "token_listing_snapshot": "Listeleme anlık görüntüsü",
+  "token_calculator_transaction_title": "🧮 İşlem Simülatörü",
+  "token_calculator_transaction_desc": "Canlı rezervleri kullanarak TCL/USDC havuzundaki alış veya satış etkisini simüle edin.",
+  "token_calculator_apr_title": "🧮 APR ve Ödül Hesaplayıcısı",
+  "token_calculator_apr_desc": "APR'ye göre günlük, haftalık, aylık ve yıllık TCL ödüllerini tahmin edin.",
+  "token_modal_apr_title": "Hesaplayıcı",
+  "token_modal_apr_intro": "Simülasyon için bir TCL miktarı girin:",
+  "token_modal_apr_placeholder": "örn. 1,000,000",
+  "top_staking_title": "🏆 İlk 100 Staking",
+  "top_staking_desc": "Lider tablosu ve canlı havuz ödülleri aynı TCL panelinde.",
+  "staking_search_placeholder": "Cüzdan adresini girin (erd1...)",
+  "common_search": "Ara",
+  "wiki_title": "📖 The Cursed Land – Wiki",
+  "wiki_desc": "Sınıflar, ırklar, bonuslar, eşyalar — aşağıdaki bölümlerde arayın veya gezinin. Dil, uygulama seçiminizle eşleşir.",
+  "wiki_search_placeholder": "🔍 Wiki'de ara...",
+  "wiki_loading": "⏳ Wiki yükleniyor…",
+  "wiki_failed_load": "Şu dil için Wiki verileri yüklenemedi:",
+  "wiki_view_in_tcl_explorer": "TCL Explorer'da Gör",
+  "wiki_view_in_explorer": "Explorer'da Gör",
+  "wiki_opened_from_explorer": "Wiki'den TCL Explorer içinde açıldı.",
+  "wiki_special_item_bonus_title": "Eşya Bonusu ve Upgrade",
+  "wiki_special_item_bonus_desc": "Eşyaları geliştirmek için gereken tüm bonusları ve malzemeleri görüntüleyin.",
+  "wiki_special_blacksmith_title": "Blacksmith - Upgrade Simülatörü %",
+  "wiki_special_blacksmith_desc": "Eşyalarınızı riske atmadan önce upgrade stratejinizi test edin ve beklenen sonuçları hesaplayın.",
+  "wiki_special_drop_title": "Düşme Oranı %",
+  "wiki_special_drop_desc": "Tüm eşyaları ve canavarları görün — düşme oranları ve ganimet tabloları.",
+  "wiki_section_about": "Hakkında",
+  "wiki_section_races": "Irklar",
+  "wiki_section_classes": "Sınıflar",
+  "wiki_section_materials": "Malzemeler",
+  "wiki_section_bonuses": "Bonuslar",
+  "events_local_time": "Aşağıdaki saatler yerel saatinizde gösterilir ({timezone}).",
+  "events_today": "Bugün",
+  "events_starts_label": "Başlangıç",
+  "events_ends_label": "Bitiş",
+  "events_next_run_label": "Sonraki çalışma"
 }
-
