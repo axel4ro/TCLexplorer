@@ -1191,6 +1191,8 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   align-items: center;
   justify-content: center;
   padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #transactionCalcModal {
@@ -1202,6 +1204,8 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   align-items: center;
   justify-content: center;
   padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #aprModal .modal-content {
@@ -1215,6 +1219,9 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
   position: relative;
   text-align: center;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #transactionCalcModal .modal-content {
@@ -1227,24 +1234,47 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   color: var(--text);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
   position: relative;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #aprModal .close {
-  position: absolute;
-  top: 12px;
-  right: 14px;
+  position: sticky;
+  top: 0;
+  right: 0;
+  margin-left: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
   color: var(--accent);
   font-size: 1.25rem;
   cursor: pointer;
+  z-index: 2;
+  background: rgba(18, 21, 31, 0.95);
+  border: 1px solid rgba(0, 232, 204, 0.18);
+  border-radius: 999px;
 }
 
 #transactionCalcModal .close {
-  position: absolute;
-  top: 12px;
-  right: 14px;
+  position: sticky;
+  top: 0;
+  right: 0;
+  margin-left: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
   color: var(--accent);
   font-size: 1.25rem;
   cursor: pointer;
+  z-index: 2;
+  background: rgba(18, 21, 31, 0.95);
+  border: 1px solid rgba(0, 232, 204, 0.18);
+  border-radius: 999px;
 }
 
 .apr-grid {
@@ -1282,6 +1312,43 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 
 #aprResult {
   color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  #aprModal,
+  #transactionCalcModal {
+    align-items: flex-start;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+
+  #aprModal .modal-content,
+  #transactionCalcModal .modal-content {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 20px);
+    padding: 14px 14px 18px;
+    border-radius: 12px;
+  }
+
+  .modal-calc-layout {
+    gap: 12px;
+  }
+
+  .calc-card-panel {
+    padding: 14px;
+  }
+
+  .calc-actions {
+    flex-direction: column;
+  }
+
+  .calc-actions button,
+  .calc-actions .btn-primary-green,
+  .calc-actions .btn-trade {
+    width: 100%;
+  }
+
+  .apr-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Install */
