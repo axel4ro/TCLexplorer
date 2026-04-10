@@ -89,6 +89,8 @@ th { background:#3b2b6b; color:#fff }
   height: 40px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   text-decoration: none;   /* 🔥 scoate underline */
 }
 
@@ -207,6 +209,7 @@ font-size:13px;
 <h1>Item Upgrade Requirements & Bonuses preview </h1>
 
 <div class="top-bar">
+  <a href="wiki.html" class="back-btn" onclick="return goBackToWiki(event)">⬅️ Back to WiKi</a>
   <div class="search-wrap">
     <input id="searchInput"
        placeholder="Search by item name..."
@@ -231,6 +234,20 @@ font-size:13px;
 
 <script>
 const DESKTOP_SCALE_WIDTH = 1280;
+
+function goBackToWiki(event) {
+  if (event) event.preventDefault();
+  if (window.parent && window.parent !== window) {
+    try {
+      window.parent.postMessage({ type: "tcl:navigate", page: "wiki" }, "*");
+      return false;
+    } catch (err) {
+      console.warn("Back to Wiki parent navigation failed:", err);
+    }
+  }
+  window.location.href = "wiki.html";
+  return false;
+}
 
 function applyDesktopPortraitScale() {
   const shell = document.getElementById("desktopScaleShell");

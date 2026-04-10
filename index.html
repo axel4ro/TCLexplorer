@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -20,7 +20,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css" />
 </head>
-<body class="app-body">
+<body class="app-body app-booting">
+<div class="app-boot-splash" id="appBootSplash" aria-live="polite" aria-label="Loading TCL Explorer">
+  <div class="app-boot-splash__panel">
+    <img class="app-boot-splash__logo" src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="">
+    <h2 class="app-boot-splash__title">Loading <span>TCL Explorer</span>...</h2>
+    <p class="app-boot-splash__subtitle">Preparing dashboard, live data and navigation.</p>
+    <div class="app-boot-splash__bar" aria-hidden="true"></div>
+  </div>
+</div>
 <div class="app-layout">
   <aside class="sidebar" id="appSidebar" aria-label="Main navigation">
     <div class="sidebar-header">
@@ -35,7 +43,7 @@
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable">⭐ EXP Table</button>
       <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide">ℹ️ Web3 Guides</button>
-      <button type="button" class="nav-item" onclick="showPage('token')" id="btn-token">
+      <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
@@ -89,7 +97,7 @@
     <main class="app-main">
 
  <!-- Token -->
-<div id="token" class="section-page">
+<div id="token" class="section-page active">
   <div class="page-hero">
     <h2>
       <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="" width="28" height="28" style="border-radius:8px;">
@@ -102,18 +110,18 @@
   </div>
   <div class="token-accordion-nav" role="tablist" aria-label="TCL Token sections">
     <button type="button" class="token-accordion-card active" id="tokenAccordionBtn-overview" onclick="setTokenAccordion('tokenOverviewSection')">
-      <span class="token-accordion-card__title">📊 TCL Token</span>
-      <span class="token-accordion-card__hint">Tap to view token stats & sentiment</span>
+      <span class="token-accordion-card__title" data-i18n="token_overview_title">📊 TCL Token</span>
+      <span class="token-accordion-card__hint" data-i18n="token_overview_hint">Tap to view token stats & sentiment</span>
       <span class="token-accordion-card__icon">▾</span>
     </button>
     <button type="button" class="token-accordion-card" id="tokenAccordionBtn-calculators" onclick="setTokenAccordion('tokenCalculatorsSection')">
-      <span class="token-accordion-card__title">🧮 Calculator Simulate Transaction &amp; Staking Reward</span>
-      <span class="token-accordion-card__hint">Tap to open calculator actions</span>
+      <span class="token-accordion-card__title" data-i18n="token_calculators_title">🧮 Calculator Simulate Transaction &amp; Staking Reward</span>
+      <span class="token-accordion-card__hint" data-i18n="token_calculators_hint">Tap to open calculator actions</span>
       <span class="token-accordion-card__icon">▾</span>
     </button>
     <button type="button" class="token-accordion-card" id="tokenAccordionBtn-staking" onclick="setTokenAccordion('tokenStakingSection')">
-      <span class="token-accordion-card__title">🏆 Top Staking</span>
-      <span class="token-accordion-card__hint">Tap to view leaderboard & pool rewards</span>
+      <span class="token-accordion-card__title" data-i18n="token_staking_title">🏆 Top Staking</span>
+      <span class="token-accordion-card__hint" data-i18n="token_staking_hint">Tap to view leaderboard & pool rewards</span>
       <span class="token-accordion-card__icon">▾</span>
     </button>
   </div>
@@ -232,8 +240,8 @@
 
   <div class="token-overview-panel init-liq-panel">
     <div class="token-overview-head">
-      <h3>Initial Liquidity</h3>
-      <span class="token-overview-note">Listing snapshot</span>
+      <h3 data-i18n="token_initial_liquidity">Initial Liquidity</h3>
+      <span class="token-overview-note" data-i18n="token_listing_snapshot">Listing snapshot</span>
     </div>
     <div class="init-liq-overview-grid">
       <div class="init-liq-item">
@@ -276,20 +284,20 @@
   <div id="tokenCalculatorsSection" class="token-accordion-section">
     <div class="calculator-action-grid">
       <button type="button" class="calculator-action-card" onclick="openTransactionCalculator()">
-        <span class="calculator-action-card__title">🧮 Transaction Simulator</span>
-        <span class="calculator-action-card__desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
+        <span class="calculator-action-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
+        <span class="calculator-action-card__desc" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
       </button>
       <button type="button" class="calculator-action-card" onclick="openAprCalculator()">
-        <span class="calculator-action-card__title">🧮 APR &amp; Rewards Calculator</span>
-        <span class="calculator-action-card__desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
+        <span class="calculator-action-card__title" data-i18n="token_calculator_apr_title">🧮 APR &amp; Rewards Calculator</span>
+        <span class="calculator-action-card__desc" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
       </button>
     </div>
 
     <div id="transactionCalcModal" style="display:none;">
       <div class="modal-content">
         <span class="close" onclick="closeTransactionCalculator()">✖</span>
-        <h3 style="margin-top:0;">Transaction Simulator</h3>
-        <p style="font-size:14px; color:#9ca3af;">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</p>
+        <h3 style="margin-top:0;" data-i18n="token_calculator_transaction_title">Transaction Simulator</h3>
+        <p style="font-size:14px; color:#9ca3af;" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</p>
 
         <div class="calc-layout modal-calc-layout">
           <div class="calc-card-panel">
@@ -319,18 +327,18 @@
     <div id="aprModal" style="display:none;">
       <div class="modal-content">
         <span class="close" onclick="closeAprCalculator()">✖</span>
-        <h3 style="margin-top:0;">Calculator</h3>
-        <p style="font-size:14px; color:#9ca3af;">Enter an amount of TCL to simulate:</p>
+        <h3 style="margin-top:0;" data-i18n="token_modal_apr_title">Calculator</h3>
+        <p style="font-size:14px; color:#9ca3af;" data-i18n="token_modal_apr_intro">Enter an amount of TCL to simulate:</p>
         
         <input 
           type="text" 
           id="aprInput" 
-          placeholder="e.g. 1,000,000" 
+          placeholder="e.g. 1,000,000" data-i18n-placeholder="token_modal_apr_placeholder" 
           inputmode="numeric" 
           style="text-align:center;" 
         />
 
-        <button onclick="simulateApr()">Calculate</button>
+        <button onclick="simulateApr()" data-i18n="calc_btn_calculate">Calculate</button>
         
         <div id="aprResult" style="margin-top:14px; font-size:15px;"></div>
       </div>
@@ -338,8 +346,8 @@
   </div>
 
   <div id="tokenStakingSection" class="token-accordion-section">
-    <h2 class="section-heading">🏆 Top 100 Staking</h2>
-    <p class="muted" style="margin-bottom:12px;">Leaderboard &amp; live pool rewards in the same TCL dashboard.</p>
+    <h2 class="section-heading" data-i18n="top_staking_title">🏆 Top 100 Staking</h2>
+    <p class="muted" style="margin-bottom:12px;" data-i18n="top_staking_desc">Leaderboard &amp; live pool rewards in the same TCL dashboard.</p>
 
     <small id="lastUpdated" class="muted" style="display:block; margin-bottom:12px;">
       ⏳ Loading update time...
@@ -372,9 +380,9 @@
     </div>
 
     <div class="staking-search-row">
-      <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
+      <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" data-i18n-placeholder="staking_search_placeholder" 
             style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
-      <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
+      <button onclick="searchStaker()" style="background:#28a745; font-weight:600;" data-i18n="common_search">Search</button>
     </div>
 
     <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
@@ -406,24 +414,28 @@
 <!-- Wiki -->
 <div id="wiki" class="section-page">
   <div class="page-hero">
-    <h2>📖 The Cursed Land – Wiki</h2>
-    <p class="muted">Classes, races, bonuses, items — search or browse sections below. Language matches your app selection.</p>
+    <h2 data-i18n="wiki_title">📖 The Cursed Land – Wiki</h2>
+    <p class="muted" data-i18n="wiki_desc">Classes, races, bonuses, items — search or browse sections below. Language matches your app selection.</p>
   </div>
   <div class="wiki-toolbar">
     <div class="wiki-search-row">
-      <input type="search" id="wikiSearchInput" placeholder="🔍 Search in Wiki..." autocomplete="off" onkeyup="searchWiki()" />
-      <button type="button" class="btn-primary-green" onclick="searchWiki()">Search</button>
+      <input type="search" id="wikiSearchInput" placeholder="🔍 Search in Wiki..." data-i18n-placeholder="wiki_search_placeholder" autocomplete="off" onkeyup="searchWiki()" />
+      <button type="button" class="btn-primary-green" onclick="searchWiki()" data-i18n="common_search">Search</button>
     </div>
   </div>
   <div id="wikiContent" class="wiki-body">
-    <p class="muted">⏳ Loading wiki…</p>
+    <p class="muted" data-i18n="wiki_loading">⏳ Loading wiki…</p>
   </div>
 </div>
 
 <!-- xExchange Trade -->
 <div id="xexchangeIframe" class="section-page">
-  <iframe 
-    src="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
+  <div class="fullpage-embed-placeholder" id="xexchangePlaceholder">Loading xExchange...</div>
+  <iframe
+    id="xexchangeFrame"
+    loading="lazy"
+    src="about:blank"
+    data-src="https://xexchange.com/trade?firstToken=USDC-c76f1f&secondToken=TCL-fe459d"
     style="width:100%;height:100%;border:0;">
   </iframe>
 </div>
@@ -505,22 +517,29 @@
 
 <!-- TCL Token Chart -->
 <div id="chart" class="section-page">
-  <iframe 
-    loading="eager"
-    fetchpriority="high"
-    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15">
+  <div class="fullpage-embed-placeholder" id="chartPlaceholder">Loading chart...</div>
+  <iframe
+    id="chartFrame"
+    loading="lazy"
+    src="about:blank"
+    data-src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=15">
   </iframe>
 </div>
 
   <!-- Explorer MultiversX -->
 <div id="explorerIframe" class="section-page">
-  <iframe 
-    src="https://explorer.multiversx.com/tokens/TCL-fe459d"
+  <div class="fullpage-embed-placeholder" id="explorerPlaceholder">Loading explorer...</div>
+  <iframe
+    id="explorerFrame"
+    loading="lazy"
+    src="about:blank"
+    data-src="https://explorer.multiversx.com/tokens/TCL-fe459d"
     style="width:100%;height:100%;border:0;">
   </iframe>
 </div>
 
 <div id="internalPage" class="section-page">
+  <div class="fullpage-embed-placeholder" id="internalPagePlaceholder">Loading page...</div>
   <iframe id="internalPageFrame" title="Internal explorer page" loading="lazy"></iframe>
 </div>
 
@@ -639,11 +658,14 @@
   <img id="overlayImg" class="overlay-img" alt="" />
 </div>
 
-<script src="js/wiki.js"></script>
+<script src="lang/lang.bundle.js?v=20260410-2"></script>
+<script src="js/wiki.js?v=20260410-2"></script>
 <script>
 function openNFTs() {
   openInternalPage("NFTs.html", "NFTs Explorer", {
-    navId: "btn-nfts"
+    navId: "btn-nfts",
+    loadingText: "Loading NFTs...",
+    waitForReadyMessage: true
   });
 }
 
@@ -674,10 +696,175 @@ function openLander() {
   }
   function getText(id){ return (document.getElementById(id).textContent || '').trim(); }
   function setText(id, v){ document.getElementById(id).textContent = v; }
+
+  const TOKEN_OVERVIEW_CACHE_KEY = "tclExplorer.tokenOverview.v1";
+  const TOKEN_OVERVIEW_CACHE_MIN_REFRESH_MS = 90 * 1000;
+  const TOKEN_OVERVIEW_SECTION_TTL = {
+    pool: 90 * 1000,
+    explorer: 90 * 1000,
+    rewards: 90 * 1000,
+    gecko: 12 * 60 * 60 * 1000
+  };
+  const TOKEN_OVERVIEW_FALLBACKS = {
+    gecko: {
+      ath: 0.010077,
+      atl: 0.000372
+    }
+  };
+  const tokenOverviewCache = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(TOKEN_OVERVIEW_CACHE_KEY) || "{}");
+    } catch (_) {
+      return {};
+    }
+  })();
+  const tokenOverviewRequests = {
+    pool: null,
+    gecko: null,
+    explorer: null,
+    rewards: null
+  };
+
+  function persistTokenOverviewCache() {
+    try {
+      localStorage.setItem(TOKEN_OVERVIEW_CACHE_KEY, JSON.stringify(tokenOverviewCache));
+    } catch (_) {}
+  }
+
+  function getTokenOverviewCache(section) {
+    return tokenOverviewCache?.[section] || null;
+  }
+
+  function setTokenOverviewCache(section, payload) {
+    tokenOverviewCache[section] = {
+      ...payload,
+      cachedAt: Date.now()
+    };
+    persistTokenOverviewCache();
+  }
+
+  function hasFreshTokenOverviewCache(section, maxAgeMs = null) {
+    const cached = getTokenOverviewCache(section);
+    const ttl = maxAgeMs ?? TOKEN_OVERVIEW_SECTION_TTL[section] ?? TOKEN_OVERVIEW_CACHE_MIN_REFRESH_MS;
+    return !!cached && typeof cached.cachedAt === "number" && (Date.now() - cached.cachedAt) < ttl;
+  }
+
+  function withTokenOverviewRequest(section, loader) {
+    if (tokenOverviewRequests[section]) return tokenOverviewRequests[section];
+    tokenOverviewRequests[section] = (async () => {
+      try {
+        return await loader();
+      } finally {
+        tokenOverviewRequests[section] = null;
+      }
+    })();
+    return tokenOverviewRequests[section];
+  }
+
+  function applyPoolStats(payload) {
+    if (!payload) return;
+    if (typeof payload.curTCL === "number" && Number.isFinite(payload.curTCL)) {
+      setText("curTCL", formatNumber(payload.curTCL));
+    }
+    if (typeof payload.curUSDC === "number" && Number.isFinite(payload.curUSDC)) {
+      setText("curUSDC", formatNumber(payload.curUSDC) + " $");
+    }
+    if (typeof payload.priceUsd === "number" && Number.isFinite(payload.priceUsd) && payload.priceUsd > 0) {
+      setText("curPrice", payload.priceUsd.toFixed(6) + " $");
+    }
+    if (typeof payload.change24h === "number" && Number.isFinite(payload.change24h)) {
+      const symbol = payload.change24h >= 0 ? "📈 +" : "📉 ";
+      setText("change24h", symbol + payload.change24h.toFixed(2) + "%");
+    }
+  }
+
+  function hasValidGeckoStats(payload) {
+    return !!payload
+      && typeof payload.ath === "number" && Number.isFinite(payload.ath) && payload.ath > 0
+      && typeof payload.atl === "number" && Number.isFinite(payload.atl) && payload.atl > 0;
+  }
+
+  function getBestGeckoStats() {
+    const cached = getTokenOverviewCache("gecko");
+    if (hasValidGeckoStats(cached)) return cached;
+    if (hasValidGeckoStats(TOKEN_OVERVIEW_FALLBACKS.gecko)) return TOKEN_OVERVIEW_FALLBACKS.gecko;
+    return null;
+  }
+
+  function applyGeckoStats(payload) {
+    const source = hasValidGeckoStats(payload) ? payload : getBestGeckoStats();
+    if (!source) return;
+    setText("ath", source.ath.toFixed(6) + " $");
+    setText("atl", source.atl.toFixed(6) + " $");
+  }
+
+  function applyExplorerStats(payload) {
+    if (!payload) return;
+    if (typeof payload.marketCap === "number" && Number.isFinite(payload.marketCap)) {
+      setText("marketCap", formatNumber(payload.marketCap) + " $");
+    }
+    if (typeof payload.holders === "number" && Number.isFinite(payload.holders)) {
+      setText("holders", payload.holders.toLocaleString());
+    }
+    if (typeof payload.transactions === "number" && Number.isFinite(payload.transactions)) {
+      setText("transactions", payload.transactions.toLocaleString());
+    }
+    if (typeof payload.circulating === "number" && Number.isFinite(payload.circulating)) {
+      setText("circulating", formatNumber(payload.circulating));
+    }
+    if (typeof payload.burned === "number" && Number.isFinite(payload.burned)) {
+      setText("burned", formatNumber(payload.burned));
+    }
+    if (typeof payload.supply === "number" && Number.isFinite(payload.supply)) {
+      setText("supply", formatNumber(payload.supply));
+    }
+    if (typeof payload.currentSupply === "number" && Number.isFinite(payload.currentSupply)) {
+      setText("currentSupply", formatNumber(payload.currentSupply));
+    }
+    if (typeof payload.volume24h === "number" && Number.isFinite(payload.volume24h)) {
+      setText("volume24h", formatNumber(payload.volume24h) + " $");
+    }
+    if (typeof payload.tradesCount === "number" && Number.isFinite(payload.tradesCount)) {
+      setText("tradesCount", payload.tradesCount.toLocaleString());
+    }
+  }
+
+  function applyRewardsStats(payload) {
+    if (!payload) return;
+    if (typeof payload.apr === "number" && Number.isFinite(payload.apr)) {
+      const aprText = payload.apr.toFixed(2) + "%";
+      document.getElementById("apr").textContent = aprText;
+      const aprOverviewEl = document.getElementById("aprOverview");
+      if (aprOverviewEl) aprOverviewEl.textContent = aprText;
+    }
+    if (typeof payload.totalStaked === "number" && Number.isFinite(payload.totalStaked)) {
+      document.getElementById("staked").textContent = payload.totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
+    }
+    if (typeof payload.emission === "number" && Number.isFinite(payload.emission)) {
+      document.getElementById("emission").textContent = payload.emission.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
+    }
+    if (typeof payload.stakedUsd === "number" && Number.isFinite(payload.stakedUsd)) {
+      document.getElementById("stakedUsd").textContent = "≈ " + payload.stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
+    }
+    if (typeof payload.emissionUsd === "number" && Number.isFinite(payload.emissionUsd)) {
+      document.getElementById("emissionUsd").textContent = "≈ " + payload.emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
+    }
+    const aprUsdEl = document.getElementById("aprUsd");
+    if (aprUsdEl) aprUsdEl.textContent = "";
+  }
+
+  function applyCachedTokenOverview() {
+    applyPoolStats(getTokenOverviewCache("pool"));
+    applyGeckoStats(getBestGeckoStats());
+    applyExplorerStats(getTokenOverviewCache("explorer"));
+    applyRewardsStats(getTokenOverviewCache("rewards"));
+  }
+
   // helper pentru traduceri dinamice cu variabile
 function t(key, vars = {}) {
-  if (!translations[key]) return key; // fallback
-  let str = translations[key];
+  const value = translations[key] ?? fallbackTranslations[key];
+  if (value === undefined || value === null || typeof value === "object") return key;
+  let str = String(value);
   for (const [k, v] of Object.entries(vars)) {
     str = str.replace(new RegExp(`{${k}}`, "g"), v);
   }
@@ -781,6 +968,23 @@ function getTodayIndex() {
 const EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
 let currentDay = null;
 let eventsData = {};
+
+function getCurrentLocale() {
+  const localeMap = {
+    en: "en-US",
+    ro: "ro-RO",
+    tr: "tr-TR",
+    de: "de-DE",
+    es: "es-ES",
+    fr: "fr-FR",
+    it: "it-IT",
+    pl: "pl-PL",
+    pt: "pt-PT"
+  };
+
+  return localeMap[currentLang] || navigator.language || "en-US";
+}
+
 function getLocalTimeZoneLabel() {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time";
@@ -791,13 +995,15 @@ function getLocalTimeZoneLabel() {
 
 function formatLocalEventDate(date) {
   try {
-    return new Intl.DateTimeFormat(undefined, {
-      weekday: "short",
-      month: "short",
+    const formatted = new Intl.DateTimeFormat(getCurrentLocale(), {
+      weekday: "long",
+      month: "long",
       day: "numeric",
       hour: "numeric",
       minute: "2-digit"
     }).format(date);
+
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   } catch (_) {
     return date.toLocaleString();
   }
@@ -822,10 +1028,12 @@ async function loadEvents() {
     console.log("✅ Today:", currentDay); // debug
     renderDayButtons(currentDay);
     showEventsForDay(currentDay);
+    return eventsData;
 
   } catch (err) {
     document.getElementById("eventContainer").innerHTML = "❌ Error loading events.";
     console.error("Events load error", err);
+    throw err;
   }
 }
 
@@ -972,7 +1180,7 @@ showEventsForDay = function(day) {
   const events = eventsData[day] || [];
 
   if (descEl) {
-    descEl.textContent = `Times below are shown in your local time (${getLocalTimeZoneLabel()}).`;
+    descEl.textContent = t("events_local_time", { timezone: getLocalTimeZoneLabel() });
   }
 
   if (events.length === 0) {
@@ -985,7 +1193,7 @@ showEventsForDay = function(day) {
 
   const buildEventMetaLine = (label, date) => {
     const display = isSameLocalDay(date, now)
-      ? `Today, ${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date)}`
+      ? `${t("events_today")}, ${new Intl.DateTimeFormat(getCurrentLocale(), { hour: "numeric", minute: "2-digit" }).format(date)}`
       : formatLocalEventDate(date);
     return `<div style="font-size:12px; color:#9ca3af; margin-top:4px;"><strong style="color:#d1d5db;">${label}:</strong> ${display}</div>`;
   };
@@ -1028,8 +1236,8 @@ showEventsForDay = function(day) {
       statusText = t("events_active", { h, m });
       borderClass = "event-active";
       timingHtml = `
-        ${buildEventMetaLine("Ends", end)}
-        ${buildEventMetaLine("Next run", new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000))}
+        ${buildEventMetaLine(t("events_ends_label"), end)}
+        ${buildEventMetaLine(t("events_next_run_label"), new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000))}
       `;
 
       if (!ev._notified) {
@@ -1049,8 +1257,8 @@ showEventsForDay = function(day) {
       }
 
       timingHtml = `
-        ${buildEventMetaLine("Starts", start)}
-        ${buildEventMetaLine("Ends", end)}
+        ${buildEventMetaLine(t("events_starts_label"), start)}
+        ${buildEventMetaLine(t("events_ends_label"), end)}
       `;
     }
 
@@ -1090,71 +1298,106 @@ showEventsForDay = function(day) {
 }
 
   // ===== Data Fetch =====
-  async function fetchPoolData() {
-    try {
-      const res = await fetch(DEX_API_URL);
-      const data = await res.json();
-      const pool = data.pair;
-      setText("curTCL", formatNumber(pool.liquidity.base));
-	  setText("curUSDC", formatNumber(pool.liquidity.quote) + " $");
-	  setText("curPrice", parseFloat(pool.priceUsd).toFixed(6) + " $");
+  async function fetchPoolData(options = {}) {
+    const cached = getTokenOverviewCache("pool");
+    if (cached) applyPoolStats(cached);
+    if (!options.force && hasFreshTokenOverviewCache("pool")) return cached;
 
-	  const change = parseFloat(pool.priceChange.h24).toFixed(2);
-      const symbol = change >= 0 ? "📈 +" : "📉 ";
-      setText("change24h", symbol + change + "%");
-    } catch (err) { console.error("❌ Failed to fetch pool data:", err); }
-  }
+    return withTokenOverviewRequest("pool", async () => {
+      try {
+        const res = await fetch(DEX_API_URL);
+        const data = await res.json();
+        const pool = data?.pair;
+        if (!pool) throw new Error("Missing DexScreener pair data");
 
-  async function fetchGeckoAthAtl(){
-    try {
-      const resp = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander");
-      const arr = await resp.json();
-      if(arr && arr.length > 0){
-        const data = arr[0];
-		setText("ath", data.ath.toFixed(6) + " $");
-		setText("atl", data.atl.toFixed(6) + " $");
+        const payload = {
+          curTCL: Number(pool.liquidity?.base) || 0,
+          curUSDC: Number(pool.liquidity?.quote) || 0,
+          priceUsd: Number(pool.priceUsd) || 0,
+          change24h: Number(pool.priceChange?.h24) || 0
+        };
 
+        applyPoolStats(payload);
+        setTokenOverviewCache("pool", payload);
+        return payload;
+      } catch (err) {
+        console.error("❌ Failed to fetch pool data:", err);
+        return cached || null;
       }
-    } catch(e){ console.error("❌ CoinGecko ATH/ATL error", e); }
+    });
   }
+
+  async function fetchGeckoAthAtl(options = {}){
+    const cached = getTokenOverviewCache("gecko");
+    const bestExisting = getBestGeckoStats();
+    if (bestExisting) applyGeckoStats(bestExisting);
+    if (!options.force && hasValidGeckoStats(cached) && hasFreshTokenOverviewCache("gecko")) return cached;
+
+    return withTokenOverviewRequest("gecko", async () => {
+      try {
+        const resp = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander");
+        const arr = await resp.json();
+        if (arr && arr.length > 0) {
+          const data = arr[0];
+          const payload = {
+            ath: Number(data.ath) || 0,
+            atl: Number(data.atl) || 0
+          };
+          if (hasValidGeckoStats(payload)) {
+            applyGeckoStats(payload);
+            setTokenOverviewCache("gecko", payload);
+            return payload;
+          }
+          applyGeckoStats(bestExisting);
+          return bestExisting || null;
+        }
+        applyGeckoStats(bestExisting);
+        return bestExisting || null;
+      } catch(e){
+          console.error("❌ CoinGecko ATH/ATL error", e);
+          applyGeckoStats(bestExisting);
+          return bestExisting || null;
+        }
+      });
+    }
 
 // ===== MultiversX Explorer Data =====
-async function fetchExplorerData() {
-  try {
-    const res = await fetch(`${MULTIVERSX_API}/tokens/TCL-fe459d`);
-    const data = await res.json();
-    if (!data) return;
+async function fetchExplorerData(options = {}) {
+  const cached = getTokenOverviewCache("explorer");
+  if (cached) applyExplorerStats(cached);
+  if (!options.force && hasFreshTokenOverviewCache("explorer")) return cached;
 
-    const decimals = data.decimals || 18;
+  return withTokenOverviewRequest("explorer", async () => {
+    try {
+      const res = await fetch(`${MULTIVERSX_API}/tokens/TCL-fe459d`);
+      const data = await res.json();
+      if (!data) throw new Error("Missing MultiversX token data");
 
-    // ✅ Max Supply = initialMinted
-    const maxSupply = parseFloat(data.initialMinted) / (10 ** decimals);
+      const decimals = data.decimals || 18;
+      const maxSupply = parseFloat(data.initialMinted) / (10 ** decimals);
+      const burned = parseFloat(data.burnt) / (10 ** decimals);
+      const circulating = parseFloat(data.circulatingSupply) || (maxSupply - burned);
+      const currentSupply = parseFloat(data.supply) || 0;
+      const payload = {
+        marketCap: Number(data.marketCap) || 0,
+        holders: Number(data.accounts) || 0,
+        transactions: Number(data.transfers) || 0,
+        circulating,
+        burned,
+        supply: maxSupply,
+        currentSupply,
+        volume24h: Number(data.totalVolume24h) || 0,
+        tradesCount: Number(data.tradesCount) || 0
+      };
 
-    // ✅ Burned & Circulating
-    const burned = parseFloat(data.burnt) / (10 ** decimals);
-    const circulating = parseFloat(data.circulatingSupply) || (maxSupply - burned);
-    const currentSupply = parseFloat(data.supply) || 0;
-    const marketCap = data.marketCap || 0;
-    const holders = data.accounts || 0;
-    const transactions = data.transfers || 0;
-	const volume24h = data.totalVolume24h || 0;
-    const tradesCount = data.tradesCount || 0;
-
-// ✅ Scriem valorile cu $ la final
-setText("marketCap", formatNumber(marketCap) + " $");
-setText("holders", holders.toLocaleString());
-setText("transactions", transactions.toLocaleString());
-setText("circulating", formatNumber(circulating));
-setText("burned", formatNumber(burned));
-setText("supply", formatNumber(maxSupply));
-setText("currentSupply", formatNumber(currentSupply));
-setText("volume24h", formatNumber(volume24h) + " $");
-setText("tradesCount", tradesCount.toLocaleString());
-
-	
-  } catch (err) {
-    console.error("❌ Explorer fetch error", err);
-  }
+      applyExplorerStats(payload);
+      setTokenOverviewCache("explorer", payload);
+      return payload;
+    } catch (err) {
+      console.error("❌ Explorer fetch error", err);
+      return cached || null;
+    }
+  });
 }
 
   // ===== Staking Leaderboard din JSON =====
@@ -1259,7 +1502,7 @@ body.innerHTML = html;
 }
 
   function updateStakingLeaderboard() {
-    fetchLeaderboard();
+    return fetchLeaderboard();
   }
 	
 async function searchStaker() {
@@ -1373,8 +1616,199 @@ const PAGE_TITLES = {
 const internalPageState = {
   src: "",
   title: "Explorer Page",
-  navId: ""
+  navId: "",
+  waitForReadyMessage: false,
+  readyFallbackTimer: null
 };
+
+const lazyEmbedPages = {
+  chart: "chartFrame",
+  explorerIframe: "explorerFrame",
+  xexchangeIframe: "xexchangeFrame"
+};
+
+let eventsLoadPromise = null;
+let stakingLoadPromise = null;
+let stakingRefreshStarted = false;
+let tokenRefreshStarted = false;
+let startupScheduled = false;
+let nonCriticalServicesStarted = false;
+const appBootStartedAt = performance.now();
+
+function runAfterFirstPaint(task, delay = 0) {
+  requestAnimationFrame(() => {
+    window.setTimeout(task, delay);
+  });
+}
+
+function runWhenIdle(task, timeout = 1500) {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(() => task(), { timeout });
+    return;
+  }
+  window.setTimeout(task, Math.min(timeout, 300));
+}
+
+function hideAppBootSplash() {
+  const splash = document.getElementById("appBootSplash");
+  if (!splash || splash.dataset.hidden === "true") return;
+
+  const finishHide = () => {
+    splash.dataset.hidden = "true";
+    splash.classList.add("is-hidden");
+    document.body.classList.remove("app-booting");
+    window.setTimeout(() => {
+      splash.style.display = "none";
+    }, 320);
+  };
+
+  const elapsed = performance.now() - appBootStartedAt;
+  const remaining = Math.max(0, 420 - elapsed);
+  window.setTimeout(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(finishHide);
+    });
+  }, remaining);
+}
+
+function ensureLazyEmbedLoaded(pageId) {
+  const frameId = lazyEmbedPages[pageId];
+  if (!frameId) return;
+
+  const page = document.getElementById(pageId);
+  const frame = document.getElementById(frameId);
+  if (!page || !frame) return;
+
+  if (frame.dataset.loaded === "true") {
+    page.classList.add("embed-ready");
+    page.classList.remove("embed-loading");
+    return;
+  }
+
+  if (frame.dataset.loading === "true") return;
+
+  const src = frame.getAttribute("data-src");
+  if (!src) return;
+
+  frame.dataset.loading = "true";
+  page.classList.add("embed-loading");
+
+  const markReady = () => {
+    frame.dataset.loaded = "true";
+    frame.dataset.loading = "false";
+    page.classList.add("embed-ready");
+    page.classList.remove("embed-loading");
+  };
+
+  frame.addEventListener("load", markReady, { once: true });
+  frame.addEventListener("error", () => {
+    frame.dataset.loading = "false";
+    page.classList.remove("embed-loading");
+  }, { once: true });
+  frame.src = src;
+}
+
+function ensureEventsLoaded(options = {}) {
+  if (!options.force && Object.keys(eventsData || {}).length > 0) {
+    if (currentDay) showEventsForDay(currentDay);
+    return Promise.resolve(eventsData);
+  }
+  if (eventsLoadPromise) return eventsLoadPromise;
+
+  eventsLoadPromise = loadEvents(options)
+    .catch((err) => {
+      console.error("Events warmup error", err);
+      return null;
+    })
+    .finally(() => {
+      eventsLoadPromise = null;
+    });
+
+  return eventsLoadPromise;
+}
+
+function startStakingRefresh() {
+  if (stakingRefreshStarted) return;
+  stakingRefreshStarted = true;
+
+  fetchLeaderboardLastUpdate();
+  fetchLeaderboard();
+  window.setInterval(fetchLeaderboardLastUpdate, 2 * 60 * 1000);
+  window.setInterval(fetchLeaderboard, 300000);
+  window.setInterval(updateCommitRelative, 30 * 1000);
+}
+
+function ensureStakingLoaded(options = {}) {
+  startStakingRefresh();
+
+  if (stakingLoadPromise) return stakingLoadPromise;
+  stakingLoadPromise = Promise.all([
+    fetchLeaderboard(),
+    loadTCLStats(options)
+  ]).finally(() => {
+    stakingLoadPromise = null;
+    requestAnimationFrame(applyStakingPortraitScale);
+  });
+  return stakingLoadPromise;
+}
+
+function startTokenRefresh() {
+  if (tokenRefreshStarted) return;
+  tokenRefreshStarted = true;
+
+  runAfterFirstPaint(() => {
+    fetchPoolData();
+    fetchGeckoAthAtl();
+    fetchExplorerData();
+    loadTCLStats();
+  }, 40);
+
+  window.setInterval(() => {
+    fetchPoolData();
+    fetchGeckoAthAtl();
+    fetchExplorerData();
+    loadTCLStats();
+
+    const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+    if (hasValue) calculate();
+  }, 300000);
+}
+
+function loadNonCriticalServices() {
+  if (nonCriticalServicesStarted) return;
+  nonCriticalServicesStarted = true;
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register(new URL("sw.js", window.location.href))
+      .then((reg) => console.log("✅ SW registered", reg))
+      .catch((err) => console.error("❌ SW error", err));
+  }
+
+  const firstScript = document.getElementsByTagName("script")[0];
+  if (firstScript && !document.getElementById("tawk-script")) {
+    window.Tawk_API = window.Tawk_API || {};
+    window.Tawk_LoadStart = new Date();
+    const script = document.createElement("script");
+    script.id = "tawk-script";
+    script.async = true;
+    script.src = "https://embed.tawk.to/68e759567914761952cb4c66/1j73r9ujm";
+    script.charset = "UTF-8";
+    script.setAttribute("crossorigin", "*");
+    firstScript.parentNode.insertBefore(script, firstScript);
+  }
+}
+
+function scheduleAppStartup() {
+  if (startupScheduled) return;
+  startupScheduled = true;
+
+  startTokenRefresh();
+  runWhenIdle(() => ensureEventsLoaded(), 1800);
+  if (!navigator.connection?.saveData) {
+    runWhenIdle(() => ensureLazyEmbedLoaded("chart"), 4000);
+  }
+  runWhenIdle(loadNonCriticalServices, 2500);
+}
 
 const STAKING_SCALE_WIDTH = 980;
 
@@ -1430,6 +1864,8 @@ function showPage(id) {
     }
   }
 
+  ensureLazyEmbedLoaded(id);
+
   const titleEl = document.getElementById("appPageTitle");
   if (titleEl) {
     titleEl.textContent = id === "internalPage"
@@ -1450,8 +1886,16 @@ function showPage(id) {
     loadWiki(currentLang, true);
   }
 
+  if (id === "events") {
+    ensureEventsLoaded();
+  }
+
   if (id === "token") {
     ensureTokenAccordionState();
+    startTokenRefresh();
+    if (document.getElementById("tokenStakingSection")?.classList.contains("active")) {
+      ensureStakingLoaded();
+    }
   }
 
   requestAnimationFrame(applyStakingPortraitScale);
@@ -1476,6 +1920,10 @@ function setTokenAccordion(sectionId) {
       button.setAttribute("aria-expanded", isActive ? "true" : "false");
     }
   });
+
+  if (sectionId === "tokenStakingSection") {
+    ensureStakingLoaded();
+  }
 }
 
 function ensureTokenAccordionState() {
@@ -1488,12 +1936,88 @@ function openInternalPage(src, title, options = {}) {
   internalPageState.src = src;
   internalPageState.title = title || "Explorer Page";
   internalPageState.navId = options.navId || "";
+  internalPageState.waitForReadyMessage = !!options.waitForReadyMessage;
+  const page = document.getElementById("internalPage");
   const frame = document.getElementById("internalPageFrame");
+  const placeholder = document.getElementById("internalPagePlaceholder");
 
-  if (frame) frame.src = src;
+  if (page) {
+    page.classList.remove("embed-ready");
+    page.classList.add("embed-loading");
+  }
+
+  if (placeholder) {
+    placeholder.textContent = options.loadingText || "Loading page...";
+  }
+
+  if (internalPageState.readyFallbackTimer) {
+    clearTimeout(internalPageState.readyFallbackTimer);
+    internalPageState.readyFallbackTimer = null;
+  }
+
+  if (frame) {
+    frame.addEventListener("load", () => {
+      if (page && !internalPageState.waitForReadyMessage) {
+        page.classList.add("embed-ready");
+        page.classList.remove("embed-loading");
+      }
+    }, { once: true });
+
+    frame.src = src;
+  }
+
+  if (internalPageState.waitForReadyMessage) {
+    internalPageState.readyFallbackTimer = window.setTimeout(() => {
+      if (page) {
+        page.classList.add("embed-ready");
+        page.classList.remove("embed-loading");
+      }
+      internalPageState.readyFallbackTimer = null;
+    }, 12000);
+  }
 
   showPage("internalPage");
 }
+
+window.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data) return;
+
+  if (data.type === "tcl:page-ready") {
+    if (internalPageState.readyFallbackTimer) {
+      clearTimeout(internalPageState.readyFallbackTimer);
+      internalPageState.readyFallbackTimer = null;
+    }
+    const page = document.getElementById("internalPage");
+    if (page) {
+      page.classList.add("embed-ready");
+      page.classList.remove("embed-loading");
+    }
+    return;
+  }
+
+  if (data.type !== "tcl:navigate") return;
+
+  const targetPage = typeof data.page === "string" ? data.page : "wiki";
+  const targetEl = document.getElementById(targetPage);
+  if (!targetEl) return;
+
+  const frame = document.getElementById("internalPageFrame");
+  if (frame) frame.src = "about:blank";
+
+  internalPageState.src = "";
+  internalPageState.title = "Explorer Page";
+  internalPageState.waitForReadyMessage = false;
+  if (internalPageState.readyFallbackTimer) {
+    clearTimeout(internalPageState.readyFallbackTimer);
+    internalPageState.readyFallbackTimer = null;
+  }
+
+  showPage(targetPage);
+  if (window.location.hash.replace("#", "") !== targetPage) {
+    window.location.hash = targetPage;
+  }
+});
 
 window.addEventListener("resize", applyStakingPortraitScale);
 
@@ -1524,36 +2048,14 @@ function renderExpTable() {
 }
 
 renderExpTable();
+applyCachedTokenOverview();
 
-  // ===== On Load =====
-window.onload = function() {
-  fetchPoolData();
-  fetchGeckoAthAtl();
-  updateStakingLeaderboard();
-  loadEvents(); // ✅ încarcă și events
-
-  setInterval(function() {
-    fetchPoolData();
-    fetchGeckoAthAtl();
-    const hasValue = parseNumber(document.getElementById('amount').value) > 0;
-    if (hasValue) calculate();
-  }, 300000);
-  
-fetchLeaderboardLastUpdate(); // ia commitul inițial
-setInterval(fetchLeaderboardLastUpdate, 2 * 60 * 1000); // verifică commit nou la 2 min
-setInterval(updateCommitRelative, 1000); // actualizează „x seconds/minutes ago” la fiecare secundă
-
-
-};
 // Auto-refresh events countdown every minute
 setInterval(() => {
-  if (currentDay) {
+  if (currentDay && Object.keys(eventsData || {}).length > 0) {
     showEventsForDay(currentDay);
   }
 }, 60000); // 60000ms = 1 minut
-
-fetchExplorerData();
-setInterval(fetchExplorerData, 300000); // la fiecare 5 min
 
 
 // === TCL Sentiment Index ===
@@ -1620,9 +2122,13 @@ function sentimentLabel(score) {
 // === TCL Sentiment Index cu Last Update ===
 let lastSentimentScore = null;
 let lastSentimentUpdate = null;
+let sentimentUpdatePromise = null;
 
-async function updateSentimentIndex() {
-  try {
+function updateSentimentIndex() {
+  if (sentimentUpdatePromise) return sentimentUpdatePromise;
+
+  sentimentUpdatePromise = (async () => {
+    try {
     // 🔹 Fetch toate datele necesare
     const [dexRes, mvxRes] = await Promise.all([
       fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff").then(r => r.json()),
@@ -1754,6 +2260,7 @@ try {
     updateSentimentLastUpdate();
 
     console.log("✅ Sentiment updated:", score, text, "Changed:", hasChanged);
+    return true;
 
   } catch (e) {
     console.error("❌ Sentiment error:", e);
@@ -1761,7 +2268,13 @@ try {
     document.getElementById("sentimentScore").textContent = "?";
     document.getElementById("sentimentLabel").textContent = "Data unavailable";
     document.getElementById("sentimentLabel").style.color = "#6b7280";
+    return false;
+  } finally {
+    sentimentUpdatePromise = null;
   }
+  })();
+
+  return sentimentUpdatePromise;
 }
 
 // === Actualizează afișajul "last update" ===
@@ -1804,9 +2317,6 @@ function updateSentimentLastUpdate() {
 
 // === Inițializare la încărcare ===
 document.addEventListener("DOMContentLoaded", function() {
-  // Așteaptă puțin pentru a se încărca restul datelor
-  setTimeout(updateSentimentIndex, 2000);
-  
   // Actualizează la fiecare 5 minute
   setInterval(updateSentimentIndex, 5 * 60 * 1000);
   
@@ -1888,8 +2398,9 @@ overlayImg?.addEventListener("wheel", e => {
   overlayImg.style.transform = `scale(${scale})`;
 });
 
-const BASE_URL = "https://axel4ro.github.io/TCLexplorer/lang/";
+const BASE_URL = "./lang/";
 let translations = {};
+let fallbackTranslations = {};
 let currentLang = localStorage.getItem("lang") || "en";
 
 // Dropdown custom
@@ -1909,62 +2420,139 @@ const LANGS = [
   { code: "pt", label: "Português", flag: "pt" }
 ];
 
-// 🔹 Verifică dacă fișierul JSON există pe server
-async function checkLangFile(lang) {
-  try {
-    const res = await fetch(`${BASE_URL}${lang}.json`, { method: "HEAD" });
-    return res.ok;
-  } catch {
-    return false;
-  }
+function getBundledLangData(lang) {
+  return window.TCL_LANG_DATA?.[lang] || null;
 }
+
 async function buildLangDropdown() {
   const menu = document.querySelector(".lang-menu");
+  if (!menu) return;
   menu.innerHTML = ""; // curățăm complet
 
   for (const lang of LANGS) {
-    if (await checkLangFile(lang.code)) {
-      const option = document.createElement("div");
-      option.className = "lang-option";
-      option.innerHTML = `<img src="https://flagcdn.com/w20/${lang.flag}.png"> ${lang.label}`;
-      option.onclick = () => setLang(lang.code);
-      menu.appendChild(option);
-    }
+    const option = document.createElement("div");
+    option.className = "lang-option";
+    option.innerHTML = `<img src="https://flagcdn.com/w20/${lang.flag}.png" alt="${lang.code.toUpperCase()}"> ${lang.label}`;
+    option.onclick = () => setLang(lang.code);
+    menu.appendChild(option);
   }
+}
+
+function getLangMeta(lang) {
+  return LANGS.find(item => item.code === lang) || LANGS[0];
+}
+
+function updateCurrentLangButton(lang) {
+  if (!currentLangBtn) return;
+  const meta = getLangMeta(lang);
+  currentLangBtn.innerHTML = `<img src="https://flagcdn.com/w20/${meta.flag}.png" alt="${meta.code.toUpperCase()}"> ${meta.label}`;
+}
+
+async function ensureFallbackTranslations() {
+  if (Object.keys(fallbackTranslations).length > 0) return fallbackTranslations;
+
+  const bundledEnglish = getBundledLangData("en");
+  if (bundledEnglish) {
+    fallbackTranslations = bundledEnglish;
+    window.fallbackTranslations = fallbackTranslations;
+    return fallbackTranslations;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}en.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} for en.json`);
+    }
+    fallbackTranslations = await res.json();
+    window.fallbackTranslations = fallbackTranslations;
+  } catch (err) {
+    console.error("❌ Fallback translation load error:", err);
+    fallbackTranslations = {};
+    window.fallbackTranslations = fallbackTranslations;
+  }
+
+  return fallbackTranslations;
 }
 
 
 async function loadTranslations(lang) {
-  try {
-    const res = await fetch(`${BASE_URL}${lang}.json?t=${Date.now()}`);
-    translations = await res.json();
-    currentLang = lang;
-    localStorage.setItem("lang", lang);
-    
-    // 🔹 Aplică traducerile imediat
-    applyTranslations();
-    
-    // 🔹 Recalculează sentiment index după ce traducerile sunt încărcate
-    updateSentimentIndex();
+  await ensureFallbackTranslations();
+  currentLang = lang;
+  window.currentLang = currentLang;
+  localStorage.setItem("lang", lang);
+  updateCurrentLangButton(lang);
 
-    if (document.getElementById("wiki")?.classList.contains("active") && typeof loadWiki === "function") {
-      loadWiki(lang, true);
+  const bundledTranslations = getBundledLangData(lang);
+  if (bundledTranslations) {
+    translations = {
+      ...fallbackTranslations,
+      ...bundledTranslations
+    };
+    window.translations = translations;
+
+    try {
+      applyTranslations();
+    } catch (applyErr) {
+      console.error("❌ applyTranslations error:", applyErr);
     }
 
-    // 🔥 actualizează vizual dropdown-ul cu steag + text
-    let label = "English", flag = "https://flagcdn.com/w20/gb.png";
-    if (lang === "ro") { label = "Română"; flag = "https://flagcdn.com/w20/ro.png"; }
-    if (lang === "tr") { label = "Türkçe"; flag = "https://flagcdn.com/w20/tr.png"; }
-    if (lang === "de") { label = "Deutsch"; flag = "https://flagcdn.com/w20/de.png"; }
-    if (lang === "es") { label = "Español"; flag = "https://flagcdn.com/w20/es.png"; }
-    if (lang === "fr") { label = "Français"; flag = "https://flagcdn.com/w20/fr.png"; }
-    if (lang === "it") { label = "Italiano"; flag = "https://flagcdn.com/w20/it.png"; }
-    if (lang === "pl") { label = "Polski"; flag = "https://flagcdn.com/w20/pl.png"; }
-    if (lang === "pt") { label = "Português"; flag = "https://flagcdn.com/w20/pt.png"; }
-    currentLangBtn.innerHTML = `<img src="${flag}" alt="${lang.toUpperCase()}"> ${label}`;
+    try {
+      updateSentimentIndex();
+    } catch (sentimentErr) {
+      console.error("❌ updateSentimentIndex error:", sentimentErr);
+    }
+
+    try {
+      if (document.getElementById("wiki")?.classList.contains("active") && typeof loadWiki === "function") {
+        loadWiki(lang, true);
+      }
+    } catch (wikiErr) {
+      console.error("❌ loadWiki error:", wikiErr);
+    }
+
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}${lang}.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} for ${lang}.json`);
+    }
+    translations = {
+      ...fallbackTranslations,
+      ...(await res.json())
+    };
+    window.translations = translations;
+    try {
+      applyTranslations();
+    } catch (applyErr) {
+      console.error("❌ applyTranslations error:", applyErr);
+    }
+
+    try {
+      updateSentimentIndex();
+    } catch (sentimentErr) {
+      console.error("❌ updateSentimentIndex error:", sentimentErr);
+    }
+
+    try {
+      if (document.getElementById("wiki")?.classList.contains("active") && typeof loadWiki === "function") {
+        loadWiki(lang, true);
+      }
+    } catch (wikiErr) {
+      console.error("❌ loadWiki error:", wikiErr);
+    }
 
   } catch (err) {
     console.error("❌ Translation load error:", err);
+    translations = { ...fallbackTranslations };
+    window.translations = translations;
+    updateCurrentLangButton(lang);
+    try {
+      applyTranslations();
+    } catch (applyErr) {
+      console.error("❌ applyTranslations fallback error:", applyErr);
+    }
   }
 }
 
@@ -1973,13 +2561,21 @@ function applyTranslations() {
   const hasTranslations = activePage && activePage.querySelectorAll("[data-i18n]").length > 0;
   
   // 🌍 butonul Language apare mereu, dar dacă nu sunt traduceri -> doar EN rămâne
-  document.querySelector(".lang-dropdown").style.display = "block";
+  const langDropdownEl = document.querySelector(".lang-dropdown");
+  if (langDropdownEl) langDropdownEl.style.display = "block";
 
   if (!translations || Object.keys(translations).length === 0) return;
 
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
-    if (translations[key]) el.innerHTML = translations[key];
+    const value = translations[key] ?? fallbackTranslations[key];
+    if (value !== undefined && typeof value !== "object") el.innerHTML = value;
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    const value = translations[key] ?? fallbackTranslations[key];
+    if (value !== undefined && typeof value !== "object") el.setAttribute("placeholder", value);
   });
 
   // ✅ dacă avem deja rezultate, le regenerăm
@@ -2003,8 +2599,8 @@ function applyTranslations() {
 function setLang(lang) {
   const menu = document.querySelector(".lang-menu");
   if (menu) menu.style.display = "none"; // 🔥 închidem manual dropdownul
-  langDropdown.classList.remove('open');
-  loadTranslations(lang);
+  langDropdown?.classList.remove('open');
+  return loadTranslations(lang);
 }
 
 
@@ -2046,8 +2642,19 @@ window.addEventListener("DOMContentLoaded", async () => {
     currentLang = localStorage.getItem("lang");
   }
 
+  if (!LANGS.some(lang => lang.code === currentLang)) {
+    currentLang = "en";
+    localStorage.setItem("lang", currentLang);
+  }
+
   // încarcă traducerile pentru limba detectată sau salvată
-  loadTranslations(currentLang);
+  scheduleAppStartup();
+  try {
+    await loadTranslations(currentLang);
+    await updateSentimentIndex();
+  } finally {
+    hideAppBootSplash();
+  }
 });
 
 function copyAddr(addr, event) {
@@ -2256,21 +2863,12 @@ function notify(title, message) {
   }
 }
 
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register(new URL("sw.js", window.location.href))
-    .then((reg) => console.log("✅ SW registered", reg))
-    .catch((err) => console.error("❌ SW error", err));
-}
-
-// 🔔 Ceri permisiune notificări
 async function askPermission() {
   const result = await Notification.requestPermission();
   if (result === "granted") {
     console.log("✅ Notifications allowed");
   }
 }
-askPermission();
 
 
 /* === INSTALL GUIDE Chrome-like === */
@@ -2365,15 +2963,6 @@ document.querySelectorAll('.live-dot').forEach(dot => {
   const random = 1.5 + Math.random(); // între 1.5s și 2.5s
   dot.style.setProperty('--pulse-speed', `${random}s`);
 });
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/68e759567914761952cb4c66/1j73r9ujm';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
 
 function showSubGuide(id) {
   document.getElementById("web3Guide").classList.remove("active");
@@ -2425,59 +3014,53 @@ function bech32ToHex(bech) {
   return bytes ? Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("") : null;
 }
 
-async function loadTCLStats() {
-  try {
-    const hexAddr = bech32ToHex(SC_ADDRESS);
-    const payload = { scAddress: SC_ADDRESS, funcName: "getRewardsData", args: [hexAddr] };
-    const res = await fetch("https://api.multiversx.com/query", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!data.returnData || !data.returnData[0]) throw new Error("No return data");
-    
-    const decoded = atob(data.returnData[0]);
-    const parts = decoded.split(" ");
-    
-    const apr = parseFloat(parts[2]).toFixed(2);
-    const totalStakedRaw = parseFloat(parts[3]);
-    const emissionRaw = parseFloat(parts[14]);
+async function loadTCLStats(options = {}) {
+  const cached = getTokenOverviewCache("rewards");
+  if (cached) applyRewardsStats(cached);
+  if (!options.force && hasFreshTokenOverviewCache("rewards")) return cached;
 
-    // === TCL valori
-    const totalStaked = totalStakedRaw / 1e18;
-    const emission = emissionRaw / 1e18;
+  return withTokenOverviewRequest("rewards", async () => {
+    try {
+      const hexAddr = bech32ToHex(SC_ADDRESS);
+      const payload = { scAddress: SC_ADDRESS, funcName: "getRewardsData", args: [hexAddr] };
+      const res = await fetch("https://api.multiversx.com/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.returnData || !data.returnData[0]) throw new Error("No return data");
+      
+      const decoded = atob(data.returnData[0]);
+      const parts = decoded.split(" ");
+      const apr = Number(parseFloat(parts[2]).toFixed(2));
+      const totalStaked = parseFloat(parts[3]) / 1e18;
+      const emission = parseFloat(parts[14]) / 1e18;
 
-    // === Fetch prețul TCL live
-    const priceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
-    const priceData = await priceRes.json();
-    const price = parseFloat(priceData.pair?.priceUsd || 0);
+      const poolData = await fetchPoolData(options);
+      const price = Number(poolData?.priceUsd) || 0;
+      const rewardsPayload = {
+        apr,
+        totalStaked,
+        emission,
+        stakedUsd: totalStaked * price,
+        emissionUsd: emission * price
+      };
 
-    // === Valori în USD
-    const stakedUsd = totalStaked * price;
-    const emissionUsd = emission * price;
-
-    // === Afișare formatată
-    document.getElementById("apr").textContent = apr + "%";
-    const aprOverviewEl = document.getElementById("aprOverview");
-    if (aprOverviewEl) aprOverviewEl.textContent = apr + "%";
-    document.getElementById("staked").textContent = totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
-    document.getElementById("emission").textContent = emission.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
-    document.getElementById("stakedUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
-    document.getElementById("emissionUsd").textContent = "≈ " + emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
-    document.getElementById("aprUsd").textContent = ""; // APR n-are valoare în $
-
-  } catch (e) {
-    console.error("⚠️ Error loading TCL rewards:", e);
-    document.getElementById("apr").textContent = "Error";
-    const aprOverviewEl = document.getElementById("aprOverview");
-    if (aprOverviewEl) aprOverviewEl.textContent = "Error";
-  }
+      applyRewardsStats(rewardsPayload);
+      setTokenOverviewCache("rewards", rewardsPayload);
+      return rewardsPayload;
+    } catch (e) {
+      console.error("⚠️ Error loading TCL rewards:", e);
+      if (!cached) {
+        document.getElementById("apr").textContent = "Error";
+        const aprOverviewEl = document.getElementById("aprOverview");
+        if (aprOverviewEl) aprOverviewEl.textContent = "Error";
+      }
+      return cached || null;
+    }
+  });
 }
-
-loadTCLStats();
-setInterval(loadTCLStats, 300000); // actualizare la 5 minute
-
 function openAprCalculator() {
   document.getElementById("aprModal").style.display = "flex";
 }

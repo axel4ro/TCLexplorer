@@ -489,6 +489,31 @@ function getCache(key, maxAgeMs) {
   return null;
 }
 
+function notifyParentReady() {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "tcl:page-ready", page: "nfts" }, "*");
+    }
+  } catch (e) {
+    console.warn("parent ready notify failed", e);
+  }
+}
+
+function waitForContainerImages(container) {
+  if (!container) return Promise.resolve();
+  const images = Array.from(container.querySelectorAll("img")).filter(img => img.getAttribute("src"));
+  if (images.length === 0) return Promise.resolve();
+
+  return Promise.all(images.map((img) => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise((resolve) => {
+      const done = () => resolve();
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+    });
+  }));
+}
+
 async function loadCollections() {
   const container = document.getElementById("collections");
   const nftsGrid  = document.getElementById("nfts");
@@ -544,8 +569,11 @@ async function loadCollections() {
     container.appendChild(card);
   }
 
+  await waitForContainerImages(container);
+  notifyParentReady();
+
   // 🔥 preload toate NFT-urile o singură dată
-  await preloadAllNFTs(all);
+  preloadAllNFTs(all).catch(err => console.error("NFT preload error", err));
 }
 
 async function preloadAllNFTs(collections) {
@@ -920,4 +948,3 @@ s0.parentNode.insertBefore(s1,s0);
   </script>
 </body>
 </html>
-

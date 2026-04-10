@@ -39,11 +39,17 @@ body {
 }
 
 .header-buttons a,
-.header-buttons button {
-    flex: 1;
+.header-buttons button,
+.header-buttons .back-btn {
+    flex: 0 0 auto;
     text-align: center;
-    padding: 12px 8px;
+    padding: 0 14px;
     font-size: 15px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .header-title {
@@ -70,6 +76,15 @@ button {
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0,0,0,0.4);
 	text-decoration: none !important;
+}
+
+.back-btn {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    white-space: nowrap;
 }
 
 
@@ -354,6 +369,7 @@ input {
 
 <div class="header">
     <div class="header-buttons">
+        <a href="wiki.html" class="back-btn" onclick="return goBackToWiki(event)">⬅️ Back to WiKi</a>
         <button onclick="showItems()">Items</button>
         <button onclick="showMonsters()">Monsters</button>
     </div>
@@ -366,6 +382,20 @@ input {
 <div id="content"></div>
 
 <script>
+function goBackToWiki(event) {
+    if (event) event.preventDefault();
+    if (window.parent && window.parent !== window) {
+        try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "wiki" }, "*");
+            return false;
+        } catch (err) {
+            console.warn("Back to Wiki parent navigation failed:", err);
+        }
+    }
+    window.location.href = "wiki.html";
+    return false;
+}
+
 let DATA = null;
 
 // State
