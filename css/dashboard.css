@@ -405,12 +405,18 @@ body.sidebar-desktop .section-page.fullpage {
 .event-card {
   border-radius: var(--radius);
   padding: 14px 16px;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   background: var(--bg-card);
   color: var(--text);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-panel);
   transition: transform 0.2s, border-color 0.2s;
+}
+
+#eventContainer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .event-card:hover {
@@ -446,6 +452,12 @@ body.sidebar-desktop .section-page.fullpage {
 }
 .event-expired {
   border-left: 4px solid var(--danger) !important;
+}
+
+@media (max-width: 900px) {
+  #eventContainer {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat,
