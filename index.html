@@ -781,6 +781,38 @@ function getTodayIndex() {
 const EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
 let currentDay = null;
 let eventsData = {};
+function getLocalTimeZoneLabel() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time";
+  } catch (_) {
+    return "Local time";
+  }
+}
+
+function formatLocalEventDate(date) {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(date);
+  } catch (_) {
+    return date.toLocaleString();
+  }
+}
+
+function eventMetaLine(label, date) {
+  return `<div style="font-size:12px; color:#9ca3af; margin-top:4px;"><strong style="color:#d1d5db;">${label}:</strong> ${formatLocalEventDate(date)}</div>`;
+}
+
+function isSameLocalDay(a, b) {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
 async function loadEvents() {
   try {
     const res = await fetch(EVENTS_URL + "?t=" + Date.now());
@@ -923,6 +955,133 @@ function showEventsForDay(day) {
                 ℹ️ Info
               </button>` 
              : `` }
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+showEventsForDay = function(day) {
+  currentDay = day;
+  renderDayButtons(day);
+
+  const container = document.getElementById("eventContainer");
+  const descEl = document.querySelector('#events [data-i18n="events_desc"]');
+  container.innerHTML = "";
+  const events = eventsData[day] || [];
+
+  if (descEl) {
+    descEl.textContent = `Times below are shown in your local time (${getLocalTimeZoneLabel()}).`;
+  }
+
+  if (events.length === 0) {
+    container.innerHTML = `<p>${t("events_none")}</p>`;
+    return;
+  }
+
+  const now = new Date();
+  let html = "";
+
+  const buildEventMetaLine = (label, date) => {
+    const display = isSameLocalDay(date, now)
+      ? `Today, ${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date)}`
+      : formatLocalEventDate(date);
+    return `<div style="font-size:12px; color:#9ca3af; margin-top:4px;"><strong style="color:#d1d5db;">${label}:</strong> ${display}</div>`;
+  };
+
+  events.forEach(ev => {
+    const [sh, sm] = ev.start.split(":").map(Number);
+    const [eh, em] = ev.end.split(":").map(Number);
+
+    const targetIndex = weekdays.indexOf(day);
+    const dayOffset = (targetIndex - getTodayIndex() + 7) % 7;
+
+    let start = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + dayOffset,
+      sh, sm
+    ));
+
+    let end = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + dayOffset,
+      eh, em
+    ));
+
+    if (end <= start) end.setUTCDate(end.getUTCDate() + 1);
+    if (end < now) {
+      start.setUTCDate(start.getUTCDate() + 7);
+      end.setUTCDate(end.getUTCDate() + 7);
+    }
+
+    let statusText = "";
+    let borderClass = "";
+    let timingHtml = "";
+
+    if (now >= start && now <= end) {
+      const diff = Math.floor((end - now) / 60000);
+      const h = Math.floor(diff / 60);
+      const m = diff % 60;
+      statusText = t("events_active", { h, m });
+      borderClass = "event-active";
+      timingHtml = `
+        ${buildEventMetaLine("Ends", end)}
+        ${buildEventMetaLine("Next run", new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000))}
+      `;
+
+      if (!ev._notified) {
+        notify("Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
+        ev._notified = true;
+      }
+    } else {
+      const diff = Math.floor((start - now) / 60000);
+      const h = Math.floor(diff / 60);
+      const m = diff % 60;
+
+      if (diff <= 24 * 60) {
+        statusText = t("events_soon", { h, m });
+        borderClass = "event-soon";
+      } else {
+        statusText = t("events_later", { h, m });
+      }
+
+      timingHtml = `
+        ${buildEventMetaLine("Starts", start)}
+        ${buildEventMetaLine("Ends", end)}
+      `;
+    }
+
+    const durMs = end - start;
+    const durH = Math.floor(durMs / 3600000);
+    const durM = (durMs % 3600000) / 60000;
+
+    const evName = translations["events"]?.[ev.name]?.name || ev.name;
+    const evDesc = translations["events"]?.[ev.name]?.desc || ev.description;
+    const imageName = ev.image;
+
+    html += `
+      <div class="event-card ${borderClass}" style="position:relative;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div>
+            <div class="event-title">${evName}</div>
+            <div class="event-desc">${evDesc}</div>
+            <div class="event-status">
+              ${statusText} • ${t("events_duration", { duration: (durH > 0 ? durH + 'h ' : '') + (durM > 0 ? durM + 'm' : '') })}
+            </div>
+            <div style="margin-top:8px;">
+              ${timingHtml}
+            </div>
+          </div>
+          ${imageName
+            ? `<button
+                onclick="openImage('https://axel4ro.github.io/TCLexplorer/images/${imageName}')"
+                style="background:#0d6efd; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px; margin-left:8px;">
+                ℹ️ Info
+              </button>`
+            : ``}
         </div>
       </div>`;
   });
