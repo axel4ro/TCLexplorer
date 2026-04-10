@@ -6,10 +6,14 @@
 <title>Items Bonus & Upgrade Requirements</title>
 
 <style>
-body { font-family: Arial; background:#111; color:#eee; padding:20px }
+* { box-sizing: border-box; }
+
+html, body { overflow-x: hidden; }
+
+body { font-family: Arial; background:#111; color:#eee; padding:20px; margin:0; }
 select { width:100%; padding:6px; margin:4px 0 }
 
-.wiki-item { background:#f3e8c9; color:#000; margin-bottom:30px; border:2px solid #6b0000 }
+.wiki-item { background:#f3e8c9; color:#000; margin-bottom:30px; border:2px solid #6b0000; overflow:hidden }
 .wiki-header { background:#6b0000; color:#fff; padding:6px 10px; font-weight:bold }
 .wiki-body { padding:10px }
 table {
@@ -124,23 +128,13 @@ th { background:#3b2b6b; color:#fff }
   box-shadow: none;
 }
 
-@media (max-width: 768px) {
-
-  .wiki-body {
-    padding: 8px;
-  }
-
-  th, td {
-    padding: 5px;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
+.wiki-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.wiki-container {
-  max-width: 1400px;     /* 🔥 ca în prima poză */
-  margin: 0 auto;       /* 🔥 CENTRARE */
+.desktop-scale-shell {
   width: 100%;
 }
 
@@ -158,7 +152,7 @@ border:none;
 
 .plus-grid{
 display:grid;
-grid-template-columns:repeat(5,1fr);
+grid-template-columns:repeat(5,minmax(0,1fr));
 gap:10px;
 margin-top:15px;
 }
@@ -169,6 +163,7 @@ border:1px solid #9b8d6a;
 padding:12px;
 text-align:center;
 color:#FFFFFF;
+min-width:0;
 }
 
 .item-title{
@@ -181,16 +176,37 @@ color:#6df0c2;
 font-size:13px;
 }
 
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+
+  .desktop-scale-shell {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .wiki-container {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1280px;
+    max-width: none;
+    margin: 0;
+    transform-origin: top center;
+  }
+}
+
 </style>
 </head>
 
 <body>
-<div class="wiki-container">
+<div class="desktop-scale-shell" id="desktopScaleShell">
+<div class="wiki-container" id="desktopScaleRoot">
 <h1>Item Upgrade Requirements & Bonuses preview </h1>
 
 <div class="top-bar">
-  <a href="wiki.html" class="back-btn">⬅️ Back to WiKi</a>
-
   <div class="search-wrap">
     <input id="searchInput"
        placeholder="Search by item name..."
@@ -209,9 +225,39 @@ font-size:13px;
 
 <div id="subCards"></div>
 <div id="wiki"></div>
+</div>
+</div>
 
 
 <script>
+const DESKTOP_SCALE_WIDTH = 1280;
+
+function applyDesktopPortraitScale() {
+  const shell = document.getElementById("desktopScaleShell");
+  const root = document.getElementById("desktopScaleRoot");
+
+  if (!shell || !root) return;
+
+  if (window.innerWidth > 768) {
+    shell.style.height = "";
+    root.style.position = "";
+    root.style.left = "";
+    root.style.width = "";
+    root.style.transform = "";
+    return;
+  }
+
+  const availableWidth = Math.max(window.innerWidth - 12, 320);
+  const scale = Math.min(1, availableWidth / DESKTOP_SCALE_WIDTH);
+  const scaledHeight = root.scrollHeight * scale;
+
+  root.style.position = "absolute";
+  root.style.left = "50%";
+  root.style.width = DESKTOP_SCALE_WIDTH + "px";
+  root.style.transform = `translateX(-50%) scale(${scale})`;
+  shell.style.height = Math.ceil(scaledHeight) + "px";
+}
+
 function openCategory(cat) {
   activeCategory = cat;
   activeSub = null;
@@ -233,6 +279,7 @@ function openCategory(cat) {
   `;
 
   wiki.innerHTML = "";
+  requestAnimationFrame(applyDesktopPortraitScale);
 }
 
 
@@ -243,6 +290,7 @@ function openSub(sub) {
   document.getElementById("searchInput").value = "";
 
   renderItems();
+  requestAnimationFrame(applyDesktopPortraitScale);
 }
 
 
@@ -307,8 +355,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 await loadItemsData();
 
 loadRandomCategoryAndSub();
+applyDesktopPortraitScale();
 
 });
+window.addEventListener("resize", applyDesktopPortraitScale);
 const funTexts = [
   "Blacksmith’s Random Pick",
   "Today’s Featured Upgrades",
@@ -337,6 +387,7 @@ items = data.items || [];
 bonuses = data.bonuses || {};
 
 renderItems();
+requestAnimationFrame(applyDesktopPortraitScale);
 
 }catch(err){
 
@@ -530,6 +581,8 @@ function renderItems() {
       </div>
     `;
   });
+
+  requestAnimationFrame(applyDesktopPortraitScale);
 }
 
 

@@ -30,16 +30,14 @@
     </div>
     <nav class="sidebar-nav">
       <button type="button" class="nav-item" onclick="showPage('wiki')" id="btn-wiki">📖 Wiki</button>
+      <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events">📅 Events</button>
+      <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable">⭐ EXP Table</button>
       <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide">ℹ️ Web3 Guides</button>
       <button type="button" class="nav-item" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
-      <button type="button" class="nav-item" onclick="showPage('calculator')" id="btn-calculator">
-        <img src="https://axel4ro.github.io/TCLexplorer/images/calculator.png" alt=""> Calculator
-      </button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
-      <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events">📅 Events</button>
-      <button type="button" class="nav-item" onclick="showPage('staking')" id="btn-staking">🏆 Top Staking</button>
+      <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck">🔎 Wallet Check</button>
       <button type="button" class="nav-item" onclick="showPage('explorerIframe')" id="btn-explorerIframe">
         <img src="https://axel4ro.github.io/TCLexplorer/images/EGLD.png" alt=""> MvX Explorer
@@ -50,7 +48,6 @@
       <button type="button" class="nav-item nav-item--external" onclick="openLander()" id="btn-Lander">
         <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png" alt=""> Lander ↗
       </button>
-	  <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item nav-item--external" onclick="openXPortal()" id="btn-xportal">
         <img src="https://axel4ro.github.io/TCLexplorer/images/xPortal.png" alt=""> xPortal ↗
       </button>
@@ -101,35 +98,56 @@
       Data from MultiversX, DexScreener &amp; CoinGecko
     </p>
   </div>
-<!-- 🧠 TCL Sentiment + Staking Stats -->
-<div class="sentiment-row">
-  <!-- 🔹 Left: Total Staked -->
-  <div class="mini-stat">
-    <div class="mini-top">
-      <span>Total TCL Staked</span><span class="live-dot"></span>
-    </div>
-    <div id="stakedMini" class="mini-value">—</div>
-    <div id="stakedMiniUsd" class="mini-sub">≈ — $</div>
+  <div class="token-accordion-nav" role="tablist" aria-label="TCL Token sections">
+    <button type="button" class="token-accordion-card active" id="tokenAccordionBtn-overview" onclick="setTokenAccordion('tokenOverviewSection')">
+      <span class="token-accordion-card__title">📊 TCL Token</span>
+      <span class="token-accordion-card__hint">Tap to view token stats & sentiment</span>
+      <span class="token-accordion-card__icon">▾</span>
+    </button>
+    <button type="button" class="token-accordion-card" id="tokenAccordionBtn-calculators" onclick="setTokenAccordion('tokenCalculatorsSection')">
+      <span class="token-accordion-card__title">🧮 Calculator Simulate Transaction &amp; Staking Reward</span>
+      <span class="token-accordion-card__hint">Tap to open calculator actions</span>
+      <span class="token-accordion-card__icon">▾</span>
+    </button>
+    <button type="button" class="token-accordion-card" id="tokenAccordionBtn-staking" onclick="setTokenAccordion('tokenStakingSection')">
+      <span class="token-accordion-card__title">🏆 Top Staking</span>
+      <span class="token-accordion-card__hint">Tap to view leaderboard & pool rewards</span>
+      <span class="token-accordion-card__icon">▾</span>
+    </button>
   </div>
 
-  <!-- 🔸 Center: Sentiment Gauge -->
-<div id="sentimentBox">
-  <h3 data-i18n="sentiment_title">Sentiment Index</h3>
-  <canvas id="sentimentGauge" width="160" height="80"></canvas>
-  <div id="sentimentScore">--</div>
-  <div id="sentimentLabel" data-i18n="sentiment_loading">Loading...</div>
-</div>
+  <div id="tokenOverviewSection" class="token-accordion-section active">
+    <div class="token-overview-row">
+      <div class="token-overview-panel init-liq-panel">
+        <div class="token-overview-head">
+          <h3>Initial Liquidity</h3>
+          <span class="token-overview-note">Listing snapshot</span>
+        </div>
+        <div class="init-liq-overview-grid">
+          <div class="init-liq-item">
+            <span>Initial Price</span>
+            <strong>0.006 $</strong>
+          </div>
+          <div class="init-liq-item">
+            <span>TCL Supply</span>
+            <strong>4,000,000</strong>
+          </div>
+          <div class="init-liq-item">
+            <span>USDC Supply</span>
+            <strong>25,000 $</strong>
+          </div>
+        </div>
+      </div>
 
-  <!-- 🔹 Right: Emission/Day -->
-  <div class="mini-stat">
-    <div class="mini-top">
-      <span>Current Emission/Day</span><span class="live-dot"></span>
+      <div class="token-overview-panel sentiment-panel">
+        <div id="sentimentBox">
+          <h3 data-i18n="sentiment_title">Sentiment Index</h3>
+          <canvas id="sentimentGauge" width="160" height="80"></canvas>
+          <div id="sentimentScore">--</div>
+          <div id="sentimentLabel" data-i18n="sentiment_loading">Loading...</div>
+        </div>
+      </div>
     </div>
-    <div id="emissionMini" class="mini-value">—</div>
-    <div id="emissionMiniUsd" class="mini-sub">≈ — $</div>
-  </div>
-</div>
-
 
   <!-- 🔥 Toate cardurile live -->
   <div class="stats-row token-grid">
@@ -224,48 +242,154 @@
       <div id="transactions" class="stat-value">—</div>
     </div>
   </div> <!-- ✅ închis grid-ul aici -->
+  
+  <!-- How to Earn TCL (Whitepaper) -->
+  <div class="section">
+    <strong><span>📖 How to Earn TCL</span></strong>
+    <div style="margin-top:12px; border:1px solid #333; border-radius:12px; overflow:hidden; background:#161a24;">
+      <img 
+        src="https://whitepaper.thecursedland.com/~gitbook/image?url=https%3A%2F%2F1088796652-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FNfwQqA3PjlWwIAbvldOU%252Fuploads%252FVZ0W5PmUUiOq7abWcmm8%252Fearn%2520tcl.jpg%3Falt%3Dmedia%26token%3D156219ff-cec6-4bb6-8710-f8f11b8cc520&width=768&dpr=4&quality=100&sign=bbb5e8e&sv=2" 
+        alt="How to Earn TCL - Whitepaper"
+        style="width:100%; height:auto; display:block; border-radius:12px; cursor:zoom-in;"
+        loading="lazy"
+        onclick="openImage(this.src)"
+      />
+    </div>
+    <small style="color:#6b7280; display:block; margin-top:8px; font-size:13px;">
+      🔗 Source: 
+      <a href="https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl" 
+        target="_blank" 
+        style="color:var(--accent); text-decoration:none; font-weight:600;">
+        The Cursed Land Whitepaper</a>
+    </small>
+  </div>
+  </div>
 
-  <!-- Initial Liquidity separat -->
-<div class="section init-liq-section">
-  <strong><span>Initial Liquidity (Listing)</span></strong>
-  <div class="stats-row init-liq">
-    <div class="stat">
-      <div class="stat-top"><span>Initial Price</span></div>
-      <div class="stat-value">0.006 $</div>
+  <div id="tokenCalculatorsSection" class="token-accordion-section">
+    <div class="calculator-action-grid">
+      <button type="button" class="calculator-action-card" onclick="openTransactionCalculator()">
+        <span class="calculator-action-card__title">🧮 Transaction Simulator</span>
+        <span class="calculator-action-card__desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
+      </button>
+      <button type="button" class="calculator-action-card" onclick="openAprCalculator()">
+        <span class="calculator-action-card__title">🧮 APR &amp; Rewards Calculator</span>
+        <span class="calculator-action-card__desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
+      </button>
     </div>
-    <div class="stat">
-      <div class="stat-top"><span>TCL Supply</span></div>
-      <div class="stat-value">4,000,000</div>
+
+    <div id="transactionCalcModal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" onclick="closeTransactionCalculator()">✖</span>
+        <h3 style="margin-top:0;">Transaction Simulator</h3>
+        <p style="font-size:14px; color:#9ca3af;">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</p>
+
+        <div class="calc-layout modal-calc-layout">
+          <div class="calc-card-panel">
+            <h3>Input</h3>
+            <div class="row-group">
+              <div style="flex:2; min-width:180px;">
+                <label id="inputLabel" data-i18n="calc_label_buy"></label>
+                <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" autocomplete="off" />
+              </div>
+              <div style="flex:1; min-width:140px; display:flex; align-items:flex-end;">
+                <button type="button" style="width:100%;" onclick="switchMode()" id="switchBtn" data-i18n="calc_switch_to_sell"></button>
+              </div>
+            </div>
+            <div class="calc-actions">
+              <button type="button" class="btn-primary-green" onclick="calculate()" data-i18n="calc_btn_calculate"></button>
+              <button type="button" class="btn-trade" onclick="showPage('xexchangeIframe')" data-i18n="calc_btn_trade"></button>
+            </div>
+          </div>
+          <div class="calc-card-panel">
+            <h3>Result</h3>
+            <div class="result" id="resultBox" style="margin-top:0; min-height:120px;"></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-top"><span>USDC Supply</span></div>
-      <div class="stat-value">25,000 $</div>
+
+    <div id="aprModal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" onclick="closeAprCalculator()">✖</span>
+        <h3 style="margin-top:0;">Calculator</h3>
+        <p style="font-size:14px; color:#9ca3af;">Enter an amount of TCL to simulate:</p>
+        
+        <input 
+          type="text" 
+          id="aprInput" 
+          placeholder="e.g. 1,000,000" 
+          inputmode="numeric" 
+          style="text-align:center;" 
+        />
+
+        <button onclick="simulateApr()">Calculate</button>
+        
+        <div id="aprResult" style="margin-top:14px; font-size:15px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tokenStakingSection" class="token-accordion-section">
+    <h2 class="section-heading">🏆 Top 100 Staking</h2>
+    <p class="muted" style="margin-bottom:12px;">Leaderboard &amp; live pool rewards in the same TCL dashboard.</p>
+
+    <small id="lastUpdated" class="muted" style="display:block; margin-bottom:12px;">
+      ⏳ Loading update time...
+    </small>
+
+    <div id="stakingStats" class="staking-grid">
+      <div class="stat">
+        <div class="stat-top">
+          <span>Total TCL Staked</span><span class="live-dot"></span>
+        </div>
+        <div id="staked" class="stat-value">—</div>
+        <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-top">
+          <span>Current Emission/Day</span><span class="live-dot"></span>
+        </div>
+        <div id="emission" class="stat-value">—</div>
+        <div id="emissionUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-top">
+          <span>APR</span><span class="live-dot"></span>
+        </div>
+        <div id="apr" class="stat-value">—</div>
+        <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px; display:flex; gap:8px;">
+      <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
+            style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
+      <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
+    </div>
+
+    <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
+
+    <div class="staking-table-wrap">
+      <table id="stakingTable">
+        <thead>
+          <tr>
+            <th style="padding:8px; text-align:center;">Rank</th>
+            <th style="padding:8px; text-align:center;">Address</th>
+            <th style="padding:8px; text-align:center;">Total TCL</th>
+            <th style="padding:8px; text-align:center;">NFT</th>
+            <th style="padding:8px; text-align:center;">Loan</th>
+            <th style="padding:8px; text-align:center;">Infinity</th>
+          </tr>
+        </thead>
+        <tbody id="stakingBody">
+          <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
-
-
-<!-- How to Earn TCL (Whitepaper) -->
-<div class="section">
-  <strong><span>📖 How to Earn TCL</span></strong>
-  <div style="margin-top:12px; border:1px solid #333; border-radius:12px; overflow:hidden; background:#161a24;">
-    <img 
-      src="https://whitepaper.thecursedland.com/~gitbook/image?url=https%3A%2F%2F1088796652-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FNfwQqA3PjlWwIAbvldOU%252Fuploads%252FVZ0W5PmUUiOq7abWcmm8%252Fearn%2520tcl.jpg%3Falt%3Dmedia%26token%3D156219ff-cec6-4bb6-8710-f8f11b8cc520&width=768&dpr=4&quality=100&sign=bbb5e8e&sv=2" 
-      alt="How to Earn TCL - Whitepaper"
-      style="width:100%; height:auto; display:block; border-radius:12px; cursor:zoom-in;"
-      loading="lazy"
-      onclick="openImage(this.src)"
-    />
-  </div>
-  <small style="color:#6b7280; display:block; margin-top:8px; font-size:13px;">
-    🔗 Source: 
-    <a href="https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl" 
-       target="_blank" 
-       style="color:var(--accent); text-decoration:none; font-weight:600;">
-       The Cursed Land Whitepaper</a>
-  </small>
-</div>
-  </div>
 
 <!-- Wiki -->
 <div id="wiki" class="section-page">
@@ -292,37 +416,38 @@
   </iframe>
 </div>
 
-  <!-- Calculator -->
-  <div id="calculator" class="section-page">
+<!-- 🌐 Web3 Guide -->
+  <div id="expTable" class="section-page">
     <div class="page-hero">
-      <h2 data-i18n="calc_title">Pool calculator</h2>
-      <p class="muted">Simulate buy/sell impact on the TCL/USDC pool using live reserves</p>
+      <h2>⭐ EXP Progression Table</h2>
+      <p class="muted">Level to next level EXP requirements for The Cursed Land.</p>
     </div>
-    <div class="calc-layout">
-      <div class="calc-card-panel">
-        <h3>Input</h3>
-        <div class="row-group">
-          <div style="flex:2; min-width:180px;">
-            <label id="inputLabel" data-i18n="calc_label_buy"></label>
-            <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" autocomplete="off" />
-          </div>
-          <div style="flex:1; min-width:140px; display:flex; align-items:flex-end;">
-            <button type="button" style="width:100%;" onclick="switchMode()" id="switchBtn" data-i18n="calc_switch_to_sell"></button>
-          </div>
-        </div>
-        <div class="calc-actions">
-          <button type="button" class="btn-primary-green" onclick="calculate()" data-i18n="calc_btn_calculate"></button>
-          <button type="button" class="btn-trade" onclick="showPage('xexchangeIframe')" data-i18n="calc_btn_trade"></button>
+    <div class="exp-table-panel">
+      <div class="exp-table-header">
+        <div>
+          <h3>Level Progression</h3>
+          <p>Formatted progression values from level 2 to level 65.</p>
         </div>
       </div>
-      <div class="calc-card-panel">
-        <h3>Result</h3>
-        <div class="result" id="resultBox" style="margin-top:0; min-height:120px;"></div>
+      <div class="exp-table-wrap">
+        <table class="exp-table" aria-label="EXP progression table">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>EXP Needed</th>
+            </tr>
+          </thead>
+          <tbody id="expTableBody">
+            <tr>
+              <td colspan="2" class="exp-table-empty">Loading EXP table...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-<!-- 🌐 Web3 Guide -->
+<!-- Web3 Guide -->
 <div id="web3Guide" class="section-page">
   <h2 data-i18n="web3_title">🌐 Web3 Guides</h2>
   <p data-i18n="web3_desc" style="color:#a1a1aa; font-size:15px;">
@@ -338,11 +463,11 @@
     <button type="button" class="btn-trade" onclick="showSubGuide('connectXportal')" data-i18n="web3_connect_btn">Open Tutorial</button>
   </div>
 
-  <!-- Redeem α Voucher
+  <!-- Redeem Î± Voucher
   <div class="event-card">
-    <div class="event-title" data-i18n="web3_alpha_title">💎 Redeem α Voucher</div>
+    <div class="event-title" data-i18n="web3_alpha_title">💎 Redeem Î± Voucher</div>
     <div class="event-desc" data-i18n="web3_alpha_desc">
-      Redeem your in-game <b>α Voucher</b> to receive <b>Alpha Tokens ($SN114)</b> from Subnet Level 114 on the Bittensor Blockchain.
+      Redeem your in-game <b>Î± Voucher</b> to receive <b>Alpha Tokens ($SN114)</b> from Subnet Level 114 on the Bittensor Blockchain.
     </div>
     <button onclick="showSubGuide('redeemAlpha')" style="background:#2ff6de;color:#000;" data-i18n="web3_alpha_btn">Open Tutorial</button>
   </div> -->
@@ -381,105 +506,8 @@
   </iframe>
 </div>
 
-<!-- Staking -->
-<div id="staking" class="section-page">
-  <div class="page-hero">
-    <h2>🏆 Top 100 Staking</h2>
-    <p class="muted">Leaderboard &amp; live pool rewards</p>
-  </div>
-
-  <div class="tcl-strip">
-    <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="TCL" width="40" height="40" />
-    <div class="tcl-strip-info">
-      <strong>TCL Token</strong>
-      <span>Price, supply &amp; sentiment — same live feed as the Token page</span>
-    </div>
-    <button type="button" class="btn-tcl-live" onclick="showPage('token')">Open TCL dashboard</button>
-  </div>
-
-  <small id="lastUpdated" class="muted" style="display:block; margin-bottom:12px;">
-    ⏳ Loading update time...
-  </small>
-<!-- 🔥 TCL Rewards Stats Row (cu valori în $ și buton calculator) -->
-<div id="stakingStats" class="staking-grid">
-  <div class="stat">
-    <div class="stat-top">
-      <span>Total TCL Staked</span><span class="live-dot"></span>
-    </div>
-    <div id="staked" class="stat-value">—</div>
-    <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
-  </div>
-
-  <div class="stat">
-    <div class="stat-top">
-      <span>Current Emission/Day</span><span class="live-dot"></span>
-    </div>
-    <div id="emission" class="stat-value">—</div>
-    <div id="emissionUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
-  </div>
-
- <!-- 🔹 APR Display + Calculator Button -->
-<div class="stat">
-  <div class="stat-top">
-    <span>APR</span><span class="live-dot"></span>
-  </div>
-  <div id="apr" class="stat-value">—</div>
-  <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
-</div>
-
-<div class="stat calc-card" onclick="openAprCalculator()">
-  <div class="stat-top" style="justify-content:center; color:#fff;">
-    <span>🧮 APR & Rewards Calculator</span>
-  </div>
-</div>
-
-<!-- 💎 APR Calculator Modal -->
-<div id="aprModal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="closeAprCalculator()">✖</span>
-    <h3 style="margin-top:0;">Calculator</h3>
-    <p style="font-size:14px; color:#9ca3af;">Enter an amount of TCL to simulate:</p>
-    
-    <input 
-      type="text" 
-      id="aprInput" 
-      placeholder="e.g. 1,000,000" 
-      inputmode="numeric" 
-      style="text-align:center;" 
-    />
-
-    <button onclick="simulateApr()">Calculate</button>
-    
-    <div id="aprResult" style="margin-top:14px; font-size:15px;"></div>
-  </div>
-</div>
-</div>
-<!-- 🔎 Search bar -->
-<div style="margin-bottom:12px; display:flex; gap:8px;">
-  <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" 
-         style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
-  <button onclick="searchStaker()" style="background:#28a745; font-weight:600;">Search</button>
-</div>
-
-<div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
-
-<div class="staking-table-wrap">
-<table id="stakingTable">
-  <thead>
-    <tr>
-        <th style="padding:8px; text-align:center;">Rank</th>
-        <th style="padding:8px; text-align:center;">Address</th>
-        <th style="padding:8px; text-align:center;">Total TCL</th>
-        <th style="padding:8px; text-align:center;">NFT</th>
-        <th style="padding:8px; text-align:center;">Loan</th>
-        <th style="padding:8px; text-align:center;">Infinity</th>
-      </tr>
-    </thead>
-    <tbody id="stakingBody">
-      <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
-    </tbody>
-  </table>
-</div>
+<div id="internalPage" class="section-page">
+  <iframe id="internalPageFrame" title="Internal explorer page" loading="lazy"></iframe>
 </div>
 
 <!-- Connect xPortal Tutorial -->
@@ -522,7 +550,7 @@
   <small style="display:block;margin-top:20px;color:#6b7280;" data-i18n="help_text"></small>
 </div>
 
-<!-- Redeem α Voucher -->
+<!-- Redeem Î± Voucher -->
 <div id="redeemAlpha" class="section-page">
   <h2 data-i18n="alpha_title"></h2>
   <p class="event-desc" data-i18n="alpha_intro"></p>
@@ -600,7 +628,9 @@
 <script src="js/wiki.js"></script>
 <script>
 function openNFTs() {
-  window.location.href = "NFTs.html"; // deschide NFTs în același tab
+  openInternalPage("NFTs.html", "NFTs Explorer", {
+    navId: "btn-nfts"
+  });
 }
 
 function openTCL() {
@@ -1150,6 +1180,7 @@ const PAGE_TITLES = {
   wiki: "Wiki",
   token: "TCL Token",
   calculator: "Pool Calculator",
+  expTable: "EXP Table",
   chart: "TCL Chart",
   events: "Weekly Events",
   staking: "Top Staking",
@@ -1157,8 +1188,15 @@ const PAGE_TITLES = {
   web3Guide: "Web3 Guides",
   explorerIframe: "MvX Explorer",
   xexchangeIframe: "xExchange",
+  internalPage: "Explorer Page",
   connectXportal: "Connect xPortal",
-  redeemAlpha: "Redeem α Voucher"
+  redeemAlpha: "Redeem Î± Voucher"
+};
+
+const internalPageState = {
+  src: "",
+  title: "Explorer Page",
+  navId: ""
 };
 
 function setSidebarOpen(open) {
@@ -1180,16 +1218,22 @@ function showPage(id) {
   const page = document.getElementById(id);
   if (page) {
     page.classList.add("active");
-    if (id === "chart" || id === "explorerIframe" || id === "xexchangeIframe") {
+    if (id === "chart" || id === "explorerIframe" || id === "xexchangeIframe" || id === "internalPage") {
       page.classList.add("fullpage");
     }
   }
 
   const titleEl = document.getElementById("appPageTitle");
-  if (titleEl) titleEl.textContent = PAGE_TITLES[id] || "TCL Explorer";
+  if (titleEl) {
+    titleEl.textContent = id === "internalPage"
+      ? internalPageState.title
+      : (PAGE_TITLES[id] || "TCL Explorer");
+  }
 
   document.querySelectorAll(".sidebar-nav .nav-item").forEach((b) => b.classList.remove("active"));
-  const navBtn = document.getElementById("btn-" + id);
+  const navBtn = id === "internalPage"
+    ? document.getElementById(internalPageState.navId)
+    : document.getElementById("btn-" + id);
   if (navBtn) navBtn.classList.add("active");
 
   closeSidebarMobile();
@@ -1198,7 +1242,77 @@ function showPage(id) {
   if (id === "wiki" && typeof loadWiki === "function") {
     loadWiki(currentLang, true);
   }
+
+  if (id === "token") {
+    ensureTokenAccordionState();
+  }
 }
+
+function setTokenAccordion(sectionId) {
+  const sections = ["tokenOverviewSection", "tokenCalculatorsSection", "tokenStakingSection"];
+  const buttonMap = {
+    tokenOverviewSection: "tokenAccordionBtn-overview",
+    tokenCalculatorsSection: "tokenAccordionBtn-calculators",
+    tokenStakingSection: "tokenAccordionBtn-staking"
+  };
+
+  sections.forEach((id) => {
+    const section = document.getElementById(id);
+    const button = document.getElementById(buttonMap[id]);
+    const isActive = id === sectionId;
+
+    if (section) section.classList.toggle("active", isActive);
+    if (button) {
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-expanded", isActive ? "true" : "false");
+    }
+  });
+}
+
+function ensureTokenAccordionState() {
+  const hasActive = Array.from(document.querySelectorAll(".token-accordion-section"))
+    .some((section) => section.classList.contains("active"));
+  if (!hasActive) setTokenAccordion("tokenOverviewSection");
+}
+
+function openInternalPage(src, title, options = {}) {
+  internalPageState.src = src;
+  internalPageState.title = title || "Explorer Page";
+  internalPageState.navId = options.navId || "";
+  const frame = document.getElementById("internalPageFrame");
+
+  if (frame) frame.src = src;
+
+  showPage("internalPage");
+}
+
+const EXP_TABLE_DATA = [
+  [2, 300], [3, 800], [4, 1500], [5, 2500], [6, 4300], [7, 7200], [8, 11000], [9, 17000],
+  [10, 24000], [11, 33000], [12, 43000], [13, 58000], [14, 76000], [15, 100000], [16, 130000],
+  [17, 169000], [18, 219000], [19, 283000], [20, 365000], [21, 472000], [22, 610000], [23, 705000],
+  [24, 813000], [25, 937000], [26, 1077000], [27, 1237000], [28, 1418000], [29, 1624000],
+  [30, 4642500], [31, 5305000], [32, 6052500], [33, 6902500], [34, 7862500], [35, 8950000],
+  [36, 10182500], [37, 11580000], [38, 12985000], [39, 14292500], [40, 31320000], [41, 34185000],
+  [42, 38000000], [43, 41370000], [44, 44950000], [45, 48765000], [46, 52800000], [47, 57050000],
+  [48, 61600000], [49, 66350000], [50, 142800000], [51, 153400000], [52, 168700000], [53, 189600000],
+  [54, 199800000], [55, 214200000], [56, 229300000], [57, 245300000], [58, 262000000],
+  [59, 279600000], [60, 596000000], [61, 655600000], [62, 721200000], [63, 793400000],
+  [64, 872800000], [65, 960000000]
+];
+
+function renderExpTable() {
+  const tableBody = document.getElementById("expTableBody");
+  if (!tableBody) return;
+
+  tableBody.innerHTML = EXP_TABLE_DATA.map(([level, exp]) => `
+    <tr>
+      <td class="exp-level">${level}</td>
+      <td class="exp-value">${exp.toLocaleString("en-US")}</td>
+    </tr>
+  `).join("");
+}
+
+renderExpTable();
 
   // ===== On Load =====
 window.onload = function() {
@@ -2139,10 +2253,6 @@ async function loadTCLStats() {
     document.getElementById("stakedUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
     document.getElementById("emissionUsd").textContent = "≈ " + emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
     document.getElementById("aprUsd").textContent = ""; // APR n-are valoare în $
-    document.getElementById("stakedMini").textContent = totalStaked.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
-	document.getElementById("stakedMiniUsd").textContent = "≈ " + stakedUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
-	document.getElementById("emissionMini").textContent = emission.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " TCL";
-	document.getElementById("emissionMiniUsd").textContent = "≈ " + emissionUsd.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " $";
 
   } catch (e) {
     console.error("⚠️ Error loading TCL rewards:", e);
@@ -2159,6 +2269,14 @@ function openAprCalculator() {
 
 function closeAprCalculator() {
   document.getElementById("aprModal").style.display = "none";
+}
+
+function openTransactionCalculator() {
+  document.getElementById("transactionCalcModal").style.display = "flex";
+}
+
+function closeTransactionCalculator() {
+  document.getElementById("transactionCalcModal").style.display = "none";
 }
 
 // === Format input automat cu virgule ===
@@ -2243,5 +2361,3 @@ function simulateApr() {
 </script>
 </body>
 </html>
-
-
