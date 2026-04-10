@@ -5,6 +5,16 @@
   window.wikiData = {};
   let wikiSearchQuery = "";
 
+  window.openWikiInternalPage = function (src, title, description) {
+    if (typeof window.openInternalPage === "function") {
+      window.openInternalPage(src, title, {
+        navId: "btn-wiki"
+      });
+      return;
+    }
+    window.location.href = src;
+  };
+
   window.wikiGoToPage = function (pageId) {
     if (typeof showPage === "function") showPage(pageId);
     if (window.location.hash.replace("#", "") !== pageId) {
@@ -63,21 +73,21 @@
 
       if (sectionName.toLowerCase() === "classes") {
         container.innerHTML += `
-        <div class="card wiki-link-card" onclick="window.location.href='Item_Upgrade_Requirements.html'">
+        <div class="card wiki-link-card" onclick="openWikiInternalPage('Item_Upgrade_Requirements.html', 'Items Bonus & Upgrade Requirements', 'Opened from Wiki inside TCL Explorer.')">
             <div class="wiki-toggle-header">
                 <h2>⚙️ Item Bonus &amp; Upgrade </h2>
                 <span>▶</span>
             </div>
             <p>View all Bonuses and materials requirements needed to upgrade items.</p>
         </div>
-        <div class="card wiki-link-card" onclick="window.location.href='Items_Upgrade_Simulator.html'">
+        <div class="card wiki-link-card" onclick="openWikiInternalPage('Items_Upgrade_Simulator.html', 'Blacksmith - Upgrade Simulator %', 'Test upgrade strategy without leaving the dashboard.')">
             <div class="wiki-toggle-header">
                 <h2>🔄 Blacksmith - Upgrade Simulator %</h2>
                 <span>▶</span>
             </div>
             <p>Test your upgrade strategy and calculate expected results before risking your items.</p>
         </div>
-        <div class="card wiki-link-card" onclick="window.location.href='loot.html'">
+        <div class="card wiki-link-card" onclick="openWikiInternalPage('loot.html', 'Drop Chance %', 'View loot tables and drop percentages inside TCL Explorer.')">
             <div class="wiki-toggle-header">
                 <h2>📊 Drop Chance %</h2>
                 <span>▶</span>
@@ -136,7 +146,9 @@
         <div class="card">
           <h2>${highlightText(item.name, wikiSearchQuery)}</h2>
           ${descHtml}
-          ${item.link ? `<a href="${item.link}" class="wiki-btn-link">🌐 View in TCL Explorer</a>` : ""}
+          ${item.link ? (String(item.link).toLowerCase().endsWith(".html")
+            ? `<button type="button" class="wiki-btn-link" onclick="openWikiInternalPage('${item.link}', '${String(item.name).replace(/'/g, "\\'")}', 'Opened from Wiki inside TCL Explorer.')">🌐 View in TCL Explorer</button>`
+            : `<a href="${item.link}" class="wiki-btn-link" target="_blank" rel="noopener noreferrer">🌐 View in TCL Explorer</a>`) : ""}
           ${item.page ? `<button type="button" class="wiki-btn-link" onclick="wikiGoToPage('${item.page}')">🌐 View in Explorer</button>` : ""}
         </div>
       `;
