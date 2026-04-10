@@ -51,6 +51,100 @@ body.app-body {
   overflow-x: hidden;
 }
 
+body.app-booting {
+  overflow: hidden;
+}
+
+.app-boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 232, 204, 0.10), transparent 28%),
+    radial-gradient(circle at 82% 0%, rgba(120, 91, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(10, 14, 22, 0.98), rgba(5, 8, 12, 0.99));
+  transition: opacity 0.28s var(--ease), visibility 0.28s var(--ease);
+}
+
+.app-boot-splash.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.app-boot-splash__panel {
+  min-width: min(92vw, 380px);
+  max-width: 460px;
+  padding: 28px 28px 24px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(18, 21, 31, 0.95), rgba(10, 15, 24, 0.96));
+  border: 1px solid rgba(0, 232, 204, 0.16);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(168, 85, 247, 0.10) inset;
+  text-align: center;
+}
+
+.app-boot-splash__logo {
+  width: 62px;
+  height: 62px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 0 30px rgba(0, 232, 204, 0.22);
+  margin-bottom: 16px;
+}
+
+.app-boot-splash__title {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 3vw, 1.35rem);
+  letter-spacing: 0.03em;
+}
+
+.app-boot-splash__title span {
+  color: var(--accent);
+}
+
+.app-boot-splash__subtitle {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.app-boot-splash__bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  margin-top: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-boot-splash__bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00e8cc, #7c3aed, #00e8cc);
+  animation: appBootSlide 1.15s linear infinite;
+}
+
+@keyframes appBootSlide {
+  from {
+    transform: translateX(-115%);
+  }
+  to {
+    transform: translateX(280%);
+  }
+}
+
 /* ----- App shell ----- */
 .app-layout {
   display: flex;
@@ -359,6 +453,7 @@ h2.section-heading {
   padding: 0;
   max-width: none;
   background: var(--bg-deep);
+  overflow: hidden;
 }
 
 body.sidebar-desktop .section-page.fullpage {
@@ -370,6 +465,35 @@ body.sidebar-desktop .section-page.fullpage {
   height: 100%;
   border: none;
   display: block;
+  opacity: 1;
+  transition: opacity 0.2s var(--ease);
+}
+
+.section-page.fullpage.embed-loading iframe {
+  opacity: 0;
+}
+
+.fullpage-embed-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 232, 204, 0.08), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(120, 91, 255, 0.12), transparent 35%),
+    linear-gradient(180deg, rgba(19, 24, 37, 0.96), rgba(10, 13, 20, 0.98));
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  letter-spacing: 0.03em;
+  text-align: center;
+  z-index: 1;
+}
+
+.section-page.fullpage.embed-ready .fullpage-embed-placeholder {
+  display: none;
 }
 
 #internalPageFrame {
