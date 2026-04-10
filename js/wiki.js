@@ -1,18 +1,36 @@
-/* Wiki — embedded in TCL Explorer (expects global showPage, setLang, currentLang from index) */
+﻿/* Wiki — embedded in TCL Explorer (expects global showPage, setLang, currentLang from index) */
 (function () {
-  const WIKI_BASE_URL = "https://axel4ro.github.io/TCLexplorer/lang";
+  const WIKI_BASE_URL = "./lang/";
 
   window.wikiData = {};
   let wikiSearchQuery = "";
 
+  function tr(key, fallback) {
+    return (window.translations && window.translations[key])
+      || (window.fallbackTranslations && window.fallbackTranslations[key])
+      || fallback;
+  }
+
+  function getBundledWikiData(lang) {
+    return window.TCL_WIKI_DATA?.[lang] || null;
+  }
+
+  function wikiSectionTitle(name) {
+    const key = String(name || "").toLowerCase();
+    return tr("wiki_section_" + key, name.charAt(0).toUpperCase() + name.slice(1));
+  }
+
   window.openWikiInternalPage = function (src, title, description) {
+    const lang = window.currentLang || "en";
+    const separator = String(src).includes("?") ? "&" : "?";
+    const resolvedSrc = `${src}${separator}lang=${encodeURIComponent(lang)}&v=20260410-3`;
     if (typeof window.openInternalPage === "function") {
-      window.openInternalPage(src, title, {
+      window.openInternalPage(resolvedSrc, title, {
         navId: "btn-wiki"
       });
       return;
     }
-    window.location.href = src;
+    window.location.href = resolvedSrc;
   };
 
   window.wikiGoToPage = function (pageId) {
@@ -28,11 +46,26 @@
     return String(text).replace(regex, '<span class="wiki-highlight">$1</span>');
   }
 
+  function escapeJsString(value) {
+    return String(value || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/\r?\n/g, " ");
+  }
+
   window.loadWiki = async function (lang, fallback) {
     const container = document.getElementById("wikiContent");
     if (!container) return;
+
+    const bundledWiki = getBundledWikiData(lang);
+    if (bundledWiki) {
+      window.wikiData = bundledWiki;
+      window.renderWiki(window.wikiData, false);
+      return;
+    }
+
     try {
-      const res = await fetch(WIKI_BASE_URL + "/wiki_" + lang + ".json?t=" + Date.now());
+      const res = await fetch(WIKI_BASE_URL + "wiki_" + lang + ".json?t=" + Date.now(), { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       window.wikiData = await res.json();
       window.renderWiki(window.wikiData, false);
@@ -41,7 +74,7 @@
       if (fallback && lang !== "en" && typeof setLang === "function") {
         setLang("en");
       } else {
-        container.innerHTML = "<p>❌ Failed to load Wiki data for lang: " + lang + "</p>";
+        container.innerHTML = "<p>❌ " + tr("wiki_failed_load", "Failed to load Wiki data for lang:") + " " + lang + "</p>";
       }
     }
   };
@@ -62,7 +95,7 @@
       <div class="card wiki-toggle ${forceOpen && sectionHasResults ? "open" : ""}" 
            onclick="toggleWikiSection('${sectionName}List', this)">
         <div class="wiki-toggle-header">
-          <h2>📂 ${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}</h2>
+          <h2>📂 ${wikiSectionTitle(sectionName)}</h2>
           <span>${forceOpen && sectionHasResults ? "▼" : "▶"}</span>
         </div>
         <p>${highlightText(sectionData.info || "", wikiSearchQuery)}</p>
@@ -72,27 +105,32 @@
     `;
 
       if (sectionName.toLowerCase() === "classes") {
+        const wikiOpenedText = escapeJsString(tr("wiki_opened_from_explorer", "Opened from Wiki inside TCL Explorer."));
+        const itemBonusTitle = escapeJsString(tr("wiki_special_item_bonus_title", "Items Bonus & Upgrade Requirements"));
+        const blacksmithTitle = escapeJsString(tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %"));
+        const dropTitle = escapeJsString(tr("wiki_special_drop_title", "Drop Chance %"));
+
         container.innerHTML += `
-        <div class="card wiki-link-card" onclick="openWikiInternalPage('Item_Upgrade_Requirements.html', 'Items Bonus & Upgrade Requirements', 'Opened from Wiki inside TCL Explorer.')">
+        <div class="card wiki-link-card" onclick="openWikiInternalPage('Item_Upgrade_Requirements.html', '${itemBonusTitle}', '${wikiOpenedText}')">
             <div class="wiki-toggle-header">
-                <h2>⚙️ Item Bonus &amp; Upgrade </h2>
+                <h2>⚙️ ${tr("wiki_special_item_bonus_title", "Item Bonus & Upgrade")}</h2>
                 <span>▶</span>
             </div>
-            <p>View all Bonuses and materials requirements needed to upgrade items.</p>
+            <p>${tr("wiki_special_item_bonus_desc", "View all bonuses and materials requirements needed to upgrade items.")}</p>
         </div>
-        <div class="card wiki-link-card" onclick="openWikiInternalPage('Items_Upgrade_Simulator.html', 'Blacksmith - Upgrade Simulator %', 'Test upgrade strategy without leaving the dashboard.')">
+        <div class="card wiki-link-card" onclick="openWikiInternalPage('Items_Upgrade_Simulator.html', '${blacksmithTitle}', '${wikiOpenedText}')">
             <div class="wiki-toggle-header">
-                <h2>🔄 Blacksmith - Upgrade Simulator %</h2>
+                <h2>🔄 ${tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %")}</h2>
                 <span>▶</span>
             </div>
-            <p>Test your upgrade strategy and calculate expected results before risking your items.</p>
+            <p>${tr("wiki_special_blacksmith_desc", "Test your upgrade strategy and calculate expected results before risking your items.")}</p>
         </div>
-        <div class="card wiki-link-card" onclick="openWikiInternalPage('loot.html', 'Drop Chance %', 'View loot tables and drop percentages inside TCL Explorer.')">
+        <div class="card wiki-link-card" onclick="openWikiInternalPage('loot.html', '${dropTitle}', '${wikiOpenedText}')">
             <div class="wiki-toggle-header">
-                <h2>📊 Drop Chance %</h2>
+                <h2>📊 ${tr("wiki_special_drop_title", "Drop Chance %")}</h2>
                 <span>▶</span>
             </div>
-            <p>View all Items and Monsters — drop percentages and loot tables.</p>
+            <p>${tr("wiki_special_drop_desc", "View all items and monsters — drop percentages and loot tables.")}</p>
         </div>
     `;
       }
@@ -147,9 +185,9 @@
           <h2>${highlightText(item.name, wikiSearchQuery)}</h2>
           ${descHtml}
           ${item.link ? (String(item.link).toLowerCase().endsWith(".html")
-            ? `<button type="button" class="wiki-btn-link" onclick="openWikiInternalPage('${item.link}', '${String(item.name).replace(/'/g, "\\'")}', 'Opened from Wiki inside TCL Explorer.')">🌐 View in TCL Explorer</button>`
-            : `<a href="${item.link}" class="wiki-btn-link" target="_blank" rel="noopener noreferrer">🌐 View in TCL Explorer</a>`) : ""}
-          ${item.page ? `<button type="button" class="wiki-btn-link" onclick="wikiGoToPage('${item.page}')">🌐 View in Explorer</button>` : ""}
+            ? `<button type="button" class="wiki-btn-link" onclick="openWikiInternalPage('${item.link}', '${String(item.name).replace(/'/g, "\\'")}', '${tr("wiki_opened_from_explorer", "Opened from Wiki inside TCL Explorer.").replace(/'/g, "\\'")}')">🌐 ${tr("wiki_view_in_tcl_explorer", "View in TCL Explorer")}</button>`
+            : `<a href="${item.link}" class="wiki-btn-link" target="_blank" rel="noopener noreferrer">🌐 ${tr("wiki_view_in_tcl_explorer", "View in TCL Explorer")}</a>`) : ""}
+          ${item.page ? `<button type="button" class="wiki-btn-link" onclick="wikiGoToPage('${item.page}')">🌐 ${tr("wiki_view_in_explorer", "View in Explorer")}</button>` : ""}
         </div>
       `;
         });
