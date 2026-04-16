@@ -23,10 +23,13 @@
   window.openWikiInternalPage = function (src, title, description) {
     const lang = window.currentLang || "en";
     const separator = String(src).includes("?") ? "&" : "?";
-    const resolvedSrc = `${src}${separator}lang=${encodeURIComponent(lang)}&v=20260410-3`;
+    const resolvedSrc = `${src}${separator}lang=${encodeURIComponent(lang)}&v=20260416-1`;
     if (typeof window.openInternalPage === "function") {
       window.openInternalPage(resolvedSrc, title, {
-        navId: "btn-wiki"
+        navId: "btn-wiki",
+        loadingTitle: "Loading <span>TCL Explorer</span>...",
+        loadingSubtitle: "Opening Wiki page inside TCL Explorer.",
+        waitForReadyMessage: true
       });
       return;
     }
@@ -92,16 +95,18 @@
         (sectionData.categories && Object.keys(sectionData.categories).length > 0);
 
       container.innerHTML += `
-      <div class="card wiki-toggle ${forceOpen && sectionHasResults ? "open" : ""}" 
-           onclick="toggleWikiSection('${sectionName}List', this)">
-        <div class="wiki-toggle-header">
-          <h2>📂 ${wikiSectionTitle(sectionName)}</h2>
-          <span>${forceOpen && sectionHasResults ? "▼" : "▶"}</span>
+      <div class="wiki-grid-item ${forceOpen && sectionHasResults ? "is-expanded" : ""}">
+        <div class="card wiki-toggle ${forceOpen && sectionHasResults ? "open" : ""}" 
+             onclick="toggleWikiSection('${sectionName}List', this)">
+          <div class="wiki-toggle-header">
+            <h2>📂 ${wikiSectionTitle(sectionName)}</h2>
+            <span>${forceOpen && sectionHasResults ? "▼" : "▶"}</span>
+          </div>
+          <p>${highlightText(sectionData.info || "", wikiSearchQuery)}</p>
         </div>
-        <p>${highlightText(sectionData.info || "", wikiSearchQuery)}</p>
+        <div id="${sectionName}List" class="wiki-section-content" 
+             style="display:${forceOpen && sectionHasResults ? "block" : "none"}"></div>
       </div>
-      <div id="${sectionName}List" class="wiki-section-content" 
-           style="display:${forceOpen && sectionHasResults ? "block" : "none"}"></div>
     `;
 
       if (sectionName.toLowerCase() === "classes") {
@@ -111,26 +116,29 @@
         const dropTitle = escapeJsString(tr("wiki_special_drop_title", "Drop Chance %"));
 
         container.innerHTML += `
-        <div class="card wiki-link-card" onclick="openWikiInternalPage('Item_Upgrade_Requirements.html', '${itemBonusTitle}', '${wikiOpenedText}')">
-            <div class="wiki-toggle-header">
-                <h2>⚙️ ${tr("wiki_special_item_bonus_title", "Item Bonus & Upgrade")}</h2>
-                <span>▶</span>
-            </div>
-            <p>${tr("wiki_special_item_bonus_desc", "View all bonuses and materials requirements needed to upgrade items.")}</p>
+        <div class="wiki-grid-item">
+          <div class="card wiki-link-card" onclick="openWikiInternalPage('Item_Upgrade_Requirements.html', '${itemBonusTitle}', '${wikiOpenedText}')">
+              <div class="wiki-toggle-header">
+                  <h2>⚙️ ${tr("wiki_special_item_bonus_title", "Item Bonus & Upgrade")}</h2>
+              </div>
+              <p>${tr("wiki_special_item_bonus_desc", "View all bonuses and materials requirements needed to upgrade items.")}</p>
+          </div>
         </div>
-        <div class="card wiki-link-card" onclick="openWikiInternalPage('Items_Upgrade_Simulator.html', '${blacksmithTitle}', '${wikiOpenedText}')">
-            <div class="wiki-toggle-header">
-                <h2>🔄 ${tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %")}</h2>
-                <span>▶</span>
-            </div>
-            <p>${tr("wiki_special_blacksmith_desc", "Test your upgrade strategy and calculate expected results before risking your items.")}</p>
+        <div class="wiki-grid-item">
+          <div class="card wiki-link-card" onclick="openWikiInternalPage('Items_Upgrade_Simulator.html', '${blacksmithTitle}', '${wikiOpenedText}')">
+              <div class="wiki-toggle-header">
+                  <h2>🔄 ${tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %")}</h2>
+              </div>
+              <p>${tr("wiki_special_blacksmith_desc", "Test your upgrade strategy and calculate expected results before risking your items.")}</p>
+          </div>
         </div>
-        <div class="card wiki-link-card" onclick="openWikiInternalPage('loot.html', '${dropTitle}', '${wikiOpenedText}')">
-            <div class="wiki-toggle-header">
-                <h2>📊 ${tr("wiki_special_drop_title", "Drop Chance %")}</h2>
-                <span>▶</span>
-            </div>
-            <p>${tr("wiki_special_drop_desc", "View all items and monsters — drop percentages and loot tables.")}</p>
+        <div class="wiki-grid-item">
+          <div class="card wiki-link-card" onclick="openWikiInternalPage('loot.html', '${dropTitle}', '${wikiOpenedText}')">
+              <div class="wiki-toggle-header">
+                  <h2>📊 ${tr("wiki_special_drop_title", "Drop Chance %")}</h2>
+              </div>
+              <p>${tr("wiki_special_drop_desc", "View all items and monsters — drop percentages and loot tables.")}</p>
+          </div>
         </div>
     `;
       }
@@ -229,12 +237,32 @@
   window.toggleWikiSection = function (id, el) {
     const section = document.getElementById(id);
     if (!section) return;
+    const gridItem = el.closest(".wiki-grid-item");
+    const hasContent = !!(section.children.length || section.textContent.trim());
+    const allGridItems = Array.from(document.querySelectorAll("#wikiContent > .wiki-grid-item"));
+    allGridItems.forEach((item) => item.classList.remove("is-expanded", "is-row-companion"));
     if (section.style.display === "block") {
       section.style.display = "none";
       el.classList.remove("open");
     } else {
+      document.querySelectorAll("#wikiContent .wiki-grid-item .wiki-toggle.open").forEach((otherToggle) => {
+        if (otherToggle === el) return;
+        otherToggle.classList.remove("open");
+        const otherGridItem = otherToggle.closest(".wiki-grid-item");
+        if (otherGridItem) otherGridItem.classList.remove("is-expanded");
+        const otherContent = otherGridItem?.querySelector(".wiki-section-content");
+        if (otherContent) otherContent.style.display = "none";
+      });
       section.style.display = "block";
       el.classList.add("open");
+      if (gridItem && hasContent) {
+        const gridIndex = allGridItems.indexOf(gridItem);
+        if (gridIndex % 2 === 1) {
+          const leftPair = allGridItems[gridIndex - 1];
+          if (leftPair) leftPair.classList.add("is-row-companion");
+        }
+        gridItem.classList.add("is-expanded");
+      }
     }
   };
 
