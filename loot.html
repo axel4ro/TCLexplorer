@@ -396,6 +396,16 @@ function goBackToWiki(event) {
     return false;
 }
 
+function notifyParentReady() {
+    try {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "tcl:page-ready", page: "wiki-loot" }, "*");
+        }
+    } catch (err) {
+        console.warn("parent ready notify failed:", err);
+    }
+}
+
 let DATA = null;
 
 // State
@@ -427,6 +437,7 @@ async function loadDropFromGitHub() {
 <!--         console.log("drop.json loaded automatically from GitHub!");-->
 <!--         alert("drop.json loaded automatically from GitHub!");-->
 showItems();
+requestAnimationFrame(notifyParentReady);
     } catch (err) {
         console.error("Failed loading GitHub drop.json:", err);
         alert("❌ Cannot load drop.json from GitHub! Check console for details.");
@@ -536,6 +547,7 @@ items.sort((a, b) => a.name.localeCompare(b.name));
 
     html += `</div>`;
     document.getElementById("content").innerHTML = html;
+    requestAnimationFrame(notifyParentReady);
 
     document.getElementById("itemInput").addEventListener("keydown", e => {
         if (e.key === "Enter") applyItemSearch();
@@ -862,6 +874,7 @@ function showMonsters() {
     html += `</div>`;
 
     document.getElementById("content").innerHTML = html;
+    requestAnimationFrame(notifyParentReady);
 
     document.getElementById("monsterInput").addEventListener("keydown", e => {
         if (e.key === "Enter") applyMonsterSearch();

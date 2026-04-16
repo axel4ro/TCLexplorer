@@ -422,6 +422,16 @@ function goBackToWiki(event) {
     return false;
 }
 
+function notifyParentReady() {
+    try {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "tcl:page-ready", page: "wiki-upgrade-simulator" }, "*");
+        }
+    } catch (err) {
+        console.warn("parent ready notify failed:", err);
+    }
+}
+
 const baseChances = [0.9,0.8,0.7,0.6,0.5,0.4];
 let eventActive = false;
 
@@ -486,6 +496,7 @@ function closeModal(){
 
 window.addEventListener("load", function(){
     simulate();
+    requestAnimationFrame(notifyParentReady);
 });
 </script>
 </body>

@@ -457,37 +457,89 @@ body.page-sub {
 	let allNFTs = [];
 	let forSaleList = [];
     let allNFTsByCollection = {}; // 🔥 aici vom ține toate NFT-urile preload
+    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v2";
+    const NFTS_CACHE_TTL = {
+      collections: 15 * 60 * 1000,
+      allNFTs: 15 * 60 * 1000,
+      collectionImage: 24 * 60 * 60 * 1000,
+      nftDetails: 15 * 60 * 1000,
+      walletBalance: 2 * 60 * 1000
+    };
+    const nftRequestPool = {};
 
+    function buildCacheKey(section, suffix = "") {
+      const tail = suffix ? `.${encodeURIComponent(String(suffix))}` : "";
+      return `${NFTS_CACHE_PREFIX}.${section}${tail}`;
+    }
+
+    function writeCache(section, data, suffix = "") {
+      try {
+        localStorage.setItem(
+          buildCacheKey(section, suffix),
+          JSON.stringify({
+            cachedAt: Date.now(),
+            data
+          })
+        );
+      } catch (e) {
+        console.warn("Cache write failed", section, suffix, e);
+      }
+    }
+
+    function readCacheEntry(section, suffix = "") {
+      try {
+        const raw = localStorage.getItem(buildCacheKey(section, suffix));
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        console.warn("Cache invalid", section, suffix, e);
+        return null;
+      }
+    }
+
+    function getCache(section, maxAgeMs, suffix = "") {
+      const entry = readCacheEntry(section, suffix);
+      if (!entry || typeof entry.cachedAt !== "number") return null;
+      if (Date.now() - entry.cachedAt > maxAgeMs) return null;
+      return entry.data;
+    }
+
+    function getCachedValue(section, suffix = "") {
+      return readCacheEntry(section, suffix)?.data ?? null;
+    }
+
+    function withNFTRequest(key, loader) {
+      if (nftRequestPool[key]) return nftRequestPool[key];
+      nftRequestPool[key] = Promise.resolve()
+        .then(loader)
+        .finally(() => {
+          delete nftRequestPool[key];
+        });
+      return nftRequestPool[key];
+    }
+
+    function persistAllNFTsCache() {
+      writeCache("allNFTs", allNFTsByCollection);
+    }
 
     async function getCollectionImage(collection) {
-      try {
-        const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1`);
-        const data = await resp.json();
-        if (data.length > 0 && data[0].media && data[0].media[0]) return data[0].media[0].url;
-      } catch(e){ console.error("fallback image", collection, e); }
-      return "";
-    }
+      const cachedImage = getCache("collectionImage", NFTS_CACHE_TTL.collectionImage, collection);
+      if (typeof cachedImage === "string" && cachedImage) {
+        return cachedImage;
+      }
 
-// helper pt cache local
-function setCache(key, data) {
-  const payload = {
-    time: Date.now(),
-    data: data
-  };
-  localStorage.setItem(key, JSON.stringify(payload));
-}
-
-function getCache(key, maxAgeMs) {
-  const raw = localStorage.getItem(key);
-  if (!raw) return null;
-  try {
-    const payload = JSON.parse(raw);
-    if (Date.now() - payload.time < maxAgeMs) {
-      return payload.data;
+      return withNFTRequest(`collectionImage:${collection}`, async () => {
+        try {
+          const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1`);
+          const data = await resp.json();
+          const image = (data.length > 0 && data[0].media && data[0].media[0]) ? data[0].media[0].url : "";
+          if (image) writeCache("collectionImage", image, collection);
+          return image;
+        } catch (e) {
+          console.error("fallback image", collection, e);
+          return getCachedValue("collectionImage", collection) || "";
+        }
+      });
     }
-  } catch(e) { console.warn("Cache invalid", key, e); }
-  return null;
-}
 
 function notifyParentReady() {
   try {
@@ -524,26 +576,28 @@ async function loadCollections() {
 
   container.innerHTML = "Loading collections...";
 
-  // 🔥 verificăm cache
-  let all = getCache("collections", 5 * 60 * 1000); // 5 minute
+  let all = getCache("collections", NFTS_CACHE_TTL.collections);
   if (all) {
     console.log("Loaded collections from cache");
   } else {
-    console.log("Fetching collections from API");
-    all = [];
-    for (const creator of creators) {
-      try {
-        await new Promise(r => setTimeout(r, 300));
-        const resp = await fetch(`https://api.multiversx.com/collections?creator=${creator}&size=50`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        all = all.concat(data);
-      } catch (err) {
-        console.error("Eroare la fetch pentru creator:", creator, err);
+    all = await withNFTRequest("collections", async () => {
+      console.log("Fetching collections from API");
+      let freshCollections = [];
+      for (const creator of creators) {
+        try {
+          await new Promise(r => setTimeout(r, 300));
+          const resp = await fetch(`https://api.multiversx.com/collections?creator=${creator}&size=50`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+          freshCollections = freshCollections.concat(data);
+        } catch (err) {
+          console.error("Eroare la fetch pentru creator:", creator, err);
+        }
       }
-    }
-    all = all.filter(col => !col.collection.startsWith("TCLSPONSOR"));
-    setCache("collections", all); // 🔥 salvăm în cache
+      freshCollections = freshCollections.filter(col => !col.collection.startsWith("TCLSPONSOR"));
+      writeCache("collections", freshCollections);
+      return freshCollections;
+    });
   }
 
   container.innerHTML = "";
@@ -572,30 +626,57 @@ async function loadCollections() {
   await waitForContainerImages(container);
   notifyParentReady();
 
-  // 🔥 preload toate NFT-urile o singură dată
   preloadAllNFTs(all).catch(err => console.error("NFT preload error", err));
 }
 
 async function preloadAllNFTs(collections) {
-  let cache = getCache("allNFTs", 5 * 60 * 1000); // 5 minute
+  let cache = getCache("allNFTs", NFTS_CACHE_TTL.allNFTs);
   if (cache) {
     console.log("Loaded ALL NFTs from cache");
     allNFTsByCollection = cache;
     return;
   }
 
-  allNFTsByCollection = {};
-  for (const col of collections) {
-    try {
-      console.log("Fetching NFTs from API", col.collection);
-      const resp = await fetch(`https://api.multiversx.com/collections/${col.collection}/nfts?size=1000`);
-      const data = await resp.json();
-      allNFTsByCollection[col.collection] = data;
-    } catch (err) {
-      console.error("Error fetching NFTs for", col.collection, err);
+  allNFTsByCollection = await withNFTRequest("allNFTs", async () => {
+    const payload = {};
+    for (const col of collections) {
+      try {
+        console.log("Fetching NFTs from API", col.collection);
+        const resp = await fetch(`https://api.multiversx.com/collections/${col.collection}/nfts?size=1000`);
+        const data = await resp.json();
+        payload[col.collection] = data;
+      } catch (err) {
+        console.error("Error fetching NFTs for", col.collection, err);
+      }
     }
+    writeCache("allNFTs", payload);
+    return payload;
+  });
+}
+
+async function ensureCollectionNFTs(collection) {
+  if (Array.isArray(allNFTsByCollection[collection])) {
+    return allNFTsByCollection[collection];
   }
-  setCache("allNFTs", allNFTsByCollection);
+
+  const cachedAll = getCache("allNFTs", NFTS_CACHE_TTL.allNFTs);
+  if (cachedAll && Array.isArray(cachedAll[collection])) {
+    allNFTsByCollection = cachedAll;
+    return cachedAll[collection];
+  }
+
+  return withNFTRequest(`collectionNFTs:${collection}`, async () => {
+    try {
+      const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1000`);
+      const data = await resp.json();
+      allNFTsByCollection[collection] = data;
+      persistAllNFTsCache();
+      return data;
+    } catch (err) {
+      console.error("Error fetching NFTs for collection", collection, err);
+      return [];
+    }
+  });
 }
 
 
@@ -610,12 +691,7 @@ async function loadNFTs(collection) {
   document.getElementById("collections-hint").style.display = "none";
   grid.innerHTML = "Loading NFTs...";
 
-// 🔥 direct din cache global (preloaded)
-let data = allNFTsByCollection[collection] || [];
-allNFTs = data;
-
-
-
+  const data = await ensureCollectionNFTs(collection);
   allNFTs = data;
 
   // buton View on XOXNO
@@ -773,8 +849,15 @@ async function renderNFTs(nfts) {
       return Number(val) || 0;
     }
 async function showNFTDetails(identifier) {
-  const resp = await fetch(`https://api.multiversx.com/nfts/${identifier}`);
-  const nft = await resp.json();
+  let nft = getCache("nftDetails", NFTS_CACHE_TTL.nftDetails, identifier);
+  if (!nft) {
+    nft = await withNFTRequest(`nftDetails:${identifier}`, async () => {
+      const resp = await fetch(`https://api.multiversx.com/nfts/${identifier}`);
+      const data = await resp.json();
+      writeCache("nftDetails", data, identifier);
+      return data;
+    });
+  }
 
   const modal = document.getElementById("modal");
   const content = document.getElementById("modal-content");
@@ -857,8 +940,15 @@ async function loadBalance() {
   const container = document.getElementById("balance-nfts");
   container.innerHTML = "Loading NFTs...";
 
-  const resp = await fetch(`https://api.multiversx.com/accounts/${addr}/nfts?size=1000`);
-  const data = await resp.json();
+  let data = getCache("walletBalance", NFTS_CACHE_TTL.walletBalance, addr);
+  if (!data) {
+    data = await withNFTRequest(`walletBalance:${addr}`, async () => {
+      const resp = await fetch(`https://api.multiversx.com/accounts/${addr}/nfts?size=1000`);
+      const payload = await resp.json();
+      writeCache("walletBalance", payload, addr);
+      return payload;
+    });
+  }
 
   // 🔥 filtrăm doar colecțiile TCL (numele începe cu "TCL")
   const tclNFTs = data.filter(nft => nft.collection && nft.collection.startsWith("TCL"));

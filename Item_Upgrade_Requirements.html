@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,16 +64,13 @@ th { background:#3b2b6b; color:#fff }
   background:#20263a;
 }
 
-
-
 .top-bar {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 12px 0 18px 0;
-  flex-wrap: nowrap; /* 🔥 CHEIA */
+  flex-wrap: nowrap;
 }
-
 
 .back-btn {
   background: #249c8c;
@@ -85,27 +81,25 @@ th { background:#3b2b6b; color:#fff }
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  text-decoration: none;   /* 🔥 scoate underline */
+  text-decoration: none;
 }
-
 
 .search-wrap {
   display: flex;
   align-items: center;
   flex: 1;
   gap: 8px;
-  min-width: 0; /* 🔥 IMPORTANT pentru flex */
+  min-width: 0;
 }
 
 .search-wrap input {
   flex: 1;
-  min-width: 0; /* 🔥 fără overflow */
+  min-width: 0;
   padding: 10px;
   border-radius: 8px;
   background: #1e2230;
@@ -124,9 +118,8 @@ th { background:#3b2b6b; color:#fff }
   cursor: pointer;
   font-weight: 600;
   white-space: nowrap;
-
   height: 40px;
-  flex-shrink: 0; /* 🔥 NU se micșorează / nu urcă */
+  flex-shrink: 0;
   box-shadow: none;
 }
 
@@ -140,7 +133,6 @@ th { background:#3b2b6b; color:#fff }
   width: 100%;
 }
 
-/* Ascunde coloana +0 */
 table th:nth-child(2),
 table td:nth-child(2) {
   display: none;
@@ -225,12 +217,10 @@ font-size:13px;
   <button onclick="openCategory('Accessories')">Accessories</button>
 </div>
 
-
 <div id="subCards"></div>
 <div id="wiki"></div>
 </div>
 </div>
-
 
 <script>
 const DESKTOP_SCALE_WIDTH = 1280;
@@ -247,6 +237,16 @@ function goBackToWiki(event) {
   }
   window.location.href = "wiki.html";
   return false;
+}
+
+function notifyParentReady() {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "tcl:page-ready", page: "wiki-item-upgrade" }, "*");
+    }
+  } catch (err) {
+    console.warn("parent ready notify failed:", err);
+  }
 }
 
 function applyDesktopPortraitScale() {
@@ -279,7 +279,6 @@ function openCategory(cat) {
   activeCategory = cat;
   activeSub = null;
 
-  // 🔥 reset search când schimbăm categoria
   document.getElementById("searchInput").value = "";
 
   const box = document.getElementById("subCards");
@@ -299,17 +298,14 @@ function openCategory(cat) {
   requestAnimationFrame(applyDesktopPortraitScale);
 }
 
-
 function openSub(sub) {
   activeSub = sub;
 
-  // 🔥 reset search când alegem subcategorie
   document.getElementById("searchInput").value = "";
 
   renderItems();
   requestAnimationFrame(applyDesktopPortraitScale);
 }
-
 
 const subCategories = {
   "Armors": [
@@ -331,51 +327,43 @@ const subCategories = {
     "Bracelet",
     "Necklace",
     "Earrings",
-    "Shoes",
-	//"Belt"
+    "Shoes"
   ]
 };
+
 const subCategoryRace = {
   "Armour": "Human",
   "Suit": "Beast",
   "Plate": "Undead",
   "Clothing": "Elf"
 };
+
 function getSubLabel(name) {
   return subCategoryRace[name]
     ? `${name} (${subCategoryRace[name]})`
     : name;
 }
 
-
 function loadRandomCategoryAndSub() {
   const categories = Object.keys(subCategories);
-
-  // categorie random
-  const randomCategory =
-    categories[Math.floor(Math.random() * categories.length)];
-
+  const randomCategory = categories[Math.floor(Math.random() * categories.length)];
   const subs = subCategories[randomCategory];
   if (!subs || subs.length === 0) return;
 
-  // subcategorie random
-  const randomSub =
-    subs[Math.floor(Math.random() * subs.length)];
-
-  // 🔥 exact ca un click real
+  const randomSub = subs[Math.floor(Math.random() * subs.length)];
   openCategory(randomCategory);
   openSub(randomSub);
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-
-await loadItemsData();
-
-loadRandomCategoryAndSub();
-applyDesktopPortraitScale();
-
+  await loadItemsData();
+  loadRandomCategoryAndSub();
+  applyDesktopPortraitScale();
+  requestAnimationFrame(notifyParentReady);
 });
+
 window.addEventListener("resize", applyDesktopPortraitScale);
+
 const funTexts = [
   "Blacksmith’s Random Pick",
   "Today’s Featured Upgrades",
@@ -387,34 +375,27 @@ document.querySelector("h1").innerHTML =
   `Items Bonus & Upgrade Requirements
   <br> <span style="opacity:.6;font-size:18px">${funTexts[Math.floor(Math.random() * funTexts.length)]}</span>`;
 
-
 let items = [];
 let bonuses = {};
 
 async function loadItemsData(){
+  const url = "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/data/items_data.json";
 
-const url = "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/data/items_data.json";
+  try{
+    const res = await fetch(url);
+    const data = await res.json();
 
-try{
+    items = data.items || [];
+    bonuses = data.bonuses || {};
 
-const res = await fetch(url);
-const data = await res.json();
+    renderItems();
+    requestAnimationFrame(applyDesktopPortraitScale);
+  } catch(err){
+    console.error("JSON load error:", err);
 
-items = data.items || [];
-bonuses = data.bonuses || {};
-
-renderItems();
-requestAnimationFrame(applyDesktopPortraitScale);
-
-}catch(err){
-
-console.error("JSON load error:", err);
-
-document.getElementById("wiki").innerHTML =
-"<p style='color:red'>Failed loading item data.</p>";
-
-}
-
+    document.getElementById("wiki").innerHTML =
+      "<p style='color:red'>Failed loading item data.</p>";
+  }
 }
 
 let activeCategory = null;
@@ -423,12 +404,12 @@ let activeSub = null;
 function applySearch() {
   renderItems();
 }
+
 document.getElementById("searchInput").addEventListener("keydown", e => {
   if (e.key === "Enter") applySearch();
 });
 
 function goBack() {
-  // reset total
   activeCategory = null;
   activeSub = null;
   document.getElementById("searchInput").value = "";
@@ -436,68 +417,60 @@ function goBack() {
   document.getElementById("subCards").innerHTML = "";
   document.getElementById("wiki").innerHTML = "";
 }
+
 function handleSearchInput(input) {
-  // auto-capitalize în timp real
   const cursor = input.selectionStart;
   input.value = capitalizeWords(input.value);
   input.setSelectionRange(cursor, cursor);
 
-  // live search
   renderItems();
 }
 
 function safe(v) {
   return (v === undefined || v === null || v === "") ? "-" : v;
 }
+
 function renderBonusPreview(item){
+  if(!bonuses[item.name]) return "";
 
-if(!bonuses[item.name]) return "";
+  let cards="";
 
-let cards="";
+  for(let p=0;p<=9;p++){
+    let stats="";
+    const b=bonuses[item.name][p];
 
-for(let p=0;p<=9;p++){
+    if(b){
+      b.forEach(s=>{
+        let value=s.min || "";
 
-let stats="";
-const b=bonuses[item.name][p];
+        if(s.random && s.max){
+          value=s.min+"-"+s.max;
+        }
 
-if(b){
+        if(s.percent){
+          value=value+"%";
+        }
 
-b.forEach(s=>{
+        let color="#6df0c2";
 
-let value=s.min || "";
+        if(String(value).startsWith("-")){
+          color="#ff4d4d";
+        }
 
-if(s.random && s.max){
-value=s.min+"-"+s.max;
-}
+        stats+=`<div class="stat" style="color:${color}">${s.type} ${value}</div>`;
+      });
+    }
 
-if(s.percent){
-value=value+"%";
-}
+    let wearable="Human • Beast • Undead • Elf";
 
-let color="#6df0c2";
+    if(item.category==="Armors"){
+      if(item.subCategory==="Armour") wearable="Human";
+      if(item.subCategory==="Suit") wearable="Beast";
+      if(item.subCategory==="Plate") wearable="Undead";
+      if(item.subCategory==="Clothing") wearable="Elf";
+    }
 
-if(String(value).startsWith("-")){
-color="#ff4d4d";
-}
-
-stats+=`<div class="stat" style="color:${color}">${s.type} ${value}</div>`;
-
-});
-
-}
-
-let wearable="Human • Beast • Undead • Elf";
-
-if(item.category==="Armors"){
-
-if(item.subCategory==="Armour") wearable="Human";
-if(item.subCategory==="Suit") wearable="Beast";
-if(item.subCategory==="Plate") wearable="Undead";
-if(item.subCategory==="Clothing") wearable="Elf";
-
-}
-
-cards+=`
+    cards+=`
 
 <div class="item-card">
 
@@ -513,10 +486,9 @@ ${stats}
 </div>
 
 `;
+  }
 
-}
-
-return `
+  return `
 
 <div class="item-group">
 
@@ -528,6 +500,7 @@ ${cards}
 
 `;
 }
+
 function capitalizeWords(str) {
   return str
     .toLowerCase()
@@ -540,16 +513,13 @@ function renderItems() {
 
   wiki.innerHTML = "";
 
-  // 🔥 DACĂ există search → ignorăm categoria activă
   const useCategoryFilter = q === "";
 
-
   items.forEach(it => {
-  if (useCategoryFilter) {
-  if (activeCategory && it.category !== activeCategory) return;
-  if (activeSub && it.subCategory !== activeSub) return;
-}
-
+    if (useCategoryFilter) {
+      if (activeCategory && it.category !== activeCategory) return;
+      if (activeSub && it.subCategory !== activeSub) return;
+    }
 
     if (
       q &&
@@ -594,15 +564,13 @@ function renderItems() {
             }
           </table>
         </div>
-		${renderBonusPreview(it)}
+    ${renderBonusPreview(it)}
       </div>
     `;
   });
 
   requestAnimationFrame(applyDesktopPortraitScale);
 }
-
-
 </script>
 
 </body>

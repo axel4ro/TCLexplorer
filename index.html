@@ -40,15 +40,15 @@
     </div>
     <nav class="sidebar-nav">
       <button type="button" class="nav-item" onclick="showPage('wiki')" id="btn-wiki">📖 Wiki</button>
-      <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events">📅 Events</button>
-      <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable">⭐ EXP Table</button>
-      <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide">ℹ️ Web3 Guides</button>
+      <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
+      <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
+      <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide" data-i18n="sidebar_web3_guides">ℹ️ Web3 Guides</button>
       <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
-      <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck">🔎 Wallet Check</button>
+      <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck" data-i18n="sidebar_wallet_check">🔎 Wallet Check</button>
       <button type="button" class="nav-item" onclick="showPage('explorerIframe')" id="btn-explorerIframe">
         <img src="https://axel4ro.github.io/TCLexplorer/images/EGLD.png" alt=""> MvX Explorer
       </button>
@@ -387,6 +387,10 @@
 
     <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
 
+    <div class="staking-reward-note muted" data-i18n="staking_reward_note">
+      ℹ️ Reward/day is a base estimate at current APR and price and does not include TCLBoost bonuses (+5% / +7% / +10%)
+    </div>
+
     <div class="staking-scale-shell" id="stakingScaleShell">
       <div class="staking-scale-root" id="stakingScaleRoot">
         <div class="staking-table-wrap">
@@ -394,7 +398,7 @@
             <thead>
               <tr>
                 <th style="padding:8px; text-align:center;">Rank</th>
-                <th style="padding:8px; text-align:center;">Address</th>
+                <th style="padding:8px; text-align:center;" data-i18n="staking_table_address">Address</th>
                 <th style="padding:8px; text-align:center;">Total TCL</th>
                 <th style="padding:8px; text-align:center;">NFT</th>
                 <th style="padding:8px; text-align:center;">Loan</th>
@@ -443,27 +447,27 @@
 <!-- 🌐 Web3 Guide -->
   <div id="expTable" class="section-page">
     <div class="page-hero">
-      <h2>⭐ EXP Progression Table</h2>
-      <p class="muted">Level to next level EXP requirements for The Cursed Land.</p>
+      <h2 data-i18n="exp_table_title">⭐ EXP Progression Table</h2>
+      <p class="muted" data-i18n="exp_table_desc">Level to next level EXP requirements for The Cursed Land.</p>
     </div>
     <div class="exp-table-panel">
       <div class="exp-table-header">
         <div>
-          <h3>Level Progression</h3>
-          <p>Formatted progression values from level 2 to level 65.</p>
+          <h3 data-i18n="exp_table_section_title">Level Progression</h3>
+          <p data-i18n="exp_table_section_desc">Formatted progression values from level 2 to level 65.</p>
         </div>
       </div>
       <div class="exp-table-wrap">
         <table class="exp-table" aria-label="EXP progression table">
           <thead>
             <tr>
-              <th>Level</th>
-              <th>EXP Needed</th>
+              <th data-i18n="exp_table_level">Level</th>
+              <th data-i18n="exp_table_exp_needed">EXP Needed</th>
             </tr>
           </thead>
           <tbody id="expTableBody">
             <tr>
-              <td colspan="2" class="exp-table-empty">Loading EXP table...</td>
+              <td colspan="2" class="exp-table-empty" data-i18n="exp_table_loading">Loading EXP table...</td>
             </tr>
           </tbody>
         </table>
@@ -539,7 +543,14 @@
 </div>
 
 <div id="internalPage" class="section-page">
-  <div class="fullpage-embed-placeholder" id="internalPagePlaceholder">Loading page...</div>
+  <div class="fullpage-embed-placeholder" id="internalPagePlaceholder" aria-live="polite" aria-label="Loading TCL Explorer">
+    <div class="app-boot-splash__panel">
+      <img class="app-boot-splash__logo" src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="">
+      <h2 class="app-boot-splash__title" id="internalPageLoadingTitle">Loading <span>TCL Explorer</span>...</h2>
+      <p class="app-boot-splash__subtitle" id="internalPageLoadingSubtitle">Preparing dashboard, live data and navigation.</p>
+      <div class="app-boot-splash__bar" aria-hidden="true"></div>
+    </div>
+  </div>
   <iframe id="internalPageFrame" title="Internal explorer page" loading="lazy"></iframe>
 </div>
 
@@ -658,13 +669,15 @@
   <img id="overlayImg" class="overlay-img" alt="" />
 </div>
 
-<script src="lang/lang.bundle.js?v=20260410-2"></script>
-<script src="js/wiki.js?v=20260410-2"></script>
+<script src="lang/lang.bundle.js?v=20260416-3"></script>
+<script src="lang/wiki.bundle.js?v=20260415-1"></script>
+<script src="js/wiki.js?v=20260416-1"></script>
 <script>
 function openNFTs() {
   openInternalPage("NFTs.html", "NFTs Explorer", {
     navId: "btn-nfts",
-    loadingText: "Loading NFTs...",
+    loadingTitle: "Loading NFTs...",
+    loadingSubtitle: "Preparing collections, images and explorer tools.",
     waitForReadyMessage: true
   });
 }
@@ -680,7 +693,12 @@ function openLander() {
 }
   let mode = 'buy';
   const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
-  const LEADERBOARD_URL = "https://axel4ro.github.io/TCLexplorer/leaderboard.json";
+  const LEADERBOARD_URLS = [
+    "https://axel4ro.github.io/TCLexplorer/leaderboard.json",
+    "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json",
+    "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
+  ];
+  const LEADERBOARD_CACHE_KEY = "tclExplorer.leaderboard.v1";
   const MULTIVERSX_API = "https://api.multiversx.com";
 
   // ===== Utils =====
@@ -696,6 +714,49 @@ function openLander() {
   }
   function getText(id){ return (document.getElementById(id).textContent || '').trim(); }
   function setText(id, v){ document.getElementById(id).textContent = v; }
+
+  function getLeaderboardCache() {
+    try {
+      const raw = localStorage.getItem(LEADERBOARD_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function setLeaderboardCache(data) {
+    try {
+      localStorage.setItem(LEADERBOARD_CACHE_KEY, JSON.stringify({
+        cachedAt: Date.now(),
+        data
+      }));
+    } catch {}
+  }
+
+  async function fetchLeaderboardData() {
+    let lastError = null;
+
+    for (const baseUrl of LEADERBOARD_URLS) {
+      try {
+        const separator = baseUrl.includes("?") ? "&" : "?";
+        const data = await fetchJsonWithTimeout(
+          `${baseUrl}${separator}t=${Date.now()}`,
+          { cache: "no-store" },
+          5000
+        );
+
+        if (!data || typeof data !== "object" || Array.isArray(data) || Object.keys(data).length === 0) {
+          throw new Error(`Empty leaderboard payload from ${baseUrl}`);
+        }
+
+        return data;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    throw lastError || new Error("Unable to fetch leaderboard data");
+  }
 
   const TOKEN_OVERVIEW_CACHE_KEY = "tclExplorer.tokenOverview.v1";
   const TOKEN_OVERVIEW_CACHE_MIN_REFRESH_MS = 90 * 1000;
@@ -776,6 +837,7 @@ function openLander() {
       const symbol = payload.change24h >= 0 ? "📈 +" : "📉 ";
       setText("change24h", symbol + payload.change24h.toFixed(2) + "%");
     }
+    refreshLeaderboardMetaValues({ priceUsd: payload.priceUsd });
   }
 
   function hasValidGeckoStats(payload) {
@@ -851,6 +913,7 @@ function openLander() {
     }
     const aprUsdEl = document.getElementById("aprUsd");
     if (aprUsdEl) aprUsdEl.textContent = "";
+    refreshLeaderboardMetaValues({ rewards: payload });
   }
 
   function applyCachedTokenOverview() {
@@ -860,15 +923,51 @@ function openLander() {
     applyRewardsStats(getTokenOverviewCache("rewards"));
   }
 
-  // helper pentru traduceri dinamice cu variabile
-function t(key, vars = {}) {
-  const value = translations[key] ?? fallbackTranslations[key];
-  if (value === undefined || value === null || typeof value === "object") return key;
+  var translations = window.translations || {};
+  var fallbackTranslations = window.fallbackTranslations || {};
+  var currentLang = window.currentLang || (localStorage.getItem("lang") || "en");
+  window.translations = translations;
+  window.fallbackTranslations = fallbackTranslations;
+  window.currentLang = currentLang;
+
+// helper pentru traduceri dinamice cu variabile
+function t(key, vars = {}, fallbackValue = null) {
+  if (vars === null || Array.isArray(vars) || typeof vars !== "object") {
+    fallbackValue = vars;
+    vars = {};
+  }
+
+  const activeTranslations = (window.translations && typeof window.translations === "object") ? window.translations : translations;
+  const activeFallbackTranslations = (window.fallbackTranslations && typeof window.fallbackTranslations === "object") ? window.fallbackTranslations : fallbackTranslations;
+  const value = activeTranslations[key] ?? activeFallbackTranslations[key] ?? fallbackValue;
+  if (value === undefined || value === null || typeof value === "object") return fallbackValue ?? key;
   let str = String(value);
   for (const [k, v] of Object.entries(vars)) {
-    str = str.replace(new RegExp(`{${k}}`, "g"), v);
+    str = str.split(`{${k}}`).join(String(v));
   }
   return str;
+}
+
+function delay(ms, value = null) {
+  return new Promise((resolve) => window.setTimeout(() => resolve(value), ms));
+}
+
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`);
+    }
+    return await response.json();
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 
@@ -1041,15 +1140,16 @@ async function loadEvents() {
 // ===== Butoane zile =====
 function renderDayButtons(activeDay) {
   const translatedDays = translations["days"] || weekdays;
+  const todayName = weekdays[getTodayIndex()];
   let html = "";
 
   weekdays.forEach((day, i) => {
     const label = translatedDays[i];
     const isActive = day === activeDay;
+    const isToday = day === todayName;
 
     html += `<button onclick="showEventsForDay('${day}')"
-                style="flex:1; padding:6px; border-radius:6px; border:none; cursor:pointer; font-weight:600;
-                       background:${isActive ? '#28a745' : '#007bff'}; color:white;">
+                class="event-day-btn ${isActive ? 'active' : ''} ${isToday ? 'current' : ''}">
                 ${label}
              </button>`;
   });
@@ -1286,7 +1386,7 @@ showEventsForDay = function(day) {
           ${imageName
             ? `<button
                 onclick="openImage('https://axel4ro.github.io/TCLexplorer/images/${imageName}')"
-                style="background:#0d6efd; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px; margin-left:8px;">
+                class="event-info-btn">
                 ℹ️ Info
               </button>`
             : ``}
@@ -1419,83 +1519,213 @@ function formatTcl(val, decimals = 18) {
   return whole.toLocaleString("en-US");
 }
 
+function getWholeTclAmount(val, decimals = 18) {
+  if (!val) return 0;
+
+  let strVal = typeof val === "number"
+    ? val.toLocaleString("fullwide", { useGrouping: false })
+    : val.toString();
+
+  const num = BigInt(strVal);
+  const divisor = BigInt(10) ** BigInt(decimals);
+  const whole = num / divisor;
+  return Number(whole);
+}
+
+function getCurrentTclPriceUsd() {
+  const cachedPool = getTokenOverviewCache("pool");
+  if (cachedPool && typeof cachedPool.priceUsd === "number" && Number.isFinite(cachedPool.priceUsd) && cachedPool.priceUsd > 0) {
+    return cachedPool.priceUsd;
+  }
+
+  const livePrice = parseNumber(getText("curPrice"));
+  if (Number.isFinite(livePrice) && livePrice > 0) {
+    return livePrice;
+  }
+
+  return 0;
+}
+
+function getCurrentRewardsStats(preferredPayload = null) {
+  const payload = preferredPayload || getTokenOverviewCache("rewards");
+  if (
+    payload &&
+    typeof payload.totalStaked === "number" && Number.isFinite(payload.totalStaked) && payload.totalStaked > 0 &&
+    typeof payload.emission === "number" && Number.isFinite(payload.emission) && payload.emission >= 0
+  ) {
+    return payload;
+  }
+  return null;
+}
+
+function formatTclUsdValue(val, decimals = 18, preferredPriceUsd = null) {
+  const priceUsd = preferredPriceUsd || getCurrentTclPriceUsd();
+  if (!priceUsd) return "";
+
+  const wholeAmount = getWholeTclAmount(val, decimals);
+  const usdValue = wholeAmount * priceUsd;
+  return "≈ " + formatNumber(usdValue) + " $";
+}
+
+function formatTclRewardDayValue(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null) {
+  const rewardsPayload = getCurrentRewardsStats(preferredRewardsPayload);
+  if (!rewardsPayload) return "";
+
+  const wholeAmount = getWholeTclAmount(val, decimals);
+  if (!wholeAmount) return "";
+
+  const rewardTclPerDay = (wholeAmount / rewardsPayload.totalStaked) * rewardsPayload.emission;
+  if (!Number.isFinite(rewardTclPerDay) || rewardTclPerDay <= 0) return "";
+
+  const priceUsd = preferredPriceUsd || getCurrentTclPriceUsd();
+  const rewardUsdPerDay = priceUsd ? rewardTclPerDay * priceUsd : 0;
+  const rewardTclText = formatNumber(rewardTclPerDay);
+
+  if (rewardUsdPerDay > 0) {
+    return t("staking_reward_day_with_usd", {
+      tcl: rewardTclText,
+      usd: formatNumber(rewardUsdPerDay)
+    });
+  }
+
+  return t("staking_reward_day", {
+    tcl: rewardTclText
+  });
+}
+
+function refreshLeaderboardMetaValues(options = {}) {
+  const priceUsd = options.priceUsd || getCurrentTclPriceUsd();
+  const rewardsPayload = getCurrentRewardsStats(options.rewards || null);
+  const copyLabel = t("common_copy", "Copy");
+
+  document.querySelectorAll(".staking-copy-btn").forEach((btn) => {
+    if (btn.dataset.copied === "1") return;
+    btn.textContent = copyLabel;
+    btn.setAttribute("data-copy-label", copyLabel);
+  });
+
+  document.querySelectorAll(".staking-total-cell[data-raw-total]").forEach((cell) => {
+    const rawTotal = cell.getAttribute("data-raw-total");
+    const usdEl = cell.querySelector(".staking-total-usd");
+
+    if (usdEl) {
+      usdEl.textContent = priceUsd ? formatTclUsdValue(rawTotal, 18, priceUsd) : "";
+    }
+  });
+
+  document.querySelectorAll(".staking-address-reward[data-raw-total]").forEach((rewardEl) => {
+    const rawTotal = rewardEl.getAttribute("data-raw-total");
+    rewardEl.textContent = formatTclRewardDayValue(rawTotal, 18, rewardsPayload, priceUsd);
+  });
+}
+
+function renderLeaderboardRows(data) {
+  const body = document.getElementById("stakingBody");
+  if (!body) return false;
+
+  if (!data || typeof data !== "object" || Array.isArray(data) || Object.keys(data).length === 0) {
+    body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
+    return false;
+  }
+
+  const results = Object.entries(data).map(([addr, v]) => ({
+    addr: String(addr || ""),
+    rank: Number(v?.rank) || 0,
+    nft: v?.nft ?? 0,
+    loan: v?.loan ?? 0,
+    infinity: v?.infinity ?? 0,
+    total: v?.total ?? 0
+  }));
+
+  results.sort((a, b) => a.rank - b.rank);
+
+  const filtered = results.filter(r =>
+    Number(r.total) > 0 ||
+    Number(r.nft) > 0 ||
+    Number(r.loan) > 0 ||
+    Number(r.infinity) > 0
+  );
+
+  const top100 = filtered.slice(0, 100);
+  if (top100.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
+    return false;
+  }
+
+  const copyLabel = t("common_copy");
+  let html = "";
+
+  top100.forEach(r => {
+    try {
+      const address = String(r.addr || "");
+      const shortAddr = address.length > 10 ? (address.slice(0, 6) + "..." + address.slice(-4)) : address;
+      const totalUsd = formatTclUsdValue(r.total);
+      const rewardDay = formatTclRewardDayValue(r.total);
+      const totalCellHtml = totalUsd
+        ? "<div class='staking-total-cell' data-raw-total='" + r.total + "'><div class='staking-total-value'>" + formatTcl(r.total) + "</div><div class='staking-total-usd'>" + totalUsd + "</div></div>"
+        : "<div class='staking-total-cell' data-raw-total='" + r.total + "'><div class='staking-total-value'>" + formatTcl(r.total) + "</div><div class='staking-total-usd'></div></div>";
+      const addressCellHtml =
+        "<div class='staking-address-cell'>" +
+          "<span class='staking-address-text'>" + shortAddr + "</span>" +
+          "<button onclick=\"copyAddr('" + address + "', event)\" " +
+            "class='staking-copy-btn' data-copy-label='" + copyLabel + "' data-copied='0' " +
+            "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>" + copyLabel + "</button>" +
+        "</div>" +
+        "<div class='staking-address-reward' data-raw-total='" + r.total + "'>" + (rewardDay || "") + "</div>";
+
+      html += "<tr>" +
+        "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
+        "<td style='padding:6px;'>" + addressCellHtml + "</td>" +
+        "<td style='padding:6px;font-weight:bold;'>" + totalCellHtml + "</td>" +
+        "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
+        "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
+        "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
+      "</tr>";
+    } catch (rowErr) {
+      console.warn("⚠️ Skipping malformed leaderboard row:", r, rowErr);
+    }
+  });
+
+  body.innerHTML = html || '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No valid leaderboard rows</td></tr>';
+  return !!html;
+}
+
 async function fetchLeaderboard() {
   const body = document.getElementById("stakingBody");
   const statusEl = document.getElementById("lastUpdated");
 
   if (!body) return;
 
-  body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Leaderboard is being updated on-chain...</td></tr>';
-  statusEl.textContent = "⏳ Fetching latest staking data...";
+  const cached = getLeaderboardCache();
+  if (cached?.data && renderLeaderboardRows(cached.data)) {
+    if (statusEl) statusEl.textContent = "⏳ Refreshing latest staking data...";
+  } else {
+    body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Leaderboard is being updated on-chain...</td></tr>';
+    if (statusEl) statusEl.textContent = "⏳ Fetching latest staking data...";
+  }
 
   try {
-    const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
-    if (!resp.ok) {
-      statusEl.textContent = "❌ Failed to load leaderboard";
+    const data = await fetchLeaderboardData();
+    lastUpdateTime = new Date();
+    setLeaderboardCache(data);
+
+    const rendered = renderLeaderboardRows(data);
+    if (!rendered) {
+      if (statusEl) statusEl.textContent = "⚠️ Leaderboard update still in progress...";
       return;
     }
-
-const data = await resp.json();
-
-if (!data || Object.keys(data).length === 0) {
-  body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
-  statusEl.textContent = "⚠️ Leaderboard update still in progress...";
-  return;
-}
-
-// ✅ acum lucrăm direct cu data
-lastUpdateTime = new Date();
-
-const results = Object.entries(data).map(([addr, v]) => ({
-  addr,
-  rank: v.rank,
-  nft: v.nft,
-  loan: v.loan,
-  infinity: v.infinity,
-  total: v.total
-}));
-
-// sortăm după rank
-results.sort((a, b) => a.rank - b.rank);
-
-// ✅ filtrăm cei cu 0 peste tot
-const filtered = results.filter(r =>
-  Number(r.total) > 0 ||
-  Number(r.nft) > 0 ||
-  Number(r.loan) > 0 ||
-  Number(r.infinity) > 0
-);
-
-// ✅ păstrăm doar primii 100
-const top100 = filtered.slice(0, 100);
-
-let html = "";
-top100.forEach(r => {
-  // scurtăm afișarea adresei
-  let shortAddr = r.addr.slice(0, 6) + "..." + r.addr.slice(-4);
-
-  html += "<tr>" +
-    "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
-    "<td style='padding:6px; display:flex; align-items:center; gap:6px;'>" +
-      "<span style='font-family:monospace;'>" + shortAddr + "</span>" +
-      "<button onclick=\"copyAddr('" + r.addr + "', event)\" " +
-        "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>Copy</button>" +
-    "</td>" +
-    "<td style='padding:6px;font-weight:bold;'>" + formatTcl(r.total) + "</td>" +
-    "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
-    "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
-    "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
-  "</tr>";
-});
-
-body.innerHTML = html;
 
 	  
   } catch (err) {
     console.error("Leaderboard error", err);
-    statusEl.textContent = "❌ Error loading leaderboard";
-  body.innerHTML =
-      '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
+    const fallbackCached = getLeaderboardCache();
+    if (fallbackCached?.data && renderLeaderboardRows(fallbackCached.data)) {
+      if (statusEl) statusEl.textContent = "⚠️ Showing cached leaderboard";
+    } else {
+      if (statusEl) statusEl.textContent = "❌ Error loading leaderboard";
+      body.innerHTML =
+        '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ Error loading leaderboard</td></tr>';
+    }
   }
 
   requestAnimationFrame(applyStakingPortraitScale);
@@ -1523,8 +1753,18 @@ async function searchStaker() {
   searchResult.style.color = "#eab308";
 
   try {
-    const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
-    const data = await resp.json();
+    let data = null;
+    try {
+      data = await fetchLeaderboardData();
+      setLeaderboardCache(data);
+    } catch (fetchErr) {
+      const cached = getLeaderboardCache();
+      if (cached?.data) {
+        data = cached.data;
+      } else {
+        throw fetchErr;
+      }
+    }
 
     const leaderboardArray = Object.entries(data).map(([addr, v]) => ({
       addr,
@@ -1671,6 +1911,49 @@ function hideAppBootSplash() {
   }, remaining);
 }
 
+window.setTimeout(() => {
+  hideAppBootSplash();
+}, 9000);
+
+function resetFullpageFrameFit(frame) {
+  if (!frame) return;
+  frame.style.position = "";
+  frame.style.top = "";
+  frame.style.left = "";
+  frame.style.width = "";
+  frame.style.height = "";
+  frame.style.maxWidth = "";
+  frame.style.transformOrigin = "";
+  frame.style.transform = "";
+}
+
+function applyInternalPageFit() {
+  const frame = document.getElementById("internalPageFrame");
+  resetFullpageFrameFit(frame);
+}
+
+function schedulePageFits() {
+  requestAnimationFrame(() => {
+    applyStakingPortraitScale();
+    applyFullpageViewportFit();
+    applyInternalPageFit();
+  });
+  setTimeout(() => {
+    applyFullpageViewportFit();
+    applyInternalPageFit();
+  }, 60);
+}
+
+function applyFullpageViewportFit() {
+  const frameIds = ["chartFrame", "explorerFrame", "xexchangeFrame"];
+
+  frameIds.forEach((frameId) => {
+    const frame = document.getElementById(frameId);
+    if (!frame) return;
+    resetFullpageFrameFit(frame);
+  });
+}
+
 function ensureLazyEmbedLoaded(pageId) {
   const frameId = lazyEmbedPages[pageId];
   if (!frameId) return;
@@ -1682,6 +1965,7 @@ function ensureLazyEmbedLoaded(pageId) {
   if (frame.dataset.loaded === "true") {
     page.classList.add("embed-ready");
     page.classList.remove("embed-loading");
+    schedulePageFits();
     return;
   }
 
@@ -1698,6 +1982,7 @@ function ensureLazyEmbedLoaded(pageId) {
     frame.dataset.loading = "false";
     page.classList.add("embed-ready");
     page.classList.remove("embed-loading");
+    schedulePageFits();
   };
 
   frame.addEventListener("load", markReady, { once: true });
@@ -1864,6 +2149,10 @@ function showPage(id) {
     }
   }
 
+  if (id === "internalPage") {
+    resetFullpageFrameFit(document.getElementById("internalPageFrame"));
+  }
+
   ensureLazyEmbedLoaded(id);
 
   const titleEl = document.getElementById("appPageTitle");
@@ -1898,7 +2187,7 @@ function showPage(id) {
     }
   }
 
-  requestAnimationFrame(applyStakingPortraitScale);
+  schedulePageFits();
 }
 
 function setTokenAccordion(sectionId) {
@@ -1940,14 +2229,20 @@ function openInternalPage(src, title, options = {}) {
   const page = document.getElementById("internalPage");
   const frame = document.getElementById("internalPageFrame");
   const placeholder = document.getElementById("internalPagePlaceholder");
+  const placeholderTitle = document.getElementById("internalPageLoadingTitle");
+  const placeholderSubtitle = document.getElementById("internalPageLoadingSubtitle");
 
   if (page) {
     page.classList.remove("embed-ready");
     page.classList.add("embed-loading");
   }
 
-  if (placeholder) {
-    placeholder.textContent = options.loadingText || "Loading page...";
+  if (placeholderTitle) {
+    placeholderTitle.innerHTML = options.loadingTitle || options.loadingText || 'Loading <span>TCL Explorer</span>...';
+  }
+
+  if (placeholderSubtitle) {
+    placeholderSubtitle.textContent = options.loadingSubtitle || "Preparing dashboard, live data and navigation.";
   }
 
   if (internalPageState.readyFallbackTimer) {
@@ -1956,11 +2251,13 @@ function openInternalPage(src, title, options = {}) {
   }
 
   if (frame) {
+    resetFullpageFrameFit(frame);
     frame.addEventListener("load", () => {
       if (page && !internalPageState.waitForReadyMessage) {
         page.classList.add("embed-ready");
         page.classList.remove("embed-loading");
       }
+      schedulePageFits();
     }, { once: true });
 
     frame.src = src;
@@ -1972,11 +2269,13 @@ function openInternalPage(src, title, options = {}) {
         page.classList.add("embed-ready");
         page.classList.remove("embed-loading");
       }
+      schedulePageFits();
       internalPageState.readyFallbackTimer = null;
     }, 12000);
   }
 
   showPage("internalPage");
+  schedulePageFits();
 }
 
 window.addEventListener("message", (event) => {
@@ -1993,6 +2292,7 @@ window.addEventListener("message", (event) => {
       page.classList.add("embed-ready");
       page.classList.remove("embed-loading");
     }
+    schedulePageFits();
     return;
   }
 
@@ -2042,7 +2342,7 @@ function renderExpTable() {
   tableBody.innerHTML = EXP_TABLE_DATA.map(([level, exp]) => `
     <tr>
       <td class="exp-level">${level}</td>
-      <td class="exp-value">${exp.toLocaleString("en-US")}</td>
+      <td class="exp-value">${exp.toLocaleString(getCurrentLocale())}</td>
     </tr>
   `).join("");
 }
@@ -2131,8 +2431,8 @@ function updateSentimentIndex() {
     try {
     // 🔹 Fetch toate datele necesare
     const [dexRes, mvxRes] = await Promise.all([
-      fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff").then(r => r.json()),
-      fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json())
+      fetchJsonWithTimeout("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff", {}, 4500),
+      fetchJsonWithTimeout("https://api.multiversx.com/tokens/TCL-fe459d", {}, 4500)
     ]);
 
     const pair = dexRes.pair;
@@ -2155,7 +2455,7 @@ function updateSentimentIndex() {
     let stakedPct = 0;
     try {
       const hexAddr = bech32ToHex("erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk");
-      const stRes = await fetch("https://api.multiversx.com/query", {
+      const stData = await fetchJsonWithTimeout("https://api.multiversx.com/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2163,8 +2463,7 @@ function updateSentimentIndex() {
           funcName: "getRewardsData",
           args: [hexAddr]
         })
-      });
-      const stData = await stRes.json();
+      }, 4500);
       if (stData.returnData && stData.returnData[0]) {
         const decoded = atob(stData.returnData[0]);
         const parts = decoded.split(" ");
@@ -2177,20 +2476,16 @@ function updateSentimentIndex() {
 // 🔹 Locked data precisă din assets + verificare live a balanței
 let lockedPct = 0;
 try {
-  const tokenInfo = await fetch("https://api.multiversx.com/tokens/TCL-fe459d").then(r => r.json());
+  const tokenInfo = await fetchJsonWithTimeout("https://api.multiversx.com/tokens/TCL-fe459d", {}, 4000);
   const lockedAccounts = tokenInfo?.assets?.lockedAccounts || {};
 
   // 🧹 Filtrăm doar adrese valide și cu minim 1 TCL
-  const balances = await Promise.all(
+  const balances = await Promise.allSettled(
     Object.keys(lockedAccounts)
       .filter(addr => addr && addr.startsWith("erd1"))
       .map(async addr => {
         try {
-          const res = await fetch(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`);
-          if (res.status === 404) return 0; // wallet fără TCL -> skip
-          if (!res.ok) return 0;
-
-          const data = await res.json();
+          const data = await fetchJsonWithTimeout(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`, {}, 2500);
           const balance = parseFloat(data?.balance || 0) / 1e18;
 
           // 🔥 skip complet dacă are sub 1 TCL
@@ -2204,7 +2499,10 @@ try {
   );
 
   // 🧮 Calcul locked %
-  const totalLocked = balances.reduce((a, b) => a + b, 0);
+  const totalLocked = balances.reduce((sum, result) => {
+    if (result.status === "fulfilled") return sum + (Number(result.value) || 0);
+    return sum;
+  }, 0);
   const circulating = parseFloat(tokenInfo.circulatingSupply || 1);
   lockedPct = ((totalLocked / circulating) * 100).toFixed(2);
 
@@ -2330,6 +2628,7 @@ function applySidebarLayout() {
   if (wide) {
     document.body.classList.remove("sidebar-open");
   }
+  schedulePageFits();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2399,13 +2698,18 @@ overlayImg?.addEventListener("wheel", e => {
 });
 
 const BASE_URL = "./lang/";
-let translations = {};
-let fallbackTranslations = {};
-let currentLang = localStorage.getItem("lang") || "en";
+translations = {};
+fallbackTranslations = {};
+currentLang = localStorage.getItem("lang") || "en";
+window.translations = translations;
+window.fallbackTranslations = fallbackTranslations;
+window.currentLang = currentLang;
 
 // Dropdown custom
 const langDropdown = document.querySelector('.lang-dropdown');
 const currentLangBtn = document.getElementById('currentLang');
+const LANG_STORAGE_KEY = "lang";
+const LANG_MANUAL_OVERRIDE_KEY = "langManualOverride";
 
 // 🔹 Limbile suportate
 const LANGS = [
@@ -2419,6 +2723,41 @@ const LANGS = [
   { code: "pl", label: "Polski", flag: "pl" },
   { code: "pt", label: "Português", flag: "pt" }
 ];
+
+function isSupportedLang(lang) {
+  return !!lang && LANGS.some(item => item.code === lang);
+}
+
+function detectPreferredBrowserLang() {
+  const browserLangs = Array.isArray(navigator.languages) && navigator.languages.length
+    ? navigator.languages
+    : [navigator.language || navigator.userLanguage || "en"];
+
+  const normalizedLangs = browserLangs
+    .filter(Boolean)
+    .map(lang => String(lang).toLowerCase());
+
+  for (const lang of normalizedLangs) {
+    if (isSupportedLang(lang)) return lang;
+
+    const baseLang = lang.split("-")[0];
+    if (isSupportedLang(baseLang)) return baseLang;
+  }
+
+  return "en";
+}
+
+function resolveStartupLang() {
+  const storedLang = localStorage.getItem(LANG_STORAGE_KEY);
+  if (isSupportedLang(storedLang)) {
+    return storedLang;
+  }
+
+  const detectedLang = detectPreferredBrowserLang();
+  localStorage.setItem(LANG_STORAGE_KEY, detectedLang);
+  localStorage.removeItem(LANG_MANUAL_OVERRIDE_KEY);
+  return detectedLang;
+}
 
 function getBundledLangData(lang) {
   return window.TCL_LANG_DATA?.[lang] || null;
@@ -2588,6 +2927,19 @@ function applyTranslations() {
     showEventsForDay(currentDay);
   }
 
+  try {
+    const cachedLeaderboard = getLeaderboardCache();
+    if (cachedLeaderboard?.data) {
+      renderLeaderboardRows(cachedLeaderboard.data);
+    }
+    if (typeof renderExpTable === "function") {
+      renderExpTable();
+    }
+    refreshLeaderboardMetaValues();
+  } catch (leaderboardMetaErr) {
+    console.error("❌ refreshLeaderboardMetaValues error:", leaderboardMetaErr);
+  }
+
   // 🔥 ACTUALIZARE SENTIMENT INDEX când pagina token este activă
   if (document.getElementById('token')?.classList.contains('active')) {
     console.log("🔄 Refreshing sentiment index via applyTranslations...");
@@ -2600,6 +2952,7 @@ function setLang(lang) {
   const menu = document.querySelector(".lang-menu");
   if (menu) menu.style.display = "none"; // 🔥 închidem manual dropdownul
   langDropdown?.classList.remove('open');
+  localStorage.setItem(LANG_MANUAL_OVERRIDE_KEY, "1");
   return loadTranslations(lang);
 }
 
@@ -2607,51 +2960,25 @@ function setLang(lang) {
 
 // Detectează limba device-ului și setează-o automat la primul load
 window.addEventListener("DOMContentLoaded", async () => {
-  await buildLangDropdown(); // 🌍 construim doar limbile disponibile
-  const hash = window.location.hash.replace("#", "");
-  if (hash) showPage(hash);
-  else showPage("token");
-
-  // dacă nu există deja limba salvată în localStorage
-  if (!localStorage.getItem("lang")) {
-    let browserLang = navigator.language || navigator.userLanguage; 
-    browserLang = browserLang.toLowerCase();
-
-    if (browserLang.startsWith("ro")) {
-      currentLang = "ro";
-    } else if (browserLang.startsWith("tr")) {
-      currentLang = "tr";
-	} else if (browserLang.startsWith("de")) {
-      currentLang = "de";
-	} else if (browserLang.startsWith("es")) {
-      currentLang = "es";
-	} else if (browserLang.startsWith("fr")) {
-      currentLang = "fr";
-	} else if (browserLang.startsWith("it")) {
-      currentLang = "it";
-	} else if (browserLang.startsWith("pl")) {
-      currentLang = "pl";
-	} else if (browserLang.startsWith("pt")) {
-      currentLang = "pt";
-    } else {
-      currentLang = "en"; // fallback default
+  try {
+    await buildLangDropdown(); // 🌍 construim doar limbile disponibile
+    showPage("token");
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
     }
 
-    localStorage.setItem("lang", currentLang);
-  } else {
-    currentLang = localStorage.getItem("lang");
-  }
+    currentLang = resolveStartupLang();
+    localStorage.setItem(LANG_STORAGE_KEY, currentLang);
 
-  if (!LANGS.some(lang => lang.code === currentLang)) {
-    currentLang = "en";
-    localStorage.setItem("lang", currentLang);
-  }
-
-  // încarcă traducerile pentru limba detectată sau salvată
-  scheduleAppStartup();
-  try {
+    // încarcă traducerile pentru limba detectată sau salvată
+    scheduleAppStartup();
     await loadTranslations(currentLang);
-    await updateSentimentIndex();
+    await Promise.race([
+      updateSentimentIndex(),
+      delay(6500, false)
+    ]);
+  } catch (bootErr) {
+    console.error("❌ App boot error:", bootErr);
   } finally {
     hideAppBootSplash();
   }
@@ -2660,12 +2987,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 function copyAddr(addr, event) {
   navigator.clipboard.writeText(addr).then(() => {
     const btn = event.target;
-    const oldText = btn.textContent;
-    btn.textContent = "✅ Copied!";
+    const defaultText = t("common_copy", "Copy");
+    btn.dataset.copied = "1";
+    btn.setAttribute("data-copy-label", defaultText);
+    btn.textContent = "✅ " + t("common_copied", "Copied!");
     btn.style.background = "#10b981";
 
     setTimeout(() => {
-      btn.textContent = oldText;
+      btn.dataset.copied = "0";
+      btn.textContent = t("common_copy", "Copy");
       btn.style.background = "#28a745";
     }, 2000);
   });
@@ -2714,20 +3044,25 @@ async function checkWallet() {
 	
     // === Leaderboard Data (Rank + Staking details) ===
     let stakingInfo = null;
+    let leaderboardData = null;
     try {
-      const lbRes = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
-      const lbData = await lbRes.json();
-      if (lbData[address]) {
-        stakingInfo = lbData[address]; 
+      leaderboardData = await fetchLeaderboardData();
+      setLeaderboardCache(leaderboardData);
+      if (leaderboardData[address]) {
+        stakingInfo = leaderboardData[address]; 
       }
     } catch (e) {
+      const cached = getLeaderboardCache();
+      leaderboardData = cached?.data || null;
+      if (leaderboardData && leaderboardData[address]) {
+        stakingInfo = leaderboardData[address];
+      }
       console.warn("⚠️ Leaderboard fetch failed", e);
     }
 // === OUTPUT  ===
 if (stakingInfo) {
   // leaderboard array pentru top 100
-  const resp = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
-  const data = await resp.json();
+  const data = leaderboardData || {};
   const leaderboardArray = Object.entries(data).map(([addr, v]) => v);
   leaderboardArray.sort((a, b) => a.rank - b.rank);
   const top100 = leaderboardArray.slice(0, 100);
