@@ -145,5 +145,22 @@
   "events_today": "Heute",
   "events_starts_label": "Start",
   "events_ends_label": "Ende",
-  "events_next_run_label": "Nächster Lauf"
+  "events_next_run_label": "Nächster Lauf",
+  "staking_reward_note": "ℹ️ Belohnung / Tag ist eine Basisschätzung auf Grundlage des aktuellen APR und Preises, TCLBoost-Boni (+5% / +7% / +10%) sind nicht enthalten",
+  "staking_table_address": "Adresse",
+  "staking_reward_day_with_usd": "Belohnung: ≈ {tcl} TCL/Tag (≈ {usd} $/Tag)",
+  "staking_reward_day": "Belohnung: ≈ {tcl} TCL/Tag",
+  "common_copy": "Kopieren",
+  "common_copied": "Kopiert!",
+  "exp_table_nav": "⭐ EXP-Tabelle",
+  "exp_table_title": "⭐ EXP-Fortschrittstabelle",
+  "exp_table_desc": "Benotigte EXP fur den Aufstieg zum nachsten Level in The Cursed Land.",
+  "exp_table_section_title": "Level-Fortschritt",
+  "exp_table_section_desc": "Formatierte Fortschrittswerte von Level 2 bis Level 65.",
+  "exp_table_level": "Level",
+  "exp_table_exp_needed": "Benotigte EXP",
+  "exp_table_loading": "EXP-Tabelle wird geladen...",
+  "sidebar_events": "\ud83d\udcc5 Ereignisse",
+  "sidebar_web3_guides": "\u2139\ufe0f Web3-Leitfaden",
+  "sidebar_wallet_check": "\ud83d\udd0e Wallet-Pr\u00fcfung"
 }

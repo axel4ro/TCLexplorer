@@ -145,5 +145,22 @@
   "events_today": "Bugün",
   "events_starts_label": "Başlangıç",
   "events_ends_label": "Bitiş",
-  "events_next_run_label": "Sonraki çalışma"
+  "events_next_run_label": "Sonraki çalışma",
+  "staking_reward_note": "ℹ️ Ödül / gün, mevcut APR ve fiyata göre temel bir tahmindir, TCLBoost bonuslarını (+5% / +7% / +10%) içermez",
+  "staking_table_address": "Adres",
+  "staking_reward_day_with_usd": "Ödül: ≈ {tcl} TCL/gün (≈ {usd} $/gün)",
+  "staking_reward_day": "Ödül: ≈ {tcl} TCL/gün",
+  "common_copy": "Kopyala",
+  "common_copied": "Kopyalandı!",
+  "exp_table_nav": "⭐ EXP Tablosu",
+  "exp_table_title": "⭐ EXP Ilerleme Tablosu",
+  "exp_table_desc": "The Cursed Land icin bir sonraki seviyeye gecmekte gereken EXP miktari.",
+  "exp_table_section_title": "Seviye Ilerlemesi",
+  "exp_table_section_desc": "2. seviyeden 65. seviyeye kadar bicimlendirilmis ilerleme degerleri.",
+  "exp_table_level": "Seviye",
+  "exp_table_exp_needed": "Gerekli EXP",
+  "exp_table_loading": "EXP tablosu yukleniyor...",
+  "sidebar_events": "\ud83d\udcc5 Etkinlikler",
+  "sidebar_web3_guides": "\u2139\ufe0f Web3 Rehberleri",
+  "sidebar_wallet_check": "\ud83d\udd0e C\u00fczdan Kontrol\u00fc"
 }

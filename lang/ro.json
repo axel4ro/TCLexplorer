@@ -145,5 +145,22 @@
   "events_today": "Astăzi",
   "events_starts_label": "Începe",
   "events_ends_label": "Se termină",
-  "events_next_run_label": "Următoarea rulare"
+  "events_next_run_label": "Următoarea rulare",
+  "staking_reward_note": "ℹ️ Recompensa / zi este o estimare de bază la APR-ul și prețul curent, nu include bonusurile TCLBoost (+5% / +7% / +10%)",
+  "staking_table_address": "Adresă",
+  "staking_reward_day_with_usd": "Recompensă: ≈ {tcl} TCL/zi (≈ {usd} $/zi)",
+  "staking_reward_day": "Recompensă: ≈ {tcl} TCL/zi",
+  "common_copy": "Copiază",
+  "common_copied": "Copiat!",
+  "exp_table_nav": "⭐ Tabel EXP",
+  "exp_table_title": "⭐ Tabel Progresie EXP",
+  "exp_table_desc": "EXP necesar pentru trecerea la urmatorul nivel in The Cursed Land.",
+  "exp_table_section_title": "Progresie Niveluri",
+  "exp_table_section_desc": "Valorile progresiei formatate de la nivelul 2 la nivelul 65.",
+  "exp_table_level": "Nivel",
+  "exp_table_exp_needed": "EXP Necesar",
+  "exp_table_loading": "Se incarca tabelul EXP...",
+  "sidebar_events": "\ud83d\udcc5 Evenimente",
+  "sidebar_web3_guides": "\u2139\ufe0f Ghiduri Web3",
+  "sidebar_wallet_check": "\ud83d\udd0e Verificare Portofel"
 }
