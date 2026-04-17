@@ -708,6 +708,23 @@ function openLander() {
   function parseNumber(value) {
     return parseFloat((value || '').toString().replace(/,/g, '')) || 0;
   }
+  function extractDexPair(data) {
+    if (!data || typeof data !== "object") return null;
+
+    if (data.pair && typeof data.pair === "object") {
+      return data.pair;
+    }
+
+    if (Array.isArray(data.pairs) && data.pairs.length > 0) {
+      return [...data.pairs].sort((a, b) => {
+        const liquidityA = Number(a?.liquidity?.usd) || 0;
+        const liquidityB = Number(b?.liquidity?.usd) || 0;
+        return liquidityB - liquidityA;
+      })[0];
+    }
+
+    return null;
+  }
   function formatInputField(input) {
     let value = input.value.replace(/,/g, '');
     if (!isNaN(value) && value !== '') input.value = formatNumber(value);
@@ -758,7 +775,10 @@ function openLander() {
     throw lastError || new Error("Unable to fetch leaderboard data");
   }
 
-  const TOKEN_OVERVIEW_CACHE_KEY = "tclExplorer.tokenOverview.v1";
+  const TOKEN_OVERVIEW_CACHE_KEY = "tclExplorer.tokenOverview.v2";
+  const LEGACY_TOKEN_OVERVIEW_CACHE_KEYS = [
+    "tclExplorer.tokenOverview.v1"
+  ];
   const TOKEN_OVERVIEW_CACHE_MIN_REFRESH_MS = 90 * 1000;
   const TOKEN_OVERVIEW_SECTION_TTL = {
     pool: 90 * 1000,
@@ -773,6 +793,12 @@ function openLander() {
     }
   };
   const tokenOverviewCache = (() => {
+    for (const legacyKey of LEGACY_TOKEN_OVERVIEW_CACHE_KEYS) {
+      try {
+        localStorage.removeItem(legacyKey);
+      } catch (_) {}
+    }
+
     try {
       return JSON.parse(localStorage.getItem(TOKEN_OVERVIEW_CACHE_KEY) || "{}");
     } catch (_) {
@@ -807,7 +833,19 @@ function openLander() {
   function hasFreshTokenOverviewCache(section, maxAgeMs = null) {
     const cached = getTokenOverviewCache(section);
     const ttl = maxAgeMs ?? TOKEN_OVERVIEW_SECTION_TTL[section] ?? TOKEN_OVERVIEW_CACHE_MIN_REFRESH_MS;
-    return !!cached && typeof cached.cachedAt === "number" && (Date.now() - cached.cachedAt) < ttl;
+    if (!cached || typeof cached.cachedAt !== "number") return false;
+
+    const ageMs = Date.now() - cached.cachedAt;
+    if (!Number.isFinite(ageMs)) return false;
+
+    // Guard against corrupted or future timestamps that can freeze stale values indefinitely.
+    if (ageMs < -5000) {
+      delete tokenOverviewCache[section];
+      persistTokenOverviewCache();
+      return false;
+    }
+
+    return ageMs >= 0 && ageMs < ttl;
   }
 
   function withTokenOverviewRequest(section, loader) {
@@ -1405,9 +1443,11 @@ showEventsForDay = function(day) {
 
     return withTokenOverviewRequest("pool", async () => {
       try {
-        const res = await fetch(DEX_API_URL);
+        const separator = DEX_API_URL.includes("?") ? "&" : "?";
+        const res = await fetch(`${DEX_API_URL}${separator}t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`DexScreener HTTP ${res.status}`);
         const data = await res.json();
-        const pool = data?.pair;
+        const pool = extractDexPair(data);
         if (!pool) throw new Error("Missing DexScreener pair data");
 
         const payload = {
@@ -1416,6 +1456,9 @@ showEventsForDay = function(day) {
           priceUsd: Number(pool.priceUsd) || 0,
           change24h: Number(pool.priceChange?.h24) || 0
         };
+        if (!Number.isFinite(payload.priceUsd) || payload.priceUsd <= 0) {
+          throw new Error("Invalid DexScreener price data");
+        }
 
         applyPoolStats(payload);
         setTokenOverviewCache("pool", payload);
@@ -2042,10 +2085,10 @@ function startTokenRefresh() {
   tokenRefreshStarted = true;
 
   runAfterFirstPaint(() => {
-    fetchPoolData();
+    fetchPoolData({ force: true });
     fetchGeckoAthAtl();
     fetchExplorerData();
-    loadTCLStats();
+    loadTCLStats({ force: true });
   }, 40);
 
   window.setInterval(() => {
@@ -3030,13 +3073,13 @@ async function checkWallet() {
     const walletNfts = nftData.filter(n => n.collection.startsWith("TCL"));
 
     // === Prices ===
-    const egldPriceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq");
+    const egldPriceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq?t=" + Date.now(), { cache: "no-store" });
     const egldPriceData = await egldPriceRes.json();
-    const priceEGLD = parseFloat(egldPriceData.pair.priceUsd || 0);
+    const priceEGLD = parseFloat(extractDexPair(egldPriceData)?.priceUsd || 0);
 
-    const tclPriceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    const tclPriceRes = await fetch("https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?t=" + Date.now(), { cache: "no-store" });
     const tclPriceData = await tclPriceRes.json();
-    const priceTCL = parseFloat(tclPriceData.pairs?.[0]?.priceUsd || 0);
+    const priceTCL = parseFloat(extractDexPair(tclPriceData)?.priceUsd || 0);
 
     // === Values ===
     const valueEGLD = egld * priceEGLD;
