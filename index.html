@@ -1547,17 +1547,10 @@ async function fetchExplorerData(options = {}) {
 function formatTcl(val, decimals = 18) {
   if (!val) return "0";
 
-  // transformăm valoarea într-un string "normal" (fără e+xx)
-  let strVal = typeof val === "number"
-  ? val.toLocaleString("fullwide", { useGrouping: false })
-  : val.toString(); // ✅ merge și cu string
-
-
-  // acum folosim BigInt
-  let num = BigInt(strVal);
-  let divisor = BigInt(10) ** BigInt(decimals);
-
-  let whole = num / divisor;
+  const normalized = normalizeIntegerLikeValue(val);
+  const num = BigInt(normalized);
+  const divisor = BigInt(10) ** BigInt(decimals);
+  const whole = num / divisor;
 
   return whole.toLocaleString("en-US");
 }
@@ -1565,14 +1558,56 @@ function formatTcl(val, decimals = 18) {
 function getWholeTclAmount(val, decimals = 18) {
   if (!val) return 0;
 
-  let strVal = typeof val === "number"
-    ? val.toLocaleString("fullwide", { useGrouping: false })
-    : val.toString();
-
-  const num = BigInt(strVal);
+  const num = BigInt(normalizeIntegerLikeValue(val));
   const divisor = BigInt(10) ** BigInt(decimals);
   const whole = num / divisor;
   return Number(whole);
+}
+
+function normalizeIntegerLikeValue(val) {
+  if (val === null || val === undefined || val === "") return "0";
+
+  if (typeof val === "bigint") {
+    return val.toString();
+  }
+
+  if (typeof val === "number") {
+    if (!Number.isFinite(val)) return "0";
+    return val.toLocaleString("fullwide", {
+      useGrouping: false,
+      maximumFractionDigits: 0
+    });
+  }
+
+  const str = String(val).trim().replace(/,/g, "");
+  if (!str) return "0";
+  if (/^[+-]?\d+$/.test(str)) return str;
+
+  const scientificMatch = str.match(/^([+-]?)(\d+)(?:\.(\d+))?[eE]([+-]?\d+)$/);
+  if (scientificMatch) {
+    const sign = scientificMatch[1] === "-" ? "-" : "";
+    const intPart = scientificMatch[2];
+    const fracPart = scientificMatch[3] || "";
+    const exponent = Number(scientificMatch[4]);
+    const digits = `${intPart}${fracPart}`.replace(/^0+(?=\d)/, "");
+
+    if (exponent < 0) return "0";
+
+    const zerosToAdd = exponent - fracPart.length;
+    if (zerosToAdd >= 0) {
+      return sign + digits + "0".repeat(zerosToAdd);
+    }
+
+    const wholeDigits = digits.slice(0, digits.length + zerosToAdd);
+    return sign + (wholeDigits || "0");
+  }
+
+  const decimalMatch = str.match(/^([+-]?\d+)\.\d+$/);
+  if (decimalMatch) {
+    return decimalMatch[1];
+  }
+
+  return str;
 }
 
 function getCurrentTclPriceUsd() {
@@ -1674,10 +1709,10 @@ function renderLeaderboardRows(data) {
   const results = Object.entries(data).map(([addr, v]) => ({
     addr: String(addr || ""),
     rank: Number(v?.rank) || 0,
-    nft: v?.nft ?? 0,
-    loan: v?.loan ?? 0,
-    infinity: v?.infinity ?? 0,
-    total: v?.total ?? 0
+    nft: normalizeIntegerLikeValue(v?.nft ?? 0),
+    loan: normalizeIntegerLikeValue(v?.loan ?? 0),
+    infinity: normalizeIntegerLikeValue(v?.infinity ?? 0),
+    total: normalizeIntegerLikeValue(v?.total ?? 0)
   }));
 
   results.sort((a, b) => a.rank - b.rank);
@@ -1702,11 +1737,12 @@ function renderLeaderboardRows(data) {
     try {
       const address = String(r.addr || "");
       const shortAddr = address.length > 10 ? (address.slice(0, 6) + "..." + address.slice(-4)) : address;
-      const totalUsd = formatTclUsdValue(r.total);
-      const rewardDay = formatTclRewardDayValue(r.total);
+      const totalRaw = normalizeIntegerLikeValue(r.total);
+      const totalUsd = formatTclUsdValue(totalRaw);
+      const rewardDay = formatTclRewardDayValue(totalRaw);
       const totalCellHtml = totalUsd
-        ? "<div class='staking-total-cell' data-raw-total='" + r.total + "'><div class='staking-total-value'>" + formatTcl(r.total) + "</div><div class='staking-total-usd'>" + totalUsd + "</div></div>"
-        : "<div class='staking-total-cell' data-raw-total='" + r.total + "'><div class='staking-total-value'>" + formatTcl(r.total) + "</div><div class='staking-total-usd'></div></div>";
+        ? "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'>" + totalUsd + "</div></div>"
+        : "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'></div></div>";
       const addressCellHtml =
         "<div class='staking-address-cell'>" +
           "<span class='staking-address-text'>" + shortAddr + "</span>" +
@@ -1714,7 +1750,7 @@ function renderLeaderboardRows(data) {
             "class='staking-copy-btn' data-copy-label='" + copyLabel + "' data-copied='0' " +
             "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>" + copyLabel + "</button>" +
         "</div>" +
-        "<div class='staking-address-reward' data-raw-total='" + r.total + "'>" + (rewardDay || "") + "</div>";
+        "<div class='staking-address-reward' data-raw-total='" + totalRaw + "'>" + (rewardDay || "") + "</div>";
 
       html += "<tr>" +
         "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
