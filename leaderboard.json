@@ -79,9 +79,9 @@
   "erd1trwxuln2r5wn7lqcpryssf7q9svekes4dlza8nqz50m6m6fd0rwqjk76dy": {
     "rank": 12,
     "nft": 0,
-    "loan": 2469082000000000081264640,
+    "loan": 2472083999999999902482432,
     "infinity": 0,
-    "total": 2469082000000000081264640
+    "total": 2472083999999999902482432
   },
   "erd1tccyxm8k37pclvuh7a7ye05xqzdfr6e9akg8vgfv4lpgfkar8z5sx5unzr": {
     "rank": 13,
@@ -251,47 +251,47 @@
     "infinity": 0,
     "total": 481802000000000000000000
   },
-  "erd14xk20ra4ruxshaczr7hv60x0vhjc2l8kqw950a7w7002urzhqumqka27ql": {
-    "rank": 37,
-    "nft": 419846000000000000000000,
-    "loan": 61494999999999991873536,
-    "infinity": 0,
-    "total": 481340999999999991873536
-  },
   "erd1jjskee7c732ugykdy7y37cytryy378gks959yyp3n79vz44jzxhsfh9esj": {
-    "rank": 38,
+    "rank": 37,
     "nft": 0,
     "loan": 20673999999999999475712,
     "infinity": 451828925665905311060307,
     "total": 472502925665905310536019
   },
   "erd16ac3wklm8tsnxw9kutyznyxyvncsytnfdwhdz0thc5kcr7n27fvsrceuky": {
-    "rank": 39,
+    "rank": 38,
     "nft": 0,
     "loan": 0,
     "infinity": 467500000000000000000000,
     "total": 467500000000000000000000
   },
   "erd1mrazl4d6n8z36389duq04mtwykwwvwuzw3478nyv2kmr0yzvcuhq26ez54": {
-    "rank": 40,
+    "rank": 39,
     "nft": 21764000000000000000000,
     "loan": 0,
     "infinity": 417132503572860883674584,
     "total": 438896503572860883674584
   },
   "erd1skpyhspjc7xq0lzl0f55dmsz5jc0kvvk8ddhsj9snx90zz5ck3rqqy6yyv": {
-    "rank": 41,
+    "rank": 40,
     "nft": 0,
     "loan": 0,
     "infinity": 412840000000000000000000,
     "total": 412840000000000000000000
   },
   "erd1rhdsmz4ag4vnkj85gk7q8j5erpzy3f9szyd0ap8ksdgk42xd23dq7jwdsa": {
-    "rank": 42,
+    "rank": 41,
     "nft": 0,
     "loan": 0,
     "infinity": 400000000000000000000000,
     "total": 400000000000000000000000
+  },
+  "erd14xk20ra4ruxshaczr7hv60x0vhjc2l8kqw950a7w7002urzhqumqka27ql": {
+    "rank": 42,
+    "nft": 355846000000000000000000,
+    "loan": 26320000000000000000000,
+    "infinity": 0,
+    "total": 382166000000000000000000
   },
   "erd1gqawm35mqn26c5kgy3xyc6pgxpzyuk4s7lm2tjz3y3yxz2j2ngcsfs3u09": {
     "rank": 43,
