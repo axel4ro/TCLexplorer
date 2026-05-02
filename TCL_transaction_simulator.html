@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCL Transaction Simulator</title>
+<style>
+:root{
+    --text:#eef4ff;
+    --muted:#92a3bf;
+    --line:rgba(80, 223, 201, 0.18);
+    --good:#49eb91;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+    font-family:"Space Grotesk","Segoe UI",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(47,246,222,0.08), transparent 22%),
+      radial-gradient(circle at bottom right, rgba(125,92,255,0.1), transparent 26%),
+      linear-gradient(160deg, #04070d 0%, #09111d 42%, #050912 100%);
+}
+.page-shell{width:min(1440px, calc(100% - 32px));margin:0 auto;padding:18px 0 26px}
+.back-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;
+    padding:10px 14px;background:linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);color:#fff;
+    font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(112, 88, 255, .24)
+}
+.hero,.card{
+    margin-top:14px;padding:18px;border-radius:22px;border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(14, 24, 39, .94) 0%, rgba(9, 16, 28, .96) 100%)
+}
+.eyebrow{margin:0 0 8px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.hero h1{margin:0;font-size:2rem;line-height:1.05}
+.hero p,.card p{margin:10px 0 0;color:var(--muted);line-height:1.5}
+.hero-stats{margin-top:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hero-stat{padding:14px 16px;border-radius:16px;border:1px solid rgba(126,152,188,.12);background:linear-gradient(180deg, rgba(14,23,37,.78) 0%, rgba(8,14,24,.84) 100%)}
+.hero-stat span{display:block;margin-bottom:6px;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em}
+.hero-stat strong{font-size:1rem}
+.grid{margin-top:18px;display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:16px;align-items:start}
+.card h2{margin:0 0 8px;font-size:1.12rem}
+.segment-control{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;padding:6px;border-radius:999px;background:rgba(4,9,19,.9);border:1px solid rgba(126,152,188,.14)}
+.segment{border:0;border-radius:999px;padding:10px 12px;font:inherit;font-size:.95rem;font-weight:700;color:#d7e3f6;background:transparent;cursor:pointer}
+.segment.active.buy{color:#04110b;background:linear-gradient(135deg, var(--good) 0%, #6fffaf 100%)}
+.segment.active.sell{color:#190607;background:linear-gradient(135deg, #ff5f66 0%, #ff9196 100%)}
+.field-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.field-label{margin:0;color:#d8e4f7;font-size:.92rem;font-weight:600}
+.quick-fill{display:flex;gap:8px}
+.quick-fill-btn{border:1px solid rgba(126,152,188,.2);border-radius:999px;padding:6px 10px;background:rgba(3,9,18,.9);color:#d7e3f6;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.field-input{width:100%;border:1px solid rgba(126,152,188,.18);border-radius:16px;padding:11px 14px;background:rgba(2,7,15,.86);color:var(--text);font:inherit;font-size:.96rem;outline:none}
+.field-meta{margin-top:10px;display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:.78rem}
+.estimate{margin-top:6px;font-size:1.5rem;font-weight:700}
+.action-grid{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;border:0;border-radius:16px;padding:11px 14px;font:inherit;font-size:.95rem;font-weight:700;cursor:pointer}
+.btn-primary{color:#04110b;background:linear-gradient(135deg, var(--good) 0%, #70f7af 100%)}
+.btn-secondary{color:#fff;background:linear-gradient(135deg, #4f7fff 0%, #69a0ff 100%)}
+.result-box{min-height:320px;border-radius:18px;border:1px solid rgba(126,152,188,.12);background:linear-gradient(180deg, rgba(12,23,39,.74) 0%, rgba(6,13,23,.84) 100%);padding:18px;line-height:1.65}
+.result-panel{border-left:4px solid #2ff6de;border-radius:14px;padding:14px 16px;background:rgba(8,16,28,.62)}
+.result-line{margin:0 0 4px;color:#eef4ff;font-size:1rem;font-weight:600}
+.result-line.muted{color:#aebcd3;font-weight:500}
+.result-spacer{height:14px}
+.result-list{margin:0;padding-left:18px;color:#eef4ff}
+.result-list li{margin:2px 0}
+@media (max-width:980px){.grid,.hero-stats{grid-template-columns:1fr}}
+@media (max-width:720px){
+    .page-shell{width:min(100%, calc(100% - 20px));padding:12px 0 18px}
+    .hero,.card{padding:14px;border-radius:18px}
+    .hero h1{font-size:1.65rem}
+    .action-grid,.field-head,.field-meta{grid-template-columns:1fr;flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="page-shell">
+  <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
+  <section class="hero">
+    <p class="eyebrow">Trading Calculator</p>
+    <h1>🧮 Transaction Simulator</h1>
+    <p>Simulate buy or sell impact on the TCL/USDC pool using the current live reserves.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span>Current Price</span><strong id="curPrice">—</strong></div>
+      <div class="hero-stat"><span>Pool TCL</span><strong id="curTCL">—</strong></div>
+      <div class="hero-stat"><span>Pool USDC</span><strong id="curUSDC">—</strong></div>
+    </div>
+  </section>
+  <div class="grid">
+    <section class="card">
+      <h2>Input</h2>
+      <p>Choose a side, enter an amount and estimate the impact before trading.</p>
+      <div class="segment-control">
+        <button id="buy-switch" class="segment active buy" type="button">Buy</button>
+        <button id="sell-switch" class="segment" type="button">Sell</button>
+      </div>
+      <div class="field-head">
+        <label class="field-label" id="inputLabel" for="amount">USDC to spend</label>
+        <div class="quick-fill">
+          <button class="quick-fill-btn" type="button" id="fillHalf">50%</button>
+          <button class="quick-fill-btn" type="button" id="fillMax">Max</button>
+        </div>
+      </div>
+      <input class="field-input" type="text" id="amount" placeholder="ex: 100" autocomplete="off">
+      <div class="field-meta">
+        <span>Trading fee applied: 1%</span>
+        <span id="resultMeta">Est. TCL received</span>
+      </div>
+      <div class="estimate" id="estimateValue">0 TCL</div>
+      <div class="action-grid">
+        <button class="btn btn-primary" type="button" id="calcBtn">Calculate</button>
+        <button class="btn btn-secondary" type="button" onclick="openXExchange()">Trade on xExchange</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Result</h2>
+      <p>Estimated slippage, average execution price and new pool balances after the simulated trade.</p>
+      <div class="result-box" id="resultBox">Enter an amount to begin the simulation.</div>
+    </section>
+  </div>
+</div>
+<script>
+const DEX_API_URL="https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+let mode="buy",readyNotified=false,poolState={curTCL:0,curUSDC:0,priceUsd:0};
+function notifyReady(){if(readyNotified)return;readyNotified=true;if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:page-ready"},"*")}catch(error){console.warn("Failed to notify parent page ready",error)}}}
+function goBackToTclToken(){if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:navigate",page:"token",section:"tokenCalculatorsSection"},"*");return}catch(error){console.warn("Back to TCL Token parent navigation failed",error)}}window.location.href="index.html#token"}
+function openXExchange(){if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:navigate",page:"xexchangeIframe"},"*");return}catch(error){console.warn("Open xExchange parent navigation failed",error)}}window.location.href="index.html#xexchangeIframe"}
+function formatNumber(n){return Number(n).toLocaleString("en-US",{maximumFractionDigits:2})}
+function parseNumber(value){return parseFloat((value||"").toString().replace(/,/g,""))||0}
+function formatNum(num,dec=2){if(isNaN(num))return"0";return num.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+function formatInputField(input){let value=input.value.replace(/,/g,"");if(!isNaN(value)&&value!=="")input.value=formatNumber(value)}
+function extractDexPair(data){if(!data||typeof data!=="object")return null;if(data.pair&&typeof data.pair==="object")return data.pair;if(Array.isArray(data.pairs)){return data.pairs.find((pair)=>pair&&pair.chainId==="multiversx"&&String(pair.baseToken?.symbol||"").toUpperCase()==="TCL")||data.pairs[0]||null}return null}
+function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value}
+function setResultPlaceholder(message){const resultBox=document.getElementById("resultBox");resultBox.innerHTML=`<div class="result-panel"><p class="result-line muted">${message}</p></div>`}
+function switchMode(){mode=mode==="buy"?"sell":"buy";const inputLabel=document.getElementById("inputLabel"),resultMeta=document.getElementById("resultMeta"),buyBtn=document.getElementById("buy-switch"),sellBtn=document.getElementById("sell-switch"),amountInput=document.getElementById("amount"),estimateValue=document.getElementById("estimateValue");if(mode==="buy"){inputLabel.textContent="USDC to spend";resultMeta.textContent="Est. TCL received";buyBtn.classList.add("active","buy");sellBtn.classList.remove("active","sell");estimateValue.textContent="0 TCL"}else{inputLabel.textContent="TCL to sell";resultMeta.textContent="Est. USDC received";sellBtn.classList.add("active","sell");buyBtn.classList.remove("active","buy");estimateValue.textContent="0 USDC"}amountInput.value="";setResultPlaceholder("Enter an amount to begin the simulation.")}
+function updateEstimatePreview(){const tcl=poolState.curTCL,usdc=poolState.curUSDC,value=parseNumber(document.getElementById("amount").value),estimateValue=document.getElementById("estimateValue"),feePct=.01,valueAfterFee=value*(1-feePct);if(!value||!tcl||!usdc){estimateValue.textContent=mode==="buy"?"0 TCL":"0 USDC";return}if(mode==="buy"){const newUSDC=usdc+valueAfterFee,newTCL=tcl*usdc/newUSDC,boughtTCL=tcl-newTCL;estimateValue.textContent=`${formatNumber(boughtTCL)} TCL`}else{const newTCL=tcl+valueAfterFee,newUSDC=usdc*tcl/newTCL,receivedUSDC=usdc-newUSDC;estimateValue.textContent=`${formatNumber(receivedUSDC)} USDC`}}
+function calculate(){const tcl=poolState.curTCL,usdc=poolState.curUSDC,curPrice=poolState.priceUsd,value=parseNumber(document.getElementById("amount").value),resultBox=document.getElementById("resultBox"),feePct=.01,valueAfterFee=value*(1-feePct);resultBox.innerHTML="";if(mode==="buy"&&value>0){const newUSDC=usdc+valueAfterFee,newTCL=tcl*usdc/newUSDC,boughtTCL=tcl-newTCL,avgPrice=value/boughtTCL,newPrice=newUSDC/newTCL,priceImpact=(avgPrice-curPrice)/avgPrice*100,pctChange=(newPrice-curPrice)/curPrice*100;resultBox.innerHTML=`<div class="result-panel"><p class="result-line">🌀 Buy TCL with ${formatNumber(value)} USDC ($)</p><p class="result-line">💲 Estimated TCL received: ${formatNumber(boughtTCL)}</p><p class="result-line">⚖️ Average paid price: ${formatNum(avgPrice,5)} USDC/TCL</p><p class="result-line">💥 Price Impact: ${formatNum(priceImpact,2)}%</p><p class="result-line">📈 Estimated Increase: +${formatNum(pctChange,2)}%</p><div class="result-spacer"></div><p class="result-line">📊 Estimated TCL final price: ${formatNum(newPrice,5)} USDC ($)</p><p class="result-line">🔄 Estimated Supply After Transaction:</p><ul class="result-list"><li>TCL in Pool: ${formatNumber(newTCL)}</li><li>USDC in Pool: ${formatNumber(newUSDC)}</li></ul></div>`;return}if(mode==="sell"&&value>0){const newTCL=tcl+valueAfterFee,newUSDC=usdc*tcl/newTCL,receivedUSDC=usdc-newUSDC,avgPrice=receivedUSDC/value,newPrice=newUSDC/newTCL,priceImpact=(curPrice-avgPrice)/curPrice*100,pctChange=(newPrice-curPrice)/curPrice*100;resultBox.innerHTML=`<div class="result-panel"><p class="result-line">🌀 Sell ${formatNumber(value)} TCL</p><p class="result-line">💲 Estimated USDC received: ${formatNumber(receivedUSDC)}</p><p class="result-line">⚖️ Average sold price: ${formatNum(avgPrice,5)} USDC/TCL</p><p class="result-line">💥 Price Impact: ${formatNum(priceImpact,2)}%</p><p class="result-line">📉 Estimated Decrease: ${formatNum(pctChange,2)}%</p><div class="result-spacer"></div><p class="result-line">📊 Estimated TCL final price: ${formatNum(newPrice,5)} USDC ($)</p><p class="result-line">🔄 Estimated Supply After Transaction:</p><ul class="result-list"><li>TCL in Pool: ${formatNumber(newTCL)}</li><li>USDC in Pool: ${formatNumber(newUSDC)}</li></ul></div>`;return}setResultPlaceholder("Please enter a valid amount.")}
+async function loadPoolData(){try{const separator=DEX_API_URL.includes("?")?"&":"?";const res=await fetch(`${DEX_API_URL}${separator}t=${Date.now()}`,{cache:"no-store"});if(!res.ok)throw new Error(`DexScreener HTTP ${res.status}`);const data=await res.json();const pool=extractDexPair(data);if(!pool)throw new Error("Missing pair data");poolState={curTCL:Number(pool.liquidity?.base)||0,curUSDC:Number(pool.liquidity?.quote)||0,priceUsd:Number(pool.priceUsd)||0}}catch(error){console.error("Failed to fetch pool data",error)}finally{setText("curPrice",poolState.priceUsd?`${formatNum(poolState.priceUsd,6)} $`:"—");setText("curTCL",poolState.curTCL?`${formatNumber(poolState.curTCL)} TCL`:"—");setText("curUSDC",poolState.curUSDC?`${formatNumber(poolState.curUSDC)} USDC`:"—");notifyReady()}}
+function fillAmount(ratio){const source=mode==="buy"?poolState.curUSDC:poolState.curTCL;const value=source*ratio;const input=document.getElementById("amount");input.value=value?formatNumber(value):"";updateEstimatePreview()}
+document.getElementById("buy-switch").addEventListener("click",()=>{if(mode!=="buy")switchMode()});
+document.getElementById("sell-switch").addEventListener("click",()=>{if(mode!=="sell")switchMode()});
+document.getElementById("amount").addEventListener("input",updateEstimatePreview);
+document.getElementById("amount").addEventListener("blur",(event)=>formatInputField(event.target));
+document.getElementById("amount").addEventListener("keydown",(event)=>{if(event.key==="Enter")calculate()});
+document.getElementById("fillHalf").addEventListener("click",()=>fillAmount(.5));
+document.getElementById("fillMax").addEventListener("click",()=>fillAmount(1));
+document.getElementById("calcBtn").addEventListener("click",calculate);
+setResultPlaceholder("Enter an amount to begin the simulation.");
+loadPoolData();
+</script>
+</body>
+</html>

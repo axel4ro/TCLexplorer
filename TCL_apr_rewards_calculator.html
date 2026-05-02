@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCL APR & Rewards Calculator</title>
+<style>
+:root{
+    --text:#eef4ff;
+    --muted:#92a3bf;
+    --line:rgba(80, 223, 201, 0.18);
+    --accent:#2ff6de;
+    --good:#49eb91;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+    font-family:"Space Grotesk","Segoe UI",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(47,246,222,0.08), transparent 22%),
+      radial-gradient(circle at bottom right, rgba(125,92,255,0.1), transparent 26%),
+      linear-gradient(160deg, #04070d 0%, #09111d 42%, #050912 100%);
+}
+.page-shell{width:min(1360px, calc(100% - 32px));margin:0 auto;padding:18px 0 26px}
+.back-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;
+    padding:10px 14px;background:linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);color:#fff;
+    font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(112, 88, 255, .24)
+}
+.hero,.card{margin-top:14px;padding:20px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(180deg, rgba(14, 24, 39, .94) 0%, rgba(9, 16, 28, .96) 100%)}
+.eyebrow{margin:0 0 8px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.hero h1{margin:0;font-size:2rem;line-height:1.05}
+.hero p,.placeholder{margin:10px 0 0;color:var(--muted);line-height:1.5}
+.hero-stats{margin-top:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hero-stat{padding:14px 16px;border-radius:16px;border:1px solid rgba(126,152,188,.12);background:linear-gradient(180deg, rgba(14,23,37,.78) 0%, rgba(8,14,24,.84) 100%)}
+.hero-stat span{display:block;margin-bottom:6px;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em}
+.hero-stat strong{font-size:1rem}
+.input-row{display:flex;gap:12px;align-items:end;margin-top:10px}
+.input-group{flex:1}
+label{display:block;margin-bottom:8px;color:#d8e4f7;font-size:.92rem;font-weight:600}
+input{width:100%;border:1px solid rgba(126,152,188,.18);border-radius:16px;padding:12px 14px;background:rgba(2,7,15,.86);color:var(--text);font:inherit;font-size:.96rem;outline:none;text-align:center}
+.btn{border:0;border-radius:16px;padding:12px 18px;font:inherit;font-size:.95rem;font-weight:700;cursor:pointer;color:#04110b;background:linear-gradient(135deg, var(--good) 0%, #70f7af 100%)}
+.summary{margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;color:#dfe9f8}
+.summary .accent{color:var(--accent);font-weight:700}
+.result-grid{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.result-card{padding:18px;border-radius:18px;border:1px solid rgba(126,152,188,.12);background:linear-gradient(180deg, rgba(12,23,39,.78) 0%, rgba(6,13,23,.84) 100%)}
+.result-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px;align-items:baseline}
+.result-title{color:var(--accent);font-size:1.25rem;font-weight:700}
+.result-rate{color:#eef4ff;font-size:1.12rem;font-weight:700}
+.result-line{margin:6px 0;font-size:1rem}
+@media (max-width:980px){.hero-stats,.result-grid{grid-template-columns:1fr}}
+@media (max-width:720px){.page-shell{width:min(100%, calc(100% - 20px));padding:12px 0 18px}.hero,.card{padding:14px;border-radius:18px}.hero h1{font-size:1.65rem}.input-row{flex-direction:column;align-items:stretch}}
+</style>
+</head>
+<body>
+<div class="page-shell">
+  <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
+  <section class="hero">
+    <p class="eyebrow">Rewards Calculator</p>
+    <h1>🧮 APR &amp; Rewards Calculator</h1>
+    <p>Estimate daily, weekly, monthly and yearly TCL rewards using the current live APR and total staked supply.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span>Current APR</span><strong id="currentApr">—</strong></div>
+      <div class="hero-stat"><span>Total Staked</span><strong id="totalStaked">—</strong></div>
+      <div class="hero-stat"><span>Emission / Day</span><strong id="emissionPerDay">—</strong></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="input-row">
+      <div class="input-group">
+        <label for="aprInput">Enter an amount of TCL to simulate</label>
+        <input type="text" id="aprInput" placeholder="e.g. 1,000,000" inputmode="numeric">
+      </div>
+      <button class="btn" type="button" id="calculateAprBtn">Calculate</button>
+    </div>
+    <div class="summary">
+      <div>🧮 Simulated amount: <b id="simulatedAmount">—</b></div>
+      <div class="accent">🔋 Current APR: <b id="summaryApr">—</b></div>
+    </div>
+    <div id="aprResultGrid" class="result-grid" style="display:none;"></div>
+    <div id="aprPlaceholder" class="placeholder">Enter a TCL amount to estimate rewards and APR impact.</div>
+  </section>
+</div>
+<script>
+const SC_ADDRESS="erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+const CHARSET="qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+let readyNotified=false,rewardsState={apr:0,totalStaked:0,emission:0};
+function notifyReady(){if(readyNotified)return;readyNotified=true;if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:page-ready"},"*")}catch(error){console.warn("Failed to notify parent page ready",error)}}}
+function goBackToTclToken(){if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:navigate",page:"token",section:"tokenCalculatorsSection"},"*");return}catch(error){console.warn("Back to TCL Token parent navigation failed",error)}}window.location.href="index.html#token"}
+function formatNumber(n,digits=2){return Number(n).toLocaleString("en-US",{minimumFractionDigits:digits,maximumFractionDigits:digits})}
+function bech32Decode(bech){bech=bech.toLowerCase();const pos=bech.lastIndexOf("1");const data=[];for(let i=pos+1;i<bech.length;i++){const v=CHARSET.indexOf(bech[i]);if(v===-1)return null;data.push(v)}return convertBits(data.slice(0,-6),5,8,false)}
+function convertBits(data,frombits,tobits,pad){let acc=0,bits=0,ret=[];const maxv=(1<<tobits)-1;for(let value of data){if(value<0||(value>>frombits))return null;acc=(acc<<frombits)|value;bits+=frombits;while(bits>=tobits){bits-=tobits;ret.push((acc>>bits)&maxv)}}if(pad){if(bits>0)ret.push((acc<<(tobits-bits))&maxv)}else if(bits>=frombits||((acc<<(tobits-bits))&maxv))return null;return ret}
+function bech32ToHex(bech){const bytes=bech32Decode(bech);return bytes?Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join(""):null}
+function renderRewardsSummary(){document.getElementById("currentApr").textContent=rewardsState.apr?`${rewardsState.apr.toFixed(2)}%`:"—";document.getElementById("totalStaked").textContent=rewardsState.totalStaked?`${formatNumber(rewardsState.totalStaked)} TCL`:"—";document.getElementById("emissionPerDay").textContent=rewardsState.emission?`${formatNumber(rewardsState.emission)} TCL`:"—";document.getElementById("summaryApr").textContent=rewardsState.apr?`${rewardsState.apr.toFixed(2)}%`:"—"}
+async function loadRewardsData(){try{const hexAddr=bech32ToHex(SC_ADDRESS);const payload={scAddress:SC_ADDRESS,funcName:"getRewardsData",args:[hexAddr]};const res=await fetch("https://api.multiversx.com/query",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(!data.returnData||!data.returnData[0])throw new Error("No return data");const decoded=atob(data.returnData[0]);const parts=decoded.split(" ");rewardsState.apr=Number(parseFloat(parts[2]).toFixed(2));rewardsState.totalStaked=parseFloat(parts[3])/1e18;rewardsState.emission=parseFloat(parts[14])/1e18}catch(error){console.error("Failed to load rewards data",error)}finally{renderRewardsSummary();notifyReady()}}
+function simulateApr(){const raw=document.getElementById("aprInput").value.replace(/,/g,"");const input=parseFloat(raw);const grid=document.getElementById("aprResultGrid");const placeholder=document.getElementById("aprPlaceholder");if(isNaN(input)||input<=0){placeholder.textContent="Please enter a valid TCL amount.";placeholder.style.display="block";grid.style.display="none";return}const totalStaked=rewardsState.totalStaked,aprNow=rewardsState.apr;if(!totalStaked||!aprNow){placeholder.textContent="Live APR data is not loaded yet.";placeholder.style.display="block";grid.style.display="none";return}const newStaked=totalStaked+input,newApr=aprNow*totalStaked/newStaked,boosts=[{label:"📊 New APR",value:newApr},{label:"🚀 With +5% boost",value:newApr*1.05},{label:"⚡ With +7% boost",value:newApr*1.07},{label:"🔥 With +10% boost",value:newApr*1.10}],fmt=(n)=>n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});document.getElementById("simulatedAmount").textContent=`${input.toLocaleString("en-US")} TCL`;document.getElementById("summaryApr").textContent=`${aprNow.toFixed(2)}%`;grid.innerHTML=boosts.map((boost)=>{const apr=boost.value/100,yearly=input*apr,monthly=yearly/12,weekly=yearly/52,daily=yearly/365;return `<div class="result-card"><div class="result-head"><span class="result-title">${boost.label}</span><span class="result-rate">${boost.value.toFixed(2)}%</span></div><div class="result-line">💵 Daily: <b>${fmt(daily)}</b> TCL</div><div class="result-line">📅 Weekly: <b>${fmt(weekly)}</b> TCL</div><div class="result-line">🪙 Monthly: <b>${fmt(monthly)}</b> TCL</div><div class="result-line">🎯 Yearly: <b>${fmt(yearly)}</b> TCL</div></div>`}).join("");placeholder.style.display="none";grid.style.display="grid"}
+document.getElementById("aprInput").addEventListener("input",(e)=>{let value=e.target.value.replace(/,/g,"");if(value==="")return;if(!/^\d+$/.test(value)){e.target.value=e.target.value.replace(/[^\d,]/g,"");return}e.target.value=parseInt(value,10).toLocaleString("en-US")});
+document.getElementById("aprInput").addEventListener("keydown",(event)=>{if(event.key==="Enter")simulateApr()});
+document.getElementById("calculateAprBtn").addEventListener("click",simulateApr);
+loadRewardsData();
+</script>
+</body>
+</html>

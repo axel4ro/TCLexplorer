@@ -282,12 +282,16 @@
   </div>
 
   <div id="tokenCalculatorsSection" class="token-accordion-section">
-    <div class="calculator-action-grid">
-      <button type="button" class="calculator-action-card" onclick="openTransactionCalculator()">
+    <div class="calculator-action-grid" id="tokenCalculatorActions">
+      <button type="button" class="calculator-action-card" onclick="openTradeSimulatorPage()">
+        <span class="calculator-action-card__title">📈 TCL Trades Simulator</span>
+        <span class="calculator-action-card__desc">Practice buy, sell and price simulation with a dedicated TCL/USDC trading panel.</span>
+      </button>
+      <button type="button" class="calculator-action-card" onclick="openTransactionSimulatorPage()">
         <span class="calculator-action-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
         <span class="calculator-action-card__desc" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
       </button>
-      <button type="button" class="calculator-action-card" onclick="openAprCalculator()">
+      <button type="button" class="calculator-action-card" onclick="openAprRewardsCalculatorPage()">
         <span class="calculator-action-card__title" data-i18n="token_calculator_apr_title">🧮 APR &amp; Rewards Calculator</span>
         <span class="calculator-action-card__desc" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
       </button>
@@ -2380,6 +2384,7 @@ window.addEventListener("message", (event) => {
   const targetPage = typeof data.page === "string" ? data.page : "wiki";
   const targetEl = document.getElementById(targetPage);
   if (!targetEl) return;
+  const targetSection = typeof data.section === "string" ? data.section : "";
 
   const frame = document.getElementById("internalPageFrame");
   if (frame) frame.src = "about:blank";
@@ -2393,6 +2398,9 @@ window.addEventListener("message", (event) => {
   }
 
   showPage(targetPage);
+  if (targetPage === "token" && targetSection) {
+    setTokenAccordion(targetSection);
+  }
   if (window.location.hash.replace("#", "") !== targetPage) {
     window.location.hash = targetPage;
   }
@@ -3476,15 +3484,42 @@ async function loadTCLStats(options = {}) {
   });
 }
 function openAprCalculator() {
-  document.getElementById("aprModal").style.display = "flex";
+  openAprRewardsCalculatorPage();
 }
 
 function closeAprCalculator() {
   document.getElementById("aprModal").style.display = "none";
 }
 
+function openTradeSimulatorPage() {
+  openInternalPage("TCL_trades.html", "TCL Trades Simulator", {
+    navId: "btn-token",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL trades simulator.",
+    waitForReadyMessage: true
+  });
+}
+
+function openTransactionSimulatorPage() {
+  openInternalPage("TCL_transaction_simulator.html", "Transaction Simulator", {
+    navId: "btn-token",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing transaction simulator.",
+    waitForReadyMessage: true
+  });
+}
+
+function openAprRewardsCalculatorPage() {
+  openInternalPage("TCL_apr_rewards_calculator.html", "APR & Rewards Calculator", {
+    navId: "btn-token",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing APR rewards calculator.",
+    waitForReadyMessage: true
+  });
+}
+
 function openTransactionCalculator() {
-  document.getElementById("transactionCalcModal").style.display = "flex";
+  openTransactionSimulatorPage();
 }
 
 function closeTransactionCalculator() {

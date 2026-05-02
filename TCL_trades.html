@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCL Simulator PRO</title>
+
+<style>
+:root{
+    --bg:#040913;
+    --bg-soft:#091221;
+    --panel:#0d1728;
+    --panel-strong:#101d31;
+    --chart:#07101c;
+    --line:rgba(120, 148, 187, 0.18);
+    --line-strong:rgba(120, 148, 187, 0.28);
+    --text:#f5f7fb;
+    --muted:#91a3bf;
+    --muted-strong:#b7c5db;
+    --buy:#1fda7a;
+    --buy-soft:rgba(31, 218, 122, 0.16);
+    --sell:#ff5f66;
+    --sell-soft:rgba(255, 95, 102, 0.16);
+    --accent:#4c8dff;
+    --accent-soft:rgba(76, 141, 255, 0.16);
+    --shadow:0 30px 80px rgba(0, 0, 0, 0.35);
+    --radius-xl:28px;
+    --radius-lg:22px;
+    --radius-md:16px;
+    --radius-sm:12px;
+    --sidebar-pad:clamp(10px, 1.1vh, 14px);
+    --sidebar-gap:clamp(8px, 0.85vh, 12px);
+    --panel-pad:clamp(10px, 1vh, 14px);
+    --input-pad-y:clamp(9px, 0.95vh, 12px);
+    --input-pad-x:clamp(14px, 1.2vw, 16px);
+    --button-pad-y:clamp(8px, 0.9vh, 11px);
+    --button-pad-x:clamp(14px, 1.2vw, 16px);
+    --segment-pad-y:clamp(7px, 0.8vh, 10px);
+    --copy-size:clamp(0.78rem, 0.74rem + 0.14vw, 0.9rem);
+    --label-size:clamp(0.8rem, 0.76rem + 0.16vw, 0.92rem);
+    --stat-title-size:clamp(0.72rem, 0.68rem + 0.12vw, 0.82rem);
+    --stat-value-size:clamp(0.92rem, 0.88rem + 0.2vw, 1.08rem);
+    --estimate-size:clamp(1.08rem, 1rem + 0.26vw, 1.3rem);
+    --button-size:clamp(0.86rem, 0.82rem + 0.1vw, 0.96rem);
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html, body{
+    margin:0;
+    height:100%;
+}
+
+body{
+    height:100vh;
+    overflow:hidden;
+    font-family:"Space Grotesk", "Segoe UI", sans-serif;
+    color:var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(31, 218, 122, 0.08), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(76, 141, 255, 0.10), transparent 28%),
+        linear-gradient(150deg, #02050b 0%, #07101c 45%, #030812 100%);
+}
+
+.app-shell{
+    height:100vh;
+    display:grid;
+    grid-template-columns:minmax(320px, 360px) 1fr;
+    gap:18px;
+    padding:18px;
+    overflow:hidden;
+    align-items:stretch;
+}
+
+.sidebar,
+.chart-card{
+    position:relative;
+    border:1px solid rgba(126, 152, 188, 0.16);
+    background:linear-gradient(180deg, rgba(11, 20, 35, 0.92) 0%, rgba(7, 15, 26, 0.94) 100%);
+    border-radius:var(--radius-xl);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(18px);
+}
+
+.sidebar{
+    height:calc(100vh - 36px);
+    min-height:0;
+    padding:var(--sidebar-pad);
+    display:flex;
+    flex-direction:column;
+    gap:var(--sidebar-gap);
+    overflow:hidden;
+}
+
+.brand-block{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.back-btn{
+    align-self:flex-start;
+    border:0;
+    border-radius:12px;
+    padding:8px 12px;
+    background:linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
+    color:#fff;
+    font:inherit;
+    font-size:0.86rem;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 10px 24px rgba(112, 88, 255, 0.24);
+}
+
+.back-btn:hover{
+    transform:translateY(-1px);
+}
+
+.eyebrow{
+    font-size:0.74rem;
+    font-weight:700;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+}
+
+.brand-block h1,
+.chart-title h2{
+    margin:0;
+    font-size:1.85rem;
+    line-height:1;
+}
+
+.brand-block p,
+.chart-footer,
+.helper-copy{
+    margin:0;
+    font-size:var(--copy-size);
+    line-height:1.45;
+    color:var(--muted);
+}
+
+.panel-card{
+    padding:var(--panel-pad);
+    border-radius:var(--radius-lg);
+    border:1px solid rgba(126, 152, 188, 0.14);
+    background:linear-gradient(180deg, rgba(15, 28, 46, 0.82) 0%, rgba(8, 16, 29, 0.86) 100%);
+}
+
+.panel-title{
+    display:block;
+    margin-bottom:clamp(8px, 0.8vh, 12px);
+    font-size:var(--label-size);
+    font-weight:700;
+    color:var(--muted-strong);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+}
+
+.segment-control{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:clamp(10px, 0.95vh, 14px);
+    padding:5px;
+    border-radius:999px;
+    background:rgba(4, 9, 19, 0.9);
+    border:1px solid rgba(126, 152, 188, 0.14);
+}
+
+.segment{
+    border:0;
+    border-radius:999px;
+    padding:var(--segment-pad-y) 12px;
+    font:inherit;
+    font-size:var(--button-size);
+    font-weight:700;
+    color:var(--muted-strong);
+    background:transparent;
+    cursor:pointer;
+    transition:background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.segment.active.buy{
+    color:#04110b;
+    background:linear-gradient(135deg, var(--buy) 0%, #6fffaf 100%);
+}
+
+.segment.active.sell{
+    color:#180607;
+    background:linear-gradient(135deg, var(--sell) 0%, #ff8f94 100%);
+}
+
+.segment:hover{
+    transform:translateY(-1px);
+}
+
+.field-label{
+    display:block;
+    margin-bottom:clamp(6px, 0.7vh, 8px);
+    font-size:var(--label-size);
+    font-weight:600;
+    color:var(--muted-strong);
+}
+
+.field-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:clamp(6px, 0.75vh, 8px);
+}
+
+.field-head .field-label{
+    margin-bottom:0;
+}
+
+.quick-fill{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+}
+
+.quick-fill-btn{
+    border:1px solid rgba(126, 152, 188, 0.2);
+    border-radius:999px;
+    padding:5px 9px;
+    background:rgba(3, 9, 18, 0.9);
+    color:var(--muted-strong);
+    font:inherit;
+    font-size:clamp(0.72rem, 0.68rem + 0.14vw, 0.82rem);
+    font-weight:700;
+    line-height:1;
+    cursor:pointer;
+    transition:border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.quick-fill-btn:hover{
+    transform:translateY(-1px);
+    border-color:rgba(76, 141, 255, 0.42);
+    background:rgba(76, 141, 255, 0.14);
+    color:#eef5ff;
+}
+
+.quick-fill-btn:disabled{
+    opacity:0.45;
+    cursor:not-allowed;
+    transform:none;
+}
+
+.field-input{
+    width:100%;
+    border:1px solid rgba(126, 152, 188, 0.18);
+    border-radius:var(--radius-md);
+    padding:var(--input-pad-y) var(--input-pad-x);
+    background:rgba(2, 7, 15, 0.86);
+    color:var(--text);
+    font:inherit;
+    font-size:var(--button-size);
+    outline:none;
+    transition:border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.field-input::placeholder{
+    color:rgba(145, 163, 191, 0.62);
+}
+
+.field-input:focus{
+    border-color:rgba(76, 141, 255, 0.7);
+    box-shadow:0 0 0 4px rgba(76, 141, 255, 0.14);
+}
+
+.field-meta{
+    margin-top:clamp(8px, 0.75vh, 10px);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    font-size:clamp(0.72rem, 0.68rem + 0.16vw, 0.82rem);
+    color:var(--muted);
+}
+
+.field-meta span:last-child{
+    text-align:right;
+}
+
+.field-meta .warning{
+    color:#ffd18a;
+}
+
+.estimate-value{
+    margin-top:clamp(4px, 0.55vh, 6px);
+    font-size:var(--estimate-size);
+    font-weight:700;
+    letter-spacing:-0.02em;
+}
+
+.action-button,
+.ghost-button{
+    width:100%;
+    border:0;
+    border-radius:18px;
+    padding:var(--button-pad-y) var(--button-pad-x);
+    margin-top:clamp(8px, 0.8vh, 10px);
+    font:inherit;
+    font-size:var(--button-size);
+    font-weight:700;
+    cursor:pointer;
+    transition:transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.action-button:hover,
+.ghost-button:hover{
+    transform:translateY(-1px);
+}
+
+.action-button.buy{
+    color:#04110b;
+    background:linear-gradient(135deg, var(--buy) 0%, #70f7af 100%);
+    box-shadow:0 12px 28px rgba(31, 218, 122, 0.24);
+}
+
+.action-button.sell{
+    color:#1b0507;
+    background:linear-gradient(135deg, var(--sell) 0%, #ff9196 100%);
+    box-shadow:0 12px 28px rgba(255, 95, 102, 0.24);
+}
+
+.action-button.neutral{
+    color:#eef5ff;
+    background:linear-gradient(135deg, #2d6fff 0%, #69a0ff 100%);
+    box-shadow:0 12px 28px rgba(76, 141, 255, 0.24);
+}
+
+.action-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+    align-items:end;
+}
+
+.ghost-button{
+    width:auto;
+    min-width:116px;
+    color:var(--text);
+    background:rgba(126, 152, 188, 0.12);
+    border:1px solid rgba(126, 152, 188, 0.14);
+}
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:clamp(6px, 0.65vh, 8px);
+}
+
+.stat-card{
+    padding:clamp(10px, 0.75vh, 12px);
+    border-radius:18px;
+    border:1px solid rgba(126, 152, 188, 0.12);
+    background:linear-gradient(180deg, rgba(12, 23, 39, 0.78) 0%, rgba(6, 13, 23, 0.84) 100%);
+}
+
+.stat-card span{
+    display:block;
+    margin-bottom:clamp(4px, 0.55vh, 6px);
+    font-size:var(--stat-title-size);
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+}
+
+.stat-card strong{
+    display:block;
+    font-size:var(--stat-value-size);
+    font-weight:700;
+    letter-spacing:-0.02em;
+}
+
+.stat-card strong.positive{
+    color:var(--buy);
+}
+
+.stat-card strong.negative{
+    color:var(--sell);
+}
+
+.content{
+    min-width:0;
+}
+
+.chart-card{
+    height:calc(100vh - 36px);
+    min-height:0;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    overflow:hidden;
+}
+
+.chart-toolbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:18px;
+}
+
+.chart-title{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.chart-pill-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    justify-content:flex-end;
+}
+
+.pill{
+    min-width:140px;
+    padding:14px 16px;
+    border-radius:18px;
+    background:linear-gradient(180deg, rgba(16, 29, 49, 0.76) 0%, rgba(8, 15, 26, 0.88) 100%);
+    border:1px solid rgba(126, 152, 188, 0.14);
+}
+
+.pill span{
+    display:block;
+    margin-bottom:6px;
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+}
+
+.pill strong{
+    font-size:1rem;
+}
+
+.chart-frame{
+    position:relative;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+    border-radius:22px;
+    border:1px solid rgba(126, 152, 188, 0.14);
+    background:
+        linear-gradient(180deg, rgba(5, 13, 24, 0.98) 0%, rgba(4, 9, 17, 0.98) 100%),
+        radial-gradient(circle at top right, rgba(76, 141, 255, 0.08), transparent 26%);
+}
+
+canvas{
+    width:100%;
+    height:100%;
+    display:block;
+}
+
+.chart-footer{
+    padding:0 6px;
+}
+
+@media (max-width: 1100px){
+    html, body{
+        height:auto;
+    }
+
+    body{
+        min-height:100vh;
+        height:auto;
+        overflow:auto;
+    }
+
+    .app-shell{
+        height:auto;
+        min-height:100vh;
+        grid-template-columns:1fr;
+        overflow:visible;
+    }
+
+    .sidebar,
+    .chart-card{
+        height:auto;
+        min-height:620px;
+    }
+}
+
+@media (max-height: 920px){
+    :root{
+        --sidebar-pad:10px;
+        --sidebar-gap:8px;
+        --panel-pad:10px;
+        --input-pad-y:8px;
+        --button-pad-y:8px;
+        --segment-pad-y:7px;
+        --copy-size:0.76rem;
+        --label-size:0.78rem;
+        --stat-title-size:0.68rem;
+        --stat-value-size:0.92rem;
+        --estimate-size:1rem;
+        --button-size:0.84rem;
+    }
+
+    .app-shell{
+        gap:14px;
+        padding:14px;
+    }
+
+    .sidebar,
+    .chart-card{
+        border-radius:22px;
+    }
+
+    .sidebar{
+        overflow:auto;
+        scrollbar-width:thin;
+    }
+
+    .back-btn{
+        padding:7px 11px;
+        font-size:0.82rem;
+    }
+
+    .brand-block{
+        gap:6px;
+    }
+
+    .brand-block h1,
+    .chart-title h2{
+        font-size:1.72rem;
+    }
+
+    .helper-copy{
+        line-height:1.35;
+    }
+}
+
+@media (max-width: 720px){
+    .app-shell{
+        gap:18px;
+        padding:16px;
+    }
+
+    .sidebar,
+    .chart-card{
+        padding:18px;
+        border-radius:22px;
+    }
+
+    .stats-grid{
+        grid-template-columns:1fr;
+    }
+
+    .chart-toolbar{
+        flex-direction:column;
+    }
+
+    .chart-pill-list{
+        width:100%;
+        justify-content:flex-start;
+    }
+
+    .action-row{
+        grid-template-columns:1fr;
+    }
+
+    .ghost-button{
+        width:100%;
+    }
+
+    .chart-frame{
+        min-height:440px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand-block">
+            <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
+            <span class="eyebrow">Trading Simulator</span>
+            <h1>TCL Trading</h1>
+            <p>Buy and sell from a clean single-position panel, with a clipped chart that stays inside its own box.</p>
+        </div>
+
+        <section class="panel-card">
+            <span class="panel-title">Trade Side</span>
+
+            <div class="segment-control" role="tablist" aria-label="Trade side">
+                <button id="buy-switch" class="segment buy active" type="button">Buy</button>
+                <button id="sell-switch" class="segment sell" type="button">Sell</button>
+            </div>
+
+            <div class="field-head">
+                <label class="field-label" id="trade-label" for="trade-amount">USDC to spend</label>
+                <div class="quick-fill">
+                    <button id="trade-half" class="quick-fill-btn" type="button">50%</button>
+                    <button id="trade-max" class="quick-fill-btn" type="button">Max</button>
+                </div>
+            </div>
+            <input id="trade-amount" class="field-input" inputmode="decimal" placeholder="Enter USDC amount">
+
+            <div class="field-meta">
+                <span id="trade-balance-label">Available: 1000.00 USDC</span>
+                <span id="estimate-label">Est. TCL received</span>
+            </div>
+
+            <div class="estimate-value" id="estimate-value">0 TCL</div>
+            <button id="trade-action" class="action-button buy" type="button">Execute Buy</button>
+        </section>
+
+        <section class="panel-card">
+            <span class="panel-title">Market Simulation</span>
+            <label class="field-label" for="manual">Set simulated price</label>
+            <input id="manual" class="field-input" inputmode="decimal" placeholder="e.g. 0.001250">
+
+            <div class="action-row">
+                <button id="simulate-button" class="action-button neutral" type="button">Apply Price</button>
+                <button id="reset-button" class="ghost-button" type="button">Reset</button>
+            </div>
+        </section>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span>Balance USDC</span>
+                <strong id="stat-usdc">0</strong>
+            </div>
+            <div class="stat-card">
+                <span>Balance TCL</span>
+                <strong id="stat-tcl">0</strong>
+            </div>
+            <div class="stat-card">
+                <span>AVG Entry</span>
+                <strong id="stat-avg">0</strong>
+            </div>
+            <div class="stat-card">
+                <span>PnL</span>
+                <strong id="stat-pnl">0</strong>
+            </div>
+        </div>
+
+        <p class="helper-copy">AVG Entry = average acquisition price for the TCL you still hold. If the position is flat, it resets to zero.</p>
+    </aside>
+
+    <main class="content">
+        <section class="chart-card">
+            <div class="chart-toolbar">
+                <div class="chart-title">
+                    <span class="eyebrow">Chart Simulator</span>
+                    <h2>TCL / USDC</h2>
+                    <p class="helper-copy">Scroll on the chart to zoom candles, drag horizontally to pan, and drag the right price scale up or down for vertical zoom.</p>
+                </div>
+
+                <div class="chart-pill-list">
+                    <div class="pill">
+                        <span>Pool TCL</span>
+                        <strong id="hero-pool-tcl">0</strong>
+                    </div>
+                    <div class="pill">
+                        <span>Pool USDC</span>
+                        <strong id="hero-pool-usdc">0</strong>
+                    </div>
+                    <div class="pill">
+                        <span>Liquidity</span>
+                        <strong id="hero-liquidity">0</strong>
+                    </div>
+                    <div class="pill">
+                        <span>Price</span>
+                        <strong id="hero-price">0</strong>
+                    </div>
+                    <div class="pill">
+                        <span>Position</span>
+                        <strong id="hero-position">Flat</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-frame" id="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+
+            <p class="chart-footer">The chart now renders inside a dedicated frame similar to a trading terminal, so nothing bleeds over the controls.</p>
+        </section>
+    </main>
+</div>
+
+<script>
+const STORAGE_KEYS = ["TCL_SIM_V2", "TCL_SIM_V1"];
+const INITIAL_USDC = 1000;
+const MAX_CANDLES = 180;
+const PRICE_SCALE_WIDTH = 96;
+const CHART_MARGIN = { top: 22, right: 18, bottom: 22, left: 20 };
+const MIN_HORIZONTAL_ZOOM = 0.45;
+const MAX_HORIZONTAL_ZOOM = 8;
+const MIN_VERTICAL_ZOOM = 0.65;
+const MAX_VERTICAL_ZOOM = 12;
+const FIT_STEP_MIN = 6;
+const FIT_STEP_MAX = 56;
+const CANDLE_STEP_MIN = 4;
+const CANDLE_STEP_MAX = 96;
+const CANDLE_WIDTH_RATIO = 0.66;
+const EPSILON_USDC = 0.0000001;
+const EPSILON_TCL = 0.0001;
+const FALLBACK_MARKET = {
+    price: 0.000928,
+    poolTCL: 12701051,
+    poolUSDC: 10613
+};
+
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+const chartContainer = document.getElementById("chart-container");
+
+const buySwitch = document.getElementById("buy-switch");
+const sellSwitch = document.getElementById("sell-switch");
+const tradeAmountInput = document.getElementById("trade-amount");
+const tradeLabel = document.getElementById("trade-label");
+const tradeHalfButton = document.getElementById("trade-half");
+const tradeMaxButton = document.getElementById("trade-max");
+const tradeBalanceLabel = document.getElementById("trade-balance-label");
+const estimateLabel = document.getElementById("estimate-label");
+const estimateValue = document.getElementById("estimate-value");
+const tradeActionButton = document.getElementById("trade-action");
+const manualInput = document.getElementById("manual");
+
+const statUsdc = document.getElementById("stat-usdc");
+const statTcl = document.getElementById("stat-tcl");
+const statAvg = document.getElementById("stat-avg");
+const statPnl = document.getElementById("stat-pnl");
+const heroPoolTcl = document.getElementById("hero-pool-tcl");
+const heroPoolUsdc = document.getElementById("hero-pool-usdc");
+const heroLiquidity = document.getElementById("hero-liquidity");
+const heroPrice = document.getElementById("hero-price");
+const heroPosition = document.getElementById("hero-position");
+
+let candles = [];
+let trades = [];
+
+let price = 0;
+let balanceUSDC = INITIAL_USDC;
+let balanceTCL = 0;
+let positionCost = 0;
+let poolTCL = 0;
+let poolUSDC = 0;
+
+let zoom = 1;
+let offsetX = 0;
+let priceZoom = 1;
+let activeSide = "buy";
+
+let chartWidth = 0;
+let chartHeight = 0;
+
+let dragMode = null;
+let dragStartX = 0;
+let dragStartY = 0;
+let dragStartOffset = 0;
+let dragStartPriceZoom = 1;
+
+function toNumber(value, fallback = 0){
+    const normalized = typeof value === "string"
+        ? value.replace(/,/g, "").replace(/\s+/g, "")
+        : value;
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function formatGroupedNumber(value, minimumFractionDigits, maximumFractionDigits){
+    if(!Number.isFinite(value)){
+        return "0";
+    }
+
+    return new Intl.NumberFormat("en-US", {
+        minimumFractionDigits,
+        maximumFractionDigits
+    }).format(value);
+}
+
+function formatPrice(value){
+    if(!Number.isFinite(value)) return "0.000000";
+    if(Math.abs(value) >= 1) return value.toFixed(4);
+    if(Math.abs(value) >= 0.01) return value.toFixed(5);
+    return value.toFixed(6);
+}
+
+function formatUSDC(value){
+    if(!Number.isFinite(value)) return "0.00";
+    return formatGroupedNumber(value, 2, 2);
+}
+
+function formatCompactUSDC(value){
+    if(!Number.isFinite(value)) return "0 USD";
+    if(Math.abs(value) < 1000){
+        return formatUSDC(value) + " USD";
+    }
+
+    return new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        maximumFractionDigits: 2
+    }).format(value) + " USD";
+}
+
+function formatCompactToken(value, symbol){
+    if(!Number.isFinite(value)) return "0 " + symbol;
+    if(Math.abs(value) < 1000){
+        const formatted = symbol === "USDC" ? formatUSDC(value) : formatTCL(value);
+        return formatted + " " + symbol;
+    }
+
+    return new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        maximumFractionDigits: 2
+    }).format(value) + " " + symbol;
+}
+
+function formatTCL(value){
+    if(!Number.isFinite(value) || Math.abs(value) <= EPSILON_TCL) return "0";
+    if(Math.abs(value) >= 1){
+        return formatGroupedNumber(value, 2, 2);
+    }
+
+    return formatGroupedNumber(value, 4, 4);
+}
+
+function formatEstimate(value, symbol){
+    const formatted = symbol === "USDC" ? formatUSDC(value) : formatTCL(value);
+    return formatted + " " + symbol;
+}
+
+function sanitizeNumericString(value){
+    const raw = String(value ?? "");
+    const stripped = raw.replace(/,/g, "").replace(/[^\d.]/g, "");
+    if(!stripped) return "";
+
+    const hasDecimal = stripped.includes(".");
+    const [integerRaw = "", ...fractionParts] = stripped.split(".");
+    const normalizedInteger = integerRaw.replace(/^0+(?=\d)/, "") || (hasDecimal ? "0" : integerRaw);
+    const fraction = fractionParts.join("").slice(0, 6);
+
+    if(hasDecimal){
+        return `${normalizedInteger || "0"}.${fraction}`;
+    }
+
+    return normalizedInteger;
+}
+
+function formatNumericInputString(value){
+    const normalized = sanitizeNumericString(value);
+    if(!normalized) return "";
+
+    const hasTrailingDot = normalized.endsWith(".");
+    const [integerPart = "0", fractionPart = ""] = normalized.split(".");
+    const groupedInteger = formatGroupedNumber(Number.parseInt(integerPart || "0", 10), 0, 0);
+
+    if(hasTrailingDot){
+        return groupedInteger + ".";
+    }
+
+    return fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
+}
+
+function formatTradeAmountInput(){
+    const formatted = formatNumericInputString(tradeAmountInput.value);
+    if(tradeAmountInput.value !== formatted){
+        tradeAmountInput.value = formatted;
+    }
+}
+
+function formatTradeInputValue(value){
+    if(!Number.isFinite(value) || value <= 0){
+        return "";
+    }
+
+    return formatNumericInputString(value.toFixed(6).replace(/\.?0+$/, ""));
+}
+
+function clamp(value, min, max){
+    return Math.min(Math.max(value, min), max);
+}
+
+function getChartGeometry(){
+    const priceScaleLeft = chartWidth - PRICE_SCALE_WIDTH;
+    const chartLeft = CHART_MARGIN.left;
+    const chartRight = priceScaleLeft - CHART_MARGIN.right;
+    const chartTop = CHART_MARGIN.top;
+    const chartBottom = chartHeight - CHART_MARGIN.bottom;
+    const chartInnerWidth = chartRight - chartLeft;
+    const chartInnerHeight = chartBottom - chartTop;
+
+    return {
+        priceScaleLeft,
+        chartLeft,
+        chartRight,
+        chartTop,
+        chartBottom,
+        chartInnerWidth,
+        chartInnerHeight
+    };
+}
+
+function getFitStep(chartInnerWidth){
+    const candleCount = Math.max(candles.length, 1);
+    return clamp(chartInnerWidth / candleCount, FIT_STEP_MIN, FIT_STEP_MAX);
+}
+
+function getHorizontalLayout(chartInnerWidth, zoomLevel = zoom, rawOffset = offsetX){
+    const candleCount = Math.max(candles.length, 1);
+    const step = clamp(getFitStep(chartInnerWidth) * zoomLevel, CANDLE_STEP_MIN, CANDLE_STEP_MAX);
+    const candleWidth = Math.max(2, Math.min(step * CANDLE_WIDTH_RATIO, step - 1.5, 36));
+    const contentWidth = candleCount > 1
+        ? ((candleCount - 1) * step) + candleWidth
+        : candleWidth;
+    const minOffset = Math.min(0, chartInnerWidth - contentWidth);
+    const offset = clamp(rawOffset, minOffset, 0);
+
+    return {
+        step,
+        candleWidth,
+        contentWidth,
+        minOffset,
+        maxOffset: 0,
+        offset
+    };
+}
+
+function getVisibleIndexRange(chartInnerWidth, layout){
+    const lastIndex = Math.max(candles.length - 1, 0);
+    const viewportStart = -layout.offset;
+    const viewportEnd = viewportStart + chartInnerWidth;
+    const firstIndex = clamp(Math.floor(viewportStart / layout.step) - 1, 0, lastIndex);
+    const visibleLastIndex = clamp(Math.ceil(viewportEnd / layout.step), firstIndex, lastIndex);
+
+    return {
+        firstIndex,
+        lastIndex: visibleLastIndex
+    };
+}
+
+function getVisibleTrades(range){
+    return trades
+        .filter((trade) => trade.index == null || (trade.index >= range.firstIndex && trade.index <= range.lastIndex))
+        .slice(-12);
+}
+
+function getVisiblePriceBounds(range, visibleTrades){
+    const visiblePrices = [];
+
+    for(let index = range.firstIndex; index <= range.lastIndex; index++){
+        const candle = candles[index];
+        if(!candle) continue;
+
+        visiblePrices.push(candle.high, candle.low);
+    }
+
+    visiblePrices.push(price);
+    visibleTrades.forEach((trade) => visiblePrices.push(trade.price));
+
+    let minPrice = Math.min(...visiblePrices);
+    let maxPrice = Math.max(...visiblePrices);
+
+    if(!Number.isFinite(minPrice) || !Number.isFinite(maxPrice)){
+        minPrice = 0;
+        maxPrice = 1;
+    }
+
+    if(maxPrice === minPrice){
+        const singlePadding = minPrice === 0 ? 0.000001 : Math.abs(minPrice) * 0.08;
+        minPrice -= singlePadding;
+        maxPrice += singlePadding;
+    }
+
+    const baseRange = maxPrice - minPrice;
+    const paddedRange = baseRange * 1.24;
+    const center = (minPrice + maxPrice) / 2;
+    const displayRange = Math.max(0.0000001, paddedRange / priceZoom);
+
+    let scaledMin = center - (displayRange / 2);
+    let scaledMax = center + (displayRange / 2);
+
+    if(scaledMin < 0){
+        scaledMax -= scaledMin;
+        scaledMin = 0;
+    }
+
+    if(scaledMax <= scaledMin){
+        scaledMax = scaledMin + 0.0000001;
+    }
+
+    return {
+        minPrice: scaledMin,
+        maxPrice: scaledMax
+    };
+}
+
+function applyHorizontalZoom(factor, canvasX){
+    const geometry = getChartGeometry();
+    if(geometry.chartInnerWidth <= 0) return;
+
+    const previousLayout = getHorizontalLayout(geometry.chartInnerWidth, zoom, offsetX);
+    const nextZoom = clamp(zoom * factor, MIN_HORIZONTAL_ZOOM, MAX_HORIZONTAL_ZOOM);
+    if(nextZoom === zoom) return;
+
+    const localX = clamp(canvasX - geometry.chartLeft, 0, geometry.chartInnerWidth);
+    const contentX = localX - previousLayout.offset;
+
+    zoom = nextZoom;
+
+    const nextLayout = getHorizontalLayout(geometry.chartInnerWidth, zoom, offsetX);
+    const ratio = nextLayout.step / previousLayout.step;
+    const nextOffset = localX - (contentX * ratio);
+
+    offsetX = getHorizontalLayout(geometry.chartInnerWidth, zoom, nextOffset).offset;
+}
+
+function applyVerticalZoom(factor){
+    priceZoom = clamp(priceZoom * factor, MIN_VERTICAL_ZOOM, MAX_VERTICAL_ZOOM);
+}
+
+function normalizePosition(){
+    if(!Number.isFinite(balanceUSDC) || balanceUSDC < 0){
+        balanceUSDC = 0;
+    }
+
+    if(!Number.isFinite(balanceTCL) || balanceTCL < 0){
+        balanceTCL = 0;
+    }
+
+    if(!Number.isFinite(positionCost) || positionCost < 0){
+        positionCost = 0;
+    }
+
+    if(balanceUSDC <= EPSILON_USDC){
+        balanceUSDC = 0;
+    }
+
+    if(balanceTCL <= EPSILON_TCL){
+        balanceTCL = 0;
+        positionCost = 0;
+    }
+
+    if(positionCost <= EPSILON_USDC){
+        positionCost = 0;
+    }
+}
+
+function averageEntry(){
+    if(balanceTCL <= EPSILON_TCL || positionCost <= EPSILON_USDC){
+        return 0;
+    }
+
+    return positionCost / balanceTCL;
+}
+
+function realizedPnl(){
+    return balanceUSDC + positionCost - INITIAL_USDC;
+}
+
+function hasCompletedSell(){
+    return trades.some((trade) => trade.type === "sell");
+}
+
+function poolLiquidityUsd(){
+    if(poolTCL <= 0 || poolUSDC <= 0 || price <= 0){
+        return 0;
+    }
+
+    return poolUSDC + (poolTCL * price);
+}
+
+function estimateBuy(usdcAmount){
+    if(usdcAmount <= 0 || poolTCL <= 0 || poolUSDC <= 0){
+        return { received: 0, nextTCL: poolTCL, nextUSDC: poolUSDC };
+    }
+
+    const invariant = poolTCL * poolUSDC;
+    const nextUSDC = poolUSDC + usdcAmount;
+    const nextTCL = invariant / nextUSDC;
+    const received = Math.max(0, poolTCL - nextTCL);
+
+    return { received, nextTCL, nextUSDC };
+}
+
+function estimateSell(tclAmount){
+    if(tclAmount <= 0 || poolTCL <= 0 || poolUSDC <= 0){
+        return { received: 0, nextTCL: poolTCL, nextUSDC: poolUSDC };
+    }
+
+    const invariant = poolTCL * poolUSDC;
+    const nextTCL = poolTCL + tclAmount;
+    const nextUSDC = invariant / nextTCL;
+    const received = Math.max(0, poolUSDC - nextUSDC);
+
+    return { received, nextTCL, nextUSDC };
+}
+
+function isPristineSimulationState(){
+    return (
+        trades.length === 0 &&
+        candles.length <= 1 &&
+        Math.abs(balanceUSDC - INITIAL_USDC) <= EPSILON_USDC &&
+        balanceTCL <= EPSILON_TCL &&
+        positionCost <= EPSILON_USDC
+    );
+}
+
+async function fetchLiveMarketSnapshot(){
+    const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    if(!response.ok){
+        throw new Error("Price request failed");
+    }
+
+    const data = await response.json();
+    const pair = data.pair || data.pairs?.[0] || {};
+
+    return {
+        price: toNumber(pair.priceUsd, FALLBACK_MARKET.price),
+        poolTCL: toNumber(pair.liquidity?.base, FALLBACK_MARKET.poolTCL),
+        poolUSDC: toNumber(pair.liquidity?.quote, FALLBACK_MARKET.poolUSDC)
+    };
+}
+
+function applyMarketSnapshot(snapshot){
+    price = snapshot.price;
+    poolTCL = snapshot.poolTCL;
+    poolUSDC = snapshot.poolUSDC;
+
+    if(!candles.length || candles.length === 1){
+        candles = [{
+            open: price,
+            close: price,
+            high: price,
+            low: price
+        }];
+    }
+}
+
+function save(){
+    localStorage.setItem(STORAGE_KEYS[0], JSON.stringify({
+        candles,
+        trades,
+        price,
+        balanceUSDC,
+        balanceTCL,
+        positionCost,
+        totalCost: positionCost,
+        poolTCL,
+        poolUSDC,
+        zoom,
+        offsetX,
+        priceZoom,
+        activeSide
+    }));
+}
+
+let readyNotified = false;
+
+function notifyReady(){
+    if(readyNotified) return;
+    readyNotified = true;
+    if(window.parent && window.parent !== window){
+        try{
+            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        }catch(error){
+            console.warn("Failed to notify parent page ready", error);
+        }
+    }
+}
+
+function goBackToTclToken(){
+    if(window.parent && window.parent !== window){
+        try{
+            window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenCalculatorsSection" }, "*");
+            return;
+        }catch(error){
+            console.warn("Back to TCL Token parent navigation failed", error);
+        }
+    }
+
+    window.location.href = "index.html#token";
+}
+
+function load(){
+    for(const key of STORAGE_KEYS){
+        const raw = localStorage.getItem(key);
+        if(!raw) continue;
+
+        try{
+            const data = JSON.parse(raw);
+
+            candles = Array.isArray(data.candles) ? data.candles : [];
+            trades = Array.isArray(data.trades) ? data.trades : [];
+
+            price = toNumber(data.price, 0);
+            balanceUSDC = toNumber(data.balanceUSDC, INITIAL_USDC);
+            balanceTCL = toNumber(data.balanceTCL, 0);
+            positionCost = toNumber(data.positionCost ?? data.totalCost, 0);
+             poolTCL = toNumber(data.poolTCL, 0);
+             poolUSDC = toNumber(data.poolUSDC, 0);
+             zoom = clamp(toNumber(data.zoom, 1), MIN_HORIZONTAL_ZOOM, MAX_HORIZONTAL_ZOOM);
+             offsetX = toNumber(data.offsetX, 0);
+             priceZoom = clamp(toNumber(data.priceZoom, 1), MIN_VERTICAL_ZOOM, MAX_VERTICAL_ZOOM);
+             activeSide = data.activeSide === "sell" ? "sell" : "buy";
+
+            if(poolTCL <= 0 || poolUSDC <= 0){
+                poolTCL = FALLBACK_MARKET.poolTCL;
+                poolUSDC = FALLBACK_MARKET.poolUSDC;
+            }
+
+            if(price <= 0 && poolTCL > 0){
+                price = poolUSDC / poolTCL;
+            }
+
+            normalizePosition();
+
+            if(!candles.length && price > 0){
+                candles = [{
+                    open: price,
+                    close: price,
+                    high: price,
+                    low: price
+                }];
+            }
+
+            return true;
+        }catch(error){
+            console.error("Failed to load saved state", error);
+        }
+    }
+
+    return false;
+}
+
+async function init(){
+    if(load()){
+        if(isPristineSimulationState()){
+            try{
+                applyMarketSnapshot(await fetchLiveMarketSnapshot());
+            }catch(error){
+                console.warn("Using saved pristine market data", error);
+            }
+        }
+
+        updateTradeControls();
+        resizeCanvas();
+        render();
+        save();
+        notifyReady();
+        return;
+    }
+
+    try{
+        applyMarketSnapshot(await fetchLiveMarketSnapshot());
+    }catch(error){
+        console.warn("Using fallback market data", error);
+        applyMarketSnapshot(FALLBACK_MARKET);
+    }
+
+    updateTradeControls();
+    resizeCanvas();
+    save();
+    render();
+    notifyReady();
+}
+
+function resizeCanvas(){
+    const rect = chartContainer.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    chartWidth = Math.max(1, Math.floor(rect.width));
+    chartHeight = Math.max(1, Math.floor(rect.height));
+
+    canvas.width = Math.floor(chartWidth * dpr);
+    canvas.height = Math.floor(chartHeight * dpr);
+    canvas.style.width = chartWidth + "px";
+    canvas.style.height = chartHeight + "px";
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+}
+
+function updateTradeControls(){
+    const isBuy = activeSide === "buy";
+
+    buySwitch.classList.toggle("active", isBuy);
+    sellSwitch.classList.toggle("active", !isBuy);
+
+    tradeLabel.textContent = isBuy ? "USDC to spend" : "TCL to sell";
+    tradeAmountInput.placeholder = isBuy ? "Enter USDC amount" : "Enter TCL amount";
+    estimateLabel.textContent = isBuy ? "Est. TCL received" : "Est. USDC received";
+    tradeActionButton.textContent = isBuy ? "Execute Buy" : "Execute Sell";
+    tradeActionButton.classList.toggle("buy", isBuy);
+    tradeActionButton.classList.toggle("sell", !isBuy);
+}
+
+function fillTradeAmount(percentage){
+    const available = activeSide === "buy" ? balanceUSDC : balanceTCL;
+    const amount = available * percentage;
+
+    tradeAmountInput.value = formatTradeInputValue(amount);
+    updateEstimate();
+}
+
+function updateEstimate(){
+    formatTradeAmountInput();
+
+    const amount = toNumber(tradeAmountInput.value, 0);
+    const isBuy = activeSide === "buy";
+    const available = isBuy ? balanceUSDC : balanceTCL;
+    const epsilon = isBuy ? EPSILON_USDC : EPSILON_TCL;
+    const exceedsBalance = amount > available + epsilon;
+    const hasAvailableBalance = available > epsilon;
+
+    tradeBalanceLabel.textContent = "Available: " + (isBuy ? formatUSDC(balanceUSDC) + " USDC" : formatTCL(balanceTCL) + " TCL");
+    tradeBalanceLabel.classList.toggle("warning", exceedsBalance);
+    tradeHalfButton.disabled = !hasAvailableBalance;
+    tradeMaxButton.disabled = !hasAvailableBalance;
+
+    if(amount <= 0){
+        estimateValue.textContent = isBuy ? "0 TCL" : "0.00 USDC";
+        return;
+    }
+
+    const cappedAmount = Math.min(amount, available);
+    const preview = isBuy ? estimateBuy(cappedAmount).received : estimateSell(cappedAmount).received;
+    estimateValue.textContent = isBuy ? formatEstimate(preview, "TCL") : formatEstimate(preview, "USDC");
+}
+
+function setActiveSide(side){
+    if(activeSide === side) return;
+
+    activeSide = side;
+    tradeAmountInput.value = "";
+    updateTradeControls();
+    updateEstimate();
+    save();
+}
+
+function addTradeMarker(type, tradePrice){
+    trades.push({
+        type,
+        price: tradePrice,
+        index: candles.length
+    });
+
+    if(trades.length > MAX_CANDLES){
+        trades.shift();
+    }
+}
+
+function addCandle(open, close){
+    candles.push({
+        open,
+        close,
+        high: Math.max(open, close),
+        low: Math.min(open, close)
+    });
+
+    if(candles.length > MAX_CANDLES){
+        candles.shift();
+    }
+
+    save();
+    render();
+}
+
+function executeBuy(){
+    let usdc = toNumber(tradeAmountInput.value, 0);
+    if(usdc <= 0 || balanceUSDC <= EPSILON_USDC) return;
+
+    usdc = Math.min(usdc, balanceUSDC);
+
+    const quote = estimateBuy(usdc);
+    if(quote.received <= EPSILON_TCL) return;
+
+    const previousPrice = price;
+    const executionPrice = usdc / quote.received;
+
+    poolUSDC = quote.nextUSDC;
+    poolTCL = quote.nextTCL;
+
+    balanceUSDC -= usdc;
+    balanceTCL += quote.received;
+    positionCost += usdc;
+
+    normalizePosition();
+
+    price = poolUSDC / poolTCL;
+
+    addTradeMarker("buy", executionPrice);
+    tradeAmountInput.value = "";
+    addCandle(previousPrice, price);
+}
+
+function executeSell(){
+    let tcl = toNumber(tradeAmountInput.value, 0);
+    if(tcl <= 0 || balanceTCL <= EPSILON_TCL) return;
+
+    tcl = Math.min(tcl, balanceTCL);
+
+    const quote = estimateSell(tcl);
+    if(quote.received <= EPSILON_USDC) return;
+
+    const previousPrice = price;
+    const averageBeforeSell = averageEntry();
+    const executionPrice = quote.received / tcl;
+
+    poolUSDC = quote.nextUSDC;
+    poolTCL = quote.nextTCL;
+
+    balanceTCL -= tcl;
+    balanceUSDC += quote.received;
+    positionCost = Math.max(0, positionCost - (tcl * averageBeforeSell));
+
+    normalizePosition();
+
+    price = poolUSDC / poolTCL;
+
+    addTradeMarker("sell", executionPrice);
+    tradeAmountInput.value = "";
+    addCandle(previousPrice, price);
+}
+
+function executeTrade(){
+    if(activeSide === "buy"){
+        executeBuy();
+        return;
+    }
+
+    executeSell();
+}
+
+function simulate(){
+    const nextPrice = toNumber(manualInput.value, 0);
+    if(nextPrice <= 0 || poolUSDC <= 0 || poolTCL <= 0) return;
+
+    if(Math.abs(nextPrice - price) <= EPSILON_USDC){
+        manualInput.value = "";
+        return;
+    }
+
+    const previousPrice = price;
+    const invariant = poolTCL * poolUSDC;
+    const nextTCL = Math.sqrt(invariant / nextPrice);
+    const nextUSDC = Math.sqrt(invariant * nextPrice);
+
+    poolTCL = nextTCL;
+    poolUSDC = nextUSDC;
+    price = nextPrice;
+
+    addTradeMarker(nextPrice > previousPrice ? "simBuy" : "simSell", nextPrice);
+    manualInput.value = "";
+    addCandle(previousPrice, price);
+}
+
+function resetAll(){
+    STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    location.reload();
+}
+
+function updateStats(){
+    const avgEntryValue = averageEntry();
+    const pnlVisible = hasCompletedSell();
+    const pnlValue = realizedPnl();
+    const isPositive = pnlValue >= 0;
+    const liquidityUsd = poolLiquidityUsd();
+
+    statUsdc.textContent = formatUSDC(balanceUSDC) + " USDC";
+    statTcl.textContent = formatTCL(balanceTCL) + " TCL";
+    statAvg.textContent = formatPrice(avgEntryValue) + " USDC";
+    if(pnlVisible){
+        statPnl.textContent = (isPositive ? "+" : "") + formatUSDC(pnlValue) + " USDC";
+        statPnl.classList.toggle("positive", isPositive);
+        statPnl.classList.toggle("negative", !isPositive);
+    }else{
+        statPnl.textContent = "--";
+        statPnl.classList.remove("positive", "negative");
+    }
+
+    heroPoolTcl.textContent = formatCompactToken(poolTCL, "TCL");
+    heroPoolUsdc.textContent = formatCompactToken(poolUSDC, "USDC");
+    heroLiquidity.textContent = formatCompactUSDC(liquidityUsd);
+    heroPrice.textContent = formatPrice(price) + " USDC";
+    heroPosition.textContent = balanceTCL > EPSILON_TCL ? formatTCL(balanceTCL) + " TCL" : "Flat";
+}
+
+function render(){
+    updateTradeControls();
+    updateEstimate();
+    updateStats();
+    draw();
+}
+
+function draw(){
+    if(!chartWidth || !chartHeight || !candles.length){
+        return;
+    }
+
+    ctx.clearRect(0, 0, chartWidth, chartHeight);
+    ctx.font = '12px "Space Grotesk", "Segoe UI", sans-serif';
+    ctx.textBaseline = "middle";
+
+    const {
+        priceScaleLeft,
+        chartLeft,
+        chartRight,
+        chartTop,
+        chartBottom,
+        chartInnerHeight,
+        chartInnerWidth
+    } = getChartGeometry();
+
+    if(chartInnerHeight <= 0 || chartInnerWidth <= 0){
+        return;
+    }
+
+    const layout = getHorizontalLayout(chartInnerWidth, zoom, offsetX);
+    if(Math.abs(layout.offset - offsetX) > 0.0001){
+        offsetX = layout.offset;
+    }
+
+    const visibleRange = getVisibleIndexRange(chartInnerWidth, layout);
+    const visibleTrades = getVisibleTrades(visibleRange);
+    const { minPrice, maxPrice } = getVisiblePriceBounds(visibleRange, visibleTrades);
+    const priceRange = maxPrice - minPrice || 1;
+
+    function y(value){
+        return chartBottom - (((value - minPrice) / priceRange) * chartInnerHeight);
+    }
+
+    ctx.fillStyle = "rgba(5, 12, 22, 0.96)";
+    ctx.fillRect(priceScaleLeft, 0, PRICE_SCALE_WIDTH, chartHeight);
+
+    ctx.strokeStyle = "rgba(109, 137, 176, 0.14)";
+    ctx.lineWidth = 1;
+
+    for(let i = 0; i <= 5; i++){
+        const ratio = i / 5;
+        const lineY = chartTop + (chartInnerHeight * ratio);
+        const labelPrice = maxPrice - ((maxPrice - minPrice) * ratio);
+
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, lineY);
+        ctx.lineTo(chartRight, lineY);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(145, 163, 191, 0.72)";
+        ctx.fillText(formatPrice(labelPrice), priceScaleLeft + 12, lineY);
+    }
+
+    ctx.strokeStyle = "rgba(109, 137, 176, 0.18)";
+    ctx.strokeRect(chartLeft, chartTop, chartInnerWidth, chartInnerHeight);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(chartLeft, chartTop, chartInnerWidth, chartInnerHeight);
+    ctx.clip();
+
+    visibleTrades.forEach((trade) => {
+        const tradeY = y(trade.price);
+        const colorMap = {
+            buy: "rgba(31, 218, 122, 0.85)",
+            sell: "rgba(255, 95, 102, 0.85)",
+            simBuy: "rgba(76, 141, 255, 0.85)",
+            simSell: "rgba(255, 179, 71, 0.85)"
+        };
+
+        ctx.strokeStyle = colorMap[trade.type] || "rgba(145, 163, 191, 0.6)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash(trade.type.startsWith("sim") ? [6, 6] : [4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, tradeY);
+        ctx.lineTo(chartRight, tradeY);
+        ctx.stroke();
+    });
+
+    ctx.setLineDash([]);
+
+    for(let index = visibleRange.firstIndex; index <= visibleRange.lastIndex; index++){
+        const candle = candles[index];
+        if(!candle) continue;
+
+        const bodyX = chartLeft + layout.offset + (index * layout.step);
+        const bodyRight = bodyX + layout.candleWidth;
+        if(bodyRight < chartLeft || bodyX > chartRight) continue;
+
+        const bodyCenter = bodyX + (layout.candleWidth / 2);
+        const wickTop = y(candle.high);
+        const wickBottom = y(candle.low);
+        const bodyTop = y(Math.max(candle.open, candle.close));
+        const bodyBottom = y(Math.min(candle.open, candle.close));
+        const bodyHeight = Math.max(2, bodyBottom - bodyTop);
+        const isUp = candle.close >= candle.open;
+        const candleColor = isUp ? "#20e38a" : "#ff6168";
+
+        ctx.strokeStyle = candleColor;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(bodyCenter, wickTop);
+        ctx.lineTo(bodyCenter, wickBottom);
+        ctx.stroke();
+
+        ctx.fillStyle = candleColor;
+        ctx.fillRect(bodyX, bodyTop, layout.candleWidth, bodyHeight);
+    }
+
+    const livePriceY = y(price);
+    ctx.strokeStyle = "rgba(95, 235, 193, 0.95)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, livePriceY);
+    ctx.lineTo(chartRight, livePriceY);
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.setLineDash([]);
+
+    visibleTrades.forEach((trade) => {
+        const tradeY = clamp(y(trade.price), chartTop + 10, chartBottom - 10);
+        const labelColorMap = {
+            buy: "#20e38a",
+            sell: "#ff6168",
+            simBuy: "#4c8dff",
+            simSell: "#ffb347"
+        };
+
+        ctx.fillStyle = labelColorMap[trade.type] || "#d9e6f8";
+        ctx.fillText(formatPrice(trade.price), priceScaleLeft + 12, tradeY);
+    });
+
+    ctx.fillStyle = "#5febc1";
+    ctx.fillText(formatPrice(price), priceScaleLeft + 12, clamp(y(price), chartTop + 10, chartBottom - 10));
+}
+
+buySwitch.addEventListener("click", () => setActiveSide("buy"));
+sellSwitch.addEventListener("click", () => setActiveSide("sell"));
+tradeAmountInput.addEventListener("input", updateEstimate);
+tradeAmountInput.addEventListener("keydown", (event) => {
+    if(event.key === "Enter"){
+        executeTrade();
+    }
+});
+
+tradeHalfButton.addEventListener("click", () => fillTradeAmount(0.5));
+tradeMaxButton.addEventListener("click", () => fillTradeAmount(1));
+
+manualInput.addEventListener("keydown", (event) => {
+    if(event.key === "Enter"){
+        simulate();
+    }
+});
+
+document.getElementById("trade-action").addEventListener("click", executeTrade);
+document.getElementById("simulate-button").addEventListener("click", simulate);
+document.getElementById("reset-button").addEventListener("click", resetAll);
+
+window.addEventListener("resize", resizeCanvas);
+
+canvas.addEventListener("wheel", (event) => {
+    event.preventDefault();
+
+    const geometry = getChartGeometry();
+    const factor = event.deltaY < 0 ? 1.12 : 0.9;
+
+    if(event.offsetX >= geometry.priceScaleLeft){
+        applyVerticalZoom(factor);
+    }else{
+        applyHorizontalZoom(factor, event.offsetX);
+    }
+
+    save();
+    draw();
+}, { passive: false });
+
+canvas.addEventListener("dblclick", (event) => {
+    const geometry = getChartGeometry();
+
+    if(event.offsetX >= geometry.priceScaleLeft){
+        priceZoom = 1;
+    }else{
+        zoom = 1;
+        offsetX = 0;
+    }
+
+    save();
+    draw();
+});
+
+canvas.addEventListener("mousedown", (event) => {
+    const geometry = getChartGeometry();
+
+    if(event.offsetX >= geometry.priceScaleLeft){
+        dragMode = "scale-y";
+        dragStartY = event.clientY;
+        dragStartPriceZoom = priceZoom;
+        canvas.style.cursor = "ns-resize";
+        return;
+    }
+
+    dragMode = "pan-x";
+    dragStartX = event.clientX;
+    dragStartOffset = offsetX;
+    canvas.style.cursor = "grabbing";
+});
+
+window.addEventListener("mouseup", () => {
+    if(!dragMode){
+        return;
+    }
+
+    dragMode = null;
+    canvas.style.cursor = "default";
+    save();
+});
+
+canvas.addEventListener("mouseleave", () => {
+    if(!dragMode){
+        canvas.style.cursor = "default";
+    }
+});
+
+canvas.addEventListener("mousemove", (event) => {
+    if(dragMode){
+        return;
+    }
+
+    const geometry = getChartGeometry();
+    canvas.style.cursor = event.offsetX >= geometry.priceScaleLeft ? "ns-resize" : "grab";
+});
+
+window.addEventListener("mousemove", (event) => {
+    if(dragMode === "pan-x"){
+        const geometry = getChartGeometry();
+        if(geometry.chartInnerWidth <= 0) return;
+
+        const nextOffset = dragStartOffset + (event.clientX - dragStartX);
+        offsetX = getHorizontalLayout(geometry.chartInnerWidth, zoom, nextOffset).offset;
+        draw();
+        return;
+    }
+
+    if(dragMode === "scale-y"){
+        const deltaY = dragStartY - event.clientY;
+        priceZoom = clamp(dragStartPriceZoom * Math.exp(deltaY * 0.012), MIN_VERTICAL_ZOOM, MAX_VERTICAL_ZOOM);
+        draw();
+    }
+});
+
+init();
+</script>
+
+</body>
+</html>
