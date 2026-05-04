@@ -820,6 +820,28 @@ function formatCompactToken(value, symbol){
     }).format(value) + " " + symbol;
 }
 
+function formatCompactUsdcVolume(value){
+    if(!Number.isFinite(value) || value <= 0) return "";
+    if(Math.abs(value) < 1000){
+        return formatUSDC(value) + " USDC";
+    }
+
+    return new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        maximumFractionDigits: 2
+    }).format(value) + " USDC";
+}
+
+function formatPercentChange(previousValue, nextValue){
+    if(!Number.isFinite(previousValue) || previousValue <= 0 || !Number.isFinite(nextValue)){
+        return "";
+    }
+
+    const change = ((nextValue - previousValue) / previousValue) * 100;
+    const sign = change > 0 ? "+" : "";
+    return sign + change.toFixed(2) + "%";
+}
+
 function formatTCL(value){
     if(!Number.isFinite(value) || Math.abs(value) <= EPSILON_TCL) return "0";
     if(Math.abs(value) >= 1){
@@ -947,6 +969,58 @@ function getVisibleTrades(range){
     return trades
         .filter((trade) => trade.index == null || (trade.index >= range.firstIndex && trade.index <= range.lastIndex))
         .slice(-12);
+}
+
+function getLatestReferenceTrades(){
+    let latestBuy = null;
+    let latestSell = null;
+    let latestSimulated = null;
+
+    for(let index = trades.length - 1; index >= 0; index--){
+        const trade = trades[index];
+
+        if(!latestBuy && trade.type === "buy"){
+            latestBuy = trade;
+        }else if(!latestSell && trade.type === "sell"){
+            latestSell = trade;
+        }else if(!latestSimulated && (trade.type === "simBuy" || trade.type === "simSell")){
+            latestSimulated = trade;
+        }
+
+        if(latestBuy && latestSell && latestSimulated){
+            break;
+        }
+    }
+
+    return [latestBuy, latestSell, latestSimulated].filter(Boolean);
+}
+
+function getReferenceTradeDisplay(trade){
+    const relatedCandle = Number.isInteger(trade.index) ? candles[trade.index] : null;
+
+    if(trade.type === "buy" || trade.type === "simBuy"){
+        const value = relatedCandle?.high ?? trade.price;
+        return {
+            value,
+            label: formatPrice(value),
+            extremeType: "high"
+        };
+    }
+
+    if(trade.type === "sell" || trade.type === "simSell"){
+        const value = relatedCandle?.low ?? trade.price;
+        return {
+            value,
+            label: formatPrice(value),
+            extremeType: "low"
+        };
+    }
+
+    return {
+        value: trade.price,
+        label: formatPrice(trade.price),
+        extremeType: null
+    };
 }
 
 function getVisiblePriceBounds(range, visibleTrades){
@@ -1354,12 +1428,24 @@ function addTradeMarker(type, tradePrice){
     }
 }
 
-function addCandle(open, close){
+function addCandle(open, close, options = {}){
     candles.push({
         open,
         close,
         high: Math.max(open, close),
-        low: Math.min(open, close)
+        low: Math.min(open, close),
+        candleKind: options.candleKind ?? null,
+        volumeUsdc: options.volumeUsdc ?? null,
+        volumeSide: options.volumeSide ?? null,
+        volumeLabelText: options.volumeLabelText ?? null,
+        volumeLabelPosition: options.volumeLabelPosition ?? null,
+        volumeLabelColor: options.volumeLabelColor ?? null,
+        infoLabelText: options.infoLabelText ?? null,
+        infoLabelPosition: options.infoLabelPosition ?? null,
+        infoLabelColor: options.infoLabelColor ?? null,
+        labelText: options.labelText ?? null,
+        labelPosition: options.labelPosition ?? null,
+        labelColor: options.labelColor ?? null
     });
 
     if(candles.length > MAX_CANDLES){
@@ -1392,10 +1478,21 @@ function executeBuy(){
     normalizePosition();
 
     price = poolUSDC / poolTCL;
+    const percentLabel = formatPercentChange(previousPrice, price);
 
     addTradeMarker("buy", executionPrice);
     tradeAmountInput.value = "";
-    addCandle(previousPrice, price);
+    addCandle(previousPrice, price, {
+        candleKind: "buy",
+        volumeUsdc: usdc,
+        volumeSide: "buy",
+        volumeLabelText: formatCompactUsdcVolume(usdc),
+        volumeLabelPosition: "below",
+        volumeLabelColor: "#7bf0b2",
+        infoLabelText: percentLabel,
+        infoLabelPosition: "above",
+        infoLabelColor: "#7bf0b2"
+    });
 }
 
 function executeSell(){
@@ -1421,10 +1518,21 @@ function executeSell(){
     normalizePosition();
 
     price = poolUSDC / poolTCL;
+    const percentLabel = formatPercentChange(previousPrice, price);
 
     addTradeMarker("sell", executionPrice);
     tradeAmountInput.value = "";
-    addCandle(previousPrice, price);
+    addCandle(previousPrice, price, {
+        candleKind: "sell",
+        volumeUsdc: quote.received,
+        volumeSide: "sell",
+        volumeLabelText: formatCompactUsdcVolume(quote.received),
+        volumeLabelPosition: "above",
+        volumeLabelColor: "#ff9aa0",
+        infoLabelText: percentLabel,
+        infoLabelPosition: "below",
+        infoLabelColor: "#ff9aa0"
+    });
 }
 
 function executeTrade(){
@@ -1446,9 +1554,13 @@ function simulate(){
     }
 
     const previousPrice = price;
+    const previousPoolUsdc = poolUSDC;
     const invariant = poolTCL * poolUSDC;
     const nextTCL = Math.sqrt(invariant / nextPrice);
     const nextUSDC = Math.sqrt(invariant * nextPrice);
+    const volumeUsdc = Math.abs(nextUSDC - previousPoolUsdc);
+    const volumeSide = nextPrice > previousPrice ? "buy" : "sell";
+    const percentLabel = formatPercentChange(previousPrice, nextPrice);
 
     poolTCL = nextTCL;
     poolUSDC = nextUSDC;
@@ -1456,7 +1568,17 @@ function simulate(){
 
     addTradeMarker(nextPrice > previousPrice ? "simBuy" : "simSell", nextPrice);
     manualInput.value = "";
-    addCandle(previousPrice, price);
+    addCandle(previousPrice, price, {
+        candleKind: nextPrice > previousPrice ? "simBuy" : "simSell",
+        volumeUsdc,
+        volumeSide,
+        volumeLabelText: formatCompactUsdcVolume(volumeUsdc),
+        volumeLabelPosition: nextPrice > previousPrice ? "below" : "above",
+        volumeLabelColor: nextPrice > previousPrice ? "#7bf0b2" : "#ff9aa0",
+        infoLabelText: percentLabel,
+        infoLabelPosition: nextPrice > previousPrice ? "above" : "below",
+        infoLabelColor: nextPrice > previousPrice ? "#7dc0ff" : "#ffb784"
+    });
 }
 
 function resetAll(){
@@ -1527,8 +1649,24 @@ function draw(){
 
     const visibleRange = getVisibleIndexRange(chartInnerWidth, layout);
     const visibleTrades = getVisibleTrades(visibleRange);
+    const referenceTrades = getLatestReferenceTrades();
     const { minPrice, maxPrice } = getVisiblePriceBounds(visibleRange, visibleTrades);
     const priceRange = maxPrice - minPrice || 1;
+    let visibleHighPrice = Number.NEGATIVE_INFINITY;
+    let visibleLowPrice = Number.POSITIVE_INFINITY;
+
+    for(let index = visibleRange.firstIndex; index <= visibleRange.lastIndex; index++){
+        const candle = candles[index];
+        if(!candle) continue;
+
+        visibleHighPrice = Math.max(visibleHighPrice, candle.high);
+        visibleLowPrice = Math.min(visibleLowPrice, candle.low);
+    }
+
+    if(!Number.isFinite(visibleHighPrice) || !Number.isFinite(visibleLowPrice)){
+        visibleHighPrice = price;
+        visibleLowPrice = price;
+    }
 
     function y(value){
         return chartBottom - (((value - minPrice) / priceRange) * chartInnerHeight);
@@ -1562,8 +1700,64 @@ function draw(){
     ctx.rect(chartLeft, chartTop, chartInnerWidth, chartInnerHeight);
     ctx.clip();
 
-    visibleTrades.forEach((trade) => {
-        const tradeY = y(trade.price);
+    const rawReferenceTradeDisplays = referenceTrades.map((trade) => ({
+        trade,
+        ...getReferenceTradeDisplay(trade)
+    }));
+    const highLineY = y(visibleHighPrice);
+    const lowLineY = y(visibleLowPrice);
+    const livePriceY = y(price);
+    const referenceTradeDisplays = [];
+
+    rawReferenceTradeDisplays.forEach((referenceTrade) => {
+        const alreadyExists = referenceTradeDisplays.some((existingTrade) => Math.abs(y(existingTrade.value) - y(referenceTrade.value)) <= 2);
+        if(!alreadyExists){
+            referenceTradeDisplays.push(referenceTrade);
+        }
+    });
+
+    const drawableReferenceTrades = referenceTradeDisplays.filter((referenceTrade) => {
+        const tradeY = y(referenceTrade.value);
+
+        if(referenceTrade.extremeType === "high" && Math.abs(tradeY - highLineY) <= 2){
+            return false;
+        }
+
+        if(referenceTrade.extremeType === "low" && Math.abs(tradeY - lowLineY) <= 2){
+            return false;
+        }
+
+        return true;
+    });
+
+    const overlapsReferenceTrade = (lineY) => drawableReferenceTrades.some((referenceTrade) => Math.abs(y(referenceTrade.value) - lineY) <= 2);
+    const shouldShowHighLine = Number.isFinite(visibleHighPrice);
+    const shouldShowLowLine = Number.isFinite(visibleLowPrice) && Math.abs(lowLineY - highLineY) > 2;
+    const shouldShowLivePriceLine = Math.abs(livePriceY - highLineY) > 2
+        && (!shouldShowLowLine || Math.abs(livePriceY - lowLineY) > 2)
+        && !overlapsReferenceTrade(livePriceY);
+
+    if(shouldShowHighLine){
+        ctx.setLineDash([8, 5]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(125, 192, 255, 0.72)";
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, highLineY);
+        ctx.lineTo(chartRight, highLineY);
+        ctx.stroke();
+    }
+
+    if(shouldShowLowLine){
+        ctx.setLineDash([8, 5]);
+        ctx.strokeStyle = "rgba(95, 235, 193, 0.72)";
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, lowLineY);
+        ctx.lineTo(chartRight, lowLineY);
+        ctx.stroke();
+    }
+
+    drawableReferenceTrades.forEach((referenceTrade) => {
+        const tradeY = y(referenceTrade.value);
         const colorMap = {
             buy: "rgba(31, 218, 122, 0.85)",
             sell: "rgba(255, 95, 102, 0.85)",
@@ -1571,9 +1765,9 @@ function draw(){
             simSell: "rgba(255, 179, 71, 0.85)"
         };
 
-        ctx.strokeStyle = colorMap[trade.type] || "rgba(145, 163, 191, 0.6)";
+        ctx.strokeStyle = colorMap[referenceTrade.trade.type] || "rgba(145, 163, 191, 0.6)";
         ctx.lineWidth = 1;
-        ctx.setLineDash(trade.type.startsWith("sim") ? [6, 6] : [4, 4]);
+        ctx.setLineDash(referenceTrade.trade.type.startsWith("sim") ? [6, 6] : [4, 4]);
         ctx.beginPath();
         ctx.moveTo(chartLeft, tradeY);
         ctx.lineTo(chartRight, tradeY);
@@ -1608,21 +1802,96 @@ function draw(){
 
         ctx.fillStyle = candleColor;
         ctx.fillRect(bodyX, bodyTop, layout.candleWidth, bodyHeight);
+
+        const inferredKind = candle.candleKind
+            || (typeof candle.labelText === "string" && candle.labelText.includes("%")
+                ? (candle.volumeSide === "sell" ? "simSell" : "simBuy")
+                : candle.volumeSide === "sell"
+                    ? "sell"
+                    : candle.volumeSide === "buy"
+                        ? "buy"
+                        : null);
+
+        const volumeLabelText = candle.volumeLabelText ?? (
+            candle.volumeUsdc && candle.volumeSide ? formatCompactUsdcVolume(candle.volumeUsdc) : ""
+        );
+        const volumeLabelPosition = candle.volumeLabelPosition ?? (
+            candle.volumeSide === "buy" ? "below" : candle.volumeSide === "sell" ? "above" : null
+        );
+        const volumeLabelColor = candle.volumeLabelColor ?? (
+            candle.volumeSide === "sell" ? "#ff9aa0" : candle.volumeSide === "buy" ? "#7bf0b2" : "#d9e6f8"
+        );
+
+        const infoLabelText = candle.infoLabelText ?? (
+            typeof candle.labelText === "string" && candle.labelText.includes("%")
+                ? candle.labelText
+                : inferredKind === "buy" || inferredKind === "sell" || inferredKind === "simBuy" || inferredKind === "simSell"
+                    ? formatPercentChange(candle.open, candle.close)
+                    : ""
+        );
+        const infoLabelPosition = candle.infoLabelPosition ?? (
+            inferredKind === "buy" || inferredKind === "simBuy"
+                ? "above"
+                : inferredKind === "sell" || inferredKind === "simSell"
+                    ? "below"
+                    : null
+        );
+        const infoLabelColor = candle.infoLabelColor ?? (
+            inferredKind === "buy"
+                ? "#7bf0b2"
+                : inferredKind === "sell"
+                    ? "#ff9aa0"
+                    : inferredKind === "simBuy"
+                        ? "#7dc0ff"
+                        : inferredKind === "simSell"
+                            ? "#ffb784"
+                            : "#d9e6f8"
+        );
+
+        function drawCandleLabel(text, position, color, distance){
+            if(!text || !position) return;
+
+            const labelY = position === "above"
+                ? Math.max(chartTop + 12, wickTop - distance)
+                : Math.min(chartBottom - 12, wickBottom + distance);
+
+            ctx.save();
+            ctx.font = '10.5px "Space Grotesk", "Segoe UI", sans-serif';
+            ctx.textAlign = "center";
+            ctx.fillStyle = color;
+            ctx.fillText(text, bodyCenter, labelY);
+            ctx.restore();
+        }
+
+        drawCandleLabel(infoLabelText, infoLabelPosition, infoLabelColor, 12);
+        drawCandleLabel(volumeLabelText, volumeLabelPosition, volumeLabelColor, 24);
     }
 
-    const livePriceY = y(price);
-    ctx.strokeStyle = "rgba(95, 235, 193, 0.95)";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(chartLeft, livePriceY);
-    ctx.lineTo(chartRight, livePriceY);
-    ctx.stroke();
+    if(shouldShowLivePriceLine){
+        ctx.strokeStyle = "rgba(95, 235, 193, 0.95)";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, livePriceY);
+        ctx.lineTo(chartRight, livePriceY);
+        ctx.stroke();
+    }
 
     ctx.restore();
     ctx.setLineDash([]);
 
-    visibleTrades.forEach((trade) => {
-        const tradeY = clamp(y(trade.price), chartTop + 10, chartBottom - 10);
+    ctx.font = '11px "Space Grotesk", "Segoe UI", sans-serif';
+    if(shouldShowHighLine){
+        ctx.fillStyle = "#7dc0ff";
+        ctx.fillText("High " + formatPrice(visibleHighPrice), priceScaleLeft + 12, clamp(highLineY, chartTop + 10, chartBottom - 10));
+    }
+
+    if(shouldShowLowLine){
+        ctx.fillStyle = "#5febc1";
+        ctx.fillText("Low " + formatPrice(visibleLowPrice), priceScaleLeft + 12, clamp(lowLineY, chartTop + 10, chartBottom - 10));
+    }
+
+    drawableReferenceTrades.forEach((referenceTrade) => {
+        const tradeY = clamp(y(referenceTrade.value), chartTop + 10, chartBottom - 10);
         const labelColorMap = {
             buy: "#20e38a",
             sell: "#ff6168",
@@ -1630,12 +1899,14 @@ function draw(){
             simSell: "#ffb347"
         };
 
-        ctx.fillStyle = labelColorMap[trade.type] || "#d9e6f8";
-        ctx.fillText(formatPrice(trade.price), priceScaleLeft + 12, tradeY);
+        ctx.fillStyle = labelColorMap[referenceTrade.trade.type] || "#d9e6f8";
+        ctx.fillText(referenceTrade.label, priceScaleLeft + 12, tradeY);
     });
 
-    ctx.fillStyle = "#5febc1";
-    ctx.fillText(formatPrice(price), priceScaleLeft + 12, clamp(y(price), chartTop + 10, chartBottom - 10));
+    if(shouldShowLivePriceLine){
+        ctx.fillStyle = "#5febc1";
+        ctx.fillText(formatPrice(price), priceScaleLeft + 12, clamp(y(price), chartTop + 10, chartBottom - 10));
+    }
 }
 
 buySwitch.addEventListener("click", () => setActiveSide("buy"));
