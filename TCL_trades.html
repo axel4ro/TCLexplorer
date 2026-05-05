@@ -541,14 +541,24 @@ canvas{
 
 @media (max-width: 720px){
     .app-shell{
-        gap:18px;
-        padding:16px;
+        gap:12px;
+        padding:10px;
     }
 
-    .sidebar,
+    .sidebar{
+        padding:14px;
+        border-radius:20px;
+    }
+
     .chart-card{
-        padding:18px;
-        border-radius:22px;
+        padding:12px 0 10px;
+        border-radius:20px;
+        gap:10px;
+    }
+
+    .chart-toolbar,
+    .chart-footer{
+        padding-inline:10px;
     }
 
     .stats-grid{
@@ -557,11 +567,32 @@ canvas{
 
     .chart-toolbar{
         flex-direction:column;
+        gap:10px;
     }
 
     .chart-pill-list{
         width:100%;
-        justify-content:flex-start;
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:8px;
+        justify-content:stretch;
+    }
+
+    .pill{
+        min-width:0;
+        width:100%;
+        padding:10px 12px;
+        border-radius:16px;
+    }
+
+    .pill span{
+        margin-bottom:4px;
+    }
+
+    .pill strong{
+        display:block;
+        font-size:0.92rem;
+        overflow-wrap:anywhere;
     }
 
     .action-row{
@@ -573,7 +604,13 @@ canvas{
     }
 
     .chart-frame{
-        min-height:440px;
+        min-height:360px;
+        width:100%;
+        border-radius:18px;
+    }
+
+    .chart-footer{
+        padding-inline:10px;
     }
 }
 </style>
@@ -695,10 +732,20 @@ canvas{
 const STORAGE_KEYS = ["TCL_SIM_V2", "TCL_SIM_V1"];
 const INITIAL_USDC = 1000;
 const MAX_CANDLES = 180;
-const PRICE_SCALE_WIDTH = 152;
-const PRICE_SCALE_LABEL_HALF_HEIGHT = 18;
-const PRICE_SCALE_LABEL_GAP = 32;
-const CHART_MARGIN = { top: 22, right: 18, bottom: 22, left: 20 };
+const DESKTOP_PRICE_SCALE_WIDTH = 152;
+const MOBILE_PRICE_SCALE_MIN_WIDTH = 68;
+const MOBILE_PRICE_SCALE_MAX_WIDTH = 96;
+const MOBILE_BREAKPOINT = 720;
+const DESKTOP_PRICE_SCALE_LABEL_HALF_HEIGHT = 18;
+const MOBILE_PRICE_SCALE_LABEL_HALF_HEIGHT = 15;
+const DESKTOP_PRICE_SCALE_LABEL_GAP = 32;
+const MOBILE_PRICE_SCALE_LABEL_GAP = 26;
+const DESKTOP_CANDLE_END_PADDING = 26;
+const MOBILE_CANDLE_END_PADDING = 18;
+const DESKTOP_CANDLE_LABEL_EDGE_GAP = 12;
+const MOBILE_CANDLE_LABEL_EDGE_GAP = 8;
+const DESKTOP_CHART_MARGIN = { top: 22, right: 18, bottom: 22, left: 20 };
+const MOBILE_CHART_MARGIN = { top: 16, right: 8, bottom: 16, left: 8 };
 const MIN_HORIZONTAL_ZOOM = 0.45;
 const MAX_HORIZONTAL_ZOOM = 8;
 const MIN_VERTICAL_ZOOM = 0.65;
@@ -759,6 +806,7 @@ let activeSide = "buy";
 
 let chartWidth = 0;
 let chartHeight = 0;
+let mobileAutoPriceScaleWidth = 0;
 
 let dragMode = null;
 let dragStartX = 0;
@@ -914,11 +962,63 @@ function clamp(value, min, max){
     return Math.min(Math.max(value, min), max);
 }
 
-function resolvePriceScaleLabelCenter(targetY, occupiedCenters, preferredDirection, chartTop, chartBottom){
-    const minCenter = chartTop + PRICE_SCALE_LABEL_HALF_HEIGHT;
-    const maxCenter = chartBottom - PRICE_SCALE_LABEL_HALF_HEIGHT;
+function isCompactViewport(){
+    return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+function getPriceScaleWidth(){
+    if(!isCompactViewport()){
+        return DESKTOP_PRICE_SCALE_WIDTH;
+    }
+
+    const fallbackWidth = clamp(Math.round(chartWidth * 0.22), MOBILE_PRICE_SCALE_MIN_WIDTH, MOBILE_PRICE_SCALE_MAX_WIDTH);
+    return clamp(mobileAutoPriceScaleWidth || fallbackWidth, MOBILE_PRICE_SCALE_MIN_WIDTH, MOBILE_PRICE_SCALE_MAX_WIDTH);
+}
+
+function getChartMargin(){
+    return isCompactViewport() ? MOBILE_CHART_MARGIN : DESKTOP_CHART_MARGIN;
+}
+
+function getCandleEndPadding(){
+    return isCompactViewport() ? MOBILE_CANDLE_END_PADDING : DESKTOP_CANDLE_END_PADDING;
+}
+
+function getCandleLabelEdgeGap(){
+    return isCompactViewport() ? MOBILE_CANDLE_LABEL_EDGE_GAP : DESKTOP_CANDLE_LABEL_EDGE_GAP;
+}
+
+function measurePriceScaleWidth(axisLabels, priceLabels, titleLabels, axisFont, valueFont, titleFont){
+    if(!isCompactViewport()){
+        return DESKTOP_PRICE_SCALE_WIDTH;
+    }
+
+    ctx.save();
+    let maxWidth = 0;
+
+    ctx.font = axisFont;
+    axisLabels.forEach((label) => {
+        maxWidth = Math.max(maxWidth, ctx.measureText(label).width);
+    });
+
+    ctx.font = valueFont;
+    priceLabels.forEach((label) => {
+        maxWidth = Math.max(maxWidth, ctx.measureText(label).width);
+    });
+
+    ctx.font = titleFont;
+    titleLabels.forEach((label) => {
+        maxWidth = Math.max(maxWidth, ctx.measureText(label).width);
+    });
+
+    ctx.restore();
+    return clamp(Math.ceil(maxWidth + 18), MOBILE_PRICE_SCALE_MIN_WIDTH, MOBILE_PRICE_SCALE_MAX_WIDTH);
+}
+
+function resolvePriceScaleLabelCenter(targetY, occupiedCenters, preferredDirection, chartTop, chartBottom, labelHalfHeight, labelGap){
+    const minCenter = chartTop + labelHalfHeight;
+    const maxCenter = chartBottom - labelHalfHeight;
     const startY = clamp(targetY, minCenter, maxCenter);
-    const collides = (candidateY) => occupiedCenters.some((existingCenter) => Math.abs(existingCenter - candidateY) < PRICE_SCALE_LABEL_GAP);
+    const collides = (candidateY) => occupiedCenters.some((existingCenter) => Math.abs(existingCenter - candidateY) < labelGap);
 
     if(!collides(startY)){
         occupiedCenters.push(startY);
@@ -935,7 +1035,7 @@ function resolvePriceScaleLabelCenter(targetY, occupiedCenters, preferredDirecti
         let candidateY = startY;
 
         while(true){
-            candidateY += direction * PRICE_SCALE_LABEL_GAP;
+            candidateY += direction * labelGap;
             if(candidateY < minCenter || candidateY > maxCenter){
                 break;
             }
@@ -952,16 +1052,19 @@ function resolvePriceScaleLabelCenter(targetY, occupiedCenters, preferredDirecti
 }
 
 function getChartGeometry(){
-    const priceScaleLeft = chartWidth - PRICE_SCALE_WIDTH;
-    const chartLeft = CHART_MARGIN.left;
-    const chartRight = priceScaleLeft - CHART_MARGIN.right;
-    const chartTop = CHART_MARGIN.top;
-    const chartBottom = chartHeight - CHART_MARGIN.bottom;
+    const priceScaleWidth = getPriceScaleWidth();
+    const chartMargin = getChartMargin();
+    const priceScaleLeft = chartWidth - priceScaleWidth;
+    const chartLeft = chartMargin.left;
+    const chartRight = priceScaleLeft - chartMargin.right;
+    const chartTop = chartMargin.top;
+    const chartBottom = chartHeight - chartMargin.bottom;
     const chartInnerWidth = chartRight - chartLeft;
     const chartInnerHeight = chartBottom - chartTop;
 
     return {
         priceScaleLeft,
+        priceScaleWidth,
         chartLeft,
         chartRight,
         chartTop,
@@ -980,15 +1083,17 @@ function getHorizontalLayout(chartInnerWidth, zoomLevel = zoom, rawOffset = offs
     const candleCount = Math.max(candles.length, 1);
     const step = clamp(getFitStep(chartInnerWidth) * zoomLevel, CANDLE_STEP_MIN, CANDLE_STEP_MAX);
     const candleWidth = Math.max(2, Math.min(step * CANDLE_WIDTH_RATIO, step - 1.5, 36));
+    const trailingPadding = getCandleEndPadding();
     const contentWidth = candleCount > 1
-        ? ((candleCount - 1) * step) + candleWidth
-        : candleWidth;
+        ? ((candleCount - 1) * step) + candleWidth + trailingPadding
+        : candleWidth + trailingPadding;
     const minOffset = Math.min(0, chartInnerWidth - contentWidth);
     const offset = clamp(rawOffset, minOffset, 0);
 
     return {
         step,
         candleWidth,
+        trailingPadding,
         contentWidth,
         minOffset,
         maxOffset: 0,
@@ -1663,17 +1768,27 @@ function render(){
     draw();
 }
 
-function draw(){
+function draw(reflowPass = 0){
     if(!chartWidth || !chartHeight || !candles.length){
         return;
     }
 
     ctx.clearRect(0, 0, chartWidth, chartHeight);
-    ctx.font = '12px "Space Grotesk", "Segoe UI", sans-serif';
+    const compactViewport = isCompactViewport();
+    const priceScaleLabelHalfHeight = compactViewport ? MOBILE_PRICE_SCALE_LABEL_HALF_HEIGHT : DESKTOP_PRICE_SCALE_LABEL_HALF_HEIGHT;
+    const priceScaleLabelGap = compactViewport ? MOBILE_PRICE_SCALE_LABEL_GAP : DESKTOP_PRICE_SCALE_LABEL_GAP;
+    const candleLabelEdgeGap = getCandleLabelEdgeGap();
+    const gridLineCount = compactViewport ? 4 : 5;
+    const priceScaleTitleFont = compactViewport ? '8px "Space Grotesk", "Segoe UI", sans-serif' : '10px "Space Grotesk", "Segoe UI", sans-serif';
+    const priceScaleValueFont = compactViewport ? '9.5px "Space Grotesk", "Segoe UI", sans-serif' : '11px "Space Grotesk", "Segoe UI", sans-serif';
+    const axisFont = compactViewport ? '10px "Space Grotesk", "Segoe UI", sans-serif' : '12px "Space Grotesk", "Segoe UI", sans-serif';
+    const candleLabelFont = compactViewport ? '9px "Space Grotesk", "Segoe UI", sans-serif' : '10.5px "Space Grotesk", "Segoe UI", sans-serif';
+    ctx.font = axisFont;
     ctx.textBaseline = "middle";
 
     const {
         priceScaleLeft,
+        priceScaleWidth,
         chartLeft,
         chartRight,
         chartTop,
@@ -1716,31 +1831,55 @@ function draw(){
         return chartBottom - (((value - minPrice) / priceRange) * chartInnerHeight);
     }
 
-    const priceScaleTextX = priceScaleLeft + (PRICE_SCALE_WIDTH / 2);
+    const priceScaleTextX = priceScaleLeft + (priceScaleWidth / 2);
+    const axisLabels = [];
+
+    for(let i = 0; i <= gridLineCount; i++){
+        const ratio = i / gridLineCount;
+        const labelPrice = maxPrice - ((maxPrice - minPrice) * ratio);
+        axisLabels.push(formatChartPrice(labelPrice));
+    }
+
+    const autoPriceScaleWidth = measurePriceScaleWidth(
+        axisLabels,
+        [formatChartPrice(price), formatChartPrice(visibleHighPrice), formatChartPrice(visibleLowPrice)],
+        ["Current Price", "High", "Low"],
+        axisFont,
+        priceScaleValueFont,
+        priceScaleTitleFont
+    );
+
+    if(compactViewport && Math.abs(autoPriceScaleWidth - priceScaleWidth) > 1){
+        mobileAutoPriceScaleWidth = autoPriceScaleWidth;
+        if(reflowPass < 2){
+            draw(reflowPass + 1);
+            return;
+        }
+    }
 
     function drawPriceScaleLabel(title, value, centerY, color){
         ctx.save();
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = color;
-        ctx.font = '10px "Space Grotesk", "Segoe UI", sans-serif';
+        ctx.font = priceScaleTitleFont;
         ctx.fillText(title, priceScaleTextX, centerY - 8);
-        ctx.font = '11px "Space Grotesk", "Segoe UI", sans-serif';
+        ctx.font = priceScaleValueFont;
         ctx.fillText(formatChartPrice(value), priceScaleTextX, centerY + 8);
         ctx.restore();
     }
 
     ctx.fillStyle = "rgba(5, 12, 22, 0.96)";
-    ctx.fillRect(priceScaleLeft, 0, PRICE_SCALE_WIDTH, chartHeight);
+    ctx.fillRect(priceScaleLeft, 0, priceScaleWidth, chartHeight);
 
     ctx.strokeStyle = "rgba(109, 137, 176, 0.14)";
     ctx.lineWidth = 1;
     ctx.textAlign = "center";
 
-    for(let i = 0; i <= 5; i++){
-        const ratio = i / 5;
+    for(let i = 0; i <= gridLineCount; i++){
+        const ratio = i / gridLineCount;
         const lineY = chartTop + (chartInnerHeight * ratio);
-        const labelPrice = maxPrice - ((maxPrice - minPrice) * ratio);
+        const labelText = axisLabels[i];
 
         ctx.beginPath();
         ctx.moveTo(chartLeft, lineY);
@@ -1748,7 +1887,7 @@ function draw(){
         ctx.stroke();
 
         ctx.fillStyle = "rgba(145, 163, 191, 0.72)";
-        ctx.fillText(formatChartPrice(labelPrice), priceScaleTextX, lineY);
+        ctx.fillText(labelText, priceScaleTextX, lineY);
     }
 
     ctx.strokeStyle = "rgba(109, 137, 176, 0.18)";
@@ -1800,13 +1939,13 @@ function draw(){
     const shouldShowLivePriceLine = Number.isFinite(price);
     const priceScaleLabelCenters = [];
     const currentLabelCenterY = shouldShowLivePriceLine
-        ? resolvePriceScaleLabelCenter(livePriceY, priceScaleLabelCenters, "center", chartTop, chartBottom)
+        ? resolvePriceScaleLabelCenter(livePriceY, priceScaleLabelCenters, "center", chartTop, chartBottom, priceScaleLabelHalfHeight, priceScaleLabelGap)
         : null;
     const highLabelCenterY = shouldShowHighLine
-        ? resolvePriceScaleLabelCenter(highLineY, priceScaleLabelCenters, "above", chartTop, chartBottom)
+        ? resolvePriceScaleLabelCenter(highLineY, priceScaleLabelCenters, "above", chartTop, chartBottom, priceScaleLabelHalfHeight, priceScaleLabelGap)
         : null;
     const lowLabelCenterY = shouldShowLowLine
-        ? resolvePriceScaleLabelCenter(lowLineY, priceScaleLabelCenters, "below", chartTop, chartBottom)
+        ? resolvePriceScaleLabelCenter(lowLineY, priceScaleLabelCenters, "below", chartTop, chartBottom, priceScaleLabelHalfHeight, priceScaleLabelGap)
         : null;
 
     if(shouldShowHighLine){
@@ -1928,15 +2067,23 @@ function draw(){
                 : Math.min(chartBottom - 12, wickBottom + distance);
 
             ctx.save();
-            ctx.font = '10.5px "Space Grotesk", "Segoe UI", sans-serif';
+            ctx.font = candleLabelFont;
             ctx.textAlign = "center";
             ctx.fillStyle = color;
-            ctx.fillText(text, bodyCenter, labelY);
+            const textWidth = ctx.measureText(text).width;
+            const minLabelX = chartLeft + candleLabelEdgeGap + (textWidth / 2);
+            const maxLabelX = chartRight - candleLabelEdgeGap - (textWidth / 2);
+            const labelX = minLabelX <= maxLabelX
+                ? clamp(bodyCenter, minLabelX, maxLabelX)
+                : clamp(bodyCenter, chartLeft + (textWidth / 2), chartRight - (textWidth / 2));
+            ctx.fillText(text, labelX, labelY);
             ctx.restore();
         }
 
-        drawCandleLabel(infoLabelText, infoLabelPosition, infoLabelColor, 12);
-        drawCandleLabel(volumeLabelText, volumeLabelPosition, volumeLabelColor, 24);
+        if(!compactViewport || layout.step >= 26){
+            drawCandleLabel(infoLabelText, infoLabelPosition, infoLabelColor, 12);
+            drawCandleLabel(volumeLabelText, volumeLabelPosition, volumeLabelColor, 24);
+        }
     }
 
     if(shouldShowLivePriceLine){
