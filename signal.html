@@ -334,6 +334,10 @@ body{
     justify-content:center;
 }
 
+.mobile-chart-btn{
+    display:none;
+}
+
 .ghost-btn.disclaimer-btn{
     color:#fff1cf;
     background:rgba(255, 209, 138, 0.08);
@@ -417,6 +421,27 @@ iframe{
 
     .panel{
         max-height:none;
+    }
+
+    .mobile-chart-btn{
+        display:inline-flex;
+    }
+
+    .chart-shell{
+        display:none;
+    }
+
+    .toolbar{
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:10px;
+    }
+
+    .toolbar .primary-btn,
+    .toolbar .ghost-btn{
+        width:100%;
+        min-width:0;
+        white-space:nowrap;
     }
 }
 
@@ -549,7 +574,8 @@ iframe{
         </section>
 
         <div class="toolbar">
-            <a class="ghost-btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">Open DexScreener</a>
+            <button class="primary-btn mobile-chart-btn" type="button" onclick="goToTclChart()">TCL Live Chart</button>
+            <a class="ghost-btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">Source DexScreener</a>
         </div>
 
         <p class="helper-copy">This signal is heuristic, does not place trades, and should not replace manual validation. <a class="helper-link" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Read the disclaimer</a>.</p>
@@ -635,6 +661,19 @@ function goBackToTclToken(){
     }
 
     window.location.href = "index.html#token";
+}
+
+function goToTclChart(){
+    if(window.parent && window.parent !== window){
+        try{
+            window.parent.postMessage({ type: "tcl:navigate", page: "chart" }, "*");
+            return;
+        }catch(error){
+            console.warn("TCL Chart parent navigation failed", error);
+        }
+    }
+
+    window.location.href = "index.html#chart";
 }
 
 function toNumber(value, fallback = 0){
