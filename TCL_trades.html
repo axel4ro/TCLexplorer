@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TCL Simulator PRO</title>
+<title>TCL Simulator</title>
 
 <style>
 :root{
@@ -585,8 +585,8 @@ canvas{
     <aside class="sidebar">
         <div class="brand-block">
             <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
-            <span class="eyebrow">Trading Simulator</span>
-            <h1>TCL Trading</h1>
+            <span class="eyebrow">Simulator</span>
+            <h1>Trading</h1>
             <p>Buy and sell from a clean single-position panel, with a clipped chart that stays inside its own box.</p>
         </div>
 
@@ -695,7 +695,9 @@ canvas{
 const STORAGE_KEYS = ["TCL_SIM_V2", "TCL_SIM_V1"];
 const INITIAL_USDC = 1000;
 const MAX_CANDLES = 180;
-const PRICE_SCALE_WIDTH = 96;
+const PRICE_SCALE_WIDTH = 152;
+const PRICE_SCALE_LABEL_HALF_HEIGHT = 18;
+const PRICE_SCALE_LABEL_GAP = 32;
 const CHART_MARGIN = { top: 22, right: 18, bottom: 22, left: 20 };
 const MIN_HORIZONTAL_ZOOM = 0.45;
 const MAX_HORIZONTAL_ZOOM = 8;
@@ -787,7 +789,12 @@ function formatPrice(value){
     if(!Number.isFinite(value)) return "0.000000";
     if(Math.abs(value) >= 1) return value.toFixed(4);
     if(Math.abs(value) >= 0.01) return value.toFixed(5);
-    return value.toFixed(6);
+    return value.toString();
+}
+
+function formatChartPrice(value){
+    if(!Number.isFinite(value)) return "0.0000000";
+    return value.toFixed(7).replace(/(\.\d*?[1-9])0+$|\.0+$/, "$1");
 }
 
 function formatUSDC(value){
@@ -907,6 +914,43 @@ function clamp(value, min, max){
     return Math.min(Math.max(value, min), max);
 }
 
+function resolvePriceScaleLabelCenter(targetY, occupiedCenters, preferredDirection, chartTop, chartBottom){
+    const minCenter = chartTop + PRICE_SCALE_LABEL_HALF_HEIGHT;
+    const maxCenter = chartBottom - PRICE_SCALE_LABEL_HALF_HEIGHT;
+    const startY = clamp(targetY, minCenter, maxCenter);
+    const collides = (candidateY) => occupiedCenters.some((existingCenter) => Math.abs(existingCenter - candidateY) < PRICE_SCALE_LABEL_GAP);
+
+    if(!collides(startY)){
+        occupiedCenters.push(startY);
+        return startY;
+    }
+
+    const directionOrder = preferredDirection === "above"
+        ? [-1, 1]
+        : preferredDirection === "below"
+            ? [1, -1]
+            : [-1, 1];
+
+    for(const direction of directionOrder){
+        let candidateY = startY;
+
+        while(true){
+            candidateY += direction * PRICE_SCALE_LABEL_GAP;
+            if(candidateY < minCenter || candidateY > maxCenter){
+                break;
+            }
+
+            if(!collides(candidateY)){
+                occupiedCenters.push(candidateY);
+                return candidateY;
+            }
+        }
+    }
+
+    occupiedCenters.push(startY);
+    return startY;
+}
+
 function getChartGeometry(){
     const priceScaleLeft = chartWidth - PRICE_SCALE_WIDTH;
     const chartLeft = CHART_MARGIN.left;
@@ -1002,7 +1046,7 @@ function getReferenceTradeDisplay(trade){
         const value = relatedCandle?.high ?? trade.price;
         return {
             value,
-            label: formatPrice(value),
+            label: formatChartPrice(value),
             extremeType: "high"
         };
     }
@@ -1011,14 +1055,14 @@ function getReferenceTradeDisplay(trade){
         const value = relatedCandle?.low ?? trade.price;
         return {
             value,
-            label: formatPrice(value),
+            label: formatChartPrice(value),
             extremeType: "low"
         };
     }
 
     return {
         value: trade.price,
-        label: formatPrice(trade.price),
+        label: formatChartPrice(trade.price),
         extremeType: null
     };
 }
@@ -1608,7 +1652,7 @@ function updateStats(){
     heroPoolTcl.textContent = formatCompactToken(poolTCL, "TCL");
     heroPoolUsdc.textContent = formatCompactToken(poolUSDC, "USDC");
     heroLiquidity.textContent = formatCompactUSDC(liquidityUsd);
-    heroPrice.textContent = formatPrice(price) + " USDC";
+    heroPrice.textContent = formatChartPrice(price) + " USDC";
     heroPosition.textContent = balanceTCL > EPSILON_TCL ? formatTCL(balanceTCL) + " TCL" : "Flat";
 }
 
@@ -1672,11 +1716,26 @@ function draw(){
         return chartBottom - (((value - minPrice) / priceRange) * chartInnerHeight);
     }
 
+    const priceScaleTextX = priceScaleLeft + (PRICE_SCALE_WIDTH / 2);
+
+    function drawPriceScaleLabel(title, value, centerY, color){
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = color;
+        ctx.font = '10px "Space Grotesk", "Segoe UI", sans-serif';
+        ctx.fillText(title, priceScaleTextX, centerY - 8);
+        ctx.font = '11px "Space Grotesk", "Segoe UI", sans-serif';
+        ctx.fillText(formatChartPrice(value), priceScaleTextX, centerY + 8);
+        ctx.restore();
+    }
+
     ctx.fillStyle = "rgba(5, 12, 22, 0.96)";
     ctx.fillRect(priceScaleLeft, 0, PRICE_SCALE_WIDTH, chartHeight);
 
     ctx.strokeStyle = "rgba(109, 137, 176, 0.14)";
     ctx.lineWidth = 1;
+    ctx.textAlign = "center";
 
     for(let i = 0; i <= 5; i++){
         const ratio = i / 5;
@@ -1689,7 +1748,7 @@ function draw(){
         ctx.stroke();
 
         ctx.fillStyle = "rgba(145, 163, 191, 0.72)";
-        ctx.fillText(formatPrice(labelPrice), priceScaleLeft + 12, lineY);
+        ctx.fillText(formatChartPrice(labelPrice), priceScaleTextX, lineY);
     }
 
     ctx.strokeStyle = "rgba(109, 137, 176, 0.18)";
@@ -1719,6 +1778,10 @@ function draw(){
     const drawableReferenceTrades = referenceTradeDisplays.filter((referenceTrade) => {
         const tradeY = y(referenceTrade.value);
 
+        if(Math.abs(tradeY - livePriceY) <= 2){
+            return false;
+        }
+
         if(referenceTrade.extremeType === "high" && Math.abs(tradeY - highLineY) <= 2){
             return false;
         }
@@ -1730,12 +1793,21 @@ function draw(){
         return true;
     });
 
-    const overlapsReferenceTrade = (lineY) => drawableReferenceTrades.some((referenceTrade) => Math.abs(y(referenceTrade.value) - lineY) <= 2);
-    const shouldShowHighLine = Number.isFinite(visibleHighPrice);
-    const shouldShowLowLine = Number.isFinite(visibleLowPrice) && Math.abs(lowLineY - highLineY) > 2;
-    const shouldShowLivePriceLine = Math.abs(livePriceY - highLineY) > 2
-        && (!shouldShowLowLine || Math.abs(livePriceY - lowLineY) > 2)
-        && !overlapsReferenceTrade(livePriceY);
+    const shouldShowHighLine = Number.isFinite(visibleHighPrice) && Math.abs(highLineY - livePriceY) > 2;
+    const shouldShowLowLine = Number.isFinite(visibleLowPrice)
+        && Math.abs(lowLineY - livePriceY) > 2
+        && Math.abs(lowLineY - highLineY) > 2;
+    const shouldShowLivePriceLine = Number.isFinite(price);
+    const priceScaleLabelCenters = [];
+    const currentLabelCenterY = shouldShowLivePriceLine
+        ? resolvePriceScaleLabelCenter(livePriceY, priceScaleLabelCenters, "center", chartTop, chartBottom)
+        : null;
+    const highLabelCenterY = shouldShowHighLine
+        ? resolvePriceScaleLabelCenter(highLineY, priceScaleLabelCenters, "above", chartTop, chartBottom)
+        : null;
+    const lowLabelCenterY = shouldShowLowLine
+        ? resolvePriceScaleLabelCenter(lowLineY, priceScaleLabelCenters, "below", chartTop, chartBottom)
+        : null;
 
     if(shouldShowHighLine){
         ctx.setLineDash([8, 5]);
@@ -1879,15 +1951,12 @@ function draw(){
     ctx.restore();
     ctx.setLineDash([]);
 
-    ctx.font = '11px "Space Grotesk", "Segoe UI", sans-serif';
     if(shouldShowHighLine){
-        ctx.fillStyle = "#7dc0ff";
-        ctx.fillText("High " + formatPrice(visibleHighPrice), priceScaleLeft + 12, clamp(highLineY, chartTop + 10, chartBottom - 10));
+        drawPriceScaleLabel("High", visibleHighPrice, highLabelCenterY, "#7dc0ff");
     }
 
     if(shouldShowLowLine){
-        ctx.fillStyle = "#5febc1";
-        ctx.fillText("Low " + formatPrice(visibleLowPrice), priceScaleLeft + 12, clamp(lowLineY, chartTop + 10, chartBottom - 10));
+        drawPriceScaleLabel("Low", visibleLowPrice, lowLabelCenterY, "#5febc1");
     }
 
     drawableReferenceTrades.forEach((referenceTrade) => {
@@ -1900,12 +1969,12 @@ function draw(){
         };
 
         ctx.fillStyle = labelColorMap[referenceTrade.trade.type] || "#d9e6f8";
-        ctx.fillText(referenceTrade.label, priceScaleLeft + 12, tradeY);
+        ctx.textAlign = "center";
+        ctx.fillText(referenceTrade.label, priceScaleTextX, tradeY);
     });
 
     if(shouldShowLivePriceLine){
-        ctx.fillStyle = "#5febc1";
-        ctx.fillText(formatPrice(price), priceScaleLeft + 12, clamp(y(price), chartTop + 10, chartBottom - 10));
+        drawPriceScaleLabel("Current Price", price, currentLabelCenterY, "#5febc1");
     }
 }
 
