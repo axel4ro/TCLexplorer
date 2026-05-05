@@ -449,6 +449,8 @@ body{
     overflow:hidden;
     border-radius:22px;
     border:1px solid rgba(126, 152, 188, 0.14);
+    touch-action:none;
+    overscroll-behavior:contain;
     background:
         linear-gradient(180deg, rgba(5, 13, 24, 0.98) 0%, rgba(4, 9, 17, 0.98) 100%),
         radial-gradient(circle at top right, rgba(76, 141, 255, 0.08), transparent 26%);
@@ -813,6 +815,7 @@ let dragStartX = 0;
 let dragStartY = 0;
 let dragStartOffset = 0;
 let dragStartPriceZoom = 1;
+let touchPinchDistance = 0;
 
 function toNumber(value, fallback = 0){
     const normalized = typeof value === "string"
@@ -977,6 +980,27 @@ function getPriceScaleWidth(){
 
 function getChartMargin(){
     return isCompactViewport() ? MOBILE_CHART_MARGIN : DESKTOP_CHART_MARGIN;
+}
+
+function getTouchCanvasPosition(touch){
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+    };
+}
+
+function getTouchDistance(firstTouch, secondTouch){
+    return Math.hypot(secondTouch.clientX - firstTouch.clientX, secondTouch.clientY - firstTouch.clientY);
+}
+
+function getTouchCenter(firstTouch, secondTouch){
+    const firstPoint = getTouchCanvasPosition(firstTouch);
+    const secondPoint = getTouchCanvasPosition(secondTouch);
+    return {
+        x: (firstPoint.x + secondPoint.x) / 2,
+        y: (firstPoint.y + secondPoint.y) / 2
+    };
 }
 
 function getCandleEndPadding(){
@@ -2238,6 +2262,102 @@ window.addEventListener("mousemove", (event) => {
         draw();
     }
 });
+
+canvas.addEventListener("touchstart", (event) => {
+    if(!event.touches.length){
+        return;
+    }
+
+    event.preventDefault();
+
+    if(event.touches.length >= 2){
+        dragMode = "touch-pinch";
+        touchPinchDistance = getTouchDistance(event.touches[0], event.touches[1]);
+        return;
+    }
+
+    const touch = event.touches[0];
+    const point = getTouchCanvasPosition(touch);
+    const geometry = getChartGeometry();
+
+    if(point.x >= geometry.priceScaleLeft){
+        dragMode = "touch-scale-y";
+        dragStartY = touch.clientY;
+        dragStartPriceZoom = priceZoom;
+        return;
+    }
+
+    dragMode = "touch-pan-x";
+    dragStartX = touch.clientX;
+    dragStartOffset = offsetX;
+}, { passive: false });
+
+canvas.addEventListener("touchmove", (event) => {
+    if(!event.touches.length){
+        return;
+    }
+
+    event.preventDefault();
+
+    if(event.touches.length >= 2){
+        const distance = getTouchDistance(event.touches[0], event.touches[1]);
+        if(!Number.isFinite(distance) || distance <= 0){
+            return;
+        }
+
+        if(dragMode !== "touch-pinch" || !touchPinchDistance){
+            dragMode = "touch-pinch";
+            touchPinchDistance = distance;
+            return;
+        }
+
+        const center = getTouchCenter(event.touches[0], event.touches[1]);
+        const geometry = getChartGeometry();
+        const factor = distance / touchPinchDistance;
+
+        if(Number.isFinite(factor) && factor > 0){
+            if(center.x >= geometry.priceScaleLeft){
+                applyVerticalZoom(factor);
+            }else{
+                applyHorizontalZoom(factor, center.x);
+            }
+            touchPinchDistance = distance;
+            draw();
+        }
+        return;
+    }
+
+    const touch = event.touches[0];
+    const geometry = getChartGeometry();
+
+    if(dragMode === "touch-pan-x"){
+        if(geometry.chartInnerWidth <= 0) return;
+
+        const nextOffset = dragStartOffset + (touch.clientX - dragStartX);
+        offsetX = getHorizontalLayout(geometry.chartInnerWidth, zoom, nextOffset).offset;
+        draw();
+        return;
+    }
+
+    if(dragMode === "touch-scale-y"){
+        const deltaY = dragStartY - touch.clientY;
+        priceZoom = clamp(dragStartPriceZoom * Math.exp(deltaY * 0.012), MIN_VERTICAL_ZOOM, MAX_VERTICAL_ZOOM);
+        draw();
+    }
+}, { passive: false });
+
+function endTouchGesture(){
+    if(!dragMode || !dragMode.startsWith("touch")){
+        return;
+    }
+
+    dragMode = null;
+    touchPinchDistance = 0;
+    save();
+}
+
+canvas.addEventListener("touchend", endTouchGesture, { passive: true });
+canvas.addEventListener("touchcancel", endTouchGesture, { passive: true });
 
 init();
 </script>
