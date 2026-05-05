@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TCL Live Technicals</title>
+
+<style>
+body{
+    margin:0;
+    background:#05080f;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+}
+
+.container{
+    padding:30px;
+}
+
+.gauge{
+    width:300px;
+    height:150px;
+    border-top-left-radius:300px;
+    border-top-right-radius:300px;
+    background:linear-gradient(to right, red, purple, #00ffcc);
+    position:relative;
+    margin:auto;
+}
+
+.needle{
+    width:4px;
+    height:120px;
+    background:white;
+    position:absolute;
+    bottom:0;
+    left:50%;
+    transform-origin:bottom;
+    transform:rotate(0deg);
+}
+
+.label{
+    margin-top:20px;
+    font-size:26px;
+}
+
+.small{
+    color:#aaa;
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>TCL Live Technicals</h2>
+
+    <div class="gauge">
+        <div id="needle" class="needle"></div>
+    </div>
+
+    <div id="signal" class="label">Loading...</div>
+    <div id="details" class="small"></div>
+</div>
+
+<script>
+
+// =========================
+// ⚙️ CONFIG
+// =========================
+const PAIR = "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+const INTERVAL = 15 * 60; // 15 min
+
+let ticks = [];   // raw price data
+let candles = []; // built candles
+
+// =========================
+// 📡 GET PRICE (DEX)
+// =========================
+async function getPrice(){
+
+    let url = `https://api.dexscreener.com/latest/dex/pairs/multiversx/${PAIR}`;
+
+    let res = await fetch(url);
+    let data = await res.json();
+
+    return parseFloat(data.pair.priceUsd);
+}
+
+// =========================
+// 🧱 BUILD CANDLES
+// =========================
+function buildCandles(){
+
+    let grouped = {};
+
+    ticks.forEach(t => {
+
+        let bucket = Math.floor(t.time / INTERVAL) * INTERVAL;
+
+        if(!grouped[bucket]){
+            grouped[bucket] = {
+                time: bucket,
+                open: t.price,
+                high: t.price,
+                low: t.price,
+                close: t.price
+            };
+        }
+
+        let c = grouped[bucket];
+
+        c.high = Math.max(c.high, t.price);
+        c.low = Math.min(c.low, t.price);
+        c.close = t.price;
+    });
+
+    candles = Object.values(grouped).sort((a,b)=>a.time-b.time);
+}
+
+// =========================
+// 📊 EMA
+// =========================
+function EMA(values, period){
+    let k = 2 / (period + 1);
+    let ema = values[0];
+
+    for(let i=1;i<values.length;i++){
+        ema = values[i]*k + ema*(1-k);
+    }
+
+    return ema;
+}
+
+// =========================
+// 📊 RSI
+// =========================
+function RSI(candles, period=14){
+
+    if(candles.length < period + 1) return 50;
+
+    let gains = 0;
+    let losses = 0;
+
+    for(let i=candles.length-period; i<candles.length-1; i++){
+        let diff = candles[i+1].close - candles[i].close;
+
+        if(diff >= 0) gains += diff;
+        else losses -= diff;
+    }
+
+    let rs = gains / (losses || 1);
+    return 100 - (100 / (1 + rs));
+}
+
+// =========================
+// 🧠 SIGNAL
+// =========================
+function getSignal(){
+
+    if(candles.length < 50){
+        return { signal:"WAITING...", score:0 };
+    }
+
+    let closes = candles.map(c => c.close);
+
+    let ema50 = EMA(closes.slice(-50), 50);
+    let ema200 = EMA(closes.slice(-200), 200);
+    let rsi = RSI(candles);
+
+    let price = closes.at(-1);
+
+    let buy = 0;
+    let sell = 0;
+
+    if(price > ema50) buy++; else sell++;
+    if(price > ema200) buy++; else sell++;
+
+    if(rsi < 30) buy++;
+    else if(rsi > 70) sell++;
+
+    let score = buy - sell;
+
+    let signal = "NEUTRAL";
+    if(score >= 2) signal = "BUY";
+    if(score <= -2) signal = "SELL";
+
+    return { signal, score, price, ema50, ema200, rsi };
+}
+
+// =========================
+// 🎯 UI
+// =========================
+function updateUI(data){
+
+    let needle = document.getElementById("needle");
+    let label = document.getElementById("signal");
+    let details = document.getElementById("details");
+
+    let angle = data.score * 30;
+    needle.style.transform = `rotate(${angle}deg)`;
+
+    label.innerText = data.signal;
+
+    details.innerHTML = `
+    Price: ${data.price?.toFixed(8) || "-"}<br>
+    RSI: ${data.rsi?.toFixed(2) || "-"}<br>
+    EMA50: ${data.ema50?.toFixed(8) || "-"}<br>
+    EMA200: ${data.ema200?.toFixed(8) || "-"}<br>
+    Candles: ${candles.length}
+    `;
+}
+
+// =========================
+// 🔄 LOOP
+// =========================
+async function loop(){
+
+    try{
+        let price = await getPrice();
+
+        ticks.push({
+            time: Math.floor(Date.now()/1000),
+            price
+        });
+
+        // limit history
+        if(ticks.length > 2000) ticks.shift();
+
+        buildCandles();
+
+        let signal = getSignal();
+        updateUI(signal);
+
+    }catch(e){
+        console.error(e);
+    }
+}
+
+// start
+setInterval(loop, 5000);
+
+</script>
+
+</body>
+</html>
