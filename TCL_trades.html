@@ -1744,7 +1744,7 @@ function updateStats(){
 
     statUsdc.textContent = formatUSDC(balanceUSDC) + " USDC";
     statTcl.textContent = formatTCL(balanceTCL) + " TCL";
-    statAvg.textContent = formatPrice(avgEntryValue) + " USDC";
+    statAvg.textContent = formatChartPrice(avgEntryValue) + " USDC";
     if(pnlVisible){
         statPnl.textContent = (isPositive ? "+" : "") + formatUSDC(pnlValue) + " USDC";
         statPnl.classList.toggle("positive", isPositive);
