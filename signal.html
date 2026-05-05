@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCL Live Signal Monitor</title>
+
+<style>
+:root{
+    --bg:#040913;
+    --bg-soft:#091221;
+    --panel:#0d1728;
+    --panel-strong:#101d31;
+    --line:rgba(120, 148, 187, 0.18);
+    --line-strong:rgba(120, 148, 187, 0.28);
+    --text:#f5f7fb;
+    --muted:#91a3bf;
+    --muted-strong:#b7c5db;
+    --buy:#1fda7a;
+    --buy-soft:rgba(31, 218, 122, 0.16);
+    --sell:#ff5f66;
+    --sell-soft:rgba(255, 95, 102, 0.16);
+    --watch:#4c8dff;
+    --watch-soft:rgba(76, 141, 255, 0.16);
+    --warning:#ffd18a;
+    --shadow:0 30px 80px rgba(0, 0, 0, 0.35);
+    --radius-xl:28px;
+    --radius-lg:22px;
+    --radius-md:16px;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html,
+body{
+    margin:0;
+    height:100%;
+    min-height:100%;
+}
+
+body{
+    min-height:100dvh;
+    font-family:"Space Grotesk", "Segoe UI", sans-serif;
+    color:var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(31, 218, 122, 0.08), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(76, 141, 255, 0.10), transparent 28%),
+        linear-gradient(150deg, #02050b 0%, #07101c 45%, #030812 100%);
+    overflow:hidden;
+}
+
+.page{
+    height:100dvh;
+    min-height:100dvh;
+    display:grid;
+    grid-template-columns:minmax(340px, 420px) 1fr;
+    gap:18px;
+    padding:18px;
+    overflow:hidden;
+    align-items:stretch;
+}
+
+.panel,
+.chart-shell{
+    min-width:0;
+    border:1px solid rgba(126, 152, 188, 0.16);
+    background:linear-gradient(180deg, rgba(11, 20, 35, 0.92) 0%, rgba(7, 15, 26, 0.94) 100%);
+    border-radius:var(--radius-xl);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(18px);
+}
+
+.panel{
+    height:calc(100dvh - 36px);
+    min-height:0;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+}
+
+.eyebrow{
+    display:block;
+    font-size:0.74rem;
+    font-weight:700;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+}
+
+.hero{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.back-btn{
+    align-self:flex-start;
+    border:0;
+    border-radius:12px;
+    padding:8px 12px;
+    background:linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
+    color:#fff;
+    font:inherit;
+    font-size:0.86rem;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 10px 24px rgba(112, 88, 255, 0.24);
+}
+
+.back-btn:hover{
+    transform:translateY(-1px);
+}
+
+.hero-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.hero h1,
+.chart-head h2{
+    margin:0;
+    font-size:1.95rem;
+    line-height:1.02;
+}
+
+.hero p,
+.helper-copy,
+.status-copy,
+.legend-copy{
+    margin:0;
+    color:var(--muted);
+    font-size:0.9rem;
+    line-height:1.5;
+}
+
+.signal-card,
+.metric-card,
+.reason-card,
+.legend-card{
+    padding:16px;
+    border-radius:var(--radius-lg);
+    border:1px solid rgba(126, 152, 188, 0.14);
+    background:linear-gradient(180deg, rgba(15, 28, 46, 0.82) 0%, rgba(8, 16, 29, 0.86) 100%);
+}
+
+.signal-card{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+
+.signal-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+
+.signal-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:102px;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid rgba(126, 152, 188, 0.18);
+    background:rgba(126, 152, 188, 0.12);
+    color:#eef5ff;
+    font-size:0.76rem;
+    font-weight:800;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+}
+
+.signal-badge.buy{
+    color:#04110b;
+    border-color:rgba(31, 218, 122, 0.28);
+    background:linear-gradient(135deg, var(--buy) 0%, #79f9b5 100%);
+    box-shadow:0 12px 28px rgba(31, 218, 122, 0.18);
+}
+
+.signal-badge.sell{
+    color:#1b0507;
+    border-color:rgba(255, 95, 102, 0.28);
+    background:linear-gradient(135deg, var(--sell) 0%, #ff9196 100%);
+    box-shadow:0 12px 28px rgba(255, 95, 102, 0.18);
+}
+
+.signal-badge.watch{
+    color:#eef5ff;
+    border-color:rgba(76, 141, 255, 0.28);
+    background:linear-gradient(135deg, #2d6fff 0%, #69a0ff 100%);
+    box-shadow:0 12px 28px rgba(76, 141, 255, 0.18);
+}
+
+.signal-headline{
+    margin:0;
+    font-size:1rem;
+    line-height:1.45;
+    color:var(--muted-strong);
+}
+
+.score-grid,
+.metric-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:10px;
+}
+
+.score-item,
+.metric-card{
+    border-radius:18px;
+}
+
+.score-item{
+    padding:12px 14px;
+    border:1px solid rgba(126, 152, 188, 0.12);
+    background:linear-gradient(180deg, rgba(12, 23, 39, 0.78) 0%, rgba(6, 13, 23, 0.84) 100%);
+}
+
+.score-item span,
+.metric-card span{
+    display:block;
+    margin-bottom:6px;
+    font-size:0.72rem;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+}
+
+.score-item strong,
+.metric-card strong{
+    display:block;
+    font-size:1rem;
+    font-weight:700;
+    letter-spacing:-0.02em;
+}
+
+.positive{
+    color:var(--buy);
+}
+
+.negative{
+    color:var(--sell);
+}
+
+.warning{
+    color:var(--warning);
+}
+
+.reason-card h3,
+.legend-card h3{
+    margin:0 0 10px;
+    font-size:0.95rem;
+}
+
+.reason-list{
+    margin:0;
+    padding-left:18px;
+    display:grid;
+    gap:8px;
+    color:var(--muted-strong);
+    font-size:0.9rem;
+    line-height:1.45;
+}
+
+.reason-list li::marker{
+    color:rgba(145, 163, 191, 0.8);
+}
+
+.toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.signal-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.toolbar-status{
+    margin:0;
+    display:flex;
+    align-items:center;
+    color:var(--muted);
+    font-size:0.84rem;
+    line-height:1.4;
+    white-space:nowrap;
+}
+
+.primary-btn,
+.ghost-btn{
+    border:0;
+    border-radius:18px;
+    padding:11px 16px;
+    font:inherit;
+    font-size:0.9rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.primary-btn:hover,
+.ghost-btn:hover{
+    transform:translateY(-1px);
+}
+
+.primary-btn{
+    color:#eef5ff;
+    background:linear-gradient(135deg, #2d6fff 0%, #69a0ff 100%);
+    box-shadow:0 12px 28px rgba(76, 141, 255, 0.24);
+}
+
+.ghost-btn{
+    color:var(--text);
+    background:rgba(126, 152, 188, 0.12);
+    border:1px solid rgba(126, 152, 188, 0.14);
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.ghost-btn.disclaimer-btn{
+    color:#fff1cf;
+    background:rgba(255, 209, 138, 0.08);
+    border-color:rgba(255, 209, 138, 0.22);
+}
+
+.hero-topbar .disclaimer-btn{
+    padding:8px 12px;
+    border-radius:999px;
+    font-size:0.78rem;
+    white-space:nowrap;
+}
+
+.helper-link{
+    color:var(--warning);
+    text-decoration:none;
+}
+
+.helper-link:hover{
+    text-decoration:underline;
+}
+
+.chart-shell{
+    height:calc(100dvh - 36px);
+    min-height:0;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    overflow:hidden;
+}
+
+.chart-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+}
+
+.chart-frame{
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+    border-radius:22px;
+    border:1px solid rgba(126, 152, 188, 0.14);
+    background:
+        linear-gradient(180deg, rgba(5, 13, 24, 0.98) 0%, rgba(4, 9, 17, 0.98) 100%),
+        radial-gradient(circle at top right, rgba(76, 141, 255, 0.08), transparent 26%);
+}
+
+iframe{
+    width:100%;
+    height:100%;
+    min-height:0;
+    border:0;
+    display:block;
+}
+
+.legend-copy strong{
+    color:var(--muted-strong);
+}
+
+@media (max-width: 980px){
+    body{
+        overflow:auto;
+    }
+
+    .page{
+        height:auto;
+        min-height:100vh;
+        grid-template-columns:1fr;
+        overflow:visible;
+    }
+
+    .panel,
+    .chart-shell{
+        height:auto;
+        min-height:unset;
+        overflow:visible;
+    }
+
+    .panel{
+        max-height:none;
+    }
+}
+
+@media (max-width: 640px){
+    .page{
+        gap:16px;
+        padding:16px;
+    }
+
+    .panel,
+    .chart-shell{
+        padding:16px;
+        border-radius:22px;
+    }
+
+    .back-btn{
+        padding:7px 11px;
+        font-size:0.82rem;
+    }
+
+    .hero h1,
+    .chart-head h2{
+        font-size:1.7rem;
+    }
+
+    .score-grid,
+    .metric-grid{
+        grid-template-columns:1fr;
+    }
+
+    .chart-head{
+        flex-direction:column;
+    }
+
+    .chart-frame,
+    iframe{
+        min-height:420px;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+    <aside class="panel">
+        <section class="hero">
+            <button class="back-btn" type="button" onclick="goBackToTclToken()">&#11013; Back to TCL Token</button>
+            <div class="hero-topbar">
+                <span class="eyebrow">Live Signal</span>
+                <a class="ghost-btn disclaimer-btn" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Not Financial Advice</a>
+            </div>
+            <h1>Opportunity Signal</h1>
+            <p>This page is separate from the trade simulator and reads live DexScreener data for the TCL / USDC pair on MultiversX.</p>
+        </section>
+
+        <section class="signal-card">
+            <div class="signal-top">
+                <div>
+                    <span class="eyebrow">Current Read</span>
+                    <p id="signal-headline" class="signal-headline">Waiting for the first live DexScreener refresh.</p>
+                </div>
+                <span id="signal-badge" class="signal-badge watch">Watch</span>
+            </div>
+
+            <div class="score-grid">
+                <div class="score-item">
+                    <span>Score</span>
+                    <strong id="signal-score">0</strong>
+                </div>
+                <div class="score-item">
+                    <span>Signal Strength</span>
+                    <strong id="signal-confidence">0%</strong>
+                </div>
+            </div>
+
+            <div class="signal-actions">
+                <button id="refresh-button" class="primary-btn" type="button">Refresh Now</button>
+                <p id="refresh-status" class="toolbar-status">Next in 05:00</p>
+            </div>
+
+        </section>
+
+        <section class="metric-grid">
+            <div class="metric-card">
+                <span>Price</span>
+                <strong id="metric-price">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>Liquidity</span>
+                <strong id="metric-liquidity">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>6h Change</span>
+                <strong id="metric-h6">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>24h Change</span>
+                <strong id="metric-h24">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>Listing Gap</span>
+                <strong id="metric-discount">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>Pool Age</span>
+                <strong id="metric-age">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>6h Order Flow</span>
+                <strong id="metric-flow-6h">--</strong>
+            </div>
+            <div class="metric-card">
+                <span>24h Order Flow</span>
+                <strong id="metric-flow-24h">--</strong>
+            </div>
+        </section>
+
+        <section class="reason-card">
+            <h3>Signal Drivers</h3>
+            <ul id="reason-list" class="reason-list">
+                <li>6h and 24h momentum, order flow and liquidity drivers will appear here after the first live response.</li>
+            </ul>
+        </section>
+
+        <section class="legend-card">
+            <h3>Quick Guide</h3>
+            <p class="legend-copy"><strong>BUY</strong> appears when 6h / 24h structure, order flow and stability metrics begin to align constructively.</p>
+            <p class="legend-copy"><strong>SELL</strong> appears when 6h / 24h structure and order flow continue to point to weakness.</p>
+            <p class="legend-copy"><strong>WATCH</strong> appears when the 6h / 24h picture is still mixed or lacks confirmation.</p>
+        </section>
+
+        <div class="toolbar">
+            <a class="ghost-btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">Open DexScreener</a>
+        </div>
+
+        <p class="helper-copy">This signal is heuristic, does not place trades, and should not replace manual validation. <a class="helper-link" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Read the disclaimer</a>.</p>
+    </aside>
+
+    <main class="chart-shell">
+        <div class="chart-head">
+            <div>
+                <span class="eyebrow">Chart Embed</span>
+                <h2>TCL / USDC</h2>
+                <p class="helper-copy">The chart stays separate, while the score is calculated from the official DexScreener API for the same pair.</p>
+            </div>
+        </div>
+
+        <div class="chart-frame">
+            <iframe
+    title="DexScreener TCL / USDC"
+    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&info=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=15&resetChart=1&t=12345"
+    loading="lazy">
+</iframe>
+        </div>
+    </main>
+</div>
+
+<script>
+const DEXSCREENER_PAIR_API_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+const REFRESH_MS = 300000;
+const LISTING_PRICE_REFERENCE = 0.006;
+const FALLBACK_SNAPSHOT = {
+    price: 0.000928,
+    priceDisplay: "0.000928",
+    poolTCL: 12701051,
+    poolUSDC: 10613
+};
+
+const signalBadge = document.getElementById("signal-badge");
+const signalHeadline = document.getElementById("signal-headline");
+const signalScore = document.getElementById("signal-score");
+const signalConfidence = document.getElementById("signal-confidence");
+const refreshStatus = document.getElementById("refresh-status");
+const reasonList = document.getElementById("reason-list");
+
+const metricPrice = document.getElementById("metric-price");
+const metricLiquidity = document.getElementById("metric-liquidity");
+const metricH6 = document.getElementById("metric-h6");
+const metricH24 = document.getElementById("metric-h24");
+const metricDiscount = document.getElementById("metric-discount");
+const metricFlow6h = document.getElementById("metric-flow-6h");
+const metricFlow24h = document.getElementById("metric-flow-24h");
+const metricAge = document.getElementById("metric-age");
+const refreshButton = document.getElementById("refresh-button");
+const refreshButtonLabel = refreshButton.textContent;
+
+let lastSnapshot = null;
+let refreshInFlight = false;
+let refreshTimer = null;
+let countdownTimer = null;
+let lastGoodRefreshAt = 0;
+let refreshStatusMode = "waiting";
+let nextRefreshAt = Date.now() + REFRESH_MS;
+let readyNotified = false;
+
+function notifyReady(){
+    if(readyNotified) return;
+    readyNotified = true;
+    if(window.parent && window.parent !== window){
+        try{
+            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        }catch(error){
+            console.warn("Failed to notify parent page ready", error);
+        }
+    }
+}
+
+function goBackToTclToken(){
+    if(window.parent && window.parent !== window){
+        try{
+            window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenCalculatorsSection" }, "*");
+            return;
+        }catch(error){
+            console.warn("Back to TCL Token parent navigation failed", error);
+        }
+    }
+
+    window.location.href = "index.html#token";
+}
+
+function toNumber(value, fallback = 0){
+    const normalized = typeof value === "string"
+        ? value.replace(/,/g, "").replace(/\s+/g, "")
+        : value;
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toNumericString(value, fallback = ""){
+    const normalized = typeof value === "string"
+        ? value.replace(/,/g, "").replace(/\s+/g, "")
+        : value;
+
+    if(typeof normalized === "string"){
+        if(!normalized.length){
+            return fallback;
+        }
+
+        return Number.isFinite(Number.parseFloat(normalized)) ? normalized : fallback;
+    }
+
+    if(typeof normalized === "number" && Number.isFinite(normalized)){
+        return String(normalized);
+    }
+
+    return fallback;
+}
+
+function clamp(value, min, max){
+    return Math.min(Math.max(value, min), max);
+}
+
+function formatGroupedNumber(value, minimumFractionDigits, maximumFractionDigits){
+    if(!Number.isFinite(value)){
+        return "0";
+    }
+
+    return new Intl.NumberFormat("en-US", {
+        minimumFractionDigits,
+        maximumFractionDigits
+    }).format(value);
+}
+
+function formatPrice(value, exactText = ""){
+    if(typeof exactText === "string" && exactText.length){
+        return "$" + exactText;
+    }
+
+    if(!Number.isFinite(value)) return "--";
+    return "$" + String(value);
+}
+
+function formatUSDC(value){
+    if(!Number.isFinite(value)) return "$0.00";
+    return "$" + formatGroupedNumber(value, 2, 2);
+}
+
+function formatCompactUSDC(value){
+    if(!Number.isFinite(value)) return "--";
+    if(Math.abs(value) < 1000){
+        return formatUSDC(value);
+    }
+
+    return "$" + new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
+function formatSignedPercent(value){
+    if(!Number.isFinite(value)){
+        return "--";
+    }
+
+    const sign = value > 0 ? "+" : "";
+    return sign + value.toFixed(2) + "%";
+}
+
+function formatRatioPercent(value){
+    if(!Number.isFinite(value) || value < 0){
+        return "--";
+    }
+
+    return (value * 100).toFixed(1) + "%";
+}
+
+function formatBelowReference(ratio){
+    if(!Number.isFinite(ratio) || ratio <= 0){
+        return "--";
+    }
+
+    const belowPercent = Math.max(0, (1 - ratio) * 100);
+    return belowPercent.toFixed(1) + "%";
+}
+
+function formatCountdown(ms){
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+}
+
+function formatClockTime(timestamp){
+    if(!Number.isFinite(timestamp) || timestamp <= 0){
+        return "--:--:--";
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    }).format(timestamp);
+}
+
+function normalizeTimestamp(timestamp){
+    const numeric = toNumber(timestamp, 0);
+    if(numeric <= 0){
+        return 0;
+    }
+
+    return numeric < 1000000000000 ? numeric * 1000 : numeric;
+}
+
+function createEmptySnapshot(){
+    return {
+        price: FALLBACK_SNAPSHOT.price,
+        priceDisplay: FALLBACK_SNAPSHOT.priceDisplay,
+        poolTCL: FALLBACK_SNAPSHOT.poolTCL,
+        poolUSDC: FALLBACK_SNAPSHOT.poolUSDC,
+        liquidityUsd: FALLBACK_SNAPSHOT.poolUSDC + (FALLBACK_SNAPSHOT.poolTCL * FALLBACK_SNAPSHOT.price),
+        priceChange: {
+            h6: 0,
+            h24: 0
+        },
+        txns: {
+            h6: { buys: 0, sells: 0 },
+            h24: { buys: 0, sells: 0 }
+        },
+        volume: {
+            h6: 0,
+            h24: 0
+        },
+        pairCreatedAt: 0,
+        fetchedAt: 0
+    };
+}
+
+function readTxnWindow(txns, windowKey){
+    return {
+        buys: toNumber(txns?.[windowKey]?.buys, 0),
+        sells: toNumber(txns?.[windowKey]?.sells, 0)
+    };
+}
+
+function readNumericWindow(source, windowKey){
+    return toNumber(source?.[windowKey], 0);
+}
+
+function extractSnapshot(pair = {}){
+    const snapshot = createEmptySnapshot();
+    snapshot.price = toNumber(pair.priceUsd, snapshot.price);
+    snapshot.priceDisplay = toNumericString(pair.priceUsd, snapshot.priceDisplay);
+    snapshot.poolTCL = toNumber(pair.liquidity?.base, snapshot.poolTCL);
+    snapshot.poolUSDC = toNumber(pair.liquidity?.quote, snapshot.poolUSDC);
+    snapshot.liquidityUsd = toNumber(pair.liquidity?.usd, snapshot.poolUSDC + (snapshot.poolTCL * snapshot.price));
+    snapshot.priceChange = {
+        h6: readNumericWindow(pair.priceChange, "h6"),
+        h24: readNumericWindow(pair.priceChange, "h24")
+    };
+    snapshot.txns = {
+        h6: readTxnWindow(pair.txns, "h6"),
+        h24: readTxnWindow(pair.txns, "h24")
+    };
+    snapshot.volume = {
+        h6: readNumericWindow(pair.volume, "h6"),
+        h24: readNumericWindow(pair.volume, "h24")
+    };
+    snapshot.pairCreatedAt = normalizeTimestamp(pair.pairCreatedAt);
+    snapshot.fetchedAt = Date.now();
+    return snapshot;
+}
+
+function getTxnStats(windowData){
+    const buys = toNumber(windowData?.buys, 0);
+    const sells = toNumber(windowData?.sells, 0);
+    const total = buys + sells;
+    const imbalance = total > 0 ? (buys - sells) / total : 0;
+
+    return {
+        buys,
+        sells,
+        total,
+        imbalance
+    };
+}
+
+function getPairAgeHours(snapshot){
+    if(!snapshot || !Number.isFinite(snapshot.pairCreatedAt) || snapshot.pairCreatedAt <= 0){
+        return null;
+    }
+
+    return Math.max(0, (Date.now() - snapshot.pairCreatedAt) / 3600000);
+}
+
+function formatAge(hours){
+    if(!Number.isFinite(hours) || hours == null){
+        return "--";
+    }
+
+    if(hours < 24){
+        return hours.toFixed(1) + "h";
+    }
+
+    return (hours / 24).toFixed(1) + "d";
+}
+
+function setPositiveNegativeClass(element, value){
+    element.classList.remove("positive", "negative", "warning");
+
+    if(!Number.isFinite(value)){
+        return;
+    }
+
+    if(value > 0){
+        element.classList.add("positive");
+    }else if(value < 0){
+        element.classList.add("negative");
+    }
+}
+
+function setFlowClass(element, imbalance){
+    element.classList.remove("positive", "negative", "warning");
+
+    if(!Number.isFinite(imbalance)){
+        return;
+    }
+
+    if(imbalance >= 0.12){
+        element.classList.add("positive");
+    }else if(imbalance <= -0.12){
+        element.classList.add("negative");
+    }else{
+        element.classList.add("warning");
+    }
+}
+
+function renderReasons(reasons){
+    reasonList.innerHTML = "";
+
+    reasons.forEach((reason) => {
+        const item = document.createElement("li");
+        item.textContent = reason;
+        reasonList.appendChild(item);
+    });
+}
+
+function evaluateSignal(snapshot){
+    const flow6h = getTxnStats(snapshot.txns.h6);
+    const flow24h = getTxnStats(snapshot.txns.h24);
+    const h6 = snapshot.priceChange.h6;
+    const h24 = snapshot.priceChange.h24;
+    const liquidityUsd = snapshot.liquidityUsd;
+    const price = snapshot.price;
+    const volume6h = snapshot.volume.h6;
+    const volume24h = snapshot.volume.h24;
+    const volumeToLiquidity6h = liquidityUsd > 0 ? volume6h / liquidityUsd : 0;
+    const volumeToLiquidity24h = liquidityUsd > 0 ? volume24h / liquidityUsd : 0;
+    const pairAgeHours = getPairAgeHours(snapshot);
+    const avgTrade6h = flow6h.total > 0 ? volume6h / flow6h.total : 0;
+    const avgTrade24h = flow24h.total > 0 ? volume24h / flow24h.total : 0;
+    const priceToReference = LISTING_PRICE_REFERENCE > 0 ? price / LISTING_PRICE_REFERENCE : 0;
+
+    let score = 0;
+    let bullishEvidence = 0;
+    let bearishEvidence = 0;
+    const positives = [];
+    const cautions = [];
+    const blockers = [];
+
+    const bullishTrendStack = h24 >= -8 && h6 >= 0.2;
+    const bearishTrendStack = h24 <= -18 && h6 <= -2.5;
+    const bullishFlowStack = flow6h.total >= 8 && flow24h.total >= 24 && flow6h.imbalance >= 0.08 && flow24h.imbalance >= 0.03;
+    const bearishFlowStack = flow6h.total >= 8 && flow24h.total >= 24 && flow6h.imbalance <= -0.12 && flow24h.imbalance <= -0.05;
+    const enoughLiquidityForAction = liquidityUsd >= 9000;
+    const healthyTurnover6h = volumeToLiquidity6h >= 0.03 && volumeToLiquidity6h <= 2.4;
+    const healthyTurnover24h = volumeToLiquidity24h >= 0.08 && volumeToLiquidity24h <= 6;
+    const matureEnough = !Number.isFinite(pairAgeHours) || pairAgeHours >= 12;
+    const quietMarket = flow6h.total < 8 && flow24h.total < 24;
+    const higherTimeframeBullish = h24 >= -14 && h6 >= -1.5;
+    const higherTimeframeBearish = h24 <= -22 && h6 <= -4;
+    const deepDiscountZone = Number.isFinite(priceToReference) && priceToReference > 0 && priceToReference <= 0.25;
+    const extremeDiscountZone = Number.isFinite(priceToReference) && priceToReference > 0 && priceToReference <= 0.15;
+    const stabilizedAfterDrop = h24 > -30 && h6 > -8;
+    const activeBreakdown = h24 <= -35 && h6 <= -10;
+    const bullishDipOpportunity = higherTimeframeBullish && h6 >= -2.5;
+    const bearishBounceOpportunity = higherTimeframeBearish && h6 >= 0.5;
+    const quietBullishBias = quietMarket && (higherTimeframeBullish || deepDiscountZone) && h6 >= -1.5;
+    const quietBearishBias = quietMarket && higherTimeframeBearish && h6 <= -0.75 && !deepDiscountZone;
+    const marketRegime = quietMarket ? "quiet" : "active";
+
+    if(h24 >= 4 && h6 >= 1){
+        score += 3;
+        bullishEvidence += 3;
+        positives.push(`The 24h structure is constructive at ${formatSignedPercent(h24)} with 6h support at ${formatSignedPercent(h6)}.`);
+    }else if(bullishTrendStack){
+        score += 2;
+        bullishEvidence += 2;
+        positives.push(`The 6h and 24h structure is stabilizing at ${formatSignedPercent(h6)} and ${formatSignedPercent(h24)}.`);
+    }else if(bearishTrendStack){
+        score -= 1;
+        bearishEvidence += 1;
+        cautions.push(`The 24h structure is still weak at ${formatSignedPercent(h24)} with 6h at ${formatSignedPercent(h6)}.`);
+    }else if(h24 >= -14 && h6 >= -2){
+        score += 1;
+        bullishEvidence += 1;
+        positives.push("The broader 6h / 24h structure is no longer breaking hard, which keeps recovery potential alive.");
+    }else if(h24 <= -26 && h6 <= -6){
+        score -= 1;
+        bearishEvidence += 1;
+        cautions.push(`The 24h tape is still under pressure at ${formatSignedPercent(h24)}.`);
+    }
+
+    if(extremeDiscountZone && !activeBreakdown){
+        score += 3;
+        bullishEvidence += 3;
+        positives.push("Price remains compressed in the lower end of its broader range after a prolonged drawdown.");
+    }else if(deepDiscountZone && stabilizedAfterDrop){
+        score += 2;
+        bullishEvidence += 2;
+        positives.push("Price is still trading in a lower-value zone while downside acceleration remains contained.");
+    }else if(deepDiscountZone){
+        score += 1;
+        bullishEvidence += 1;
+        positives.push("Price is still holding in a lower range relative to prior structure.");
+    }
+
+    if(extremeDiscountZone && h24 > -20 && h6 > -4){
+        score += 2;
+        bullishEvidence += 2;
+        positives.push("6h and 24h downside pressure is slowing, which keeps rebound potential alive.");
+    }
+
+    if(bullishDipOpportunity){
+        score += 1;
+        bullishEvidence += 1;
+        positives.push("This looks like a pullback inside a stabilizing 6h / 24h structure.");
+    }else if(bearishBounceOpportunity){
+        score -= 2;
+        bearishEvidence += 2;
+        cautions.push("This looks like a bounce into a weaker 6h / 24h structure.");
+    }else if(quietBullishBias){
+        score += 2;
+        bullishEvidence += 2;
+        positives.push("The market is quiet, but the 6h and 24h structure still leans bullish.");
+    }else if(quietBearishBias){
+        score -= 2;
+        bearishEvidence += 2;
+        cautions.push("The market is quiet, but the 6h and 24h structure still leans bearish.");
+    }
+
+    if(flow6h.total < 6 || flow24h.total < 18){
+        cautions.push("6h and 24h order-flow sample size is still thin, so this read leans more on structure than on tape confirmation.");
+    }else{
+        if(bullishFlowStack){
+            score += 2;
+            bullishEvidence += 2;
+            positives.push(`Both 6h and 24h order flow favor buyers (${flow6h.buys}/${flow6h.sells} and ${flow24h.buys}/${flow24h.sells}).`);
+        }else if(bearishFlowStack){
+            score -= 2;
+            bearishEvidence += 2;
+            cautions.push(`Both 6h and 24h order flow favor sellers (${flow6h.buys}/${flow6h.sells} and ${flow24h.buys}/${flow24h.sells}).`);
+        }else if(flow6h.imbalance * flow24h.imbalance < 0 && Math.abs(flow6h.imbalance) >= 0.1 && Math.abs(flow24h.imbalance) >= 0.04){
+            if(score > 0){
+                score -= 1;
+            }else if(score < 0){
+                score += 1;
+            }
+            cautions.push("6h and 24h order flow disagree, which lowers follow-through quality.");
+        }else if(flow6h.imbalance >= 0.1){
+            score += 1;
+            bullishEvidence += 1;
+            positives.push(`6h order flow is buyer-led at ${flow6h.buys}/${flow6h.sells}.`);
+        }else if(flow6h.imbalance <= -0.15){
+            score -= 1;
+            bearishEvidence += 1;
+            cautions.push(`6h order flow is seller-led at ${flow6h.buys}/${flow6h.sells}.`);
+        }
+    }
+
+    if(flow24h.total >= 24){
+        if(flow24h.imbalance >= 0.05 && h24 > -10){
+            score += 1;
+            bullishEvidence += 1;
+            positives.push(`The 24h tape still shows net buyer support at ${flow24h.buys}/${flow24h.sells}.`);
+        }else if(flow24h.imbalance <= -0.05 && h24 < 10){
+            score -= 1;
+            bearishEvidence += 1;
+            cautions.push(`The 24h tape still shows net seller pressure at ${flow24h.buys}/${flow24h.sells}.`);
+        }
+    }
+
+    if(liquidityUsd >= 25000){
+        score += 1;
+        positives.push(`Liquidity looks healthier at ${formatCompactUSDC(liquidityUsd)}.`);
+    }else if(liquidityUsd < 7000){
+        score -= 2;
+        cautions.push(`Liquidity is thin at ${formatCompactUSDC(liquidityUsd)}, so slippage risk is high.`);
+    }else if(liquidityUsd < 9000){
+        score -= 1;
+        cautions.push(`Liquidity is only mid-range at ${formatCompactUSDC(liquidityUsd)}, so size should stay smaller.`);
+    }
+
+    if(healthyTurnover6h){
+        score += 1;
+        positives.push(`6h turnover is active at ${formatRatioPercent(volumeToLiquidity6h)} of liquidity.`);
+    }else if(volumeToLiquidity6h < 0.015){
+        score -= 1;
+        cautions.push("6h volume is very light versus liquidity, so follow-through may be weak.");
+    }else if(volumeToLiquidity6h > 2.8){
+        score -= 1;
+        cautions.push(`6h turnover is overheated at ${formatRatioPercent(volumeToLiquidity6h)}, which can mean exhaustion.`);
+    }
+
+    if(healthyTurnover24h){
+        score += 1;
+        positives.push(`24h turnover stays active at ${formatRatioPercent(volumeToLiquidity24h)} of liquidity.`);
+    }else if(volumeToLiquidity24h < 0.08){
+        cautions.push("24h volume is light, so the broader follow-through is still limited.");
+    }else if(volumeToLiquidity24h > 8){
+        cautions.push(`24h turnover is unusually hot at ${formatRatioPercent(volumeToLiquidity24h)}, which can mean instability.`);
+    }
+
+    if(flow6h.total >= 8){
+        if(avgTrade6h >= 25){
+            score += 1;
+            positives.push(`Average 6h trade size is solid near ${formatUSDC(avgTrade6h)}.`);
+        }else if(avgTrade6h > 0 && avgTrade6h < 8){
+            score -= 1;
+            cautions.push(`Average 6h trade size is thin near ${formatUSDC(avgTrade6h)}.`);
+        }
+    }
+
+    if(flow24h.total >= 24){
+        if(avgTrade24h >= 20){
+            score += 1;
+            positives.push(`Average 24h trade size is holding near ${formatUSDC(avgTrade24h)}.`);
+        }else if(avgTrade24h > 0 && avgTrade24h < 6){
+            score -= 1;
+            cautions.push(`Average 24h trade size is thin near ${formatUSDC(avgTrade24h)}.`);
+        }
+    }
+
+    if(h6 >= 12 && h24 >= 10){
+        score -= 1;
+        cautions.push("Price is running hot on both 6h and 24h, so chasing here is risky.");
+    }else if(h6 <= -12 && h24 <= -20 && flow6h.imbalance > -0.2){
+        score += 1;
+        positives.push("Price is deeply washed out on 6h and 24h, so a rebound setup is possible if buyers keep returning.");
+    }
+
+    if(Number.isFinite(pairAgeHours) && pairAgeHours > 0){
+        if(pairAgeHours < 12){
+            score -= 2;
+            cautions.push(`The pool is only ${pairAgeHours.toFixed(1)}h old, so fakeouts are more likely.`);
+        }else if(pairAgeHours < 48){
+            score -= 1;
+            cautions.push(`The pool is still young at ${pairAgeHours.toFixed(1)}h, so signals need extra confirmation.`);
+        }
+    }
+
+    const macroRecoverySetup = deepDiscountZone
+        && enoughLiquidityForAction
+        && matureEnough
+        && (stabilizedAfterDrop || quietBullishBias || h24 > -22);
+
+    const quietBullishSetup = quietMarket
+        && score >= 2
+        && (bullishDipOpportunity || quietBullishBias || higherTimeframeBullish || macroRecoverySetup);
+
+    const quietBearishSetup = quietMarket
+        && score <= -2
+        && (bearishBounceOpportunity || quietBearishBias || higherTimeframeBearish)
+        && !deepDiscountZone;
+
+    const bullishSetup = (score >= 3 || quietBullishSetup || macroRecoverySetup)
+        && (bullishTrendStack || bullishDipOpportunity || quietBullishBias || macroRecoverySetup || deepDiscountZone)
+        && enoughLiquidityForAction
+        && matureEnough
+        && (bullishFlowStack || healthyTurnover6h || healthyTurnover24h || quietMarket);
+
+    const bearishSetup = (score <= -3 || quietBearishSetup)
+        && (bearishTrendStack || bearishBounceOpportunity || quietBearishBias)
+        && enoughLiquidityForAction
+        && matureEnough
+        && (bearishFlowStack || healthyTurnover6h || healthyTurnover24h || quietMarket)
+        && (!deepDiscountZone || activeBreakdown);
+
+    if(score >= 2 && !bullishSetup){
+        if(!(bullishTrendStack || bullishDipOpportunity || quietBullishBias || macroRecoverySetup || deepDiscountZone)){
+            blockers.push("Bullish 6h / 24h structure is not aligned enough yet.");
+        }
+        if(!(bullishFlowStack || healthyTurnover6h || healthyTurnover24h || quietMarket)){
+            blockers.push("There is not enough supporting activity yet to justify a cleaner bullish read.");
+        }
+        if(!enoughLiquidityForAction){
+            blockers.push("Liquidity is still below the level needed for a cleaner actionable signal.");
+        }
+        if(!matureEnough){
+            blockers.push("The pool is too young for a high-confidence bullish read.");
+        }
+    }
+
+    if(score <= -2 && !bearishSetup){
+        if(!(bearishTrendStack || bearishBounceOpportunity || quietBearishBias)){
+            blockers.push("Bearish 6h / 24h structure is not aligned enough yet.");
+        }
+        if(!(bearishFlowStack || healthyTurnover6h || healthyTurnover24h || quietMarket)){
+            blockers.push("There is not enough supporting activity yet to justify a cleaner bearish read.");
+        }
+        if(!enoughLiquidityForAction){
+            blockers.push("Liquidity is still below the level needed for a cleaner actionable signal.");
+        }
+        if(!matureEnough){
+            blockers.push("The pool is too young for a high-confidence bearish read.");
+        }
+    }
+
+    let label = "WATCH";
+    let variant = "watch";
+    let headline = "Mixed 6h / 24h context for now. Wait for better structure before forcing an entry.";
+
+    if(bullishSetup){
+        label = "BUY";
+        variant = "buy";
+        headline = macroRecoverySetup
+            ? "The 6h / 24h structure is stabilizing and the broader context remains constructive."
+            : marketRegime === "quiet"
+                ? "Quiet market, but the broader 6h / 24h structure remains constructive."
+                : "The 6h / 24h structure and market quality are aligning more constructively.";
+    }else if(bearishSetup){
+        label = "SELL";
+        variant = "sell";
+        headline = marketRegime === "quiet"
+            ? "Quiet market, but the broader 6h / 24h structure still points to ongoing weakness."
+            : "The 6h / 24h structure still points to weakness and has not stabilized yet.";
+    }else if(score > 0){
+        headline = marketRegime === "quiet"
+            ? "The market is quiet, yet the 6h / 24h bias still leans bullish."
+            : "The 6h / 24h bias leans bullish, but the confirmation stack is not clean enough yet.";
+    }else if(score < 0){
+        headline = marketRegime === "quiet"
+            ? "The market is quiet, yet the 6h / 24h bias still leans bearish."
+            : "The 6h / 24h bias leans weak, but the confirmation stack is not clean enough yet.";
+    }
+
+    const structureQuality = [
+        enoughLiquidityForAction,
+        healthyTurnover6h,
+        healthyTurnover24h,
+        matureEnough,
+        flow6h.total >= 8,
+        flow24h.total >= 24
+    ].filter(Boolean).length;
+    const conflictingEvidence = Math.min(bullishEvidence, bearishEvidence);
+    const dominantEvidence = Math.max(bullishEvidence, bearishEvidence);
+    const thinTapePenalty = flow6h.total < 6 || flow24h.total < 18 ? 12 : 0;
+    const rawConfidence = Math.round(
+        26 + (Math.abs(score) * 7) + (structureQuality * 4) + (dominantEvidence * 3) - (conflictingEvidence * 5) - (quietMarket ? 6 : 0) - thinTapePenalty
+    );
+    const confidenceCap = quietMarket ? 78 : thinTapePenalty > 0 ? 84 : 95;
+    const confidence = clamp(
+        rawConfidence,
+        24,
+        confidenceCap
+    );
+
+    const reasonPool = label === "BUY"
+        ? [...positives, ...cautions]
+        : label === "SELL"
+            ? [...cautions, ...positives]
+            : score >= 0
+                ? [...positives, ...blockers, ...cautions]
+                : [...cautions, ...blockers, ...positives];
+
+    const reasons = reasonPool.slice(0, 4);
+    if(!reasons.length){
+        reasons.push("DexScreener returned limited context, so the page is waiting for a clearer market structure.");
+    }
+
+    return {
+        label,
+        variant,
+        headline,
+        score,
+        confidence,
+        reasons,
+        h6,
+        h24,
+        flow6h,
+        flow24h,
+        volumeToLiquidity6h,
+        volumeToLiquidity24h,
+        pairAgeHours,
+        priceToReference
+    };
+}
+
+function updateRefreshStatus(){
+    const countdown = formatCountdown(nextRefreshAt - Date.now());
+
+    if(refreshInFlight){
+        refreshStatus.textContent = lastGoodRefreshAt > 0
+            ? `Updated ${formatClockTime(lastGoodRefreshAt)} | Refreshing...`
+            : "Refreshing...";
+        return;
+    }
+
+    if(refreshStatusMode === "updated" && lastGoodRefreshAt > 0){
+        refreshStatus.textContent = `Updated ${formatClockTime(lastGoodRefreshAt)} | Next in ${countdown}`;
+    }else if(refreshStatusMode === "stale" && lastGoodRefreshAt > 0){
+        refreshStatus.textContent = `Last good ${formatClockTime(lastGoodRefreshAt)} | Retry in ${countdown}`;
+    }else if(refreshStatusMode === "unavailable"){
+        refreshStatus.textContent = `Retry in ${countdown}`;
+    }else{
+        refreshStatus.textContent = `Next in ${countdown}`;
+    }
+}
+
+function startCountdown(){
+    if(countdownTimer != null){
+        return;
+    }
+
+    countdownTimer = window.setInterval(updateRefreshStatus, 1000);
+}
+
+function scheduleNextRefresh(){
+    if(refreshTimer != null){
+        window.clearTimeout(refreshTimer);
+    }
+
+    nextRefreshAt = Date.now() + REFRESH_MS;
+    updateRefreshStatus();
+    refreshTimer = window.setTimeout(refreshSignal, REFRESH_MS);
+}
+
+function renderSnapshot(snapshot, signal){
+    signalBadge.textContent = signal.label;
+    signalBadge.className = "signal-badge " + signal.variant;
+    signalHeadline.textContent = signal.headline;
+
+    const scoreText = (signal.score > 0 ? "+" : "") + String(signal.score);
+    signalScore.textContent = scoreText;
+    signalScore.classList.remove("positive", "negative");
+    signalConfidence.classList.remove("positive", "negative");
+
+    if(signal.score > 0){
+        signalScore.classList.add("positive");
+    }else if(signal.score < 0){
+        signalScore.classList.add("negative");
+    }
+
+    if(signal.variant === "buy"){
+        signalConfidence.classList.add("positive");
+    }else if(signal.variant === "sell"){
+        signalConfidence.classList.add("negative");
+    }
+
+    signalConfidence.textContent = signal.confidence + "%";
+
+    metricPrice.textContent = formatPrice(snapshot.price, snapshot.priceDisplay);
+    metricLiquidity.textContent = formatCompactUSDC(snapshot.liquidityUsd);
+    metricH6.textContent = formatSignedPercent(signal.h6);
+    metricH24.textContent = formatSignedPercent(signal.h24);
+    metricDiscount.textContent = formatBelowReference(signal.priceToReference);
+    metricFlow6h.textContent = `${signal.flow6h.buys} / ${signal.flow6h.sells}`;
+    metricFlow24h.textContent = `${signal.flow24h.buys} / ${signal.flow24h.sells}`;
+    metricAge.textContent = formatAge(signal.pairAgeHours);
+
+    setPositiveNegativeClass(metricH6, signal.h6);
+    setPositiveNegativeClass(metricH24, signal.h24);
+    setFlowClass(metricFlow6h, signal.flow6h.imbalance);
+    setFlowClass(metricFlow24h, signal.flow24h.imbalance);
+
+    metricAge.classList.remove("positive", "negative", "warning");
+    if(Number.isFinite(signal.pairAgeHours) && signal.pairAgeHours < 12){
+        metricAge.classList.add("warning");
+    }
+
+    metricDiscount.classList.remove("positive", "negative", "warning");
+    if(Number.isFinite(signal.priceToReference) && signal.priceToReference > 0){
+        if(signal.priceToReference <= 0.15){
+            metricDiscount.classList.add("positive");
+        }else if(signal.priceToReference <= 0.3){
+            metricDiscount.classList.add("warning");
+        }
+    }
+
+    renderReasons(signal.reasons);
+}
+
+async function fetchSnapshot(){
+    const response = await fetch(DEXSCREENER_PAIR_API_URL);
+    if(!response.ok){
+        throw new Error("DexScreener request failed");
+    }
+
+    const data = await response.json();
+    const pair = data.pair || data.pairs?.[0] || {};
+    return extractSnapshot(pair);
+}
+
+async function refreshSignal(){
+    if(refreshInFlight){
+        return;
+    }
+
+    refreshInFlight = true;
+    refreshButton.disabled = true;
+    refreshButton.style.opacity = "0.7";
+    refreshButton.textContent = "Refreshing...";
+    updateRefreshStatus();
+
+    try{
+        const snapshot = await fetchSnapshot();
+        lastSnapshot = snapshot;
+        const signal = evaluateSignal(snapshot);
+        renderSnapshot(snapshot, signal);
+        lastGoodRefreshAt = snapshot.fetchedAt;
+        refreshStatusMode = "updated";
+    }catch(error){
+        console.warn("Signal refresh failed", error);
+
+        if(lastSnapshot){
+            const signal = evaluateSignal(lastSnapshot);
+            renderSnapshot(lastSnapshot, signal);
+            lastGoodRefreshAt = lastSnapshot.fetchedAt;
+            refreshStatusMode = "stale";
+        }else{
+            const fallback = createEmptySnapshot();
+            const signal = evaluateSignal(fallback);
+            renderSnapshot(fallback, signal);
+            refreshStatusMode = "unavailable";
+        }
+    }finally{
+        refreshButton.disabled = false;
+        refreshButton.style.opacity = "";
+        refreshButton.textContent = refreshButtonLabel;
+        refreshInFlight = false;
+        scheduleNextRefresh();
+    }
+}
+
+refreshButton.addEventListener("click", refreshSignal);
+
+notifyReady();
+startCountdown();
+refreshSignal();
+</script>
+</body>
+</html>
