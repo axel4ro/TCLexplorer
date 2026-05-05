@@ -509,8 +509,10 @@ body{
 .chart-reset-row{
     display:flex;
     align-items:center;
-    justify-content:flex-end;
-    gap:10px;
+    justify-content:flex-start;
+    gap:8px;
+    flex-wrap:wrap;
+    padding:0 6px;
 }
 
 .chart-reset-row span{
@@ -687,7 +689,7 @@ canvas{
 
     .chart-reset-row{
         padding-inline:10px;
-        justify-content:space-between;
+        justify-content:flex-start;
     }
 
     .chart-footer{
@@ -818,7 +820,6 @@ canvas{
             </div>
 
             <div class="chart-reset-row">
-                <span>Reset View</span>
                 <button id="chart-zoom-reset" class="chart-zoom-button reset" type="button">Reset Zoom</button>
             </div>
 
