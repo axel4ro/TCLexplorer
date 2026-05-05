@@ -456,6 +456,71 @@ body{
         radial-gradient(circle at top right, rgba(76, 141, 255, 0.08), transparent 26%);
 }
 
+.chart-zoom-controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+.chart-zoom-group{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 10px;
+    border-radius:16px;
+    border:1px solid rgba(126, 152, 188, 0.14);
+    background:linear-gradient(180deg, rgba(12, 23, 39, 0.82) 0%, rgba(7, 14, 24, 0.88) 100%);
+}
+
+.chart-zoom-group span{
+    font-size:0.74rem;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+}
+
+.chart-zoom-button{
+    border:1px solid rgba(126, 152, 188, 0.18);
+    border-radius:12px;
+    min-width:38px;
+    padding:8px 10px;
+    background:rgba(3, 9, 18, 0.9);
+    color:var(--text);
+    font:inherit;
+    font-size:0.92rem;
+    font-weight:700;
+    line-height:1;
+    cursor:pointer;
+    transition:border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.chart-zoom-button:hover{
+    transform:translateY(-1px);
+    border-color:rgba(76, 141, 255, 0.4);
+    background:rgba(76, 141, 255, 0.14);
+}
+
+.chart-zoom-button.reset{
+    min-width:auto;
+    padding-inline:12px;
+}
+
+.chart-reset-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:10px;
+}
+
+.chart-reset-row span{
+    font-size:0.74rem;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+}
+
 canvas{
     width:100%;
     height:100%;
@@ -611,6 +676,20 @@ canvas{
         border-radius:18px;
     }
 
+    .chart-zoom-controls{
+        padding-inline:10px;
+    }
+
+    .chart-zoom-group{
+        flex:1 1 calc(50% - 4px);
+        justify-content:space-between;
+    }
+
+    .chart-reset-row{
+        padding-inline:10px;
+        justify-content:space-between;
+    }
+
     .chart-footer{
         padding-inline:10px;
     }
@@ -721,8 +800,26 @@ canvas{
                 </div>
             </div>
 
+            <div class="chart-zoom-controls">
+                <div class="chart-zoom-group">
+                    <span>Chart Zoom</span>
+                    <button id="chart-zoom-out" class="chart-zoom-button" type="button">-</button>
+                    <button id="chart-zoom-in" class="chart-zoom-button" type="button">+</button>
+                </div>
+                <div class="chart-zoom-group">
+                    <span>Price Zoom</span>
+                    <button id="price-zoom-out" class="chart-zoom-button" type="button">-</button>
+                    <button id="price-zoom-in" class="chart-zoom-button" type="button">+</button>
+                </div>
+            </div>
+
             <div class="chart-frame" id="chart-container">
                 <canvas id="chart"></canvas>
+            </div>
+
+            <div class="chart-reset-row">
+                <span>Reset View</span>
+                <button id="chart-zoom-reset" class="chart-zoom-button reset" type="button">Reset Zoom</button>
             </div>
 
             <p class="chart-footer">The chart now renders inside a dedicated frame similar to a trading terminal, so nothing bleeds over the controls.</p>
@@ -790,6 +887,11 @@ const heroPoolUsdc = document.getElementById("hero-pool-usdc");
 const heroLiquidity = document.getElementById("hero-liquidity");
 const heroPrice = document.getElementById("hero-price");
 const heroPosition = document.getElementById("hero-position");
+const chartZoomOutButton = document.getElementById("chart-zoom-out");
+const chartZoomInButton = document.getElementById("chart-zoom-in");
+const priceZoomOutButton = document.getElementById("price-zoom-out");
+const priceZoomInButton = document.getElementById("price-zoom-in");
+const chartZoomResetButton = document.getElementById("chart-zoom-reset");
 
 let candles = [];
 let trades = [];
@@ -1011,18 +1113,13 @@ function getCandleLabelEdgeGap(){
     return isCompactViewport() ? MOBILE_CANDLE_LABEL_EDGE_GAP : DESKTOP_CANDLE_LABEL_EDGE_GAP;
 }
 
-function measurePriceScaleWidth(axisLabels, priceLabels, titleLabels, axisFont, valueFont, titleFont){
+function measurePriceScaleWidth(priceLabels, titleLabels, valueFont, titleFont){
     if(!isCompactViewport()){
         return DESKTOP_PRICE_SCALE_WIDTH;
     }
 
     ctx.save();
     let maxWidth = 0;
-
-    ctx.font = axisFont;
-    axisLabels.forEach((label) => {
-        maxWidth = Math.max(maxWidth, ctx.measureText(label).width);
-    });
 
     ctx.font = valueFont;
     priceLabels.forEach((label) => {
@@ -1268,6 +1365,28 @@ function applyHorizontalZoom(factor, canvasX){
 
 function applyVerticalZoom(factor){
     priceZoom = clamp(priceZoom * factor, MIN_VERTICAL_ZOOM, MAX_VERTICAL_ZOOM);
+}
+
+function adjustChartZoom(factor){
+    const geometry = getChartGeometry();
+    const centerX = geometry.chartLeft + (geometry.chartInnerWidth / 2);
+    applyHorizontalZoom(factor, centerX);
+    save();
+    draw();
+}
+
+function adjustPriceZoom(factor){
+    applyVerticalZoom(factor);
+    save();
+    draw();
+}
+
+function resetChartView(){
+    zoom = 1;
+    offsetX = 0;
+    priceZoom = 1;
+    save();
+    draw();
 }
 
 function normalizePosition(){
@@ -1856,19 +1975,10 @@ function draw(reflowPass = 0){
     }
 
     const priceScaleTextX = priceScaleLeft + (priceScaleWidth / 2);
-    const axisLabels = [];
-
-    for(let i = 0; i <= gridLineCount; i++){
-        const ratio = i / gridLineCount;
-        const labelPrice = maxPrice - ((maxPrice - minPrice) * ratio);
-        axisLabels.push(formatChartPrice(labelPrice));
-    }
 
     const autoPriceScaleWidth = measurePriceScaleWidth(
-        axisLabels,
         [formatChartPrice(price), formatChartPrice(visibleHighPrice), formatChartPrice(visibleLowPrice)],
         ["Current Price", "High", "Low"],
-        axisFont,
         priceScaleValueFont,
         priceScaleTitleFont
     );
@@ -1903,15 +2013,11 @@ function draw(reflowPass = 0){
     for(let i = 0; i <= gridLineCount; i++){
         const ratio = i / gridLineCount;
         const lineY = chartTop + (chartInnerHeight * ratio);
-        const labelText = axisLabels[i];
 
         ctx.beginPath();
         ctx.moveTo(chartLeft, lineY);
         ctx.lineTo(chartRight, lineY);
         ctx.stroke();
-
-        ctx.fillStyle = "rgba(145, 163, 191, 0.72)";
-        ctx.fillText(labelText, priceScaleTextX, lineY);
     }
 
     ctx.strokeStyle = "rgba(109, 137, 176, 0.18)";
@@ -2170,6 +2276,11 @@ manualInput.addEventListener("keydown", (event) => {
 document.getElementById("trade-action").addEventListener("click", executeTrade);
 document.getElementById("simulate-button").addEventListener("click", simulate);
 document.getElementById("reset-button").addEventListener("click", resetAll);
+chartZoomOutButton.addEventListener("click", () => adjustChartZoom(0.9));
+chartZoomInButton.addEventListener("click", () => adjustChartZoom(1.12));
+priceZoomOutButton.addEventListener("click", () => adjustPriceZoom(0.9));
+priceZoomInButton.addEventListener("click", () => adjustPriceZoom(1.12));
+chartZoomResetButton.addEventListener("click", resetChartView);
 
 window.addEventListener("resize", resizeCanvas);
 
