@@ -19,6 +19,47 @@
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css" />
+  <style>
+    #tokenCalculatorActions.calculator-action-grid--stacked {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    #tokenCalculatorActions .calculator-action-row {
+      display: grid;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    #tokenCalculatorActions .calculator-action-row--top {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #tokenCalculatorActions .calculator-action-row--bottom {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    #tokenCalculatorActions .calculator-action-card {
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+    }
+
+    @media (max-width: 1080px) {
+      #tokenCalculatorActions .calculator-action-row--top,
+      #tokenCalculatorActions .calculator-action-row--bottom {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      #tokenCalculatorActions .calculator-action-row--top,
+      #tokenCalculatorActions .calculator-action-row--bottom {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body class="app-body app-booting">
 <div class="app-boot-splash" id="appBootSplash" aria-live="polite" aria-label="Loading TCL Explorer">
@@ -282,23 +323,31 @@
   </div>
 
   <div id="tokenCalculatorsSection" class="token-accordion-section">
-    <div class="calculator-action-grid" id="tokenCalculatorActions">
-      <button type="button" class="calculator-action-card" onclick="openSignalPage()">
-        <span class="calculator-action-card__title">🚨 Signal</span>
-        <span class="calculator-action-card__desc">View the live TCL signal monitor with a dedicated Buy, Sell or Watch read.</span>
-      </button>
-      <button type="button" class="calculator-action-card" onclick="openTradeSimulatorPage()">
-        <span class="calculator-action-card__title">📈 Trades Simulator</span>
-        <span class="calculator-action-card__desc">Practice buy, sell and price simulation with a dedicated TCL/USDC trading panel.</span>
-      </button>
-      <button type="button" class="calculator-action-card" onclick="openTransactionSimulatorPage()">
-        <span class="calculator-action-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
-        <span class="calculator-action-card__desc" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
-      </button>
-      <button type="button" class="calculator-action-card" onclick="openAprRewardsCalculatorPage()">
-        <span class="calculator-action-card__title" data-i18n="token_calculator_apr_title">🎁 APR &amp; Rewards Calculator</span>
-        <span class="calculator-action-card__desc" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
-      </button>
+    <div class="calculator-action-grid calculator-action-grid--stacked" id="tokenCalculatorActions">
+      <div class="calculator-action-row calculator-action-row--top">
+        <button type="button" class="calculator-action-card" onclick="openSignalPage()">
+          <span class="calculator-action-card__title">🚨 Signal</span>
+          <span class="calculator-action-card__desc">View the live TCL signal monitor with a dedicated Buy, Sell or Watch read.</span>
+        </button>
+        <button type="button" class="calculator-action-card" onclick="openTechnicalsPage()">
+          <span class="calculator-action-card__title">📊 Technicals</span>
+          <span class="calculator-action-card__desc">Open the live TCL / USDC technical dashboard with oscillators, moving averages and support levels.</span>
+        </button>
+      </div>
+      <div class="calculator-action-row calculator-action-row--bottom">
+        <button type="button" class="calculator-action-card" onclick="openTradeSimulatorPage()">
+          <span class="calculator-action-card__title">📈 Trades Simulator</span>
+          <span class="calculator-action-card__desc">Practice buy, sell and price simulation with a dedicated TCL/USDC trading panel.</span>
+        </button>
+        <button type="button" class="calculator-action-card" onclick="openTransactionSimulatorPage()">
+          <span class="calculator-action-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
+          <span class="calculator-action-card__desc" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
+        </button>
+        <button type="button" class="calculator-action-card" onclick="openAprRewardsCalculatorPage()">
+          <span class="calculator-action-card__title" data-i18n="token_calculator_apr_title">🎁 APR &amp; Rewards Calculator</span>
+          <span class="calculator-action-card__desc" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
+        </button>
+      </div>
     </div>
 
     <div id="transactionCalcModal" style="display:none;">
@@ -3500,6 +3549,15 @@ function openSignalPage() {
     navId: "btn-token",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing live signal monitor.",
+    waitForReadyMessage: true
+  });
+}
+
+function openTechnicalsPage() {
+  openInternalPage("Technicals.html", "Technicals", {
+    navId: "btn-token",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL technical signals.",
     waitForReadyMessage: true
   });
 }
