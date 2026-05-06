@@ -908,7 +908,7 @@ td.action-cell {
             </table>
         </div>
         <div class="footer-note">
-            This page uses public pair data from DEXscreener and public pair transaction history from MultiversX.
+            This page uses public pair data from DEX Screener and public pair transaction history from MultiversX.
             For low-liquidity pairs like TCL, the <strong>1D</strong> and <strong>1W</strong> views are the most reliable because they are less distorted by long no-trade gaps.
             In the pivot table, <strong>S1</strong> and <strong>S2</strong> are support areas below price, while <strong>R1</strong> and <strong>R2</strong> are resistance areas above price.
         </div>
@@ -1470,9 +1470,31 @@ function updateGaugeLabels(key, activeLabel) {
     }
 }
 
+function describeTrend(summary) {
+    if (summary.bias >= 0.6) {
+        return { label: "Strong uptrend", tone: "buy" };
+    }
+
+    if (summary.bias >= 0.2) {
+        return { label: "Uptrend", tone: "buy" };
+    }
+
+    if (summary.bias <= -0.6) {
+        return { label: "Strong downtrend", tone: "sell" };
+    }
+
+    if (summary.bias <= -0.2) {
+        return { label: "Downtrend", tone: "sell" };
+    }
+
+    return { label: "Sideways", tone: "neutral" };
+}
+
 function renderDecisionBar(trendSummary, entrySignal) {
-    ui.decisionTrend.textContent = trendSummary.label;
-    ui.decisionTrend.className = `decision-value ${getActionClass(trendSummary.label)}`;
+    const trend = describeTrend(trendSummary);
+
+    ui.decisionTrend.textContent = trend.label;
+    ui.decisionTrend.className = `decision-value ${getToneClass(trend.tone)}`;
     ui.decisionEntry.textContent = entrySignal.label;
     ui.decisionEntry.className = `decision-value ${getToneClass(entrySignal.tone)}`;
     ui.decisionNote.textContent = entrySignal.note;
@@ -1571,7 +1593,7 @@ function evaluateEntrySignal(candles, oscillators, movingAverages, pivots, trend
 
     if (trendSummary.bias >= 0.35) {
         return {
-            label: "Trend buy",
+            label: "Buy pullback",
             tone: "buy",
             note: "The market is already moving up. Do not chase the candle. A cleaner entry is a pullback into the short-term trend lines (EMA10 and EMA20) or the main pivot level."
         };
@@ -1579,7 +1601,7 @@ function evaluateEntrySignal(candles, oscillators, movingAverages, pivots, trend
 
     if ((oversoldScore >= 4 && nearS1) || nearS2) {
         return {
-            label: "Buy zone",
+            label: "Buy support",
             tone: "buy",
             note: `The gauges may still say Sell, but price is sitting near support around ${formatPriceValue(nearS2 ? s2 : s1)}. If buyers step in here and price starts bouncing, this can become a buy zone.`
         };
@@ -1587,7 +1609,7 @@ function evaluateEntrySignal(candles, oscillators, movingAverages, pivots, trend
 
     if ((oversoldScore >= 2 && (nearS1 || (Number.isFinite(price) && Number.isFinite(pivot) && price < pivot))) || reversalScore >= 3) {
         return {
-            label: "Watch buy",
+            label: "Prepare to buy",
             tone: "watch",
             note: "This is not a buy yet, but it is getting closer. Watch for price to hold support, bounce with strength, or climb back above the short-term trend lines."
         };
@@ -1595,14 +1617,14 @@ function evaluateEntrySignal(candles, oscillators, movingAverages, pivots, trend
 
     if (trendSummary.bias <= -0.2) {
         return {
-            label: "Wait",
+            label: "Wait for reversal",
             tone: "sell",
             note: "The trend is still down, so do not rush in. Wait for either a clear bounce from the first support area (S1) or the deeper support area (S2), or for price to move back above EMA10 and EMA20."
         };
     }
 
     return {
-        label: "Neutral setup",
+        label: "Stay neutral",
         tone: "neutral",
         note: "There is no clear edge right now. Wait for a strong bounce from support or a clean breakout above resistance before taking a position."
     };
