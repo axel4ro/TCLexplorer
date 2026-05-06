@@ -9,6 +9,7 @@ Set-StrictMode -Version Latest
 $coinUrl = "https://api.cryptorank.io/v0/coins/the-cursed-land"
 $quarterlyUrl = "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history"
 $monthlyUrl = "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history"
+$listingDateOverride = "2024-06-13T00:00:00.000Z"
 
 function Get-JsonFromUrl {
   param(
@@ -244,7 +245,7 @@ $outputPayload = [PSCustomObject]@{
     volume24hUsd = [double]$coin.volume24h
     athPriceUsd = [double]$coin.athPrice.USD
     atlPriceUsd = [double]$coin.atlPrice.USD
-    listingDate = [string]$coin.listingDate
+    listingDate = $listingDateOverride
     historyStartDay = [string]$coin.historyStartDay
     historyEndDay = [string]$coin.historyEndDay
   }
