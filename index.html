@@ -20,6 +20,45 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css" />
   <style>
+    .token-hero-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .token-hero-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .token-analytics-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 232, 204, 0.24);
+      background: linear-gradient(135deg, rgba(0, 232, 204, 0.14), rgba(168, 85, 247, 0.18));
+      color: #eef4ff;
+      font-family: Orbitron, sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+    }
+
+    .token-analytics-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 232, 204, 0.42);
+      box-shadow: 0 14px 32px rgba(0, 232, 204, 0.12);
+    }
+
     #tokenCalculatorActions.calculator-action-grid--stacked {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
@@ -54,6 +93,14 @@
     }
 
     @media (max-width: 640px) {
+      .token-hero-head {
+        align-items: stretch;
+      }
+
+      .token-analytics-btn {
+        width: 100%;
+      }
+
       #tokenCalculatorActions .calculator-action-row--top,
       #tokenCalculatorActions .calculator-action-row--bottom {
         grid-template-columns: 1fr;
@@ -140,10 +187,13 @@
  <!-- Token -->
 <div id="token" class="section-page active">
   <div class="page-hero">
-    <h2>
-      <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="" width="28" height="28" style="border-radius:8px;">
-      TCL Token
-    </h2>
+    <div class="token-hero-head">
+      <h2 class="token-hero-title">
+        <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="" width="28" height="28" style="border-radius:8px;">
+        TCL Token
+      </h2>
+      <button type="button" class="token-analytics-btn" onclick="openAnalyticsPage()">Analytics</button>
+    </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
       Data from MultiversX, DexScreener &amp; CoinGecko
@@ -3558,6 +3608,15 @@ function openTechnicalsPage() {
     navId: "btn-token",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing TCL technical signals.",
+    waitForReadyMessage: true
+  });
+}
+
+function openAnalyticsPage() {
+  openInternalPage("analytics.html", "Analytics", {
+    navId: "btn-token",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL analytics.",
     waitForReadyMessage: true
   });
 }
