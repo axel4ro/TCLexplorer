@@ -1,11 +1,11 @@
 name: Refresh TCL Analytics Mirror
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - leaderboard.json
+  workflow_run:
+    workflows:
+      - pages build and deployment
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,13 @@ concurrency:
 
 jobs:
   refresh:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        startsWith(github.event.workflow_run.display_title, 'update leaderboard.json')
+      )
     runs-on: ubuntu-latest
 
     steps:
