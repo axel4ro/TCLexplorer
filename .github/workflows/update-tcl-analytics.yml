@@ -16,14 +16,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  gate:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (
         github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main' &&
-        startsWith(github.event.workflow_run.display_title, 'update leaderboard.json')
+        github.event.workflow_run.head_branch == 'main'
       )
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+    steps:
+      - name: Decide whether analytics refresh should run
+        id: decide
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.eventName === "workflow_dispatch") {
+              core.info("Manual dispatch detected. Analytics refresh will run.");
+              core.setOutput("should_run", "true");
+              return;
+            }
+
+            const headSha = context.payload.workflow_run.head_sha;
+            const { data: commit } = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha
+            });
+
+            const message = commit.commit.message || "";
+            const shouldRun = message.startsWith("update leaderboard.json");
+
+            core.info(`Triggering commit SHA: ${headSha}`);
+            core.info(`Triggering commit message: ${message}`);
+            core.setOutput("should_run", shouldRun ? "true" : "false");
+
+  refresh:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
 
     steps:
