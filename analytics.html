@@ -1226,10 +1226,16 @@
       }
     }
 
-    listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
-    notifyParentReady();
-    loadSnapshot();
-    loadDexMarketStats();
+    async function initializeAnalyticsPage() {
+      listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
+      await Promise.allSettled([
+        loadSnapshot(),
+        loadDexMarketStats()
+      ]);
+      notifyParentReady();
+    }
+
+    initializeAnalyticsPage();
     window.setInterval(() => {
       loadSnapshot();
       loadDexMarketStats();
