@@ -70,6 +70,51 @@ body {
     max-width: 840px;
 }
 
+.title-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.back-btn {
+    border: 0;
+    border-radius: 12px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
+    color: #fff;
+    font-size: 0.86rem;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(112, 88, 255, 0.24);
+}
+
+.ghost-btn {
+    color: var(--text);
+    background: rgba(126, 152, 188, 0.12);
+    border: 1px solid rgba(126, 152, 188, 0.14);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ghost-btn.disclaimer-btn {
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #fff1cf;
+    background: rgba(255, 209, 138, 0.08);
+    border-color: rgba(255, 209, 138, 0.22);
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ghost-btn.disclaimer-btn:hover {
+    transform: translateY(-1px);
+}
+
 .toolbar {
     display: flex;
     align-items: center;
@@ -593,6 +638,10 @@ td.action-cell {
 <div class="page">
     <div class="topbar">
         <div class="title-block">
+            <div class="title-actions">
+                <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
+                <a class="ghost-btn disclaimer-btn" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Not Financial Advice</a>
+            </div>
             <h1>Technical Signals</h1>
             <div class="subtitle">
                 A live technical view of <strong>TCL / USDC</strong> on MultiversX, built from real on-chain swap history
@@ -859,7 +908,7 @@ td.action-cell {
             </table>
         </div>
         <div class="footer-note">
-            This page uses public pair data from DEX Screener and public pair transaction history from MultiversX.
+            This page uses public pair data from DEXscreener and public pair transaction history from MultiversX.
             For low-liquidity pairs like TCL, the <strong>1D</strong> and <strong>1W</strong> views are the most reliable because they are less distorted by long no-trade gaps.
             In the pivot table, <strong>S1</strong> and <strong>S2</strong> are support areas below price, while <strong>R1</strong> and <strong>R2</strong> are resistance areas above price.
         </div>
@@ -890,6 +939,7 @@ const TIMEFRAMES = {
 };
 
 const DIRECT_CALL_B64 = "RGlyZWN0Q2FsbA==";
+let readyNotified = false;
 
 const state = {
     pair: null,
@@ -961,9 +1011,11 @@ async function loadData(isManual = false) {
 
         recomputeAndRender();
         setStatus(`Loaded ${trades.length} real swap trades from public APIs. Last refresh ${formatDateTime(state.lastLoadedAt)}.`);
+        notifyReady();
     } catch (error) {
         console.error(error);
         setStatus(`Could not load TCL technicals: ${error.message}`, true);
+        notifyReady();
     }
 }
 
@@ -2303,6 +2355,35 @@ function getRowValue(rows, startsWith) {
 
 function getPivotValue(rows, level) {
     return rows.find((row) => row.level === level)?.Classic ?? null;
+}
+
+function notifyReady() {
+    if (readyNotified) {
+        return;
+    }
+
+    readyNotified = true;
+
+    if (window.parent && window.parent !== window) {
+        try {
+            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        } catch (error) {
+            console.warn("Failed to notify parent page ready", error);
+        }
+    }
+}
+
+function goBackToTclToken() {
+    if (window.parent && window.parent !== window) {
+        try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenCalculatorsSection" }, "*");
+            return;
+        } catch (error) {
+            console.warn("Back to TCL Token parent navigation failed", error);
+        }
+    }
+
+    window.location.href = "index.html#token";
 }
 
 function setStatus(message, isError = false) {
