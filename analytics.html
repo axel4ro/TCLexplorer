@@ -98,6 +98,8 @@
     .hero-main,
     .hero-stats,
     .status-row,
+    .page-footer,
+    .footer-source,
     .section-head,
     .performance-grid,
     .table-grid,
@@ -107,9 +109,9 @@
     }
 
     .hero-actions {
-      grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
-      justify-content: space-between;
-      align-items: center;
+      grid-template-columns: 1fr;
+      justify-content: start;
+      align-items: start;
       margin-bottom: 20px;
     }
 
@@ -117,6 +119,52 @@
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+    }
+
+    .back-btn {
+      align-self: flex-start;
+      border: 0;
+      border-radius: 12px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
+      color: #fff;
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(112, 88, 255, 0.24);
+      transition: transform 0.18s ease;
+    }
+
+    .back-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .ghost-btn {
+      border: 1px solid rgba(126, 152, 188, 0.14);
+      border-radius: 18px;
+      padding: 11px 16px;
+      color: var(--text);
+      background: rgba(126, 152, 188, 0.12);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    .ghost-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .ghost-btn.disclaimer-btn {
+      color: #fff1cf;
+      background: rgba(255, 209, 138, 0.08);
+      border-color: rgba(255, 209, 138, 0.22);
     }
 
     .hero-link,
@@ -148,10 +196,24 @@
       background: linear-gradient(135deg, rgba(0, 232, 204, 0.12), rgba(168, 85, 247, 0.18));
     }
 
+    .hero-link--static {
+      cursor: default;
+    }
+
+    .hero-link--static:hover {
+      transform: none;
+      border-color: rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
     .status-row {
       grid-template-columns: minmax(0, 1fr) max-content;
       align-items: center;
       gap: 10px;
+    }
+
+    .status-row[hidden] {
+      display: none;
     }
 
     .status-pill {
@@ -380,6 +442,43 @@
     .table-card--wide {
       margin-top: 22px;
       margin-bottom: 0;
+    }
+
+    .performance-section {
+      margin-top: 22px;
+    }
+
+    .page-footer {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      margin-top: 22px;
+      padding-bottom: 12px;
+    }
+
+    .footer-source {
+      grid-template-columns: auto max-content;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .source-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      text-align: right;
+    }
+
+    .source-meta__label {
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .source-meta__time {
+      color: var(--text-soft);
+      font-size: 0.86rem;
     }
 
     .table-scroll {
@@ -648,6 +747,8 @@
       }
 
       .status-row,
+      .page-footer,
+      .footer-source,
       .section-head {
         grid-template-columns: 1fr;
       }
@@ -657,8 +758,19 @@
       }
 
       .hero-links,
+      .footer-source,
       .hero-button {
         width: 100%;
+      }
+
+      .back-btn,
+      .ghost-btn.disclaimer-btn {
+        width: 100%;
+      }
+
+      .source-meta {
+        align-items: flex-start;
+        text-align: left;
       }
 
       .hero-title {
@@ -689,14 +801,13 @@
     <header class="hero-card">
       <div class="hero-actions">
         <div class="hero-links">
-          <a class="hero-link hero-link--accent" href="index.html">Back to TCL Explorer</a>
-          <a class="hero-link" href="https://cryptorank.io/price/the-cursed-land/analytics" target="_blank" rel="noreferrer">Open CryptoRank</a>
+          <button class="back-btn" type="button" onclick="goBackToTclToken()">&#11013; Back to TCL Token</button>
+          <a class="ghost-btn disclaimer-btn" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Not Financial Advice</a>
         </div>
       </div>
 
-      <div class="status-row">
+      <div class="status-row" id="snapshotStatusRow" hidden>
         <div class="status-pill is-error" id="snapshotStatus" hidden>Data unavailable.</div>
-        <div class="section-meta" id="snapshotTimestamp">Updated: --</div>
       </div>
 
       <div class="hero-main">
@@ -765,7 +876,7 @@
       <div class="table-scroll" id="monthlyReturnsMount"></div>
     </section>
 
-    <section class="section-card">
+    <section class="section-card performance-section">
       <div class="section-head">
         <div>
           <span class="section-kicker">Performance</span>
@@ -776,6 +887,17 @@
       </div>
       <div class="performance-grid" id="performanceGrid"></div>
     </section>
+
+    <footer class="page-footer">
+      <div></div>
+      <div class="footer-source">
+        <div class="source-meta">
+          <span class="source-meta__label">Source CryptoRank</span>
+          <span class="source-meta__time" id="snapshotTimestamp">Last Update: --</span>
+        </div>
+        <a class="hero-link" href="https://cryptorank.io/price/the-cursed-land/analytics" target="_blank" rel="noreferrer">Open CryptoRank</a>
+      </div>
+    </footer>
   </div>
 
   <script>
@@ -784,6 +906,7 @@
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     const TCL_LISTING_DATE = "2024-06-13";
 
+    const snapshotStatusRowEl = document.getElementById("snapshotStatusRow");
     const snapshotStatusEl = document.getElementById("snapshotStatus");
     const snapshotTimestampEl = document.getElementById("snapshotTimestamp");
     const currentPriceValueEl = document.getElementById("currentPriceValue");
@@ -797,12 +920,14 @@
 
     function setStatus(message, mode) {
       if (mode === "error") {
+        snapshotStatusRowEl.hidden = false;
         snapshotStatusEl.hidden = false;
         snapshotStatusEl.textContent = message;
         snapshotStatusEl.className = "status-pill is-error";
         return;
       }
 
+      snapshotStatusRowEl.hidden = true;
       snapshotStatusEl.hidden = true;
     }
 
@@ -1029,6 +1154,29 @@
       }
     }
 
+    function notifyParentReady() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        } catch (error) {
+          console.warn("Failed to notify parent page ready", error);
+        }
+      }
+    }
+
+    function goBackToTclToken() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenOverviewSection" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Back to TCL Token parent navigation failed", error);
+        }
+      }
+
+      window.location.href = "index.html#token";
+    }
+
     function loadSnapshotScript() {
       return new Promise((resolve, reject) => {
         delete window.TCL_ANALYTICS_SNAPSHOT;
@@ -1079,6 +1227,7 @@
     }
 
     listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
+    notifyParentReady();
     loadSnapshot();
     loadDexMarketStats();
     window.setInterval(() => {
