@@ -257,6 +257,11 @@
       box-shadow: 0 0 0 6px rgba(251, 113, 133, 0.16);
     }
 
+    .status-pill.is-warning::before {
+      background: #f5c55f;
+      box-shadow: 0 0 0 6px rgba(245, 197, 95, 0.16);
+    }
+
     .hero-main {
       grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
       align-items: end;
@@ -905,6 +910,7 @@
     const DEX_MARKET_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
     const MULTIVERSX_TOKEN_URL = "https://api.multiversx.com/tokens/TCL-fe459d";
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+    const SNAPSHOT_STALE_AFTER_MS = 20 * 60 * 1000;
     const TCL_LISTING_DATE = "2024-06-13";
 
     const snapshotStatusRowEl = document.getElementById("snapshotStatusRow");
@@ -920,16 +926,22 @@
     const monthlyReturnsMountEl = document.getElementById("monthlyReturnsMount");
 
     function setStatus(message, mode) {
-      if (mode === "error") {
-        snapshotStatusRowEl.hidden = false;
-        snapshotStatusEl.hidden = false;
-        snapshotStatusEl.textContent = message;
-        snapshotStatusEl.className = "status-pill is-error";
+      if (!message) {
+        snapshotStatusRowEl.hidden = true;
+        snapshotStatusEl.hidden = true;
         return;
       }
 
-      snapshotStatusRowEl.hidden = true;
-      snapshotStatusEl.hidden = true;
+      const resolvedMode =
+        mode === "error" ? "is-error" :
+        mode === "warning" ? "is-warning" :
+        mode === "loading" ? "is-loading" :
+        "is-ready";
+
+      snapshotStatusRowEl.hidden = false;
+      snapshotStatusEl.hidden = false;
+      snapshotStatusEl.textContent = message;
+      snapshotStatusEl.className = `status-pill ${resolvedMode}`;
     }
 
     function formatPercent(value) {
@@ -990,6 +1002,21 @@
         month: "2-digit",
         year: "numeric"
       }).format(date);
+    }
+
+    function formatRelativeAge(milliseconds) {
+      const totalMinutes = Math.max(1, Math.round(milliseconds / 60000));
+      if (totalMinutes < 60) {
+        return `${totalMinutes} minute${totalMinutes === 1 ? "" : "s"}`;
+      }
+
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (!minutes) {
+        return `${hours} hour${hours === 1 ? "" : "s"}`;
+      }
+
+      return `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"}`;
     }
 
     function escapeHtml(value) {
@@ -1113,6 +1140,31 @@
       snapshotTimestampEl.textContent = `Last Update: ${updatedText} ${updatedTime}`;
     }
 
+    function updateSnapshotFreshness(snapshot) {
+      const updatedAt = snapshot?.meta?.updatedAt;
+      if (!updatedAt) {
+        setStatus("Mirror loaded, but no update timestamp was included in the snapshot.", "warning");
+        return;
+      }
+
+      const updatedDate = new Date(updatedAt);
+      if (Number.isNaN(updatedDate.getTime())) {
+        setStatus("Mirror loaded, but the update timestamp could not be parsed.", "warning");
+        return;
+      }
+
+      const ageMs = Date.now() - updatedDate.getTime();
+      if (ageMs > SNAPSHOT_STALE_AFTER_MS) {
+        setStatus(
+          `Mirror looks stale: last refresh was ${formatRelativeAge(ageMs)} ago. GitHub Actions or the upstream API may have missed recent updates.`,
+          "warning"
+        );
+        return;
+      }
+
+      setStatus("", "ready");
+    }
+
     function renderHeaderMarketStats(pair, tokenData) {
       const currentPriceUsd = Number.parseFloat(pair?.priceUsd);
       const marketCapUsd = Number.isFinite(Number(tokenData?.marketCap))
@@ -1216,11 +1268,11 @@
         }
 
         renderHeader(snapshot);
+        updateSnapshotFreshness(snapshot);
         renderPerformance(snapshot.performance);
         renderMatrixTable(quarterlyReturnsMountEl, snapshot.quarterlyReturns, { type: "percent" });
         renderMatrixTable(quarterlyClosingMountEl, snapshot.quarterlyClosing, { type: "usd", decimals: 6 });
         renderMatrixTable(monthlyReturnsMountEl, snapshot.monthlyReturns, { type: "percent" });
-        setStatus("", "ready");
       } catch (error) {
         console.error("Failed to load analytics snapshot", error);
         setStatus("Could not load data/tcl-analytics.js", "error");
