@@ -6,30 +6,76 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+Write-Output ("Starting analytics refresh: " + (Get-Date).ToUniversalTime().ToString("o"))
+
 $coinUrl = "https://api.cryptorank.io/v0/coins/the-cursed-land"
 $quarterlyUrl = "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history"
 $monthlyUrl = "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history"
+$requestHeaders = @{
+  "User-Agent" = "TCLExplorerAnalyticsSync/1.0"
+  "Accept" = "application/json"
+}
+
+function Get-StatusCodeFromException {
+  param(
+    [System.Exception]$Exception
+  )
+
+  if ($null -eq $Exception) {
+    return $null
+  }
+
+  $responseProperty = $Exception.PSObject.Properties["Response"]
+  if ($null -eq $responseProperty -or $null -eq $responseProperty.Value) {
+    return $null
+  }
+
+  $statusCodeProperty = $responseProperty.Value.PSObject.Properties["StatusCode"]
+  if ($null -eq $statusCodeProperty -or $null -eq $statusCodeProperty.Value) {
+    return $null
+  }
+
+  try {
+    return [int]$statusCodeProperty.Value
+  } catch {
+    return $null
+  }
+}
 
 function Get-JsonFromUrl {
   param(
     [Parameter(Mandatory = $true)]
-    [string]$Url
+    [string]$Url,
+    [int]$MaxAttempts = 4,
+    [int]$RetryDelaySeconds = 5
   )
 
-  try {
-    $response = Invoke-RestMethod -Uri $Url -Method Get -TimeoutSec 30 -Headers @{
-      "User-Agent" = "TCLExplorerAnalyticsSync/1.0"
-      "Accept" = "application/json"
+  $lastError = $null
+  for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+    try {
+      Write-Host "Fetching analytics source ($attempt/$MaxAttempts): $Url"
+      $response = Invoke-RestMethod -Uri $Url -Method Get -TimeoutSec 30 -Headers $requestHeaders
+
+      if ($null -eq $response) {
+        throw "Empty response from $Url"
+      }
+
+      return $response
+    } catch {
+      $lastError = $_
+      $statusCode = Get-StatusCodeFromException -Exception $_.Exception
+      $failureReason = if ($null -ne $statusCode) { "HTTP $statusCode" } else { $_.Exception.Message }
+
+      if ($attempt -ge $MaxAttempts) {
+        break
+      }
+
+      Write-Warning "Attempt $attempt/$MaxAttempts failed for $Url ($failureReason). Retrying in $RetryDelaySeconds seconds."
+      Start-Sleep -Seconds $RetryDelaySeconds
     }
-  } catch {
-    throw "Failed to fetch $Url. $($_.Exception.Message)"
   }
 
-  if ($null -eq $response) {
-    throw "Empty response from $Url"
-  }
-
-  return $response
+  throw "Failed to fetch $Url after $MaxAttempts attempts. $($lastError.Exception.Message)"
 }
 
 function Get-PercentChange {
@@ -280,3 +326,4 @@ $serializedPayload | Set-Content -LiteralPath $resolvedOutputPath -Encoding UTF8
 
 Write-Output "Updated analytics snapshot: $resolvedOutputPath"
 Write-Output "Updated analytics script: $resolvedScriptOutputPath"
+Write-Output ("Completed analytics refresh: " + (Get-Date).ToUniversalTime().ToString("o"))
