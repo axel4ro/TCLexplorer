@@ -1,8 +1,11 @@
 name: Refresh TCL Analytics Mirror
 
 on:
-  schedule:
-    - cron: "2/5 * * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - leaderboard.json
   workflow_dispatch:
 
 permissions:
