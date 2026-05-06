@@ -924,7 +924,7 @@ const CONFIG = {
     chainId: "multiversx",
     pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
     dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
-    txUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transactions",
+    txUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
     txPageSize: 50,
     txMaxPages: 6,
     pollMs: 60_000,
@@ -1064,7 +1064,7 @@ async function fetchTransactionHistory() {
 
     for (let pageIndex = 0; pageIndex < CONFIG.txMaxPages; pageIndex += 1) {
         const from = pageIndex * CONFIG.txPageSize;
-        const url = `${CONFIG.txUrlBase}?from=${from}&size=${CONFIG.txPageSize}&status=success&withLogs=true`;
+        const url = `${CONFIG.txUrlBase}?from=${from}&size=${CONFIG.txPageSize}`;
         const page = await fetchJson(url);
         transactions.push(...page);
 
@@ -1077,49 +1077,71 @@ async function fetchTransactionHistory() {
 }
 
 function parseTrades(transactions, pair) {
-    const tradeList = [];
+    const tradeGroups = new Map();
 
     for (const tx of transactions) {
-        if (tx.function !== "swapTokensFixedInput") {
+        const transfers = tx.action?.arguments?.transfers;
+        if (!Array.isArray(transfers) || !transfers.length) {
             continue;
         }
 
-        const inputTransfer = tx.action?.arguments?.transfers?.[0];
-        if (!inputTransfer?.token || !inputTransfer?.value) {
+        const groupKey = String(tx.originalTxHash || tx.txHash || "");
+        if (!groupKey) {
             continue;
         }
 
-        const outputEvent = (tx.logs?.events || []).find((event) =>
-            event.identifier === "ESDTTransfer" &&
-            event.address === pair.pairAddress &&
-            Array.isArray(event.additionalData) &&
-            event.additionalData[0] === DIRECT_CALL_B64
-        );
-
-        if (!outputEvent) {
-            continue;
+        let group = tradeGroups.get(groupKey);
+        if (!group) {
+            group = {
+                hash: groupKey,
+                timestamp: 0,
+                inputTotals: Object.create(null),
+                outputTotals: Object.create(null)
+            };
+            tradeGroups.set(groupKey, group);
         }
 
-        const outputToken = decodeBase64Ascii(outputEvent.topics?.[0] || "");
-        const outputDecimals = resolveTokenDecimals(outputToken, tx);
-        const inputAmount = decimalStringToNumber(inputTransfer.value, Number(inputTransfer.decimals ?? 18));
-        const outputAmount = bigIntToDecimal(base64ToBigInt(outputEvent.topics?.[2] || ""), outputDecimals);
-
-        if (!Number.isFinite(inputAmount) || !Number.isFinite(outputAmount) || inputAmount <= 0 || outputAmount <= 0) {
-            continue;
+        const timestamp = Number(tx.timestamp);
+        if (Number.isFinite(timestamp) && timestamp > group.timestamp) {
+            group.timestamp = timestamp;
         }
+
+        if (tx.receiver === pair.pairAddress && tx.function === "swapTokensFixedInput") {
+            const inputTransfer = normalizeTradeTransfer(transfers[0], pair);
+            if (inputTransfer && isPairToken(inputTransfer.token, pair)) {
+                addTradeTokenAmount(group.inputTotals, inputTransfer.token, inputTransfer.amount);
+            }
+        }
+
+        if (tx.sender === pair.pairAddress) {
+            for (const transfer of transfers) {
+                const normalizedTransfer = normalizeTradeTransfer(transfer, pair);
+                if (normalizedTransfer && isPairToken(normalizedTransfer.token, pair)) {
+                    addTradeTokenAmount(group.outputTotals, normalizedTransfer.token, normalizedTransfer.amount);
+                }
+            }
+        }
+    }
+
+    const tradeList = [];
+
+    for (const group of tradeGroups.values()) {
+        const baseInput = group.inputTotals[pair.baseToken.address] ?? 0;
+        const quoteInput = group.inputTotals[pair.quoteToken.address] ?? 0;
+        const baseOutput = group.outputTotals[pair.baseToken.address] ?? 0;
+        const quoteOutput = group.outputTotals[pair.quoteToken.address] ?? 0;
 
         let tclAmount = 0;
         let usdcAmount = 0;
         let side = "neutral";
 
-        if (inputTransfer.token === pair.baseToken.address && outputToken === pair.quoteToken.address) {
-            tclAmount = inputAmount;
-            usdcAmount = outputAmount;
+        if (baseInput > 0 && quoteOutput > 0 && quoteInput <= 0) {
+            tclAmount = baseInput;
+            usdcAmount = quoteOutput;
             side = "sell";
-        } else if (inputTransfer.token === pair.quoteToken.address && outputToken === pair.baseToken.address) {
-            usdcAmount = inputAmount;
-            tclAmount = outputAmount;
+        } else if (quoteInput > 0 && baseOutput > 0 && baseInput <= 0) {
+            usdcAmount = quoteInput;
+            tclAmount = baseOutput;
             side = "buy";
         } else {
             continue;
@@ -1131,8 +1153,8 @@ function parseTrades(transactions, pair) {
         }
 
         tradeList.push({
-            hash: tx.txHash,
-            timestamp: Number(tx.timestamp),
+            hash: group.hash,
+            timestamp: group.timestamp,
             price,
             volumeUsd: usdcAmount,
             tclAmount,
@@ -1143,14 +1165,33 @@ function parseTrades(transactions, pair) {
     return tradeList.sort((left, right) => left.timestamp - right.timestamp);
 }
 
-function resolveTokenDecimals(token, tx) {
-    const transfers = tx.action?.arguments?.transfers || [];
-    const matchingTransfer = transfers.find((entry) => entry.token === token);
-    if (matchingTransfer?.decimals != null) {
-        return Number(matchingTransfer.decimals);
+function normalizeTradeTransfer(transfer, pair) {
+    if (!transfer?.token || !transfer?.value) {
+        return null;
     }
 
-    if (token === "USDC-c76f1f") {
+    const decimals = Number(transfer.decimals ?? resolveTokenDecimals(transfer.token, pair));
+    const amount = decimalStringToNumber(transfer.value, decimals);
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+    }
+
+    return {
+        token: transfer.token,
+        amount
+    };
+}
+
+function isPairToken(token, pair) {
+    return token === pair.baseToken.address || token === pair.quoteToken.address;
+}
+
+function addTradeTokenAmount(bucket, token, amount) {
+    bucket[token] = (bucket[token] ?? 0) + amount;
+}
+
+function resolveTokenDecimals(token, pair) {
+    if (token === pair.quoteToken.address || token === "USDC-c76f1f") {
         return 6;
     }
 
