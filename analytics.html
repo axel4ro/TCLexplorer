@@ -903,6 +903,7 @@
   <script>
     const SNAPSHOT_SCRIPT_PATH = "data/tcl-analytics.js";
     const DEX_MARKET_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+    const MULTIVERSX_TOKEN_URL = "https://api.multiversx.com/tokens/TCL-fe459d";
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     const TCL_LISTING_DATE = "2024-06-13";
 
@@ -1112,11 +1113,11 @@
       snapshotTimestampEl.textContent = `Last Update: ${updatedText} ${updatedTime}`;
     }
 
-    function renderDexMarketStats(pair) {
+    function renderHeaderMarketStats(pair, tokenData) {
       const currentPriceUsd = Number.parseFloat(pair?.priceUsd);
-      const marketCapUsd = Number.isFinite(Number(pair?.marketCap))
-        ? Number(pair.marketCap)
-        : Number(pair?.fdv);
+      const marketCapUsd = Number.isFinite(Number(tokenData?.marketCap))
+        ? Number(tokenData.marketCap)
+        : (Number.isFinite(Number(pair?.marketCap)) ? Number(pair.marketCap) : Number(pair?.fdv));
       const volume24hUsd = Number.isFinite(Number(pair?.volume?.h24))
         ? Number(pair.volume.h24)
         : Number.NaN;
@@ -1129,24 +1130,35 @@
 
     async function loadDexMarketStats() {
       try {
-        const response = await fetch(`${DEX_MARKET_URL}?v=${Date.now()}`, {
-          headers: { Accept: "application/json" },
-          cache: "no-store"
-        });
+        const [dexResponse, multiversxResponse] = await Promise.all([
+          fetch(`${DEX_MARKET_URL}?v=${Date.now()}`, {
+            headers: { Accept: "application/json" },
+            cache: "no-store"
+          }),
+          fetch(`${MULTIVERSX_TOKEN_URL}?v=${Date.now()}`, {
+            headers: { Accept: "application/json" },
+            cache: "no-store"
+          })
+        ]);
 
-        if (!response.ok) {
-          throw new Error(`DexScreener request failed with ${response.status}`);
+        if (!dexResponse.ok) {
+          throw new Error(`DexScreener request failed with ${dexResponse.status}`);
         }
 
-        const payload = await response.json();
-        const pair = Array.isArray(payload?.pairs) ? payload.pairs[0] : null;
+        if (!multiversxResponse.ok) {
+          throw new Error(`MultiversX request failed with ${multiversxResponse.status}`);
+        }
+
+        const dexPayload = await dexResponse.json();
+        const multiversxPayload = await multiversxResponse.json();
+        const pair = Array.isArray(dexPayload?.pairs) ? dexPayload.pairs[0] : null;
         if (!pair) {
           throw new Error("DexScreener response did not include a pair.");
         }
 
-        renderDexMarketStats(pair);
+        renderHeaderMarketStats(pair, multiversxPayload);
       } catch (error) {
-        console.error("Failed to load DexScreener market stats", error);
+        console.error("Failed to load analytics header stats", error);
         currentPriceValueEl.textContent = "--";
         marketCapValueEl.textContent = "--";
         volumeValueEl.textContent = "--";
