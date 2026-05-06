@@ -1,0 +1,39 @@
+name: Refresh TCL Analytics Mirror
+
+on:
+  schedule:
+    - cron: "2/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-tcl-analytics
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Refresh TCL analytics snapshot
+        shell: pwsh
+        run: ./scripts/update-tcl-analytics.ps1
+
+      - name: Commit updated mirror
+        shell: bash
+        run: |
+          if git diff --quiet -- data/tcl-analytics.json data/tcl-analytics.js; then
+            echo "No mirror changes detected."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/tcl-analytics.json data/tcl-analytics.js
+          git commit -m "chore: refresh TCL analytics mirror"
+          git push
