@@ -167,6 +167,10 @@
       font-size: 0.95rem;
     }
 
+    .status-pill[hidden] {
+      display: none;
+    }
+
     .status-pill::before {
       content: "";
       width: 8px;
@@ -361,21 +365,28 @@
 
     .table-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: stretch;
       gap: 22px;
       margin-bottom: 22px;
     }
 
     .table-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
       margin-bottom: 0;
     }
 
     .table-card--wide {
+      margin-top: 22px;
       margin-bottom: 0;
     }
 
     .table-scroll {
-      overflow-x: auto;
-      padding-bottom: 8px;
+      flex: 1;
+      overflow-x: visible;
+      overflow-y: hidden;
+      padding-bottom: 0;
     }
 
     .table-scroll::-webkit-scrollbar {
@@ -389,22 +400,24 @@
 
     .analytics-table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: separate;
       border-spacing: 0;
-      min-width: 100%;
+      min-width: 0;
     }
 
     .analytics-table th,
     .analytics-table td {
-      padding: 12px 10px;
+      padding: clamp(8px, 0.85vw, 12px) clamp(4px, 0.65vw, 10px);
       text-align: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       font-variant-numeric: tabular-nums;
+      min-width: 0;
     }
 
     .analytics-table thead th {
       color: var(--text-muted);
-      font-size: 0.8rem;
+      font-size: clamp(0.67rem, 0.7vw, 0.8rem);
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -419,6 +432,7 @@
       position: sticky;
       left: 0;
       z-index: 1;
+      width: clamp(62px, 9%, 86px);
       text-align: left;
       padding-left: 0;
       background: linear-gradient(90deg, rgba(18, 21, 31, 0.98) 70%, rgba(18, 21, 31, 0));
@@ -433,6 +447,7 @@
       color: var(--text);
       font-weight: 700;
       white-space: nowrap;
+      font-size: clamp(0.85rem, 0.92vw, 1rem);
     }
 
     .row-label.is-summary {
@@ -444,14 +459,21 @@
     }
 
     .cell-badge {
-      min-width: 96px;
-      padding: 10px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      padding: clamp(7px, 0.75vw, 10px) clamp(4px, 0.55vw, 8px);
       border-radius: 10px;
       border: 1px solid rgba(255, 255, 255, 0.05);
       background: rgba(255, 255, 255, 0.03);
       color: var(--text);
       font-weight: 700;
       line-height: 1.2;
+      font-size: clamp(0.72rem, 0.82vw, 0.98rem);
+      box-sizing: border-box;
+      white-space: nowrap;
     }
 
     .cell-badge.is-empty {
@@ -530,14 +552,18 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 96px;
-      padding: 10px 8px;
+      width: 100%;
+      min-width: 0;
+      padding: clamp(7px, 0.75vw, 10px) clamp(4px, 0.55vw, 8px);
       border-radius: 10px;
       border: 1px solid rgba(255, 255, 255, 0.05);
       background: rgba(255, 255, 255, 0.03);
       color: var(--text);
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.1;
+      font-size: clamp(0.68rem, 0.76vw, 0.92rem);
+      box-sizing: border-box;
+      white-space: nowrap;
     }
 
     .table-note {
@@ -564,6 +590,47 @@
 
       .performance-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .table-scroll {
+        overflow-x: auto;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .analytics-table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+      }
+
+      #quarterlyReturnsMount .analytics-table,
+      #quarterlyClosingMount .analytics-table {
+        min-width: 560px;
+      }
+
+      #monthlyReturnsMount .analytics-table {
+        min-width: 980px;
+      }
+
+      .analytics-table th,
+      .analytics-table td {
+        padding: 10px 8px;
+      }
+
+      .cell-badge,
+      .value-chip {
+        min-width: 88px;
+        width: auto;
+        padding: 9px 6px;
+        font-size: 0.92rem;
+      }
+
+      .analytics-table th:first-child,
+      .analytics-table td:first-child {
+        width: 76px;
       }
     }
 
@@ -614,12 +681,6 @@
       .analytics-table td {
         padding: 10px 8px;
       }
-
-      .cell-badge,
-      .value-chip {
-        min-width: 88px;
-        padding: 9px 6px;
-      }
     }
   </style>
 </head>
@@ -631,26 +692,23 @@
           <a class="hero-link hero-link--accent" href="index.html">Back to TCL Explorer</a>
           <a class="hero-link" href="https://cryptorank.io/price/the-cursed-land/analytics" target="_blank" rel="noreferrer">Open CryptoRank</a>
         </div>
-        <button class="hero-button" id="reloadSnapshotBtn" type="button">Refresh Now</button>
       </div>
 
       <div class="status-row">
-        <div class="status-pill is-loading" id="snapshotStatus">Loading GitHub mirror...</div>
+        <div class="status-pill is-error" id="snapshotStatus" hidden>Data unavailable.</div>
         <div class="section-meta" id="snapshotTimestamp">Updated: --</div>
       </div>
 
       <div class="hero-main">
         <div class="hero-copy">
-          <span class="eyebrow">TCL Explorer Analytics</span>
           <div class="hero-title">
             <img src="images/tcl_icon.png" alt="TCL icon">
             <div>
-              <h1>The Cursed Land Analytics</h1>
+              <h1>Analytics</h1>
             </div>
           </div>
           <p class="hero-subtitle">
-            TradingView-style performance cards plus quarterly returns, quarterly closing prices and monthly returns for TCL.
-            This page loads the auto-synced TCL mirror from GitHub Pages, refreshed from the CryptoRank API by GitHub Actions.
+            Performance and quarterly returns, closing prices and monthly returns for TCL.
           </p>
         </div>
 
@@ -675,24 +733,12 @@
       </div>
     </header>
 
-    <section class="section-card">
-      <div class="section-head">
-        <div>
-          <span class="section-kicker">Performance</span>
-          <h2>TCL Performance Snapshot</h2>
-          <p class="section-copy">The six cards mirror the style you showed: 1W, 1M, 3M, 6M, YTD and 1Y percentage performance pulled from the latest auto-synced TCL mirror.</p>
-        </div>
-        <div class="section-meta">Periods: 7D / 30D / 3M / 6M / YTD / 1Y</div>
-      </div>
-      <div class="performance-grid" id="performanceGrid"></div>
-    </section>
-
     <div class="table-grid">
       <section class="section-card table-card">
         <div class="section-head">
           <div>
             <span class="section-kicker">Quarterly</span>
-            <h2>The Cursed Land Quarterly Returns (USD)</h2>
+            <h2>Quarterly Returns (USD)</h2>
           </div>
         </div>
         <div class="table-scroll" id="quarterlyReturnsMount"></div>
@@ -702,7 +748,7 @@
         <div class="section-head">
           <div>
             <span class="section-kicker">Quarterly Close</span>
-            <h2>The Cursed Land Closing Price (USD) - Quarterly</h2>
+            <h2>Closing Price (USD) - Quarterly</h2>
           </div>
         </div>
         <div class="table-scroll" id="quarterlyClosingMount"></div>
@@ -713,20 +759,29 @@
       <div class="section-head">
         <div>
           <span class="section-kicker">Monthly</span>
-          <h2>The Cursed Land Monthly Returns (USD)</h2>
-          <p class="section-copy">Includes monthly return cells plus average and median rows, following the same CryptoRank-style heatmap logic.</p>
+          <h2>Monthly Returns (USD)</h2>
         </div>
       </div>
       <div class="table-scroll" id="monthlyReturnsMount"></div>
-      <p class="table-note">
-        Source mirror: <code>data/tcl-analytics.js</code>. GitHub Actions refreshes it from CryptoRank, and this page checks for a newer local mirror every 5 minutes.
-      </p>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Performance</span>
+          <h2>Performance Snapshot</h2>
+          <p class="section-copy">1W, 1M, 3M, 6M, YTD and 1Y performance.</p>
+        </div>
+        <div class="section-meta">Periods: 7D / 30D / 3M / 6M / YTD / 1Y</div>
+      </div>
+      <div class="performance-grid" id="performanceGrid"></div>
     </section>
   </div>
 
   <script>
     const SNAPSHOT_SCRIPT_PATH = "data/tcl-analytics.js";
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+    const TCL_LISTING_DATE = "2024-06-13";
 
     const snapshotStatusEl = document.getElementById("snapshotStatus");
     const snapshotTimestampEl = document.getElementById("snapshotTimestamp");
@@ -738,14 +793,16 @@
     const quarterlyReturnsMountEl = document.getElementById("quarterlyReturnsMount");
     const quarterlyClosingMountEl = document.getElementById("quarterlyClosingMount");
     const monthlyReturnsMountEl = document.getElementById("monthlyReturnsMount");
-    const reloadSnapshotBtnEl = document.getElementById("reloadSnapshotBtn");
 
     function setStatus(message, mode) {
-      snapshotStatusEl.textContent = message;
-      snapshotStatusEl.className = "status-pill";
-      if (mode === "ready") snapshotStatusEl.classList.add("is-ready");
-      if (mode === "loading") snapshotStatusEl.classList.add("is-loading");
-      if (mode === "error") snapshotStatusEl.classList.add("is-error");
+      if (mode === "error") {
+        snapshotStatusEl.hidden = false;
+        snapshotStatusEl.textContent = message;
+        snapshotStatusEl.className = "status-pill is-error";
+        return;
+      }
+
+      snapshotStatusEl.hidden = true;
     }
 
     function formatPercent(value) {
@@ -794,6 +851,17 @@
         year: "numeric",
         month: "short",
         day: "numeric"
+      }).format(date);
+    }
+
+    function formatDateDmy(dateValue) {
+      if (!dateValue) return "-";
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return "-";
+      return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
       }).format(date);
     }
 
@@ -909,7 +977,7 @@
       currentPriceValueEl.textContent = formatUsd(market.currentPriceUsd, 8);
       marketCapValueEl.textContent = formatMoney(market.marketCapUsd);
       volumeValueEl.textContent = formatMoney(market.volume24hUsd);
-      listingDateValueEl.textContent = formatDate(market.listingDate || market.historyStartDay);
+      listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
 
       const updatedText = meta.updatedAt ? formatDate(meta.updatedAt) : "--";
       const updatedTime = meta.updatedAt
@@ -919,7 +987,7 @@
             second: "2-digit"
           }).format(new Date(meta.updatedAt))
         : "--";
-      snapshotTimestampEl.textContent = `Mirror updated: ${updatedText} ${updatedTime}`;
+      snapshotTimestampEl.textContent = `Last Update: ${updatedText} ${updatedTime}`;
     }
 
     function loadSnapshotScript() {
@@ -940,7 +1008,7 @@
     }
 
     async function loadSnapshot() {
-      setStatus("Loading GitHub mirror...", "loading");
+      setStatus("", "loading");
 
       try {
         const snapshot = await loadSnapshotScript();
@@ -953,7 +1021,7 @@
         renderMatrixTable(quarterlyReturnsMountEl, snapshot.quarterlyReturns, { type: "percent" });
         renderMatrixTable(quarterlyClosingMountEl, snapshot.quarterlyClosing, { type: "usd", decimals: 6 });
         renderMatrixTable(monthlyReturnsMountEl, snapshot.monthlyReturns, { type: "percent" });
-        setStatus("Using auto-synced local mirror from GitHub Pages.", "ready");
+        setStatus("", "ready");
       } catch (error) {
         console.error("Failed to load analytics snapshot", error);
         setStatus("Could not load data/tcl-analytics.js", "error");
@@ -970,10 +1038,6 @@
         monthlyReturnsMountEl.innerHTML = errorMarkup;
       }
     }
-
-    reloadSnapshotBtnEl.addEventListener("click", () => {
-      loadSnapshot();
-    });
 
     loadSnapshot();
     window.setInterval(loadSnapshot, REFRESH_INTERVAL_MS);
