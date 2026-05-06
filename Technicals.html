@@ -70,51 +70,6 @@ body {
     max-width: 840px;
 }
 
-.title-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-}
-
-.back-btn {
-    border: 0;
-    border-radius: 12px;
-    padding: 8px 12px;
-    background: linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
-    color: #fff;
-    font-size: 0.86rem;
-    font-weight: 700;
-    box-shadow: 0 10px 24px rgba(112, 88, 255, 0.24);
-}
-
-.ghost-btn {
-    color: var(--text);
-    background: rgba(126, 152, 188, 0.12);
-    border: 1px solid rgba(126, 152, 188, 0.14);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.ghost-btn.disclaimer-btn {
-    padding: 8px 12px;
-    border-radius: 999px;
-    color: #fff1cf;
-    background: rgba(255, 209, 138, 0.08);
-    border-color: rgba(255, 209, 138, 0.22);
-    font-size: 0.78rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.ghost-btn.disclaimer-btn:hover {
-    transform: translateY(-1px);
-}
-
 .toolbar {
     display: flex;
     align-items: center;
@@ -304,120 +259,136 @@ button:hover {
 
 .gauge-wrap {
     position: relative;
-    width: min(100%, 372px);
-    margin: 0 auto 8px;
+    width: min(100%, 348px);
+    margin: 6px auto 10px;
 }
 
 .gauge {
     position: relative;
     width: 100%;
-    height: 244px;
+    height: 238px;
     overflow: visible;
 }
 
-.gauge-track,
-.gauge-arc,
-.gauge-inner {
+.gauge-meter {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
 }
 
 .gauge-track,
-.gauge-arc {
-    top: 54px;
-    width: 220px;
-    height: 114px;
-    border-radius: 220px 220px 0 0;
-    -webkit-mask: radial-gradient(circle at 50% 100%, transparent 0 65.8%, #000 67%);
-    mask: radial-gradient(circle at 50% 100%, transparent 0 65.8%, #000 67%);
-}
-
-.gauge-arc {
-    background:
-        conic-gradient(
-            from 180deg,
-            var(--sell-strong) 0deg 25deg,
-            #d94b87 25deg 54deg,
-            #b551c2 54deg 80deg,
-            #7250de 80deg 114deg,
-            #3b74ff 114deg 136deg,
-            transparent 136deg 180deg
-        );
-    z-index: 1;
+.gauge-progress {
+    fill: none;
+    stroke-width: 10.5;
+    stroke-linecap: round;
 }
 
 .gauge-track {
-    background:
-        conic-gradient(
-            from 180deg,
-            rgba(111, 118, 136, 0.92) 0deg 180deg,
-            transparent 180deg 360deg
-        );
-    opacity: 0.58;
-    z-index: 0;
+    stroke: rgba(123, 130, 145, 0.52);
 }
 
-.gauge-inner {
-    top: 79px;
-    width: 176px;
-    height: 89px;
-    border-radius: 176px 176px 0 0;
+.gauge-progress {
+    stroke-dasharray: 0 100;
+    filter: drop-shadow(0 0 12px rgba(107, 92, 255, 0.22));
+}
+
+.gauge-face {
+    position: absolute;
+    left: 50%;
+    top: 66px;
+    width: 188px;
+    height: 188px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    clip-path: inset(0 0 50% 0);
     background:
-        radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.04), transparent 58%),
-        linear-gradient(180deg, rgba(11, 13, 19, 0.16) 0%, rgba(11, 13, 19, 0.04) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    z-index: 2;
+        radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.06), transparent 60%),
+        linear-gradient(180deg, rgba(16, 19, 26, 0.12), rgba(16, 19, 26, 0.02));
+    opacity: 0.86;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.needle-wrap {
+    position: absolute;
+    left: 50%;
+    bottom: 58px;
+    width: 0;
+    height: 0;
+    transform: translateX(-50%) rotate(0deg);
+    transform-origin: center center;
+    z-index: 3;
 }
 
 .needle {
     position: absolute;
-    left: 50%;
-    bottom: 75px;
+    left: -2px;
+    bottom: 0;
     width: 4px;
-    height: 96px;
+    height: 106px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(233, 236, 241, 0.92));
     border-radius: 999px;
-    transform-origin: bottom center;
-    transform: translateX(-50%) rotate(-82deg);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.16);
-    z-index: 4;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.18);
 }
 
 .needle::after {
     content: "";
     position: absolute;
-    bottom: -11px;
+    bottom: -12px;
     left: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: #d9dee8;
     box-shadow: 0 0 0 7px rgba(9, 11, 16, 0.98);
     transform: translateX(-50%);
 }
 
+.gauge-labels {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+}
+
 .gauge-labels span {
     position: absolute;
-    z-index: 5;
     color: #7f8699;
     font-size: 12px;
     line-height: 1;
     font-weight: 700;
     white-space: nowrap;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.38);
+    opacity: 0.72;
+    transition: color 0.18s ease, opacity 0.18s ease, text-shadow 0.18s ease;
 }
 
-.gauge-labels .label-ss { left: 0; top: 146px; }
-.gauge-labels .label-s  { left: 34px; top: 96px; }
-.gauge-labels .label-n  { left: 50%; top: 40px; transform: translateX(-50%); }
-.gauge-labels .label-b  { right: 34px; top: 96px; color: #3386ff; }
-.gauge-labels .label-sb { right: 0; top: 146px; }
+.gauge-labels .label-ss { left: -38px; top: 139px; }
+.gauge-labels .label-s  { left: 52px; top: 58px; }
+.gauge-labels .label-n  { left: 50%; top: 10px; transform: translateX(-50%); }
+.gauge-labels .label-b  { right: 52px; top: 58px; }
+.gauge-labels .label-sb { right: -38px; top: 139px; }
+
+.gauge-labels span.is-active {
+    opacity: 1;
+    color: var(--text);
+    text-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+}
+
+.gauge-labels span.is-active[data-action="Buy"],
+.gauge-labels span.is-active[data-action="Strong buy"] {
+    color: #4f95ff;
+}
+
+.gauge-labels span.is-active[data-action="Sell"],
+.gauge-labels span.is-active[data-action="Strong sell"] {
+    color: #ff6b92;
+}
 
 .summary-rating {
     text-align: center;
-    margin: -2px 0 12px;
+    margin: 4px 0 12px;
 }
 
 .rating-name {
@@ -570,36 +541,37 @@ td.action-cell {
     }
 
     .gauge {
-        height: 226px;
+        height: 220px;
     }
 
     .gauge-track,
-    .gauge-arc {
-        top: 50px;
-        width: 208px;
-        height: 108px;
+    .gauge-progress {
+        stroke-width: 9.5;
     }
 
-    .gauge-inner {
-        top: 74px;
-        width: 166px;
-        height: 84px;
+    .gauge-face {
+        top: 62px;
+        width: 174px;
+        height: 174px;
+    }
+
+    .needle-wrap {
+        bottom: 54px;
     }
 
     .needle {
-        bottom: 72px;
-        height: 90px;
+        height: 98px;
     }
 
     .gauge-labels span {
         font-size: 11px;
     }
 
-    .gauge-labels .label-ss { left: 0; top: 140px; }
-    .gauge-labels .label-s  { left: 28px; top: 94px; }
-    .gauge-labels .label-n  { top: 38px; }
-    .gauge-labels .label-b  { right: 28px; top: 94px; }
-    .gauge-labels .label-sb { right: 0; top: 140px; }
+    .gauge-labels .label-ss { left: -28px; top: 129px; }
+    .gauge-labels .label-s  { left: 40px; top: 56px; }
+    .gauge-labels .label-n  { top: 10px; }
+    .gauge-labels .label-b  { right: 40px; top: 56px; }
+    .gauge-labels .label-sb { right: -28px; top: 129px; }
 
     th,
     td {
@@ -621,10 +593,6 @@ td.action-cell {
 <div class="page">
     <div class="topbar">
         <div class="title-block">
-            <div class="title-actions">
-                <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
-                <a class="ghost-btn disclaimer-btn" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Not Financial Advice</a>
-            </div>
             <h1>Technical Signals</h1>
             <div class="subtitle">
                 A live technical view of <strong>TCL / USDC</strong> on MultiversX, built from real on-chain swap history
@@ -637,8 +605,8 @@ td.action-cell {
             <label>
                 <select id="timeframe-select">
                     <option value="1H">1H</option>
-                    <option value="4H">4H</option>
-                    <option value="1D" selected>1D</option>
+                    <option value="4H" selected>4H</option>
+                    <option value="1D">1D</option>
                     <option value="1W">1W</option>
                 </select>
             </label>
@@ -655,17 +623,29 @@ td.action-cell {
                 <span id="oscillator-caption">0 signals</span>
             </div>
             <div class="gauge-wrap">
-                <div class="gauge">
-                    <div class="gauge-track"></div>
-                    <div class="gauge-arc"></div>
-                    <div class="gauge-inner"></div>
-                    <div class="needle" id="needle-oscillators"></div>
+                <div class="gauge" id="gauge-oscillators">
+                    <svg class="gauge-meter" viewBox="0 0 340 220" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="gauge-gradient-oscillators" x1="34" y1="180" x2="306" y2="180" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#f04461"></stop>
+                                <stop offset="38%" stop-color="#c24e94"></stop>
+                                <stop offset="68%" stop-color="#7250de"></stop>
+                                <stop offset="100%" stop-color="#3b74ff"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="gauge-track" d="M 34 180 A 136 136 0 0 1 306 180" pathLength="100"></path>
+                        <path class="gauge-progress" id="progress-oscillators" d="M 34 180 A 136 136 0 0 1 306 180" pathLength="100" stroke="url(#gauge-gradient-oscillators)"></path>
+                    </svg>
+                    <div class="gauge-face"></div>
+                    <div class="needle-wrap" id="needle-oscillators">
+                        <div class="needle"></div>
+                    </div>
                     <div class="gauge-labels">
-                        <span class="label-ss">Strong sell</span>
-                        <span class="label-s">Sell</span>
-                        <span class="label-n">Neutral</span>
-                        <span class="label-b">Buy</span>
-                        <span class="label-sb">Strong buy</span>
+                        <span class="label-ss" data-action="Strong sell">Strong sell</span>
+                        <span class="label-s" data-action="Sell">Sell</span>
+                        <span class="label-n" data-action="Neutral">Neutral</span>
+                        <span class="label-b" data-action="Buy">Buy</span>
+                        <span class="label-sb" data-action="Strong buy">Strong buy</span>
                     </div>
                 </div>
             </div>
@@ -686,17 +666,29 @@ td.action-cell {
                 <span id="summary-caption">0 signals</span>
             </div>
             <div class="gauge-wrap">
-                <div class="gauge">
-                    <div class="gauge-track"></div>
-                    <div class="gauge-arc"></div>
-                    <div class="gauge-inner"></div>
-                    <div class="needle" id="needle-summary"></div>
+                <div class="gauge" id="gauge-summary">
+                    <svg class="gauge-meter" viewBox="0 0 340 220" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="gauge-gradient-summary" x1="34" y1="180" x2="306" y2="180" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#f04461"></stop>
+                                <stop offset="38%" stop-color="#c24e94"></stop>
+                                <stop offset="68%" stop-color="#7250de"></stop>
+                                <stop offset="100%" stop-color="#3b74ff"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="gauge-track" d="M 34 180 A 136 136 0 0 1 306 180" pathLength="100"></path>
+                        <path class="gauge-progress" id="progress-summary" d="M 34 180 A 136 136 0 0 1 306 180" pathLength="100" stroke="url(#gauge-gradient-summary)"></path>
+                    </svg>
+                    <div class="gauge-face"></div>
+                    <div class="needle-wrap" id="needle-summary">
+                        <div class="needle"></div>
+                    </div>
                     <div class="gauge-labels">
-                        <span class="label-ss">Strong sell</span>
-                        <span class="label-s">Sell</span>
-                        <span class="label-n">Neutral</span>
-                        <span class="label-b">Buy</span>
-                        <span class="label-sb">Strong buy</span>
+                        <span class="label-ss" data-action="Strong sell">Strong sell</span>
+                        <span class="label-s" data-action="Sell">Sell</span>
+                        <span class="label-n" data-action="Neutral">Neutral</span>
+                        <span class="label-b" data-action="Buy">Buy</span>
+                        <span class="label-sb" data-action="Strong buy">Strong buy</span>
                     </div>
                 </div>
             </div>
@@ -717,17 +709,29 @@ td.action-cell {
                 <span id="ma-caption">0 signals</span>
             </div>
             <div class="gauge-wrap">
-                <div class="gauge">
-                    <div class="gauge-track"></div>
-                    <div class="gauge-arc"></div>
-                    <div class="gauge-inner"></div>
-                    <div class="needle" id="needle-moving-averages"></div>
+                <div class="gauge" id="gauge-moving-averages">
+                    <svg class="gauge-meter" viewBox="0 0 340 220" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="gauge-gradient-moving-averages" x1="34" y1="180" x2="306" y2="180" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#f04461"></stop>
+                                <stop offset="38%" stop-color="#c24e94"></stop>
+                                <stop offset="68%" stop-color="#7250de"></stop>
+                                <stop offset="100%" stop-color="#3b74ff"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="gauge-track" d="M 34 180 A 136 136 0 0 1 306 180" pathLength="100"></path>
+                        <path class="gauge-progress" id="progress-moving-averages" d="M 34 180 A 136 136 0 0 1 306 180" pathLength="100" stroke="url(#gauge-gradient-moving-averages)"></path>
+                    </svg>
+                    <div class="gauge-face"></div>
+                    <div class="needle-wrap" id="needle-moving-averages">
+                        <div class="needle"></div>
+                    </div>
                     <div class="gauge-labels">
-                        <span class="label-ss">Strong sell</span>
-                        <span class="label-s">Sell</span>
-                        <span class="label-n">Neutral</span>
-                        <span class="label-b">Buy</span>
-                        <span class="label-sb">Strong buy</span>
+                        <span class="label-ss" data-action="Strong sell">Strong sell</span>
+                        <span class="label-s" data-action="Sell">Sell</span>
+                        <span class="label-n" data-action="Neutral">Neutral</span>
+                        <span class="label-b" data-action="Buy">Buy</span>
+                        <span class="label-sb" data-action="Strong buy">Strong buy</span>
                     </div>
                 </div>
             </div>
@@ -890,11 +894,9 @@ const DIRECT_CALL_B64 = "RGlyZWN0Q2FsbA==";
 const state = {
     pair: null,
     trades: [],
-    timeframe: "1D",
+    timeframe: "4H",
     lastLoadedAt: 0
 };
-
-let readyNotified = false;
 
 const ui = {
     statusBar: document.getElementById("status-bar"),
@@ -959,11 +961,9 @@ async function loadData(isManual = false) {
 
         recomputeAndRender();
         setStatus(`Loaded ${trades.length} real swap trades from public APIs. Last refresh ${formatDateTime(state.lastLoadedAt)}.`);
-        notifyReady();
     } catch (error) {
         console.error(error);
         setStatus(`Could not load TCL technicals: ${error.message}`, true);
-        notifyReady();
     }
 }
 
@@ -1312,8 +1312,110 @@ function renderSummary(key, summary) {
     document.getElementById(`rating-${key}`).textContent = summary.label;
     document.getElementById(`rating-${key}`).className = `rating-name ${getActionClass(summary.label)}`;
     document.getElementById(`score-${key}`).textContent = `Score ${summary.score.toFixed(2)}`;
-    document.getElementById(`needle-${key}`).style.transform = `translateX(-50%) rotate(${(-78 + (summary.bias + 1) * 78).toFixed(2)}deg)`;
     document.getElementById(`${key === "summary" ? "summary" : key === "oscillators" ? "oscillator" : "ma"}-caption`).textContent = `${summary.count} signals`;
+    updateGaugeVisual(key, summary);
+    updateGaugeLabels(key, summary.label);
+}
+
+function updateGaugeVisual(key, summary) {
+    const gauge = document.getElementById(`gauge-${key}`);
+    const progressArc = document.getElementById(`progress-${key}`);
+    const needle = document.getElementById(`needle-${key}`);
+
+    if (!gauge || !progressArc || !needle) {
+        return;
+    }
+
+    const progress = clampNumber((summary.bias + 1) * 50, 0, 100);
+    const angle = clampNumber(summary.bias * 78, -78, 78);
+    const progressText = `${progress.toFixed(2)} 100`;
+    const angleText = `${angle.toFixed(2)}deg`;
+    const wobbleAngle = clampNumber(1.15 + Math.abs(summary.bias) * 0.95, 1.15, 2.35);
+    const wobbleProgress = clampNumber(0.7 + Math.abs(summary.bias) * 0.9, 0.7, 1.55);
+    const motionToken = String((Number(gauge.dataset.motionToken || "0") + 1));
+
+    gauge.dataset.motionToken = motionToken;
+    progressArc.style.strokeDasharray = progressText;
+    needle.style.transform = `translateX(-50%) rotate(${angleText})`;
+
+    if (!progressArc.animate || !needle.animate) {
+        return;
+    }
+
+    progressArc.getAnimations().forEach((animation) => animation.cancel());
+    needle.getAnimations().forEach((animation) => animation.cancel());
+
+    const introArc = progressArc.animate(
+        [
+            { strokeDasharray: "0 100" },
+            { strokeDasharray: progressText }
+        ],
+        {
+            duration: 920,
+            easing: "cubic-bezier(0.22, 0.88, 0.24, 1)",
+            fill: "forwards"
+        }
+    );
+
+    const introNeedle = needle.animate(
+        [
+            { transform: "translateX(-50%) rotate(0deg)" },
+            { transform: `translateX(-50%) rotate(${angleText})` }
+        ],
+        {
+            duration: 920,
+            easing: "cubic-bezier(0.22, 0.88, 0.24, 1)",
+            fill: "forwards"
+        }
+    );
+
+    Promise.allSettled([introArc.finished, introNeedle.finished]).then(() => {
+        if (gauge.dataset.motionToken !== motionToken) {
+            return;
+        }
+
+        const lowProgress = `${clampNumber(progress - wobbleProgress, 0, 100).toFixed(2)} 100`;
+        const highProgress = `${clampNumber(progress + wobbleProgress, 0, 100).toFixed(2)} 100`;
+        const lowAngle = `${(angle - wobbleAngle).toFixed(2)}deg`;
+        const highAngle = `${(angle + wobbleAngle).toFixed(2)}deg`;
+
+        progressArc.animate(
+            [
+                { strokeDasharray: lowProgress },
+                { strokeDasharray: highProgress }
+            ],
+            {
+                duration: 3200,
+                direction: "alternate",
+                iterations: Infinity,
+                easing: "ease-in-out",
+                fill: "forwards"
+            }
+        );
+
+        needle.animate(
+            [
+                { transform: `translateX(-50%) rotate(${lowAngle})` },
+                { transform: `translateX(-50%) rotate(${highAngle})` }
+            ],
+            {
+                duration: 3200,
+                direction: "alternate",
+                iterations: Infinity,
+                easing: "ease-in-out",
+                fill: "forwards"
+            }
+        );
+    });
+}
+
+function updateGaugeLabels(key, activeLabel) {
+    const rating = document.getElementById(`rating-${key}`);
+    const labels = rating.closest(".summary-card")?.querySelectorAll(".gauge-labels span") ?? [];
+
+    for (const label of labels) {
+        label.classList.toggle("is-active", label.dataset.action === activeLabel);
+    }
 }
 
 function renderDecisionBar(trendSummary, entrySignal) {
@@ -2159,6 +2261,10 @@ function formatRelativeAge(timestampSeconds) {
     return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+function clampNumber(value, minimum, maximum) {
+    return Math.min(maximum, Math.max(minimum, value));
+}
+
 function formatDateTime(value) {
     return new Date(value).toLocaleString();
 }
@@ -2197,31 +2303,6 @@ function getRowValue(rows, startsWith) {
 
 function getPivotValue(rows, level) {
     return rows.find((row) => row.level === level)?.Classic ?? null;
-}
-
-function notifyReady() {
-    if (readyNotified) return;
-    readyNotified = true;
-    if (window.parent && window.parent !== window) {
-        try {
-            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
-        } catch (error) {
-            console.warn("Failed to notify parent page ready", error);
-        }
-    }
-}
-
-function goBackToTclToken() {
-    if (window.parent && window.parent !== window) {
-        try {
-            window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenCalculatorsSection" }, "*");
-            return;
-        } catch (error) {
-            console.warn("Back to TCL Token parent navigation failed", error);
-        }
-    }
-
-    window.location.href = "index.html#token";
 }
 
 function setStatus(message, isError = false) {
