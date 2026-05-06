@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TCL CryptoRank Direct Test</title>
   <meta name="theme-color" content="#0c0e14">
+  <link rel="icon" href="images/tcl_icon.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
@@ -618,6 +619,9 @@
     const QUARTERLY_URL = "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history";
     const MONTHLY_URL = "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history";
     const MIRROR_SCRIPT_URL = "data/tcl-analytics.js";
+    const DIRECT_FETCH_ALLOWED_ORIGINS = new Set([
+      "https://cryptorank.io"
+    ]);
     const REFRESH_MS = 5 * 60 * 1000;
 
     const refreshBtn = document.getElementById("refreshBtn");
@@ -646,6 +650,10 @@
     function clearError() {
       errorBox.hidden = true;
       errorBox.textContent = "";
+    }
+
+    function canUseDirectFetch() {
+      return DIRECT_FETCH_ALLOWED_ORIGINS.has(window.location.origin);
     }
 
     function escapeHtml(value) {
@@ -994,7 +1002,23 @@
       );
     }
 
+    async function loadMirrorOnlyMode(message) {
+      const snapshot = await loadMirrorSnapshotScript();
+      renderFromSnapshot(snapshot);
+      setStatus("Using auto-synced local mirror for this domain.", "ready");
+      showError(message);
+    }
+
     async function loadLiveAnalytics() {
+      if (!canUseDirectFetch()) {
+        await loadMirrorOnlyMode(
+          `Direct browser -> CryptoRank is blocked by CORS for ${window.location.origin || "this origin"}.\n\n` +
+          `This page skips direct requests on this domain and uses the local mirror from ${MIRROR_SCRIPT_URL} instead.\n\n` +
+          `The mirror can be refreshed automatically by GitHub Actions, so the page still updates without manual work.`
+        );
+        return;
+      }
+
       setStatus("Requesting live data directly from CryptoRank...", "loading");
       clearError();
 
