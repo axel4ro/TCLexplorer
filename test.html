@@ -617,6 +617,7 @@
     const COIN_URL = "https://api.cryptorank.io/v0/coins/the-cursed-land";
     const QUARTERLY_URL = "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history";
     const MONTHLY_URL = "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history";
+    const MIRROR_SCRIPT_URL = "data/tcl-analytics.js";
     const REFRESH_MS = 5 * 60 * 1000;
 
     const refreshBtn = document.getElementById("refreshBtn");
@@ -764,6 +765,37 @@
           </article>
         `;
       }).join("");
+    }
+
+    function renderFromSnapshot(snapshot) {
+      if (!snapshot) throw new Error("Mirror snapshot is missing.");
+
+      const coin = {
+        price: { USD: Number(snapshot.market?.currentPriceUsd) || 0 },
+        marketCap: Number(snapshot.market?.marketCapUsd) || 0,
+        volume24h: Number(snapshot.market?.volume24hUsd) || 0,
+        listingDate: snapshot.market?.listingDate || snapshot.market?.historyStartDay || null,
+        historyStartDay: snapshot.market?.historyStartDay || null
+      };
+
+      updateHeader(coin);
+      renderPerformance(Array.isArray(snapshot.performance) ? snapshot.performance : []);
+      renderMatrixTable(quarterlyReturnsMountEl, snapshot.quarterlyReturns, "percent");
+      renderMatrixTable(quarterlyClosingMountEl, snapshot.quarterlyClosing, "usd");
+      renderMatrixTable(monthlyReturnsMountEl, snapshot.monthlyReturns, "percent");
+
+      const mirrorUpdatedAt = snapshot.meta?.updatedAt
+        ? new Intl.DateTimeFormat("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          }).format(new Date(snapshot.meta.updatedAt))
+        : "--";
+
+      updatedAtEl.textContent = `Mirror updated: ${mirrorUpdatedAt}`;
     }
 
     function renderMatrixTable(mountEl, matrix, type) {
@@ -928,6 +960,40 @@
       return response.json();
     }
 
+    function loadMirrorSnapshotScript() {
+      return new Promise((resolve, reject) => {
+        delete window.TCL_ANALYTICS_SNAPSHOT;
+
+        const oldScript = document.getElementById("mirrorSnapshotScript");
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement("script");
+        script.id = "mirrorSnapshotScript";
+        script.async = true;
+        script.src = `${MIRROR_SCRIPT_URL}?v=${Date.now()}`;
+        script.onload = () => {
+          if (!window.TCL_ANALYTICS_SNAPSHOT) {
+            reject(new Error("Mirror snapshot script loaded, but no payload was exposed."));
+            return;
+          }
+          resolve(window.TCL_ANALYTICS_SNAPSHOT);
+        };
+        script.onerror = () => reject(new Error("Could not load local mirror script."));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function loadMirrorFallback(reason) {
+      const snapshot = await loadMirrorSnapshotScript();
+      renderFromSnapshot(snapshot);
+      setStatus("Direct fetch blocked. Showing auto-synced local mirror.", "ready");
+      showError(
+        `Direct browser -> CryptoRank is blocked by CORS for ${window.location.origin || "this origin"}.\n\n` +
+        `The page is now using the local mirror from ${MIRROR_SCRIPT_URL}, which can be refreshed automatically by GitHub Actions.\n\n` +
+        `Direct error:\n${reason && reason.message ? reason.message : String(reason)}`
+      );
+    }
+
     async function loadLiveAnalytics() {
       setStatus("Requesting live data directly from CryptoRank...", "loading");
       clearError();
@@ -952,13 +1018,19 @@
         setStatus("Live CryptoRank fetch succeeded.", "ready");
       } catch (error) {
         console.error("Direct CryptoRank fetch failed", error);
-        setStatus("Direct CryptoRank fetch failed in this browser.", "error");
-        showError(
-          `This file is trying to read CryptoRank directly.\n\n` +
-          `Source page: ${CRYPTO_RANK_URL}\n\n` +
-          `If you open this file from file:// or another domain, the browser may block the request because CryptoRank does not allow this origin via CORS.\n\n` +
-          `Error:\n${error && error.message ? error.message : String(error)}`
-        );
+        try {
+          await loadMirrorFallback(error);
+        } catch (fallbackError) {
+          console.error("Mirror fallback failed", fallbackError);
+          setStatus("Direct CryptoRank fetch and mirror fallback both failed.", "error");
+          showError(
+            `This file tried two paths:\n\n` +
+            `1. Direct CryptoRank fetch\n` +
+            `2. Local mirror fallback (${MIRROR_SCRIPT_URL})\n\n` +
+            `Direct error:\n${error && error.message ? error.message : String(error)}\n\n` +
+            `Mirror error:\n${fallbackError && fallbackError.message ? fallbackError.message : String(fallbackError)}`
+          );
+        }
       }
     }
 
