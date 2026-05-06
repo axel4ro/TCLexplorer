@@ -780,6 +780,7 @@
 
   <script>
     const SNAPSHOT_SCRIPT_PATH = "data/tcl-analytics.js";
+    const DEX_MARKET_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     const TCL_LISTING_DATE = "2024-06-13";
 
@@ -970,13 +971,9 @@
 
     function renderHeader(snapshot) {
       const meta = snapshot.meta || {};
-      const market = snapshot.market || {};
       const coin = snapshot.coin || {};
 
       document.title = `${coin.symbol || "TCL"} Analytics - TCL Explorer`;
-      currentPriceValueEl.textContent = formatUsd(market.currentPriceUsd, 8);
-      marketCapValueEl.textContent = formatMoney(market.marketCapUsd);
-      volumeValueEl.textContent = formatMoney(market.volume24hUsd);
       listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
 
       const updatedText = meta.updatedAt ? formatDate(meta.updatedAt) : "--";
@@ -988,6 +985,48 @@
           }).format(new Date(meta.updatedAt))
         : "--";
       snapshotTimestampEl.textContent = `Last Update: ${updatedText} ${updatedTime}`;
+    }
+
+    function renderDexMarketStats(pair) {
+      const currentPriceUsd = Number.parseFloat(pair?.priceUsd);
+      const marketCapUsd = Number.isFinite(Number(pair?.marketCap))
+        ? Number(pair.marketCap)
+        : Number(pair?.fdv);
+      const volume24hUsd = Number.isFinite(Number(pair?.volume?.h24))
+        ? Number(pair.volume.h24)
+        : Number.NaN;
+
+      currentPriceValueEl.textContent = formatUsd(currentPriceUsd, 8);
+      marketCapValueEl.textContent = formatMoney(marketCapUsd);
+      volumeValueEl.textContent = formatMoney(volume24hUsd);
+      listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
+    }
+
+    async function loadDexMarketStats() {
+      try {
+        const response = await fetch(`${DEX_MARKET_URL}?v=${Date.now()}`, {
+          headers: { Accept: "application/json" },
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(`DexScreener request failed with ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const pair = Array.isArray(payload?.pairs) ? payload.pairs[0] : null;
+        if (!pair) {
+          throw new Error("DexScreener response did not include a pair.");
+        }
+
+        renderDexMarketStats(pair);
+      } catch (error) {
+        console.error("Failed to load DexScreener market stats", error);
+        currentPriceValueEl.textContent = "--";
+        marketCapValueEl.textContent = "--";
+        volumeValueEl.textContent = "--";
+        listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
+      }
     }
 
     function loadSnapshotScript() {
@@ -1039,8 +1078,13 @@
       }
     }
 
+    listingDateValueEl.textContent = formatDateDmy(TCL_LISTING_DATE);
     loadSnapshot();
-    window.setInterval(loadSnapshot, REFRESH_INTERVAL_MS);
+    loadDexMarketStats();
+    window.setInterval(() => {
+      loadSnapshot();
+      loadDexMarketStats();
+    }, REFRESH_INTERVAL_MS);
   </script>
 </body>
 </html>
