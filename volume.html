@@ -768,11 +768,6 @@
           </div>
         </div>
       </div>
-
-      <div class="status-row" id="snapshotStatusRow" hidden>
-        <div class="status-pill is-error" id="snapshotStatus" hidden>Data unavailable.</div>
-      </div>
-
       <div class="hero-main">
         <div class="hero-copy">
           <span class="eyebrow">On-chain Flow</span>
@@ -1041,8 +1036,6 @@
 
     const ui = {
       refreshButton: document.getElementById("refreshButton"),
-      snapshotStatusRow: document.getElementById("snapshotStatusRow"),
-      snapshotStatus: document.getElementById("snapshotStatus"),
       snapshotTimestamp: document.getElementById("snapshotTimestamp"),
       flowSnapshotMeta: document.getElementById("flowSnapshotMeta"),
       totalVolumeValue: document.getElementById("totalVolumeValue"),
@@ -1078,22 +1071,7 @@
     });
 
     function setStatus(message, mode) {
-      if (!message) {
-        ui.snapshotStatusRow.hidden = true;
-        ui.snapshotStatus.hidden = true;
-        return;
-      }
-
-      const resolvedMode =
-        mode === "error" ? "is-error" :
-        mode === "warning" ? "is-warning" :
-        mode === "loading" ? "is-loading" :
-        "is-ready";
-
-      ui.snapshotStatusRow.hidden = false;
-      ui.snapshotStatus.hidden = false;
-      ui.snapshotStatus.textContent = message;
-      ui.snapshotStatus.className = `status-pill ${resolvedMode}`;
+      return;
     }
 
     function toNumber(value, fallback = 0) {
