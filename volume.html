@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCL Volume Flow - TCL Explorer</title>
+  <meta name="theme-color" content="#0c0e14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #07080c;
+      --bg-deep: #0c0e14;
+      --bg-card: #141824;
+      --bg-card-soft: rgba(20, 24, 36, 0.9);
+      --border-subtle: rgba(0, 245, 212, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.08);
+      --accent: #00e8cc;
+      --accent-dim: rgba(0, 232, 204, 0.14);
+      --accent-purple: #a855f7;
+      --buy: #4be2a3;
+      --buy-dim: rgba(75, 226, 163, 0.16);
+      --sell: #fb7185;
+      --sell-dim: rgba(251, 113, 133, 0.16);
+      --total: #68d9ff;
+      --total-dim: rgba(104, 217, 255, 0.16);
+      --text: #e8edf5;
+      --text-muted: #8b95a8;
+      --text-soft: #6e778a;
+      --shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.38);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.22), transparent 28%),
+        radial-gradient(circle at 100% 10%, rgba(0, 232, 204, 0.12), transparent 24%),
+        linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-void) 46%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page-shell {
+      width: min(1380px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .hero-card,
+    .section-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(180deg, rgba(20, 24, 36, 0.95), rgba(14, 17, 26, 0.92)),
+        var(--bg-card);
+      box-shadow: var(--shadow-panel);
+    }
+
+    .hero-card::after,
+    .section-card::after {
+      content: "";
+      position: absolute;
+      inset: auto auto 0 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(0, 232, 204, 0.12), rgba(168, 85, 247, 0.26), transparent);
+      pointer-events: none;
+    }
+
+    .hero-card {
+      padding: 22px 22px 26px;
+      margin-bottom: 22px;
+    }
+
+    .section-card {
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    .hero-actions,
+    .hero-main,
+    .hero-stats,
+    .status-row,
+    .table-grid,
+    .summary-grid,
+    .page-footer,
+    .footer-source,
+    .section-head {
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero-actions {
+      grid-template-columns: 1fr;
+      margin-bottom: 20px;
+    }
+
+    .hero-links,
+    .hero-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-links {
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back-btn {
+      align-self: flex-start;
+      border: 0;
+      border-radius: 12px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
+      color: #fff;
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(112, 88, 255, 0.24);
+      transition: transform 0.18s ease;
+    }
+
+    .back-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .ghost-btn,
+    .hero-link,
+    .hero-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .ghost-btn:hover,
+    .hero-link:hover,
+    .hero-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .ghost-btn.disclaimer-btn {
+      color: #fff1cf;
+      background: rgba(255, 209, 138, 0.08);
+      border-color: rgba(255, 209, 138, 0.22);
+    }
+
+    .hero-button--accent,
+    .hero-link--accent {
+      border-color: rgba(0, 232, 204, 0.22);
+      background: linear-gradient(135deg, rgba(0, 232, 204, 0.12), rgba(168, 85, 247, 0.18));
+    }
+
+    .status-row {
+      grid-template-columns: minmax(0, 1fr) max-content;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-row[hidden] {
+      display: none;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .status-pill[hidden] {
+      display: none;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--text-soft);
+      box-shadow: 0 0 0 6px rgba(110, 119, 138, 0.16);
+    }
+
+    .status-pill.is-ready::before {
+      background: var(--buy);
+      box-shadow: 0 0 0 6px rgba(75, 226, 163, 0.16);
+    }
+
+    .status-pill.is-loading::before {
+      background: #f5c55f;
+      box-shadow: 0 0 0 6px rgba(245, 197, 95, 0.16);
+    }
+
+    .status-pill.is-error::before {
+      background: var(--sell);
+      box-shadow: 0 0 0 6px rgba(251, 113, 133, 0.16);
+    }
+
+    .status-pill.is-warning::before {
+      background: #f5c55f;
+      box-shadow: 0 0 0 6px rgba(245, 197, 95, 0.16);
+    }
+
+    .hero-main {
+      grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 232, 204, 0.18);
+      background: rgba(0, 232, 204, 0.08);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 16px 0 12px;
+    }
+
+    .hero-title img {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      box-shadow: 0 0 24px rgba(0, 232, 204, 0.18);
+      object-fit: cover;
+    }
+
+    .hero-title h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-subtitle {
+      max-width: 760px;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .hero-notes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .mini-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .mini-chip strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .hero-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .hero-stat,
+    .summary-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02));
+      min-width: 0;
+    }
+
+    .hero-stat--buy {
+      background: linear-gradient(180deg, rgba(75, 226, 163, 0.18), rgba(11, 50, 41, 0.82));
+      border-color: rgba(75, 226, 163, 0.16);
+    }
+
+    .hero-stat--sell {
+      background: linear-gradient(180deg, rgba(251, 113, 133, 0.16), rgba(67, 12, 12, 0.82));
+      border-color: rgba(251, 113, 133, 0.15);
+    }
+
+    .hero-stat--total {
+      background: linear-gradient(180deg, rgba(104, 217, 255, 0.16), rgba(9, 40, 64, 0.82));
+      border-color: rgba(104, 217, 255, 0.16);
+    }
+
+    .hero-stat__label,
+    .summary-card__label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero-stat__value,
+    .summary-card__value {
+      font-size: clamp(1rem, 1vw + 0.72rem, 1.28rem);
+      font-weight: 700;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .hero-stat__meta,
+    .summary-card__meta {
+      margin-top: 8px;
+      color: var(--text-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .section-head {
+      grid-template-columns: minmax(0, 1fr) max-content;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .section-kicker {
+      display: block;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(1.3rem, 2vw, 1.8rem);
+      line-height: 1.2;
+    }
+
+    .section-copy {
+      margin: 8px 0 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      max-width: 820px;
+    }
+
+    .section-meta {
+      align-self: start;
+      color: var(--text-soft);
+      font-size: 0.86rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .table-grid {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    .table-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      margin-bottom: 0;
+    }
+
+    .table-card--wide {
+      margin-top: 22px;
+      margin-bottom: 22px;
+    }
+
+    .table-scroll {
+      flex: 1;
+      overflow-x: visible;
+      overflow-y: hidden;
+      padding-bottom: 0;
+    }
+
+    .table-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .table-scroll::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(0, 232, 204, 0.22);
+    }
+
+    .analytics-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 0;
+    }
+
+    .analytics-table th,
+    .analytics-table td {
+      padding: clamp(8px, 0.85vw, 12px) clamp(4px, 0.65vw, 10px);
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-variant-numeric: tabular-nums;
+      min-width: 0;
+    }
+
+    .analytics-table thead th {
+      color: var(--text-muted);
+      font-size: clamp(0.67rem, 0.7vw, 0.8rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .analytics-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .analytics-table th:first-child,
+    .analytics-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      width: clamp(62px, 9%, 86px);
+      text-align: left;
+      padding-left: 0;
+      background: linear-gradient(90deg, rgba(18, 21, 31, 0.98) 70%, rgba(18, 21, 31, 0));
+    }
+
+    .analytics-table thead th:first-child {
+      z-index: 2;
+      background: linear-gradient(90deg, rgba(20, 24, 36, 0.98) 70%, rgba(20, 24, 36, 0));
+    }
+
+    .row-label {
+      color: var(--text);
+      font-weight: 700;
+      white-space: nowrap;
+      font-size: clamp(0.85rem, 0.92vw, 1rem);
+    }
+
+    .row-label.is-summary {
+      color: var(--text-muted);
+    }
+
+    .analytics-table tbody tr.summary-row td:first-child {
+      background: linear-gradient(90deg, rgba(22, 26, 34, 0.98) 70%, rgba(22, 26, 34, 0));
+    }
+
+    .cell-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      padding: clamp(7px, 0.75vw, 10px) clamp(4px, 0.55vw, 8px);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.2;
+      font-size: clamp(0.72rem, 0.82vw, 0.98rem);
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .cell-badge.is-empty {
+      color: var(--text-soft);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .cell-badge.is-zero {
+      color: #b0bacd;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .cell-badge.summary-tint {
+      background: linear-gradient(180deg, rgba(41, 46, 56, 0.96), rgba(33, 38, 47, 0.96));
+      border-color: rgba(255, 255, 255, 0.06);
+      box-shadow: none;
+    }
+
+    .cell-badge.tone-buy.level-soft {
+      color: #d8fff0;
+      background: rgba(8, 81, 63, 0.52);
+    }
+
+    .cell-badge.tone-buy.level-low {
+      color: #9ff3d1;
+      background: rgba(8, 81, 63, 0.78);
+    }
+
+    .cell-badge.tone-buy.level-medium {
+      color: #c6ffe8;
+      background: rgba(11, 76, 60, 0.9);
+    }
+
+    .cell-badge.tone-buy.level-high {
+      color: #ebfff7;
+      background: linear-gradient(180deg, rgba(75, 226, 163, 0.24), rgba(8, 81, 63, 0.94));
+      border-color: rgba(75, 226, 163, 0.14);
+    }
+
+    .cell-badge.tone-sell.level-soft {
+      color: #ffd0d8;
+      background: rgba(67, 12, 12, 0.52);
+    }
+
+    .cell-badge.tone-sell.level-low {
+      color: #ffb5c0;
+      background: rgba(67, 12, 12, 0.78);
+    }
+
+    .cell-badge.tone-sell.level-medium {
+      color: #ffdce2;
+      background: rgba(104, 17, 17, 0.88);
+    }
+
+    .cell-badge.tone-sell.level-high {
+      color: #fff0f3;
+      background: linear-gradient(180deg, rgba(251, 113, 133, 0.22), rgba(104, 17, 17, 0.94));
+      border-color: rgba(251, 113, 133, 0.15);
+    }
+
+    .cell-badge.tone-total.level-soft {
+      color: #d7f4ff;
+      background: rgba(11, 54, 74, 0.55);
+    }
+
+    .cell-badge.tone-total.level-low {
+      color: #bae8fb;
+      background: rgba(12, 63, 87, 0.78);
+    }
+
+    .cell-badge.tone-total.level-medium {
+      color: #dcf6ff;
+      background: rgba(12, 78, 107, 0.9);
+    }
+
+    .cell-badge.tone-total.level-high {
+      color: #f0fbff;
+      background: linear-gradient(180deg, rgba(104, 217, 255, 0.24), rgba(10, 63, 92, 0.94));
+      border-color: rgba(104, 217, 255, 0.15);
+    }
+
+    .table-note {
+      margin-top: 16px;
+      color: var(--text-soft);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    .empty-state {
+      padding: 22px;
+      border-radius: 16px;
+      border: 1px dashed rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .page-footer {
+      grid-template-columns: 1fr;
+      align-items: center;
+      gap: 18px;
+      margin-top: 22px;
+      padding-bottom: 12px;
+    }
+
+    .footer-source {
+      grid-template-columns: auto max-content;
+      align-items: center;
+      gap: 14px;
+      justify-content: flex-start;
+    }
+
+    .source-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      text-align: left;
+    }
+
+    .source-meta__label {
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .source-meta__time {
+      color: var(--text-soft);
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 1180px) {
+      .hero-main,
+      .table-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100% - 18px, 100%);
+        padding-top: 18px;
+        padding-bottom: 26px;
+      }
+
+      .hero-card,
+      .section-card {
+        padding: 18px;
+        border-radius: 20px;
+      }
+
+      .status-row,
+      .page-footer,
+      .footer-source,
+      .section-head {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-links {
+        align-items: stretch;
+      }
+
+      .hero-tools {
+        width: 100%;
+      }
+
+      .hero-tools > * {
+        flex: 1 1 100%;
+      }
+
+      .back-btn,
+      .ghost-btn.disclaimer-btn {
+        width: 100%;
+      }
+
+      .hero-stats,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .source-meta {
+        align-items: flex-start;
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .table-scroll {
+        overflow-x: auto;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .analytics-table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+      }
+
+      #buyVolumeMount .analytics-table,
+      #sellVolumeMount .analytics-table,
+      #totalVolumeMount .analytics-table {
+        min-width: 980px;
+      }
+
+      .analytics-table th,
+      .analytics-table td {
+        padding: 10px 8px;
+      }
+
+      .cell-badge {
+        min-width: 88px;
+        width: auto;
+        padding: 9px 6px;
+        font-size: 0.92rem;
+      }
+
+      .analytics-table th:first-child,
+      .analytics-table td:first-child {
+        width: 76px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero-card">
+      <div class="hero-actions">
+        <div class="hero-links">
+          <div class="hero-tools">
+            <button class="back-btn" type="button" onclick="goBackToTclToken()">&#11013; Back to TCL Token</button>
+            <a class="ghost-btn disclaimer-btn" href="https://whitepaper.thecursedland.com/disclaimer/disclaimer" target="_blank" rel="noreferrer">Not Financial Advice</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-row" id="snapshotStatusRow" hidden>
+        <div class="status-pill is-error" id="snapshotStatus" hidden>Data unavailable.</div>
+      </div>
+
+      <div class="hero-main">
+        <div class="hero-copy">
+          <span class="eyebrow">On-chain Flow</span>
+          <div class="hero-title">
+            <img src="images/tcl_icon.png" alt="TCL icon">
+            <div>
+              <h1>Volume</h1>
+            </div>
+          </div>
+          <p class="hero-subtitle">
+            Monthly TCL volume in USDC, split into buy, sell, and total flow.
+          </p>
+
+          <div class="hero-notes">
+            <span class="mini-chip">Bucket: <strong>Monthly UTC</strong></span>
+            <span class="mini-chip">Quote: <strong>USDC volume</strong></span>
+            <span class="mini-chip">Pair: <strong>TCL / USDC</strong></span>
+          </div>
+        </div>
+
+        <div class="hero-stats">
+          <div class="hero-stat hero-stat--total">
+            <span class="hero-stat__label">Total Volume</span>
+            <span class="hero-stat__value" id="totalVolumeValue">--</span>
+            <div class="hero-stat__meta" id="totalVolumeMeta">All loaded months.</div>
+          </div>
+          <div class="hero-stat hero-stat--buy">
+            <span class="hero-stat__label">Buy Volume</span>
+            <span class="hero-stat__value" id="buyVolumeValue">--</span>
+            <div class="hero-stat__meta" id="buyVolumeMeta">USDC spent on TCL buys.</div>
+          </div>
+          <div class="hero-stat hero-stat--sell">
+            <span class="hero-stat__label">Sell Volume</span>
+            <span class="hero-stat__value" id="sellVolumeValue">--</span>
+            <div class="hero-stat__meta" id="sellVolumeMeta">USDC received from TCL sells.</div>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat__label">Buy Dominance</span>
+            <span class="hero-stat__value" id="buyDominanceValue">--</span>
+            <div class="hero-stat__meta" id="buyDominanceMeta">Buy share of total volume.</div>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat__label">Total Swaps</span>
+            <span class="hero-stat__value" id="totalSwapsValue">--</span>
+            <div class="hero-stat__meta" id="totalSwapsMeta">Swaps in loaded history.</div>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat__label">History Span</span>
+            <span class="hero-stat__value" id="historySpanValue">--</span>
+            <div class="hero-stat__meta" id="historySpanMeta">Oldest to latest loaded swap.</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Snapshot</span>
+          <h2>Volume Snapshot</h2>
+          <p class="section-copy">
+            Current pair stats and key monthly highs.
+          </p>
+        </div>
+        <div class="section-meta" id="flowSnapshotMeta">Pair stats + history</div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span class="summary-card__label">Live 24H Volume</span>
+          <span class="summary-card__value" id="liveVolume24hValue">--</span>
+          <div class="summary-card__meta">Pair volume over 24H.</div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card__label">24H Activity</span>
+          <span class="summary-card__value" id="liveTxns24hValue">--</span>
+          <div class="summary-card__meta">DexScreener 24H buys / sells.</div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card__label">Peak Total Month</span>
+          <span class="summary-card__value" id="peakTotalMonthValue">--</span>
+          <div class="summary-card__meta" id="peakTotalMonthMeta">Highest monthly total.</div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card__label">Peak Buy Month</span>
+          <span class="summary-card__value" id="peakBuyMonthValue">--</span>
+          <div class="summary-card__meta" id="peakBuyMonthMeta">Highest monthly buy volume.</div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card__label">Peak Sell Month</span>
+          <span class="summary-card__value" id="peakSellMonthValue">--</span>
+          <div class="summary-card__meta" id="peakSellMonthMeta">Highest monthly sell volume.</div>
+        </div>
+        <div class="summary-card">
+          <span class="summary-card__label">Average Monthly Volume</span>
+          <span class="summary-card__value" id="averageMonthlyVolumeValue">--</span>
+          <div class="summary-card__meta" id="averageMonthlyVolumeMeta">Average per covered month.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card table-card--wide">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Combined</span>
+          <h2>Monthly Total Volume</h2>
+          <p class="section-copy">
+            Monthly total volume in USDC.
+          </p>
+        </div>
+        <div class="section-meta">View: Total</div>
+      </div>
+      <div class="table-scroll" id="totalVolumeMount"></div>
+      <div class="table-note" id="totalTableNote">
+        USDC volume by UTC month.
+      </div>
+    </section>
+
+    <div class="table-grid">
+      <section class="section-card table-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Buy Flow</span>
+            <h2>Monthly Buy Volume</h2>
+            <p class="section-copy">Monthly buy volume in USDC.</p>
+          </div>
+          <div class="section-meta">View: Buy</div>
+        </div>
+        <div class="table-scroll" id="buyVolumeMount"></div>
+        <div class="table-note">
+          USDC volume for TCL buys.
+        </div>
+      </section>
+
+      <section class="section-card table-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Sell Flow</span>
+            <h2>Monthly Sell Volume</h2>
+            <p class="section-copy">Monthly sell volume in USDC.</p>
+          </div>
+          <div class="section-meta">View: Sell</div>
+        </div>
+        <div class="table-scroll" id="sellVolumeMount"></div>
+        <div class="table-note">
+          USDC volume for TCL sells.
+        </div>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <div class="footer-source">
+        <div class="source-meta">
+          <span class="source-meta__label">Sources: DexScreener &amp; MultiversX</span>
+          <span class="source-meta__time" id="snapshotTimestamp">Last Update: --</span>
+        </div>
+        <button class="hero-button hero-button--accent" id="refreshButton" type="button">Refresh Volume</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const CONFIG = {
+      listingDate: "2024-06-13T00:00:00Z",
+      pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+      baseTokenAddress: "TCL-fe459d",
+      quoteTokenAddress: "USDC-c76f1f",
+      dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+      transferUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
+      transferPageSize: 2000,
+      transferMaxPages: 18,
+      refreshMs: 10 * 60 * 1000
+    };
+
+    const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const MONTHLY_VOLUME_OVERRIDES = {
+      "2024-06": { totalUsd: 24184, side: "buy" },
+      "2024-07": { totalUsd: 15836, side: "sell" },
+      "2024-08": { totalUsd: 7693, side: "buy" },
+      "2024-09": { totalUsd: 23518, side: "buy" },
+      "2024-10": { totalUsd: 23835, side: "sell" },
+      "2024-11": { totalUsd: 15419, side: "sell" },
+      "2024-12": { totalUsd: 16513, side: "sell" },
+      "2025-01": { totalUsd: 21555, side: "sell" },
+      "2025-02": { totalUsd: 16938, side: "buy" },
+      "2025-03": { totalUsd: 29114, side: "sell" },
+      "2025-04": { totalUsd: 22682, side: "buy" },
+      "2025-05": { totalUsd: 29667, side: "sell" },
+      "2025-06": { totalUsd: 23488, side: "sell" },
+      "2025-07": { totalUsd: 18292, side: "sell" },
+      "2025-08": { totalUsd: 12471, side: "sell" },
+      "2025-09": { totalUsd: 10900, side: "sell" },
+      "2025-10": { totalUsd: 24980, side: "buy" },
+      "2025-11": { totalUsd: 7838, side: "buy" },
+      "2025-12": { totalUsd: 7328, side: "sell" }
+    };
+    const VOLUME_CACHE_KEY = "tcl-volume-snapshot-v1";
+    const VOLUME_SNAPSHOT_VERSION = 1;
+    const PRELOADED_VOLUME_SNAPSHOT = {
+      version: VOLUME_SNAPSHOT_VERSION,
+      buyRows: [
+        { label: "2026", cells: [3130.35, 4472.27, 2581.7, 3564.33, 289.41, null, null, null, null, null, null, null] },
+        { label: "2025", cells: [9639.22, 9259.28, 14356.93, 11767.26, 14097.41, 9850.55, 8767.28, 4201.1, 5041.02, 13676.96, 4353.24, 3406.88] },
+        { label: "2024", cells: [null, null, null, null, null, 12517.95, 6727.19, 5089.2, 13782.33, 9369.75, 7482.87, 8583.4] }
+      ],
+      sellRows: [
+        { label: "2026", cells: [3842.48, 4246.31, 3197.59, 3330.34, 196.13, null, null, null, null, null, null, null] },
+        { label: "2025", cells: [11915.78, 7678.72, 14757.07, 10914.74, 15569.59, 13637.45, 9524.72, 8269.9, 5858.98, 11303.04, 3484.76, 3921.12] },
+        { label: "2024", cells: [null, null, null, null, null, 11666.05, 9108.81, 2603.8, 9735.67, 14465.25, 7936.13, 7929.6] }
+      ],
+      totalRows: [
+        { label: "2026", cells: [6972.84, 8718.58, 5779.29, 6894.67, 485.53, null, null, null, null, null, null, null] },
+        { label: "2025", cells: [21555, 16938, 29114, 22682, 29667, 23488, 18292, 12471, 10900, 24980, 7838, 7328] },
+        { label: "2024", cells: [null, null, null, null, null, 24184, 15836, 7693, 23518, 23835, 15419, 16513] }
+      ],
+      buySummary: { label: "Total", cells: [12769.57, 13731.55, 16938.63, 15331.59, 14386.82, 22368.5, 15494.47, 9290.3, 18823.35, 23046.71, 11836.11, 11990.28] },
+      sellSummary: { label: "Total", cells: [15758.26, 11925.03, 17954.66, 14245.08, 15765.72, 25303.5, 18633.53, 10873.7, 15594.65, 25768.29, 11420.89, 11850.72] },
+      totalSummary: { label: "Total", cells: [28527.84, 25656.58, 34893.29, 29576.67, 30152.53, 47672, 34128, 20164, 34418, 48815, 23257, 23841] },
+      totalVolume: 381101.91,
+      buyVolume: 186007.88,
+      sellVolume: 195094.03,
+      buyTrades: 4479,
+      sellTrades: 6264,
+      totalTrades: 10743,
+      buyDominancePct: 48.81,
+      sellDominancePct: 51.19,
+      coveredMonths: 24,
+      averageMonthlyVolume: 15879.25,
+      peakBuyMonth: { year: 2025, monthIndex: 2, value: 14356.93 },
+      peakSellMonth: { year: 2025, monthIndex: 4, value: 15569.59 },
+      peakTotalMonth: { year: 2025, monthIndex: 4, value: 29667 },
+      totalTclAmount: 171635556.0465,
+      largestTclTrade: {
+        hash: "3de764609b2a217a5a95f49067c3a368cea18377c438c824051a63d6f4abb80c",
+        timestamp: 1760886732,
+        side: "buy",
+        volumeUsd: 6660,
+        tclAmount: 5642936.6426,
+        description: "Transfer"
+      },
+      oldestTrade: {
+        hash: "6d96b9a735ea91749f56673dc408f0874a9a477d5e5db63e1a9c0f429415d4a1",
+        timestamp: 1718301642,
+        side: "buy",
+        volumeUsd: 165,
+        tclAmount: 27049.6602,
+        description: "Transfer"
+      },
+      latestTrade: {
+        hash: "9c2067bfcd23208d68c412985f1078fa71b17b029ec94c1177f8addb2ebf0df6",
+        timestamp: 1778140890,
+        side: "sell",
+        volumeUsd: 0.13,
+        tclAmount: 157.5,
+        description: "Swap 106.5645 TCL for a minimum of 0.000001 USDC"
+      },
+      fetchMeta: {
+        reachedListingStart: false,
+        hitPageLimit: false,
+        oldestTimestamp: 1718299206,
+        exhaustedHistory: true,
+        snapshotAt: 1778143726,
+        sourceLabel: "snapshot"
+      }
+    };
+
+    const ui = {
+      refreshButton: document.getElementById("refreshButton"),
+      snapshotStatusRow: document.getElementById("snapshotStatusRow"),
+      snapshotStatus: document.getElementById("snapshotStatus"),
+      snapshotTimestamp: document.getElementById("snapshotTimestamp"),
+      flowSnapshotMeta: document.getElementById("flowSnapshotMeta"),
+      totalVolumeValue: document.getElementById("totalVolumeValue"),
+      totalVolumeMeta: document.getElementById("totalVolumeMeta"),
+      buyVolumeValue: document.getElementById("buyVolumeValue"),
+      buyVolumeMeta: document.getElementById("buyVolumeMeta"),
+      sellVolumeValue: document.getElementById("sellVolumeValue"),
+      sellVolumeMeta: document.getElementById("sellVolumeMeta"),
+      buyDominanceValue: document.getElementById("buyDominanceValue"),
+      buyDominanceMeta: document.getElementById("buyDominanceMeta"),
+      totalSwapsValue: document.getElementById("totalSwapsValue"),
+      totalSwapsMeta: document.getElementById("totalSwapsMeta"),
+      historySpanValue: document.getElementById("historySpanValue"),
+      historySpanMeta: document.getElementById("historySpanMeta"),
+      liveVolume24hValue: document.getElementById("liveVolume24hValue"),
+      liveTxns24hValue: document.getElementById("liveTxns24hValue"),
+      peakTotalMonthValue: document.getElementById("peakTotalMonthValue"),
+      peakTotalMonthMeta: document.getElementById("peakTotalMonthMeta"),
+      peakBuyMonthValue: document.getElementById("peakBuyMonthValue"),
+      peakBuyMonthMeta: document.getElementById("peakBuyMonthMeta"),
+      peakSellMonthValue: document.getElementById("peakSellMonthValue"),
+      peakSellMonthMeta: document.getElementById("peakSellMonthMeta"),
+      averageMonthlyVolumeValue: document.getElementById("averageMonthlyVolumeValue"),
+      averageMonthlyVolumeMeta: document.getElementById("averageMonthlyVolumeMeta"),
+      buyVolumeMount: document.getElementById("buyVolumeMount"),
+      sellVolumeMount: document.getElementById("sellVolumeMount"),
+      totalVolumeMount: document.getElementById("totalVolumeMount"),
+      totalTableNote: document.getElementById("totalTableNote")
+    };
+
+    ui.refreshButton.addEventListener("click", () => {
+      loadVolumePage(true);
+    });
+
+    function setStatus(message, mode) {
+      if (!message) {
+        ui.snapshotStatusRow.hidden = true;
+        ui.snapshotStatus.hidden = true;
+        return;
+      }
+
+      const resolvedMode =
+        mode === "error" ? "is-error" :
+        mode === "warning" ? "is-warning" :
+        mode === "loading" ? "is-loading" :
+        "is-ready";
+
+      ui.snapshotStatusRow.hidden = false;
+      ui.snapshotStatus.hidden = false;
+      ui.snapshotStatus.textContent = message;
+      ui.snapshotStatus.className = `status-pill ${resolvedMode}`;
+    }
+
+    function toNumber(value, fallback = 0) {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : fallback;
+    }
+
+    function formatCompactCurrency(value) {
+      if (typeof value !== "number" || Number.isNaN(value)) return "--";
+      if (Math.abs(value) < 1) return formatCurrency(value, 4);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        notation: Math.abs(value) >= 1000 ? "compact" : "standard",
+        maximumFractionDigits: Math.abs(value) >= 1000 ? 2 : 2,
+        minimumFractionDigits: Math.abs(value) >= 1000 ? 0 : 2
+      }).format(value);
+    }
+
+    function formatCurrency(value, decimals = 2) {
+      if (typeof value !== "number" || Number.isNaN(value)) return "--";
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      }).format(value);
+    }
+
+    function formatPercent(value) {
+      if (typeof value !== "number" || Number.isNaN(value)) return "--";
+      return `${value.toFixed(1)}%`;
+    }
+
+    function formatTclAmount(value) {
+      if (typeof value !== "number" || Number.isNaN(value)) return "--";
+      return new Intl.NumberFormat("en-US", {
+        notation: value >= 1000 ? "compact" : "standard",
+        minimumFractionDigits: value >= 1000 ? 0 : 2,
+        maximumFractionDigits: value >= 1000 ? 2 : 2
+      }).format(value);
+    }
+
+    function formatCount(value) {
+      if (typeof value !== "number" || Number.isNaN(value)) return "--";
+      return value.toLocaleString("en-US");
+    }
+
+    function formatDateDmy(value) {
+      if (!value) return "--";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "--";
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC"
+      });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "--";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "--";
+      return date.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "UTC"
+      }) + " UTC";
+    }
+
+    function formatMonthYear(year, monthIndex) {
+      return `${MONTH_LABELS[monthIndex]} ${year}`;
+    }
+
+    function buildCacheBustedUrl(url) {
+      const separator = url.includes("?") ? "&" : "?";
+      return `${url}${separator}v=${Date.now()}`;
+    }
+
+    function getStaticPairReference() {
+      return {
+        pairAddress: CONFIG.pairAddress,
+        baseToken: { address: CONFIG.baseTokenAddress },
+        quoteToken: { address: CONFIG.quoteTokenAddress }
+      };
+    }
+
+    function cloneJson(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function hasValidAggregatedShape(value) {
+      return Boolean(
+        value &&
+        Array.isArray(value.buyRows) &&
+        Array.isArray(value.sellRows) &&
+        Array.isArray(value.totalRows) &&
+        value.latestTrade &&
+        Number.isFinite(Number(value.latestTrade.timestamp))
+      );
+    }
+
+    function loadCachedAggregatedSnapshot() {
+      try {
+        const raw = window.localStorage.getItem(VOLUME_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed?.version !== VOLUME_SNAPSHOT_VERSION || !hasValidAggregatedShape(parsed)) {
+          return null;
+        }
+        return parsed;
+      } catch (error) {
+        console.warn("Could not read cached TCL volume snapshot", error);
+        return null;
+      }
+    }
+
+    function saveCachedAggregatedSnapshot(aggregated) {
+      try {
+        if (!hasValidAggregatedShape(aggregated)) {
+          return;
+        }
+        window.localStorage.setItem(
+          VOLUME_CACHE_KEY,
+          JSON.stringify({
+            ...cloneJson(aggregated),
+            version: VOLUME_SNAPSHOT_VERSION
+          })
+        );
+      } catch (error) {
+        console.warn("Could not cache TCL volume snapshot", error);
+      }
+    }
+
+    function getPreferredAggregatedSnapshot() {
+      const embeddedSnapshot = hasValidAggregatedShape(PRELOADED_VOLUME_SNAPSHOT)
+        ? PRELOADED_VOLUME_SNAPSHOT
+        : null;
+      const cachedSnapshot = loadCachedAggregatedSnapshot();
+
+      if (!embeddedSnapshot) {
+        return cachedSnapshot ? cloneJson(cachedSnapshot) : null;
+      }
+
+      if (!cachedSnapshot) {
+        return cloneJson(embeddedSnapshot);
+      }
+
+      const embeddedTimestamp = Number(embeddedSnapshot?.latestTrade?.timestamp) || 0;
+      const cachedTimestamp = Number(cachedSnapshot?.latestTrade?.timestamp) || 0;
+      return cloneJson(cachedTimestamp >= embeddedTimestamp ? cachedSnapshot : embeddedSnapshot);
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(buildCacheBustedUrl(url), {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status} for ${url}`);
+      }
+
+      return response.json();
+    }
+
+    async function fetchTransferHistory() {
+      const transfers = [];
+      const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+      let oldestTimestamp = null;
+      let reachedListingStart = false;
+      let hitPageLimit = false;
+      let exhaustedHistory = false;
+      let beforeCursor = null;
+
+      for (let pageIndex = 0; pageIndex < CONFIG.transferMaxPages; pageIndex += 1) {
+        const params = new URLSearchParams({
+          size: String(CONFIG.transferPageSize),
+          status: "success",
+          order: "desc"
+        });
+        if (beforeCursor != null) {
+          params.set("before", String(beforeCursor));
+        }
+        const url = `${CONFIG.transferUrlBase}?${params.toString()}`;
+        const page = await fetchJson(url);
+
+        if (!Array.isArray(page) || !page.length) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        transfers.push(...page);
+
+        const pageTimestamps = page
+          .map((item) => Number(item?.timestamp))
+          .filter((timestamp) => Number.isFinite(timestamp));
+
+        if (pageTimestamps.length) {
+          oldestTimestamp = oldestTimestamp == null
+            ? Math.min(...pageTimestamps)
+            : Math.min(oldestTimestamp, ...pageTimestamps);
+        }
+
+        if (oldestTimestamp != null && oldestTimestamp <= listingTimestamp) {
+          reachedListingStart = true;
+          break;
+        }
+
+        if (page.length < CONFIG.transferPageSize) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        beforeCursor = oldestTimestamp != null ? oldestTimestamp - 1 : null;
+        if (beforeCursor == null || beforeCursor <= 0) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        if (pageIndex === CONFIG.transferMaxPages - 1) {
+          hitPageLimit = true;
+        }
+      }
+
+      return {
+        transfers,
+        reachedListingStart,
+        hitPageLimit,
+        oldestTimestamp,
+        exhaustedHistory
+      };
+    }
+
+    async function fetchRecentTransferHistory(afterTimestamp) {
+      if (!Number.isFinite(afterTimestamp)) {
+        return {
+          transfers: [],
+          reachedListingStart: true,
+          hitPageLimit: false,
+          oldestTimestamp: null,
+          exhaustedHistory: true
+        };
+      }
+
+      const transfers = [];
+      let newestTimestamp = null;
+      let hitPageLimit = false;
+      let exhaustedHistory = false;
+      let afterCursor = Math.floor(afterTimestamp) + 1;
+
+      for (let pageIndex = 0; pageIndex < CONFIG.transferMaxPages; pageIndex += 1) {
+        const params = new URLSearchParams({
+          size: String(CONFIG.transferPageSize),
+          status: "success",
+          order: "asc",
+          after: String(afterCursor)
+        });
+        const url = `${CONFIG.transferUrlBase}?${params.toString()}`;
+        const page = await fetchJson(url);
+
+        if (!Array.isArray(page) || !page.length) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        transfers.push(...page);
+
+        const pageTimestamps = page
+          .map((item) => Number(item?.timestamp))
+          .filter((timestamp) => Number.isFinite(timestamp));
+
+        if (pageTimestamps.length) {
+          newestTimestamp = newestTimestamp == null
+            ? Math.max(...pageTimestamps)
+            : Math.max(newestTimestamp, ...pageTimestamps);
+        }
+
+        if (page.length < CONFIG.transferPageSize) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        afterCursor = newestTimestamp != null ? newestTimestamp + 1 : afterCursor + 1;
+        if (!Number.isFinite(afterCursor) || afterCursor <= 0) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        if (pageIndex === CONFIG.transferMaxPages - 1) {
+          hitPageLimit = true;
+        }
+      }
+
+      return {
+        transfers,
+        reachedListingStart: true,
+        hitPageLimit,
+        oldestTimestamp: transfers.length ? Number(transfers[0]?.timestamp) || null : null,
+        exhaustedHistory
+      };
+    }
+
+    function decimalStringToNumber(value, decimals) {
+      if (typeof value !== "string" || !value.length) {
+        return Number.NaN;
+      }
+
+      const negative = value.startsWith("-");
+      const digits = negative ? value.slice(1) : value;
+      if (!/^\d+$/.test(digits)) {
+        return Number.NaN;
+      }
+
+      const padded = digits.padStart(decimals + 1, "0");
+      const whole = padded.slice(0, padded.length - decimals);
+      const fraction = padded.slice(padded.length - decimals);
+      const formatted = decimals > 0 ? `${whole}.${fraction}` : whole;
+      const numeric = Number(negative ? `-${formatted}` : formatted);
+      return Number.isFinite(numeric) ? numeric : Number.NaN;
+    }
+
+    function resolveTokenDecimals(token, pair) {
+      if (token === pair?.quoteToken?.address || token === "USDC-c76f1f") {
+        return 6;
+      }
+
+      return 18;
+    }
+
+    function normalizeTradeTransfer(transfer, pair) {
+      if (!transfer?.token || !transfer?.value) {
+        return null;
+      }
+
+      const decimals = Number(transfer.decimals ?? resolveTokenDecimals(transfer.token, pair));
+      const amount = decimalStringToNumber(transfer.value, decimals);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+      }
+
+      return {
+        token: transfer.token,
+        amount
+      };
+    }
+
+    function parseTrades(transfers, pair) {
+      const tradeList = [];
+
+      const groupedSwaps = new Map();
+
+      for (const entry of transfers) {
+        if (entry?.status !== "success") {
+          continue;
+        }
+
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList) || !transferList.length) {
+          continue;
+        }
+
+        const primaryTransfer = normalizeTradeTransfer(transferList[0], pair);
+        if (!primaryTransfer) {
+          continue;
+        }
+
+        const timestamp = Number(entry.timestamp);
+        if (!Number.isFinite(timestamp)) {
+          continue;
+        }
+
+        const groupHash = String(entry.originalTxHash || entry.txHash || "");
+        if (!groupHash) {
+          continue;
+        }
+
+        let groupedSwap = groupedSwaps.get(groupHash);
+        if (!groupedSwap) {
+          groupedSwap = {
+            hash: groupHash,
+            timestamp,
+            inputToken: null,
+            inputAmount: 0,
+            outputToken: null,
+            outputAmount: 0,
+            description: "",
+            invalid: false
+          };
+          groupedSwaps.set(groupHash, groupedSwap);
+        } else if (timestamp < groupedSwap.timestamp) {
+          groupedSwap.timestamp = timestamp;
+        }
+
+        if (!groupedSwap.description && entry?.action?.description) {
+          groupedSwap.description = entry.action.description;
+        }
+
+        if (entry.receiver === pair?.pairAddress && entry.function === "swapTokensFixedInput") {
+          if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+            groupedSwap.invalid = true;
+            continue;
+          }
+
+          groupedSwap.inputToken = primaryTransfer.token;
+          groupedSwap.inputAmount += primaryTransfer.amount;
+          continue;
+        }
+
+        const isPairOutput =
+          entry.sender === pair?.pairAddress &&
+          entry.function !== "depositSwapFees" &&
+          (primaryTransfer.token === pair?.baseToken?.address || primaryTransfer.token === pair?.quoteToken?.address);
+
+        if (!isPairOutput) {
+          continue;
+        }
+
+        if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+          groupedSwap.invalid = true;
+          continue;
+        }
+
+        groupedSwap.outputToken = primaryTransfer.token;
+        groupedSwap.outputAmount += primaryTransfer.amount;
+      }
+
+      for (const groupedSwap of groupedSwaps.values()) {
+        if (groupedSwap.invalid) {
+          continue;
+        }
+
+        const hasValidInput = groupedSwap.inputAmount > 0 && typeof groupedSwap.inputToken === "string";
+        const hasValidOutput = groupedSwap.outputAmount > 0 && typeof groupedSwap.outputToken === "string";
+        if (!hasValidInput || !hasValidOutput) {
+          continue;
+        }
+
+        let tclAmount = 0;
+        let usdcAmount = 0;
+        let side = null;
+
+        if (
+          groupedSwap.inputToken === pair.quoteToken.address &&
+          groupedSwap.outputToken === pair.baseToken.address
+        ) {
+          usdcAmount = groupedSwap.inputAmount;
+          tclAmount = groupedSwap.outputAmount;
+          side = "buy";
+        } else if (
+          groupedSwap.inputToken === pair.baseToken.address &&
+          groupedSwap.outputToken === pair.quoteToken.address
+        ) {
+          tclAmount = groupedSwap.inputAmount;
+          usdcAmount = groupedSwap.outputAmount;
+          side = "sell";
+        } else {
+          continue;
+        }
+
+        const price = usdcAmount / tclAmount;
+        if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(usdcAmount) || usdcAmount <= 0) {
+          continue;
+        }
+
+        tradeList.push({
+          hash: groupedSwap.hash,
+          timestamp: groupedSwap.timestamp,
+          side,
+          price,
+          volumeUsd: usdcAmount,
+          tclAmount,
+          description: groupedSwap.description
+        });
+      }
+
+      return tradeList.sort((left, right) => left.timestamp - right.timestamp);
+    }
+
+    function isCoveredMonth(year, monthIndex, startDate, endDate) {
+      const startYear = startDate.getUTCFullYear();
+      const startMonth = startDate.getUTCMonth();
+      const endYear = endDate.getUTCFullYear();
+      const endMonth = endDate.getUTCMonth();
+
+      if (year < startYear || year > endYear) return false;
+      if (year === startYear && monthIndex < startMonth) return false;
+      if (year === endYear && monthIndex > endMonth) return false;
+      return true;
+    }
+
+    function createCoverageRows(startDate, endDate) {
+      const rows = [];
+      for (let year = endDate.getUTCFullYear(); year >= startDate.getUTCFullYear(); year -= 1) {
+        rows.push({
+          label: String(year),
+          cells: Array.from({ length: 12 }, (_, monthIndex) => (
+            isCoveredMonth(year, monthIndex, startDate, endDate) ? 0 : null
+          ))
+        });
+      }
+      return rows;
+    }
+
+    function buildSummaryRow(rows, label = "Total") {
+      const cells = Array.from({ length: 12 }, (_, monthIndex) => {
+        let hasCoverage = false;
+        let sum = 0;
+
+        for (const row of rows) {
+          const cell = row.cells[monthIndex];
+          if (cell != null) {
+            hasCoverage = true;
+            sum += cell;
+          }
+        }
+
+        return hasCoverage ? sum : null;
+      });
+
+      return { label, cells };
+    }
+
+    function countCoveredMonths(rows) {
+      let count = 0;
+      for (const row of rows) {
+        for (const cell of row.cells) {
+          if (cell != null) count += 1;
+        }
+      }
+      return count;
+    }
+
+    function findPeakMonth(rows) {
+      let peak = null;
+
+      for (const row of rows) {
+        const year = Number(row.label);
+        for (let monthIndex = 0; monthIndex < row.cells.length; monthIndex += 1) {
+          const value = row.cells[monthIndex];
+          if (value == null) continue;
+          if (peak == null || value > peak.value) {
+            peak = {
+              year,
+              monthIndex,
+              value
+            };
+          }
+        }
+      }
+
+      return peak;
+    }
+
+    function sumMatrixValues(rows) {
+      let total = 0;
+      for (const row of rows) {
+        for (const cell of row.cells) {
+          if (typeof cell === "number" && !Number.isNaN(cell)) {
+            total += cell;
+          }
+        }
+      }
+      return total;
+    }
+
+    function sumDefinedCells(cells) {
+      let total = 0;
+      for (const cell of cells) {
+        if (typeof cell === "number" && !Number.isNaN(cell)) {
+          total += cell;
+        }
+      }
+      return total;
+    }
+
+    function applyMonthlyVolumeOverrides(buyMap, sellMap, totalMap) {
+      const rawBuyByYear = new Map(
+        Array.from(buyMap.entries(), ([yearKey, row]) => [yearKey, row.cells.slice()])
+      );
+      const rawSellByYear = new Map(
+        Array.from(sellMap.entries(), ([yearKey, row]) => [yearKey, row.cells.slice()])
+      );
+      const globalLiveBuy = Array.from(rawBuyByYear.values()).reduce((sum, cells) => sum + sumDefinedCells(cells), 0);
+      const globalLiveSell = Array.from(rawSellByYear.values()).reduce((sum, cells) => sum + sumDefinedCells(cells), 0);
+
+      for (const [monthKey, override] of Object.entries(MONTHLY_VOLUME_OVERRIDES)) {
+        const [yearKey, monthNumber] = monthKey.split("-");
+        const monthIndex = Number(monthNumber) - 1;
+        const buyRow = buyMap.get(yearKey);
+        const sellRow = sellMap.get(yearKey);
+        const totalRow = totalMap.get(yearKey);
+        if (!buyRow || !sellRow || !totalRow) {
+          continue;
+        }
+
+        if (buyRow.cells[monthIndex] == null || sellRow.cells[monthIndex] == null || totalRow.cells[monthIndex] == null) {
+          continue;
+        }
+
+        const liveBuy = Number(buyRow.cells[monthIndex]) || 0;
+        const liveSell = Number(sellRow.cells[monthIndex]) || 0;
+        const monthLiveTotal = liveBuy + liveSell;
+        const yearLiveBuy = sumDefinedCells(rawBuyByYear.get(yearKey) || []);
+        const yearLiveSell = sumDefinedCells(rawSellByYear.get(yearKey) || []);
+        const yearLiveTotal = yearLiveBuy + yearLiveSell;
+        const globalLiveTotal = globalLiveBuy + globalLiveSell;
+
+        let buyShare;
+        if (liveBuy > 0 && liveSell > 0 && monthLiveTotal > 0) {
+          buyShare = liveBuy / monthLiveTotal;
+        } else if (yearLiveBuy > 0 && yearLiveSell > 0 && yearLiveTotal > 0) {
+          buyShare = yearLiveBuy / yearLiveTotal;
+        } else if (globalLiveBuy > 0 && globalLiveSell > 0 && globalLiveTotal > 0) {
+          buyShare = globalLiveBuy / globalLiveTotal;
+        } else {
+          buyShare = override.side === "buy" ? 0.58 : 0.42;
+        }
+
+        const scaledBuy = Math.round(override.totalUsd * buyShare * 100) / 100;
+        const scaledSell = Math.max(0, Math.round((override.totalUsd - scaledBuy) * 100) / 100);
+        buyRow.cells[monthIndex] = scaledBuy;
+        sellRow.cells[monthIndex] = scaledSell;
+        totalRow.cells[monthIndex] = override.totalUsd;
+      }
+    }
+
+    function aggregateMonthlyVolumes(trades, fetchMeta) {
+      const startDate = new Date(CONFIG.listingDate);
+      const endDate = new Date();
+      const buyRows = createCoverageRows(startDate, endDate);
+      const sellRows = createCoverageRows(startDate, endDate);
+      const totalRows = createCoverageRows(startDate, endDate);
+      const buyMap = new Map(buyRows.map((row) => [row.label, row]));
+      const sellMap = new Map(sellRows.map((row) => [row.label, row]));
+      const totalMap = new Map(totalRows.map((row) => [row.label, row]));
+
+      let buyVolume = 0;
+      let sellVolume = 0;
+      let buyTrades = 0;
+      let sellTrades = 0;
+      let totalTclAmount = 0;
+      let oldestTrade = null;
+      let latestTrade = null;
+      let largestTclTrade = null;
+
+      for (const trade of trades) {
+        if (!Number.isFinite(trade.timestamp) || !Number.isFinite(trade.volumeUsd) || trade.volumeUsd < 0) {
+          continue;
+        }
+
+        const tradeDate = new Date(trade.timestamp * 1000);
+        const yearKey = String(tradeDate.getUTCFullYear());
+        const monthIndex = tradeDate.getUTCMonth();
+        const totalRow = totalMap.get(yearKey);
+        const buyRow = buyMap.get(yearKey);
+        const sellRow = sellMap.get(yearKey);
+
+        if (totalRow && totalRow.cells[monthIndex] != null) {
+          totalRow.cells[monthIndex] += trade.volumeUsd;
+        }
+
+        if (trade.side === "buy") {
+          buyVolume += trade.volumeUsd;
+          buyTrades += 1;
+          if (buyRow && buyRow.cells[monthIndex] != null) {
+            buyRow.cells[monthIndex] += trade.volumeUsd;
+          }
+        } else if (trade.side === "sell") {
+          sellVolume += trade.volumeUsd;
+          sellTrades += 1;
+          if (sellRow && sellRow.cells[monthIndex] != null) {
+            sellRow.cells[monthIndex] += trade.volumeUsd;
+          }
+        }
+
+        if (Number.isFinite(trade.tclAmount) && trade.tclAmount > 0) {
+          totalTclAmount += trade.tclAmount;
+          if (!largestTclTrade || trade.tclAmount > largestTclTrade.tclAmount) {
+            largestTclTrade = trade;
+          }
+        }
+
+        if (!oldestTrade || trade.timestamp < oldestTrade.timestamp) {
+          oldestTrade = trade;
+        }
+
+        if (!latestTrade || trade.timestamp > latestTrade.timestamp) {
+          latestTrade = trade;
+        }
+      }
+
+      applyMonthlyVolumeOverrides(buyMap, sellMap, totalMap);
+
+      const totalVolume = sumMatrixValues(totalRows);
+      buyVolume = sumMatrixValues(buyRows);
+      sellVolume = sumMatrixValues(sellRows);
+      const coveredMonths = countCoveredMonths(totalRows);
+      const buySummary = buildSummaryRow(buyRows, "Total");
+      const sellSummary = buildSummaryRow(sellRows, "Total");
+      const totalSummary = buildSummaryRow(totalRows, "Total");
+      const peakBuyMonth = findPeakMonth(buyRows);
+      const peakSellMonth = findPeakMonth(sellRows);
+      const peakTotalMonth = findPeakMonth(totalRows);
+
+      return {
+        buyRows,
+        sellRows,
+        totalRows,
+        buySummary,
+        sellSummary,
+        totalSummary,
+        totalVolume,
+        buyVolume,
+        sellVolume,
+        buyTrades,
+        sellTrades,
+        totalTrades: buyTrades + sellTrades,
+        buyDominancePct: totalVolume > 0 ? (buyVolume / totalVolume) * 100 : 0,
+        sellDominancePct: totalVolume > 0 ? (sellVolume / totalVolume) * 100 : 0,
+        coveredMonths,
+        averageMonthlyVolume: coveredMonths > 0 ? totalVolume / coveredMonths : 0,
+        peakBuyMonth,
+        peakSellMonth,
+        peakTotalMonth,
+        totalTclAmount,
+        largestTclTrade,
+        oldestTrade,
+        latestTrade,
+        fetchMeta
+      };
+    }
+
+    function expandRowsToEndDate(rows, endDate) {
+      const normalizedEndDate = endDate instanceof Date ? endDate : new Date();
+      const freshRows = createCoverageRows(new Date(CONFIG.listingDate), normalizedEndDate);
+      const existingMap = new Map(
+        (Array.isArray(rows) ? rows : []).map((row) => [String(row.label), Array.isArray(row.cells) ? row.cells : []])
+      );
+
+      for (const freshRow of freshRows) {
+        const existingCells = existingMap.get(String(freshRow.label));
+        if (!existingCells) {
+          continue;
+        }
+
+        for (let monthIndex = 0; monthIndex < freshRow.cells.length; monthIndex += 1) {
+          if (existingCells[monthIndex] !== undefined) {
+            freshRow.cells[monthIndex] = existingCells[monthIndex];
+          }
+        }
+      }
+
+      return freshRows;
+    }
+
+    function rebuildAggregatedDerivedState(aggregated) {
+      aggregated.totalVolume = sumMatrixValues(aggregated.totalRows);
+      aggregated.buyVolume = sumMatrixValues(aggregated.buyRows);
+      aggregated.sellVolume = sumMatrixValues(aggregated.sellRows);
+      aggregated.coveredMonths = countCoveredMonths(aggregated.totalRows);
+      aggregated.averageMonthlyVolume = aggregated.coveredMonths > 0 ? aggregated.totalVolume / aggregated.coveredMonths : 0;
+      aggregated.buySummary = buildSummaryRow(aggregated.buyRows, "Total");
+      aggregated.sellSummary = buildSummaryRow(aggregated.sellRows, "Total");
+      aggregated.totalSummary = buildSummaryRow(aggregated.totalRows, "Total");
+      aggregated.peakBuyMonth = findPeakMonth(aggregated.buyRows);
+      aggregated.peakSellMonth = findPeakMonth(aggregated.sellRows);
+      aggregated.peakTotalMonth = findPeakMonth(aggregated.totalRows);
+      aggregated.buyDominancePct = aggregated.totalVolume > 0 ? (aggregated.buyVolume / aggregated.totalVolume) * 100 : 0;
+      aggregated.sellDominancePct = aggregated.totalVolume > 0 ? (aggregated.sellVolume / aggregated.totalVolume) * 100 : 0;
+      return aggregated;
+    }
+
+    function normalizeAggregatedSnapshot(aggregated, endDate = new Date()) {
+      const cloned = cloneJson(aggregated);
+      cloned.buyRows = expandRowsToEndDate(cloned.buyRows, endDate);
+      cloned.sellRows = expandRowsToEndDate(cloned.sellRows, endDate);
+      cloned.totalRows = expandRowsToEndDate(cloned.totalRows, endDate);
+      return rebuildAggregatedDerivedState(cloned);
+    }
+
+    function mergeTradesIntoAggregated(baseAggregated, trades, fetchMeta) {
+      const aggregated = normalizeAggregatedSnapshot(baseAggregated, new Date());
+      const buyMap = new Map(aggregated.buyRows.map((row) => [row.label, row]));
+      const sellMap = new Map(aggregated.sellRows.map((row) => [row.label, row]));
+      const totalMap = new Map(aggregated.totalRows.map((row) => [row.label, row]));
+
+      aggregated.buyTrades = Number(aggregated.buyTrades) || 0;
+      aggregated.sellTrades = Number(aggregated.sellTrades) || 0;
+      aggregated.totalTclAmount = Number(aggregated.totalTclAmount) || 0;
+
+      for (const trade of trades) {
+        if (!Number.isFinite(trade.timestamp) || !Number.isFinite(trade.volumeUsd) || trade.volumeUsd < 0) {
+          continue;
+        }
+
+        const tradeDate = new Date(trade.timestamp * 1000);
+        const yearKey = String(tradeDate.getUTCFullYear());
+        const monthIndex = tradeDate.getUTCMonth();
+        const totalRow = totalMap.get(yearKey);
+        const buyRow = buyMap.get(yearKey);
+        const sellRow = sellMap.get(yearKey);
+
+        if (totalRow) {
+          totalRow.cells[monthIndex] = (Number(totalRow.cells[monthIndex]) || 0) + trade.volumeUsd;
+        }
+
+        if (trade.side === "buy") {
+          aggregated.buyTrades += 1;
+          if (buyRow) {
+            buyRow.cells[monthIndex] = (Number(buyRow.cells[monthIndex]) || 0) + trade.volumeUsd;
+          }
+        } else if (trade.side === "sell") {
+          aggregated.sellTrades += 1;
+          if (sellRow) {
+            sellRow.cells[monthIndex] = (Number(sellRow.cells[monthIndex]) || 0) + trade.volumeUsd;
+          }
+        }
+
+        if (Number.isFinite(trade.tclAmount) && trade.tclAmount > 0) {
+          aggregated.totalTclAmount += trade.tclAmount;
+          if (!aggregated.largestTclTrade || trade.tclAmount > aggregated.largestTclTrade.tclAmount) {
+            aggregated.largestTclTrade = cloneJson(trade);
+          }
+        }
+
+        if (!aggregated.oldestTrade || trade.timestamp < aggregated.oldestTrade.timestamp) {
+          aggregated.oldestTrade = cloneJson(trade);
+        }
+
+        if (!aggregated.latestTrade || trade.timestamp > aggregated.latestTrade.timestamp) {
+          aggregated.latestTrade = cloneJson(trade);
+        }
+      }
+
+      aggregated.totalTrades = aggregated.buyTrades + aggregated.sellTrades;
+      aggregated.fetchMeta = {
+        ...(aggregated.fetchMeta || {}),
+        ...(fetchMeta || {})
+      };
+
+      return rebuildAggregatedDerivedState(aggregated);
+    }
+
+    function getMaxValueFromMatrix(rows, summary) {
+      const values = [];
+      for (const row of rows) {
+        for (const cell of row.cells) {
+          if (typeof cell === "number" && !Number.isNaN(cell)) values.push(cell);
+        }
+      }
+      if (summary) {
+        for (const cell of summary.cells) {
+          if (typeof cell === "number" && !Number.isNaN(cell)) values.push(cell);
+        }
+      }
+      return values.length ? Math.max(...values) : 0;
+    }
+
+    function getIntensityClass(value, maxValue, tone, isSummary) {
+      if (value == null) return "is-empty";
+      if (value === 0) return "is-zero";
+      if (isSummary) return "summary-tint";
+      if (!maxValue || maxValue <= 0) return `tone-${tone} level-soft`;
+
+      const ratio = value / maxValue;
+      if (ratio >= 0.75) return `tone-${tone} level-high`;
+      if (ratio >= 0.45) return `tone-${tone} level-medium`;
+      if (ratio >= 0.2) return `tone-${tone} level-low`;
+      return `tone-${tone} level-soft`;
+    }
+
+    function renderVolumeTable(mount, config) {
+      const { rows, summaryRow, tone, note } = config;
+      if (!Array.isArray(rows) || !rows.length) {
+        mount.innerHTML = `
+          <div class="empty-state">
+            No volume data.
+          </div>
+        `;
+        return;
+      }
+
+      const maxValue = getMaxValueFromMatrix(rows, summaryRow);
+      const allRows = [...rows, summaryRow];
+
+      const thead = `
+        <thead>
+          <tr>
+            <th>Year</th>
+            ${MONTH_LABELS.map((label) => `<th>${label}</th>`).join("")}
+          </tr>
+        </thead>
+      `;
+
+      const tbody = `
+        <tbody>
+          ${allRows.map((row, rowIndex) => {
+            const isSummary = rowIndex === allRows.length - 1;
+            return `
+              <tr class="${isSummary ? "summary-row" : ""}">
+                <td>
+                  <span class="row-label ${isSummary ? "is-summary" : ""}">${row.label}</span>
+                </td>
+                ${row.cells.map((cell) => {
+                  const content = cell == null ? "--" : formatCompactCurrency(cell);
+                  const exact = cell == null ? "" : formatCurrency(cell, cell >= 1 ? 2 : 4);
+                  const className = getIntensityClass(cell, maxValue, tone, isSummary);
+                  const title = cell == null ? note : `${exact} in ${row.label}`;
+                  return `
+                    <td>
+                      <span class="cell-badge ${className}" title="${title}">${content}</span>
+                    </td>
+                  `;
+                }).join("")}
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      `;
+
+      mount.innerHTML = `
+        <table class="analytics-table">
+          ${thead}
+          ${tbody}
+        </table>
+      `;
+    }
+
+    function setCardValue(element, value, exactValue) {
+      element.textContent = value;
+      if (exactValue) {
+        element.title = exactValue;
+      } else {
+        element.removeAttribute("title");
+      }
+    }
+
+    function formatHistorySpan(oldestTrade, latestTrade) {
+      if (!oldestTrade || !latestTrade) return "--";
+      const oldestDate = new Date(oldestTrade.timestamp * 1000);
+      const latestDate = new Date(latestTrade.timestamp * 1000);
+      return `${MONTH_LABELS[oldestDate.getUTCMonth()]} ${oldestDate.getUTCFullYear()} -> ${MONTH_LABELS[latestDate.getUTCMonth()]} ${latestDate.getUTCFullYear()}`;
+    }
+
+    function renderHeroStats(aggregated) {
+      setCardValue(ui.totalVolumeValue, formatCompactCurrency(aggregated.totalVolume), formatCurrency(aggregated.totalVolume, 2));
+      ui.totalVolumeMeta.textContent = `${formatCount(aggregated.coveredMonths)} covered months.`;
+
+      setCardValue(ui.buyVolumeValue, formatCompactCurrency(aggregated.buyVolume), formatCurrency(aggregated.buyVolume, 2));
+      ui.buyVolumeMeta.textContent = `${formatCount(aggregated.buyTrades)} buy swaps.`;
+
+      setCardValue(ui.sellVolumeValue, formatCompactCurrency(aggregated.sellVolume), formatCurrency(aggregated.sellVolume, 2));
+      ui.sellVolumeMeta.textContent = `${formatCount(aggregated.sellTrades)} sell swaps.`;
+
+      setCardValue(ui.buyDominanceValue, formatPercent(aggregated.buyDominancePct));
+      ui.buyDominanceMeta.textContent = `Sell share: ${formatPercent(aggregated.sellDominancePct)}.`;
+
+      setCardValue(ui.totalSwapsValue, formatCount(aggregated.totalTrades));
+      ui.totalSwapsMeta.textContent = `${formatCount(aggregated.buyTrades)} buys, ${formatCount(aggregated.sellTrades)} sells.`;
+
+      setCardValue(ui.historySpanValue, formatHistorySpan(aggregated.oldestTrade, aggregated.latestTrade));
+      ui.historySpanMeta.textContent = `Oldest: ${formatDateDmy(aggregated.oldestTrade?.timestamp * 1000)} | Latest: ${formatDateTime(aggregated.latestTrade?.timestamp * 1000)}`;
+    }
+
+    function renderSnapshotCards(pair, aggregated) {
+      const liveVolume24h = toNumber(pair?.volume?.h24, Number.NaN);
+      const liveBuys24h = toNumber(pair?.txns?.h24?.buys, Number.NaN);
+      const liveSells24h = toNumber(pair?.txns?.h24?.sells, Number.NaN);
+
+      setCardValue(ui.liveVolume24hValue, formatCompactCurrency(liveVolume24h), Number.isFinite(liveVolume24h) ? formatCurrency(liveVolume24h, 2) : "");
+      setCardValue(
+        ui.liveTxns24hValue,
+        Number.isFinite(liveBuys24h) && Number.isFinite(liveSells24h)
+          ? `${formatCount(liveBuys24h)} / ${formatCount(liveSells24h)}`
+          : "--"
+      );
+
+      if (aggregated.peakTotalMonth) {
+        setCardValue(
+          ui.peakTotalMonthValue,
+          formatMonthYear(aggregated.peakTotalMonth.year, aggregated.peakTotalMonth.monthIndex)
+        );
+        ui.peakTotalMonthMeta.textContent = formatCurrency(aggregated.peakTotalMonth.value, aggregated.peakTotalMonth.value >= 1 ? 2 : 4);
+      } else {
+        setCardValue(ui.peakTotalMonthValue, "--");
+        ui.peakTotalMonthMeta.textContent = "No monthly peak.";
+      }
+
+      if (aggregated.peakBuyMonth) {
+        setCardValue(
+          ui.peakBuyMonthValue,
+          formatMonthYear(aggregated.peakBuyMonth.year, aggregated.peakBuyMonth.monthIndex)
+        );
+        ui.peakBuyMonthMeta.textContent = formatCurrency(aggregated.peakBuyMonth.value, aggregated.peakBuyMonth.value >= 1 ? 2 : 4);
+      } else {
+        setCardValue(ui.peakBuyMonthValue, "--");
+        ui.peakBuyMonthMeta.textContent = "No buy peak.";
+      }
+
+      if (aggregated.peakSellMonth) {
+        setCardValue(
+          ui.peakSellMonthValue,
+          formatMonthYear(aggregated.peakSellMonth.year, aggregated.peakSellMonth.monthIndex)
+        );
+        ui.peakSellMonthMeta.textContent = formatCurrency(aggregated.peakSellMonth.value, aggregated.peakSellMonth.value >= 1 ? 2 : 4);
+      } else {
+        setCardValue(ui.peakSellMonthValue, "--");
+        ui.peakSellMonthMeta.textContent = "No sell peak.";
+      }
+
+      setCardValue(
+        ui.averageMonthlyVolumeValue,
+        formatCompactCurrency(aggregated.averageMonthlyVolume),
+        formatCurrency(aggregated.averageMonthlyVolume, aggregated.averageMonthlyVolume >= 1 ? 2 : 4)
+      );
+      ui.averageMonthlyVolumeMeta.textContent = `${formatCount(aggregated.coveredMonths)} covered months.`;
+    }
+
+    function renderTables(aggregated) {
+      renderVolumeTable(ui.buyVolumeMount, {
+        rows: aggregated.buyRows,
+        summaryRow: aggregated.buySummary,
+        tone: "buy",
+        note: "Monthly buy volume in USDC"
+      });
+
+      renderVolumeTable(ui.sellVolumeMount, {
+        rows: aggregated.sellRows,
+        summaryRow: aggregated.sellSummary,
+        tone: "sell",
+        note: "Monthly sell volume in USDC"
+      });
+
+      renderVolumeTable(ui.totalVolumeMount, {
+        rows: aggregated.totalRows,
+        summaryRow: aggregated.totalSummary,
+        tone: "total",
+        note: "Monthly total volume in USDC"
+      });
+    }
+
+    function renderFooterState(aggregated, refreshedAt = null) {
+      const effectiveRefreshTimestamp = Number(refreshedAt)
+        || Number(aggregated?.fetchMeta?.snapshotAt)
+        || Math.floor(Date.now() / 1000);
+      const sourceLabel = aggregated?.fetchMeta?.sourceLabel || "live";
+
+      ui.snapshotTimestamp.textContent = `Last Update: ${formatDateTime(effectiveRefreshTimestamp * 1000)}`;
+      ui.flowSnapshotMeta.textContent = `${formatCount(aggregated.totalTrades)} swaps | ${sourceLabel}`;
+      ui.totalTableNote.textContent = "USDC volume by UTC month. Total = buy + sell. 2024-2025 use fixed monthly totals. 2026 updates from live pool transfers.";
+    }
+
+    function notifyParentReady() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        } catch (error) {
+          console.warn("Failed to notify parent page ready", error);
+        }
+      }
+    }
+
+    function goBackToTclToken() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenOverviewSection" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Back to TCL Token parent navigation failed", error);
+        }
+      }
+
+      window.location.href = "index.html#token";
+    }
+
+    function renderLoadError(message) {
+      const markup = `
+        <div class="empty-state">
+          ${message}
+        </div>
+      `;
+
+      ui.buyVolumeMount.innerHTML = markup;
+      ui.sellVolumeMount.innerHTML = markup;
+      ui.totalVolumeMount.innerHTML = markup;
+    }
+
+    async function loadVolumePage(isManual = false) {
+      const bootstrapAggregated = getPreferredAggregatedSnapshot();
+
+      if (bootstrapAggregated) {
+        const instantAggregated = normalizeAggregatedSnapshot(bootstrapAggregated, new Date());
+        renderHeroStats(instantAggregated);
+        renderSnapshotCards(null, instantAggregated);
+        renderTables(instantAggregated);
+        renderFooterState(instantAggregated);
+        setStatus(
+          isManual
+            ? "Refreshing volume..."
+            : "Loading snapshot. Syncing live trades...",
+          "loading"
+        );
+      } else {
+        setStatus(isManual ? "Refreshing volume..." : "Loading volume...", "loading");
+      }
+
+      ui.refreshButton.disabled = true;
+
+      try {
+        const historyPromise = bootstrapAggregated
+          ? fetchRecentTransferHistory(Number(bootstrapAggregated?.latestTrade?.timestamp))
+          : fetchTransferHistory();
+
+        const [dexPayload, transferHistory] = await Promise.all([
+          fetchJson(CONFIG.dexUrl),
+          historyPromise
+        ]);
+
+        const pair = dexPayload?.pair || dexPayload?.pairs?.[0];
+        if (!pair) {
+          throw new Error("DexScreener did not return a TCL / USDC pair payload.");
+        }
+
+        const pairReference = {
+          pairAddress: pair.pairAddress || CONFIG.pairAddress,
+          baseToken: { address: pair?.baseToken?.address || CONFIG.baseTokenAddress },
+          quoteToken: { address: pair?.quoteToken?.address || CONFIG.quoteTokenAddress }
+        };
+
+        const trades = parseTrades(transferHistory.transfers, pairReference);
+        let aggregated;
+
+        if (bootstrapAggregated) {
+          const bootstrapSource = bootstrapAggregated?.fetchMeta?.sourceLabel === "snapshot"
+            ? "snapshot"
+            : "cache";
+          aggregated = mergeTradesIntoAggregated(
+            bootstrapAggregated,
+            trades,
+            {
+              ...(transferHistory || {}),
+              snapshotAt: Math.floor(Date.now() / 1000),
+              sourceLabel: trades.length ? `${bootstrapSource} + live` : bootstrapSource
+            }
+          );
+        } else {
+          if (!trades.length) {
+            throw new Error("No swap trades were parsed from the public MultiversX transfers feed.");
+          }
+
+          aggregated = aggregateMonthlyVolumes(
+            trades,
+            {
+              ...(transferHistory || {}),
+              snapshotAt: Math.floor(Date.now() / 1000),
+              sourceLabel: "live"
+            }
+          );
+        }
+
+        renderHeroStats(aggregated);
+        renderSnapshotCards(pair, aggregated);
+        renderTables(aggregated);
+        renderFooterState(aggregated, Math.floor(Date.now() / 1000));
+        saveCachedAggregatedSnapshot(aggregated);
+
+        if (!bootstrapAggregated && transferHistory.hitPageLimit && !transferHistory.reachedListingStart && !transferHistory.exhaustedHistory) {
+          setStatus(
+            `${formatCount(aggregated.totalTrades)} swaps loaded. Older history is truncated.`,
+            "warning"
+          );
+        } else {
+          setStatus(
+            `${formatCount(aggregated.totalTrades)} swaps across ${formatCount(aggregated.coveredMonths)} months.`,
+            "ready"
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load TCL volume flow", error);
+        if (!bootstrapAggregated) {
+          renderLoadError(`Volume data unavailable. ${error.message}`);
+          ui.snapshotTimestamp.textContent = "Last Update: --";
+        }
+        setStatus(`Volume load failed. ${error.message}`, "error");
+      } finally {
+        ui.refreshButton.disabled = false;
+        notifyParentReady();
+      }
+    }
+
+    loadVolumePage();
+    window.setInterval(() => {
+      loadVolumePage(false);
+    }, CONFIG.refreshMs);
+  </script>
+</body>
+</html>
