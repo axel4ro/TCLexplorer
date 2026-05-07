@@ -942,7 +942,7 @@
 <div class="chart-frame">
   <iframe
     title="DexScreener TCL / USDC"
-    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTimeframesToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=1D&resetChart=1&t=12345"
+    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTimeframesToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=1D&resetChart=1&t=${Date.now()}"
     loading="lazy">
   </iframe>
 </div>
@@ -2174,7 +2174,7 @@
     function goBackToTclToken() {
       if (window.parent && window.parent !== window) {
         try {
-          window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenOverviewSection" }, "*");
+          window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
           return;
         } catch (error) {
           console.warn("Back to TCL Token parent navigation failed", error);

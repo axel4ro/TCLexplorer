@@ -1543,7 +1543,7 @@ function notifyReady(){
 function goBackToTclToken(){
     if(window.parent && window.parent !== window){
         try{
-            window.parent.postMessage({ type: "tcl:navigate", page: "token", section: "tokenCalculatorsSection" }, "*");
+            window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
             return;
         }catch(error){
             console.warn("Back to TCL Token parent navigation failed", error);

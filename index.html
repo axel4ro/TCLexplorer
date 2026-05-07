@@ -34,61 +34,58 @@
       margin: 0;
     }
 
-    .token-analytics-btn {
+    .token-hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .token-hub-grid .token-accordion-card,
+    .token-hub-grid .calculator-action-card {
+      height: 100%;
+    }
+
+    .token-hub-grid .token-accordion-card__icon {
+      margin-top: auto;
+    }
+
+    .page-hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .page-back-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-height: 42px;
       padding: 10px 16px;
       border-radius: 999px;
-      border: 1px solid rgba(0, 232, 204, 0.24);
-      background: linear-gradient(135deg, rgba(0, 232, 204, 0.14), rgba(168, 85, 247, 0.18));
+      border: 1px solid rgba(0, 232, 204, 0.28);
+      background: linear-gradient(135deg, rgba(0, 232, 204, 0.16), rgba(33, 183, 162, 0.22));
       color: #eef4ff;
       font-family: Orbitron, sans-serif;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       cursor: pointer;
       transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
     }
 
-    .token-analytics-btn:hover {
+    .page-back-btn:hover {
       transform: translateY(-1px);
       border-color: rgba(0, 232, 204, 0.42);
       box-shadow: 0 14px 32px rgba(0, 232, 204, 0.12);
     }
 
-    #tokenCalculatorActions.calculator-action-grid--stacked {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    #tokenCalculatorActions .calculator-action-row {
-      display: grid;
-      gap: 14px;
-      align-items: stretch;
-    }
-
-    #tokenCalculatorActions .calculator-action-row--top {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    #tokenCalculatorActions .calculator-action-row--bottom {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    #tokenCalculatorActions .calculator-action-card {
-      width: 100%;
-      min-width: 0;
-      height: 100%;
-    }
-
     @media (max-width: 1080px) {
-      #tokenCalculatorActions .calculator-action-row--top,
-      #tokenCalculatorActions .calculator-action-row--bottom {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      .token-hub-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       }
     }
 
@@ -97,12 +94,15 @@
         align-items: stretch;
       }
 
-      .token-analytics-btn {
+      .page-hero-actions {
+        align-items: stretch;
+      }
+
+      .page-back-btn {
         width: 100%;
       }
 
-      #tokenCalculatorActions .calculator-action-row--top,
-      #tokenCalculatorActions .calculator-action-row--bottom {
+      .token-hub-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -192,33 +192,72 @@
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="" width="28" height="28" style="border-radius:8px;">
         TCL Token
       </h2>
-      <button type="button" class="token-analytics-btn" onclick="openAnalyticsPage()">Analytics</button>
-      <button type="button" class="token-analytics-btn" onclick="openVolumePage()">Volume</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
       Data from MultiversX, DexScreener &amp; CoinGecko
     </p>
   </div>
-  <div class="token-accordion-nav" role="tablist" aria-label="TCL Token sections">
-    <button type="button" class="token-accordion-card active" id="tokenAccordionBtn-overview" onclick="setTokenAccordion('tokenOverviewSection')">
+  <div class="token-hub-grid" role="navigation" aria-label="TCL Token quick actions">
+    <button type="button" class="token-accordion-card" onclick="openTokenOverviewPage()">
       <span class="token-accordion-card__title" data-i18n="token_overview_title">📊 TCL Token</span>
-      <span class="token-accordion-card__hint" data-i18n="token_overview_hint">Tap to view token stats & sentiment</span>
-      <span class="token-accordion-card__icon">▾</span>
+      <span class="token-accordion-card__hint">Open live token stats, sentiment, supply and price overview.</span>
+      <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" id="tokenAccordionBtn-calculators" onclick="setTokenAccordion('tokenCalculatorsSection')">
-      <span class="token-accordion-card__title" data-i18n="token_calculators_title">🧮 Calculator Simulate Transaction &amp; Staking Reward</span>
-      <span class="token-accordion-card__hint" data-i18n="token_calculators_hint">Tap to open calculator actions</span>
-      <span class="token-accordion-card__icon">▾</span>
-    </button>
-    <button type="button" class="token-accordion-card" id="tokenAccordionBtn-staking" onclick="setTokenAccordion('tokenStakingSection')">
+    <button type="button" class="token-accordion-card" onclick="openTokenStakingPage()">
       <span class="token-accordion-card__title" data-i18n="token_staking_title">🏆 Top Staking</span>
-      <span class="token-accordion-card__hint" data-i18n="token_staking_hint">Tap to view leaderboard & pool rewards</span>
-      <span class="token-accordion-card__icon">▾</span>
+      <span class="token-accordion-card__hint">Open leaderboard, APR and live pool reward details.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openTradeSimulatorPage()">
+      <span class="token-accordion-card__title">📈 Trades Simulator</span>
+      <span class="token-accordion-card__hint">Practice buy, sell and price simulation with a dedicated TCL/USDC panel.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openTechnicalsPage()">
+      <span class="token-accordion-card__title">📊 Technicals</span>
+      <span class="token-accordion-card__hint">View TCL / USDC technical indicators, moving averages and support levels.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openSignalPage()">
+      <span class="token-accordion-card__title">🚨 Signal</span>
+      <span class="token-accordion-card__hint">Open the live TCL signal monitor for Buy, Sell or Watch updates.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openAprRewardsCalculatorPage()">
+      <span class="token-accordion-card__title" data-i18n="token_calculator_apr_title">🎁 APR &amp; Rewards Calculator</span>
+      <span class="token-accordion-card__hint" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openAnalyticsPage()">
+      <span class="token-accordion-card__title">📈 Analytics</span>
+      <span class="token-accordion-card__hint">Review live analytics, trends and market structure in one dashboard.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openVolumePage()">
+      <span class="token-accordion-card__title">📊 Volume</span>
+      <span class="token-accordion-card__hint">Track live volume, liquidity flow and overall trading activity.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openTransactionSimulatorPage()">
+      <span class="token-accordion-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
+      <span class="token-accordion-card__hint" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
+      <span class="token-accordion-card__icon">↗</span>
     </button>
   </div>
+</div>
 
-  <div id="tokenOverviewSection" class="token-accordion-section active">
+<div id="tokenOverviewPage" class="section-page">
+  <div class="page-hero">
+    <div class="page-hero-actions">
+      <div>
+        <h2 class="section-heading" style="margin-bottom:6px;">📊 TCL Token</h2>
+        <p class="muted">Token stats, live sentiment and on-chain overview.</p>
+      </div>
+      <button type="button" class="page-back-btn" onclick="showPage('token')">← Back to TCL Token</button>
+    </div>
+  </div>
+
     <div class="token-overview-row token-overview-row--single">
       <div class="token-overview-panel sentiment-panel">
         <div id="sentimentBox">
@@ -371,155 +410,132 @@
         The Cursed Land Whitepaper</a>
     </small>
   </div>
-  </div>
+</div>
 
-  <div id="tokenCalculatorsSection" class="token-accordion-section">
-    <div class="calculator-action-grid calculator-action-grid--stacked" id="tokenCalculatorActions">
-      <div class="calculator-action-row calculator-action-row--top">
-        <button type="button" class="calculator-action-card" onclick="openSignalPage()">
-          <span class="calculator-action-card__title">🚨 Signal</span>
-          <span class="calculator-action-card__desc">View the live TCL signal monitor with a dedicated Buy, Sell or Watch read.</span>
-        </button>
-        <button type="button" class="calculator-action-card" onclick="openTechnicalsPage()">
-          <span class="calculator-action-card__title">📊 Technicals</span>
-          <span class="calculator-action-card__desc">Open the live TCL / USDC technical dashboard with oscillators, moving averages and support levels.</span>
-        </button>
+<div id="tokenStakingPage" class="section-page">
+  <div class="page-hero">
+    <div class="page-hero-actions">
+      <div>
+        <h2 class="section-heading" data-i18n="top_staking_title" style="margin-bottom:6px;">🏆 Top 100 Staking</h2>
+        <p class="muted" data-i18n="top_staking_desc">Leaderboard &amp; live pool rewards in the same TCL dashboard.</p>
       </div>
-      <div class="calculator-action-row calculator-action-row--bottom">
-        <button type="button" class="calculator-action-card" onclick="openTradeSimulatorPage()">
-          <span class="calculator-action-card__title">📈 Trades Simulator</span>
-          <span class="calculator-action-card__desc">Practice buy, sell and price simulation with a dedicated TCL/USDC trading panel.</span>
-        </button>
-        <button type="button" class="calculator-action-card" onclick="openTransactionSimulatorPage()">
-          <span class="calculator-action-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
-          <span class="calculator-action-card__desc" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
-        </button>
-        <button type="button" class="calculator-action-card" onclick="openAprRewardsCalculatorPage()">
-          <span class="calculator-action-card__title" data-i18n="token_calculator_apr_title">🎁 APR &amp; Rewards Calculator</span>
-          <span class="calculator-action-card__desc" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
-        </button>
-      </div>
-    </div>
-
-    <div id="transactionCalcModal" style="display:none;">
-      <div class="modal-content">
-        <span class="close" onclick="closeTransactionCalculator()">✖</span>
-        <h3 style="margin-top:0;" data-i18n="token_calculator_transaction_title">Transaction Simulator</h3>
-        <p style="font-size:14px; color:#9ca3af;" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</p>
-
-        <div class="calc-layout modal-calc-layout">
-          <div class="calc-card-panel">
-            <h3>Input</h3>
-            <div class="row-group">
-              <div style="flex:2; min-width:180px;">
-                <label id="inputLabel" data-i18n="calc_label_buy"></label>
-                <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" autocomplete="off" />
-              </div>
-              <div style="flex:1; min-width:140px; display:flex; align-items:flex-end;">
-                <button type="button" style="width:100%;" onclick="switchMode()" id="switchBtn" data-i18n="calc_switch_to_sell"></button>
-              </div>
-            </div>
-            <div class="calc-actions">
-              <button type="button" class="btn-primary-green" onclick="calculate()" data-i18n="calc_btn_calculate"></button>
-              <button type="button" class="btn-trade" onclick="showPage('xexchangeIframe')" data-i18n="calc_btn_trade"></button>
-            </div>
-          </div>
-          <div class="calc-card-panel">
-            <h3>Result</h3>
-            <div class="result" id="resultBox" style="margin-top:0; min-height:120px;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="aprModal" style="display:none;">
-      <div class="modal-content">
-        <span class="close" onclick="closeAprCalculator()">✖</span>
-        <h3 style="margin-top:0;" data-i18n="token_modal_apr_title">Calculator</h3>
-        <p style="font-size:14px; color:#9ca3af;" data-i18n="token_modal_apr_intro">Enter an amount of TCL to simulate:</p>
-        
-        <input 
-          type="text" 
-          id="aprInput" 
-          placeholder="e.g. 1,000,000" data-i18n-placeholder="token_modal_apr_placeholder" 
-          inputmode="numeric" 
-          style="text-align:center;" 
-        />
-
-        <button onclick="simulateApr()" data-i18n="calc_btn_calculate">Calculate</button>
-        
-        <div id="aprResult" style="margin-top:14px; font-size:15px;"></div>
-      </div>
+      <button type="button" class="page-back-btn" onclick="showPage('token')">← Back to TCL Token</button>
     </div>
   </div>
 
-  <div id="tokenStakingSection" class="token-accordion-section">
-    <h2 class="section-heading" data-i18n="top_staking_title">🏆 Top 100 Staking</h2>
-    <p class="muted" style="margin-bottom:12px;" data-i18n="top_staking_desc">Leaderboard &amp; live pool rewards in the same TCL dashboard.</p>
+  <small id="lastUpdated" class="muted" style="display:block; margin-bottom:12px;">
+    ⏳ Loading update time...
+  </small>
 
-    <small id="lastUpdated" class="muted" style="display:block; margin-bottom:12px;">
-      ⏳ Loading update time...
-    </small>
-
-    <div id="stakingStats" class="staking-grid">
-      <div class="stat">
-        <div class="stat-top">
-          <span>Total TCL Staked</span><span class="live-dot"></span>
-        </div>
-        <div id="staked" class="stat-value">—</div>
-        <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+  <div id="stakingStats" class="staking-grid">
+    <div class="stat">
+      <div class="stat-top">
+        <span>Total TCL Staked</span><span class="live-dot"></span>
       </div>
-
-      <div class="stat">
-        <div class="stat-top">
-          <span>Current Emission/Day</span><span class="live-dot"></span>
-        </div>
-        <div id="emission" class="stat-value">—</div>
-        <div id="emissionUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-top">
-          <span>APR</span><span class="live-dot"></span>
-        </div>
-        <div id="apr" class="stat-value">—</div>
-        <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
-      </div>
+      <div id="staked" class="stat-value">—</div>
+      <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
     </div>
 
-    <div class="staking-search-row">
-      <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" data-i18n-placeholder="staking_search_placeholder" 
-            style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
-      <button onclick="searchStaker()" style="background:#28a745; font-weight:600;" data-i18n="common_search">Search</button>
+    <div class="stat">
+      <div class="stat-top">
+        <span>Current Emission/Day</span><span class="live-dot"></span>
+      </div>
+      <div id="emission" class="stat-value">—</div>
+      <div id="emissionUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
     </div>
 
-    <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
-
-    <div class="staking-reward-note muted" data-i18n="staking_reward_note">
-      ℹ️ Reward/day is a base estimate at current APR and price and does not include TCLBoost bonuses (+5% / +7% / +10%)
+    <div class="stat">
+      <div class="stat-top">
+        <span>APR</span><span class="live-dot"></span>
+      </div>
+      <div id="apr" class="stat-value">—</div>
+      <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
     </div>
+  </div>
 
-    <div class="staking-scale-shell" id="stakingScaleShell">
-      <div class="staking-scale-root" id="stakingScaleRoot">
-        <div class="staking-table-wrap">
-          <table id="stakingTable">
-            <thead>
-              <tr>
-                <th style="padding:8px; text-align:center;">Rank</th>
-                <th style="padding:8px; text-align:center;" data-i18n="staking_table_address">Address</th>
-                <th style="padding:8px; text-align:center;">Total TCL</th>
-                <th style="padding:8px; text-align:center;">NFT</th>
-                <th style="padding:8px; text-align:center;">Loan</th>
-                <th style="padding:8px; text-align:center;">Infinity</th>
-              </tr>
-            </thead>
-            <tbody id="stakingBody">
-              <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
-            </tbody>
-          </table>
-        </div>
+  <div class="staking-search-row">
+    <input type="text" id="stakingSearch" placeholder="Enter wallet address (erd1...)" data-i18n-placeholder="staking_search_placeholder" 
+          style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#111827; color:#fff;">
+    <button onclick="searchStaker()" style="background:#28a745; font-weight:600;" data-i18n="common_search">Search</button>
+  </div>
+
+  <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
+
+  <div class="staking-reward-note muted" data-i18n="staking_reward_note">
+    ℹ️ Reward/day is a base estimate at current APR and price and does not include TCLBoost bonuses (+5% / +7% / +10%)
+  </div>
+
+  <div class="staking-scale-shell" id="stakingScaleShell">
+    <div class="staking-scale-root" id="stakingScaleRoot">
+      <div class="staking-table-wrap">
+        <table id="stakingTable">
+          <thead>
+            <tr>
+              <th style="padding:8px; text-align:center;">Rank</th>
+              <th style="padding:8px; text-align:center;" data-i18n="staking_table_address">Address</th>
+              <th style="padding:8px; text-align:center;">Total TCL</th>
+              <th style="padding:8px; text-align:center;">NFT</th>
+              <th style="padding:8px; text-align:center;">Loan</th>
+              <th style="padding:8px; text-align:center;">Infinity</th>
+            </tr>
+          </thead>
+          <tbody id="stakingBody">
+            <tr><td colspan="6" style="padding:10px;text-align:center;">⏳ Loading leaderboard...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="transactionCalcModal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeTransactionCalculator()">✖</span>
+    <h3 style="margin-top:0;" data-i18n="token_calculator_transaction_title">Transaction Simulator</h3>
+    <p style="font-size:14px; color:#9ca3af;" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</p>
+
+    <div class="calc-layout modal-calc-layout">
+      <div class="calc-card-panel">
+        <h3>Input</h3>
+        <div class="row-group">
+          <div style="flex:2; min-width:180px;">
+            <label id="inputLabel" data-i18n="calc_label_buy"></label>
+            <input type="text" id="amount" placeholder="ex: 100" onblur="formatInputField(this)" autocomplete="off" />
+          </div>
+          <div style="flex:1; min-width:140px; display:flex; align-items:flex-end;">
+            <button type="button" style="width:100%;" onclick="switchMode()" id="switchBtn" data-i18n="calc_switch_to_sell"></button>
+          </div>
+        </div>
+        <div class="calc-actions">
+          <button type="button" class="btn-primary-green" onclick="calculate()" data-i18n="calc_btn_calculate"></button>
+          <button type="button" class="btn-trade" onclick="showPage('xexchangeIframe')" data-i18n="calc_btn_trade"></button>
+        </div>
+      </div>
+      <div class="calc-card-panel">
+        <h3>Result</h3>
+        <div class="result" id="resultBox" style="margin-top:0; min-height:120px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="aprModal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeAprCalculator()">✖</span>
+    <h3 style="margin-top:0;" data-i18n="token_modal_apr_title">Calculator</h3>
+    <p style="font-size:14px; color:#9ca3af;" data-i18n="token_modal_apr_intro">Enter an amount of TCL to simulate:</p>
+
+    <input
+      type="text"
+      id="aprInput"
+      placeholder="e.g. 1,000,000" data-i18n-placeholder="token_modal_apr_placeholder"
+      inputmode="numeric"
+      style="text-align:center;"
+    />
+
+    <button onclick="simulateApr()" data-i18n="calc_btn_calculate">Calculate</button>
+
+    <div id="aprResult" style="margin-top:14px; font-size:15px;"></div>
   </div>
 </div>
 
@@ -2026,6 +2042,8 @@ const XEXCHANGE_URL = "https://xexchange.com/trade?firstToken=USDC-c76f1f&second
 const PAGE_TITLES = {
   wiki: "Wiki",
   token: "TCL Token",
+  tokenOverviewPage: "TCL Token",
+  tokenStakingPage: "Top Staking",
   calculator: "Pool Calculator",
   expTable: "EXP Table",
   chart: "TCL Chart",
@@ -2052,6 +2070,11 @@ const lazyEmbedPages = {
   chart: "chartFrame",
   explorerIframe: "explorerFrame",
   xexchangeIframe: "xexchangeFrame"
+};
+
+const PAGE_PARENT_NAV = {
+  tokenOverviewPage: "btn-token",
+  tokenStakingPage: "btn-token"
 };
 
 let eventsLoadPromise = null;
@@ -2323,7 +2346,25 @@ function applyStakingPortraitScale() {
   shell.style.height = Math.ceil(root.getBoundingClientRect().height || scaledHeight) + "px";
 }
 
+function resolveTokenTargetPage(sectionId = "") {
+  if (sectionId === "tokenOverviewSection") return "tokenOverviewPage";
+  if (sectionId === "tokenStakingSection") return "tokenStakingPage";
+  return "token";
+}
+
+function openTokenOverviewPage() {
+  showPage("tokenOverviewPage");
+}
+
+function openTokenStakingPage() {
+  showPage("tokenStakingPage");
+}
+
 function showPage(id) {
+  if (id === "tokenOverviewSection" || id === "tokenStakingSection" || id === "tokenCalculatorsSection") {
+    id = resolveTokenTargetPage(id);
+  }
+
   document.querySelectorAll(".section-page").forEach((sec) => {
     sec.classList.remove("active", "fullpage");
   });
@@ -2352,11 +2393,12 @@ function showPage(id) {
   document.querySelectorAll(".sidebar-nav .nav-item").forEach((b) => b.classList.remove("active"));
   const navBtn = id === "internalPage"
     ? document.getElementById(internalPageState.navId)
-    : document.getElementById("btn-" + id);
+    : document.getElementById(PAGE_PARENT_NAV[id] || ("btn-" + id));
   if (navBtn) navBtn.classList.add("active");
 
   closeSidebarMobile();
   applyTranslations();
+  window.scrollTo({ top: 0, behavior: "auto" });
 
   if (id === "wiki" && typeof loadWiki === "function") {
     loadWiki(currentLang, true);
@@ -2366,46 +2408,15 @@ function showPage(id) {
     ensureEventsLoaded();
   }
 
-  if (id === "token") {
-    ensureTokenAccordionState();
+  if (id === "token" || id === "tokenOverviewPage" || id === "tokenStakingPage") {
     startTokenRefresh();
-    if (document.getElementById("tokenStakingSection")?.classList.contains("active")) {
-      ensureStakingLoaded();
-    }
+  }
+
+  if (id === "tokenStakingPage") {
+    ensureStakingLoaded();
   }
 
   schedulePageFits();
-}
-
-function setTokenAccordion(sectionId) {
-  const sections = ["tokenOverviewSection", "tokenCalculatorsSection", "tokenStakingSection"];
-  const buttonMap = {
-    tokenOverviewSection: "tokenAccordionBtn-overview",
-    tokenCalculatorsSection: "tokenAccordionBtn-calculators",
-    tokenStakingSection: "tokenAccordionBtn-staking"
-  };
-
-  sections.forEach((id) => {
-    const section = document.getElementById(id);
-    const button = document.getElementById(buttonMap[id]);
-    const isActive = id === sectionId;
-
-    if (section) section.classList.toggle("active", isActive);
-    if (button) {
-      button.classList.toggle("active", isActive);
-      button.setAttribute("aria-expanded", isActive ? "true" : "false");
-    }
-  });
-
-  if (sectionId === "tokenStakingSection") {
-    ensureStakingLoaded();
-  }
-}
-
-function ensureTokenAccordionState() {
-  const hasActive = Array.from(document.querySelectorAll(".token-accordion-section"))
-    .some((section) => section.classList.contains("active"));
-  if (!hasActive) setTokenAccordion("tokenOverviewSection");
 }
 
 function openInternalPage(src, title, options = {}) {
@@ -2485,10 +2496,13 @@ window.addEventListener("message", (event) => {
 
   if (data.type !== "tcl:navigate") return;
 
-  const targetPage = typeof data.page === "string" ? data.page : "wiki";
+  const requestedPage = typeof data.page === "string" ? data.page : "wiki";
+  const targetSection = typeof data.section === "string" ? data.section : "";
+  const targetPage = requestedPage === "token"
+    ? resolveTokenTargetPage(targetSection)
+    : requestedPage;
   const targetEl = document.getElementById(targetPage);
   if (!targetEl) return;
-  const targetSection = typeof data.section === "string" ? data.section : "";
 
   const frame = document.getElementById("internalPageFrame");
   if (frame) frame.src = "about:blank";
@@ -2502,9 +2516,6 @@ window.addEventListener("message", (event) => {
   }
 
   showPage(targetPage);
-  if (targetPage === "token" && targetSection) {
-    setTokenAccordion(targetSection);
-  }
   if (window.location.hash.replace("#", "") !== targetPage) {
     window.location.hash = targetPage;
   }

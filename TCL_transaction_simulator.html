@@ -121,7 +121,7 @@ body{
 const DEX_API_URL="https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
 let mode="buy",readyNotified=false,poolState={curTCL:0,curUSDC:0,priceUsd:0};
 function notifyReady(){if(readyNotified)return;readyNotified=true;if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:page-ready"},"*")}catch(error){console.warn("Failed to notify parent page ready",error)}}}
-function goBackToTclToken(){if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:navigate",page:"token",section:"tokenCalculatorsSection"},"*");return}catch(error){console.warn("Back to TCL Token parent navigation failed",error)}}window.location.href="index.html#token"}
+function goBackToTclToken(){if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:navigate",page:"token"},"*");return}catch(error){console.warn("Back to TCL Token parent navigation failed",error)}}window.location.href="index.html#token"}
 function openXExchange(){if(window.parent&&window.parent!==window){try{window.parent.postMessage({type:"tcl:navigate",page:"xexchangeIframe"},"*");return}catch(error){console.warn("Open xExchange parent navigation failed",error)}}window.location.href="index.html#xexchangeIframe"}
 function formatNumber(n){return Number(n).toLocaleString("en-US",{maximumFractionDigits:2})}
 function parseNumber(value){return parseFloat((value||"").toString().replace(/,/g,""))||0}
