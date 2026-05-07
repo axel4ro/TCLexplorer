@@ -626,6 +626,23 @@
       line-height: 1.7;
     }
 
+    .chart-frame {
+      overflow: hidden;
+      margin-top: 22px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: rgba(12, 16, 24, 0.96);
+      box-shadow: var(--shadow-panel);
+    }
+
+    .chart-frame iframe {
+      display: block;
+      width: 100%;
+      height: 440px;
+      border: 0;
+      background: #0c0e14;
+    }
+
     .page-footer {
       grid-template-columns: 1fr;
       align-items: center;
@@ -682,6 +699,10 @@
       .section-card {
         padding: 18px;
         border-radius: 20px;
+      }
+
+      .chart-frame iframe {
+        height: 360px;
       }
 
       .status-row,
@@ -916,6 +937,14 @@
           USDC volume for TCL sells.
         </div>
       </section>
+    </div>
+
+    <div class="chart-frame">
+      <iframe
+        title="DexScreener TCL / USDC"
+        src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTimeframesToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=usd&interval=1D&resetChart=1&t=12345"
+        loading="lazy">
+      </iframe>
     </div>
 
     <footer class="page-footer">
