@@ -1,6 +1,6 @@
 window.TCL_ANALYTICS_SNAPSHOT = {
   "meta": {
-    "updatedAt": "2026-05-07T16:08:13.5603067Z",
+    "updatedAt": "2026-05-07T16:13:22.8328868Z",
     "source": "CryptoRank",
     "endpoints": {
       "coin": "https://api.cryptorank.io/v0/coins/the-cursed-land",
@@ -18,8 +18,8 @@ window.TCL_ANALYTICS_SNAPSHOT = {
     }
   },
   "market": {
-    "currentPriceUsd": 0.001001597774,
-    "marketCapUsd": 7712.3028598,
+    "currentPriceUsd": 0.001001645262,
+    "marketCapUsd": 7712.6685174,
     "volume24hUsd": 122937.9667,
     "athPriceUsd": 0.010060211042,
     "atlPriceUsd": 0.000542361537,
@@ -31,40 +31,40 @@ window.TCL_ANALYTICS_SNAPSHOT = {
     {
       "label": "1W",
       "key": "7D",
-      "startPrice": 0.000841869836,
-      "currentPrice": 0.001001597774,
-      "change": 0.000159727938,
-      "changePct": 18.97299691,
+      "startPrice": 0.000841853926,
+      "currentPrice": 0.001001645262,
+      "change": 0.000159791336,
+      "changePct": 18.98088624,
       "high": 0.001045618391,
       "low": 0.000835452668
     },
     {
       "label": "1M",
       "key": "30D",
-      "startPrice": 0.000914924236,
-      "currentPrice": 0.001001597774,
-      "change": 8.6673538E-05,
-      "changePct": 9.47330222,
+      "startPrice": 0.000914841213,
+      "currentPrice": 0.001001645262,
+      "change": 8.6804049E-05,
+      "changePct": 9.48842791,
       "high": 0.001045618391,
       "low": 0.000835452668
     },
     {
       "label": "3M",
       "key": "3M",
-      "startPrice": 0.00100286146,
-      "currentPrice": 0.001001597774,
-      "change": -1.263686E-06,
-      "changePct": -0.12600803,
+      "startPrice": 0.001002776299,
+      "currentPrice": 0.001001645262,
+      "change": -1.131037E-06,
+      "changePct": -0.11279056,
       "high": 0.001127992719,
       "low": 0.000811077553
     },
     {
       "label": "6M",
       "key": "6M",
-      "startPrice": 0.001041304793,
-      "currentPrice": 0.001001597774,
-      "change": -3.9707019E-05,
-      "changePct": -3.81319852,
+      "startPrice": 0.00104129942,
+      "currentPrice": 0.001001645262,
+      "change": -3.9654158E-05,
+      "changePct": -3.80814175,
       "high": 0.001321155046,
       "low": 0.000811077553
     },
@@ -72,19 +72,19 @@ window.TCL_ANALYTICS_SNAPSHOT = {
       "label": "YTD",
       "key": "YTD",
       "startPrice": 0.001114915852,
-      "currentPrice": 0.001001597774,
-      "change": -0.000113318078,
-      "changePct": -10.16382338,
+      "currentPrice": 0.001001645262,
+      "change": -0.00011327059,
+      "changePct": -10.15956404,
       "high": 0.001203109933,
       "low": 0.000811077553
     },
     {
       "label": "1Y",
       "key": "1Y",
-      "startPrice": 0.00304151131,
-      "currentPrice": 0.001001597774,
-      "change": -0.002039913536,
-      "changePct": -67.06907613,
+      "startPrice": 0.003041517311,
+      "currentPrice": 0.001001645262,
+      "change": -0.002039872049,
+      "changePct": -67.06757978,
       "high": 0.003836686922,
       "low": 0.000542361537
     }
@@ -101,7 +101,7 @@ window.TCL_ANALYTICS_SNAPSHOT = {
         "label": "2026",
         "cells": [
           -26.89595017,
-          22.88866263,
+          22.89415029,
           null,
           null
         ]
@@ -186,7 +186,7 @@ window.TCL_ANALYTICS_SNAPSHOT = {
           -2.10377533,
           -14.90747882,
           2.88430124,
-          19.44091973,
+          19.44625342,
           null,
           null,
           null,
@@ -239,7 +239,7 @@ window.TCL_ANALYTICS_SNAPSHOT = {
           2.73,
           -11.79,
           1.7,
-          1.7,
+          1.71,
           -20.8,
           -14.76,
           -9.66,
@@ -256,7 +256,7 @@ window.TCL_ANALYTICS_SNAPSHOT = {
           2.73,
           -11.79,
           1.7,
-          1.7,
+          1.71,
           -20.8,
           -14.76,
           -9.66,
