@@ -454,8 +454,8 @@
     }
 
     .page-footer {
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
+      grid-template-columns: 1fr;
+      align-items: start;
       gap: 18px;
       margin-top: 22px;
       padding-bottom: 12px;
@@ -465,14 +465,16 @@
       grid-template-columns: auto max-content;
       align-items: center;
       gap: 14px;
+      justify-content: start;
+      justify-items: start;
     }
 
     .source-meta {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
+      align-items: flex-start;
       gap: 4px;
-      text-align: right;
+      text-align: left;
     }
 
     .source-meta__label {
@@ -894,7 +896,6 @@
     </section>
 
     <footer class="page-footer">
-      <div></div>
       <div class="footer-source">
         <div class="source-meta">
           <span class="source-meta__label">Source CryptoRank</span>
