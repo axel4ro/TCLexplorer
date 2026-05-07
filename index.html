@@ -193,6 +193,7 @@
         TCL Token
       </h2>
       <button type="button" class="token-analytics-btn" onclick="openAnalyticsPage()">Analytics</button>
+      <button type="button" class="token-analytics-btn" onclick="openVolumePage()">Volume</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
@@ -3617,6 +3618,15 @@ function openAnalyticsPage() {
     navId: "btn-token",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing TCL analytics.",
+    waitForReadyMessage: true
+  });
+}
+
+function openVolumePage() {
+  openInternalPage("volume.html", "Volume", {
+    navId: "btn-token",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL volume.",
     waitForReadyMessage: true
   });
 }
