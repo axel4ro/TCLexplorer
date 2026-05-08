@@ -128,6 +128,7 @@
       <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
+      <button type="button" class="nav-item" onclick="openEarnGuidePage()" id="btn-earn">🎮 Play and Earn</button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck" data-i18n="sidebar_wallet_check">🔎 Wallet Check</button>
@@ -155,6 +156,7 @@
     <header class="app-topbar">
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-controls="appSidebar" aria-expanded="false" aria-label="Toggle navigation">☰</button>
       <div id="installGuideContainer"></div>
+      <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="openEarnGuidePage()">🎮 Play and Earn</button>
       <h1 class="app-page-title" id="appPageTitle">TCL Token</h1>
       <div class="app-topbar-right">
         <div class="lang-dropdown">
@@ -2360,9 +2362,9 @@ function openTokenStakingPage() {
 }
 
 function openEarnGuidePage() {
-  openInternalPage("earn.html", "How to Earn", {
-    navId: "btn-token",
-    loadingTitle: "Loading earning guide...",
+  openInternalPage("earn.html", "Play and Earn", {
+    navId: "btn-earn",
+    loadingTitle: "Loading Play and Earn...",
     loadingSubtitle: "Preparing creator program, staking and web3 shop walkthrough."
   });
 }
