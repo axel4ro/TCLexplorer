@@ -352,6 +352,11 @@ body.sidebar-desktop .app-content {
   white-space: nowrap;
 }
 
+body.sidebar-open .topbar-earn-btn,
+body.sidebar-desktop .topbar-earn-btn {
+  display: none !important;
+}
+
 .app-page-title {
   display: none;
 }
@@ -1708,7 +1713,7 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 }
 
 @media (max-width: 1023px) {
-  body:not(.sidebar-open) .topbar-earn-btn {
+  body:not(.sidebar-open):not(.sidebar-desktop) .topbar-earn-btn {
     display: inline-flex;
   }
 }
