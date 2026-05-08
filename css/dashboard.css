@@ -347,6 +347,11 @@ body.sidebar-desktop .app-content {
   top: auto !important;
 }
 
+.topbar-earn-btn {
+  display: none;
+  white-space: nowrap;
+}
+
 .app-page-title {
   display: none;
 }
@@ -1700,6 +1705,12 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 
 .install-btn:hover {
   background: var(--accent-dim);
+}
+
+@media (max-width: 1023px) {
+  body:not(.sidebar-open) .topbar-earn-btn {
+    display: inline-flex;
+  }
 }
 
 /* Sentiment last update */
