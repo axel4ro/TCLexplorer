@@ -160,7 +160,8 @@
   "exp_table_level": "Nivel",
   "exp_table_exp_needed": "EXP Necesar",
   "exp_table_loading": "Se incarca tabelul EXP...",
-  "sidebar_events": "\ud83d\udcc5 Evenimente",
-  "sidebar_web3_guides": "\u2139\ufe0f Ghiduri Web3",
-  "sidebar_wallet_check": "\ud83d\udd0e Verificare Portofel"
+  "sidebar_events": "📅 Evenimente",
+  "sidebar_web3_guides": "ℹ️ Ghiduri Web3",
+  "sidebar_wallet_check": "🔎 Verificare Portofel",
+  "nav_play_and_earn": "🎮Joacă și Câștigă💰"
 }

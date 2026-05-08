@@ -160,7 +160,8 @@
   "exp_table_level": "Poziom",
   "exp_table_exp_needed": "Wymagane EXP",
   "exp_table_loading": "Ladowanie tabeli EXP...",
-  "sidebar_events": "\ud83d\udcc5 Wydarzenia",
-  "sidebar_web3_guides": "\u2139\ufe0f Przewodniki Web3",
-  "sidebar_wallet_check": "\ud83d\udd0e Sprawdzenie Portfela"
+  "sidebar_events": "📅 Wydarzenia",
+  "sidebar_web3_guides": "ℹ️ Przewodniki Web3",
+  "sidebar_wallet_check": "🔎 Sprawdzenie Portfela",
+  "nav_play_and_earn": "🎮Graj i Zarabiaj💰"
 }

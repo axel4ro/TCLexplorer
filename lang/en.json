@@ -160,7 +160,8 @@
   "exp_table_level": "Level",
   "exp_table_exp_needed": "EXP Needed",
   "exp_table_loading": "Loading EXP table...",
-  "sidebar_events": "\ud83d\udcc5 Events",
-  "sidebar_web3_guides": "\u2139\ufe0f Web3 Guides",
-  "sidebar_wallet_check": "\ud83d\udd0e Wallet Check"
+  "sidebar_events": "📅 Events",
+  "sidebar_web3_guides": "ℹ️ Web3 Guides",
+  "sidebar_wallet_check": "🔎 Wallet Check",
+  "nav_play_and_earn": "🎮Play and Earn💰"
 }

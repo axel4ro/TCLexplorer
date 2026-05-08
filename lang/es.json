@@ -160,7 +160,8 @@
   "exp_table_level": "Nivel",
   "exp_table_exp_needed": "EXP Necesaria",
   "exp_table_loading": "Cargando tabla EXP...",
-  "sidebar_events": "\ud83d\udcc5 Eventos",
-  "sidebar_web3_guides": "\u2139\ufe0f Gu\u00edas Web3",
-  "sidebar_wallet_check": "\ud83d\udd0e Verificaci\u00f3n de Wallet"
+  "sidebar_events": "📅 Eventos",
+  "sidebar_web3_guides": "ℹ️ Guías Web3",
+  "sidebar_wallet_check": "🔎 Verificación de Wallet",
+  "nav_play_and_earn": "🎮Juega y Gana💰"
 }

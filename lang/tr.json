@@ -160,7 +160,8 @@
   "exp_table_level": "Seviye",
   "exp_table_exp_needed": "Gerekli EXP",
   "exp_table_loading": "EXP tablosu yukleniyor...",
-  "sidebar_events": "\ud83d\udcc5 Etkinlikler",
-  "sidebar_web3_guides": "\u2139\ufe0f Web3 Rehberleri",
-  "sidebar_wallet_check": "\ud83d\udd0e C\u00fczdan Kontrol\u00fc"
+  "sidebar_events": "📅 Etkinlikler",
+  "sidebar_web3_guides": "ℹ️ Web3 Rehberleri",
+  "sidebar_wallet_check": "🔎 Cüzdan Kontrolü",
+  "nav_play_and_earn": "🎮Oyna ve Kazan💰"
 }
