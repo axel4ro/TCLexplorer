@@ -922,14 +922,19 @@ td.action-cell {
 <script>
 const CONFIG = {
     chainId: "multiversx",
+    listingDate: "2024-06-13T00:00:00Z",
     pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+    baseTokenAddress: "TCL-fe459d",
+    quoteTokenAddress: "USDC-c76f1f",
     dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
     txUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
-    txPageSize: 50,
-    txMaxPages: 6,
+    txPageSize: 2000,
+    txMaxPages: 18,
     pollMs: 60_000,
     targetCandles: 320
 };
+const TRADE_CACHE_KEY = "tcl-technical-trades-v1";
+const TRADE_CACHE_VERSION = 1;
 
 const TIMEFRAMES = {
     "1H": { label: "1H", seconds: 60 * 60 },
@@ -945,7 +950,9 @@ const state = {
     pair: null,
     trades: [],
     timeframe: "4H",
-    lastLoadedAt: 0
+    lastLoadedAt: 0,
+    tradeFetchMeta: null,
+    isLoading: false
 };
 
 const ui = {
@@ -987,12 +994,36 @@ loadData();
 setInterval(() => loadData(false), CONFIG.pollMs);
 
 async function loadData(isManual = false) {
-    setStatus(isManual ? "Refreshing TCL pair data..." : "Loading TCL pair metadata and on-chain swap history...");
+    if (state.isLoading) {
+        if (isManual) {
+            setStatus("A TCL technical refresh is already running...");
+        }
+        return;
+    }
+
+    const bootstrapSnapshot = loadCachedTradeSnapshot();
+    const bootstrapTrades = Array.isArray(bootstrapSnapshot?.trades) ? bootstrapSnapshot.trades : [];
+    const bootstrapLatestTimestamp = Number(
+        bootstrapSnapshot?.latestTradeTimestamp ??
+        bootstrapTrades[bootstrapTrades.length - 1]?.timestamp
+    );
+
+    state.isLoading = true;
+    ui.refreshButton.disabled = true;
+    setStatus(
+        bootstrapTrades.length
+            ? (isManual ? "Refreshing TCL technicals from cached history..." : "Loading cached swap history. Syncing live trades...")
+            : (isManual ? "Refreshing TCL technicals from full on-chain history..." : "Loading full on-chain swap history...")
+    );
 
     try {
+        const historyPromise = bootstrapTrades.length
+            ? fetchRecentTransactionHistory(bootstrapLatestTimestamp)
+            : fetchTransactionHistory();
+
         const [pairResponse, txResponse] = await Promise.all([
             fetchJson(CONFIG.dexUrl),
-            fetchTransactionHistory()
+            historyPromise
         ]);
 
         const pair = pairResponse.pair || pairResponse.pairs?.[0];
@@ -1000,22 +1031,72 @@ async function loadData(isManual = false) {
             throw new Error("The pair metadata request succeeded, but no pair was returned.");
         }
 
-        const trades = parseTrades(txResponse, pair);
+        const pairReference = {
+            pairAddress: pair.pairAddress || CONFIG.pairAddress,
+            baseToken: { address: pair?.baseToken?.address || CONFIG.baseTokenAddress },
+            quoteToken: { address: pair?.quoteToken?.address || CONFIG.quoteTokenAddress }
+        };
+
+        const liveTrades = parseTrades(txResponse.transfers, pairReference);
+        const trades = bootstrapTrades.length ? mergeTradeLists(bootstrapTrades, liveTrades) : liveTrades;
         if (!trades.length) {
-            throw new Error("No swap trades were parsed from the public MultiversX transaction feed.");
+            throw new Error("No swap trades were parsed from the public MultiversX transfer feed.");
         }
 
-        state.pair = pair;
+        state.pair = {
+            ...pair,
+            pairAddress: pairReference.pairAddress,
+            baseToken: {
+                ...(pair.baseToken || {}),
+                address: pairReference.baseToken.address
+            },
+            quoteToken: {
+                ...(pair.quoteToken || {}),
+                address: pairReference.quoteToken.address
+            }
+        };
         state.trades = trades;
         state.lastLoadedAt = Date.now();
+        state.tradeFetchMeta = {
+            ...(txResponse || {}),
+            latestTradeTimestamp: Number(trades[trades.length - 1]?.timestamp) || 0,
+            sourceLabel: bootstrapTrades.length
+                ? (liveTrades.length ? "cache + live sync" : "cache")
+                : "live"
+        };
+
+        saveCachedTradeSnapshot({
+            trades,
+            latestTradeTimestamp: state.tradeFetchMeta.latestTradeTimestamp,
+            fetchMeta: state.tradeFetchMeta
+        });
 
         recomputeAndRender();
-        setStatus(`Loaded ${trades.length} real swap trades from public APIs. Last refresh ${formatDateTime(state.lastLoadedAt)}.`);
+
+        const sourceText = state.tradeFetchMeta.sourceLabel === "cache"
+            ? "cached history"
+            : state.tradeFetchMeta.sourceLabel === "cache + live sync"
+                ? "cached history + live sync"
+                : "public APIs";
+        const fullHistoryWasTruncated =
+            !bootstrapTrades.length &&
+            txResponse.hitPageLimit &&
+            !txResponse.reachedListingStart &&
+            !txResponse.exhaustedHistory;
+
+        setStatus(
+            fullHistoryWasTruncated
+                ? `Loaded ${trades.length.toLocaleString()} real swap trades from ${sourceText}, but older history may still be truncated. Last refresh ${formatDateTime(state.lastLoadedAt)}.`
+                : `Loaded ${trades.length.toLocaleString()} real swap trades from ${sourceText}. Last refresh ${formatDateTime(state.lastLoadedAt)}.`
+        );
         notifyReady();
     } catch (error) {
         console.error(error);
         setStatus(`Could not load TCL technicals: ${error.message}`, true);
         notifyReady();
+    } finally {
+        state.isLoading = false;
+        ui.refreshButton.disabled = false;
     }
 }
 
@@ -1059,106 +1140,360 @@ async function fetchJson(url) {
     return response.json();
 }
 
-async function fetchTransactionHistory() {
-    const transactions = [];
-
-    for (let pageIndex = 0; pageIndex < CONFIG.txMaxPages; pageIndex += 1) {
-        const from = pageIndex * CONFIG.txPageSize;
-        const url = `${CONFIG.txUrlBase}?from=${from}&size=${CONFIG.txPageSize}`;
-        const page = await fetchJson(url);
-        transactions.push(...page);
-
-        if (page.length < CONFIG.txPageSize) {
-            break;
-        }
-    }
-
-    return transactions;
+function isValidTrade(trade) {
+    return Boolean(
+        trade &&
+        typeof trade.hash === "string" &&
+        trade.hash.length &&
+        Number.isFinite(Number(trade.timestamp)) &&
+        Number.isFinite(Number(trade.price)) &&
+        Number(trade.price) > 0 &&
+        Number.isFinite(Number(trade.volumeUsd)) &&
+        Number(trade.volumeUsd) > 0 &&
+        Number.isFinite(Number(trade.tclAmount)) &&
+        Number(trade.tclAmount) > 0 &&
+        (trade.side === "buy" || trade.side === "sell")
+    );
 }
 
-function parseTrades(transactions, pair) {
-    const tradeGroups = new Map();
+function normalizeTradeSnapshotEntry(trade) {
+    return {
+        hash: String(trade.hash),
+        timestamp: Number(trade.timestamp),
+        price: Number(trade.price),
+        volumeUsd: Number(trade.volumeUsd),
+        tclAmount: Number(trade.tclAmount),
+        side: trade.side,
+        description: typeof trade.description === "string" ? trade.description : ""
+    };
+}
 
-    for (const tx of transactions) {
-        const transfers = tx.action?.arguments?.transfers;
-        if (!Array.isArray(transfers) || !transfers.length) {
-            continue;
+function hasValidTradeSnapshot(snapshot) {
+    return Array.isArray(snapshot?.trades) && snapshot.trades.every((trade) => isValidTrade(trade));
+}
+
+function loadCachedTradeSnapshot() {
+    try {
+        const raw = window.localStorage.getItem(TRADE_CACHE_KEY);
+        if (!raw) {
+            return null;
         }
 
-        const groupKey = String(tx.originalTxHash || tx.txHash || "");
-        if (!groupKey) {
-            continue;
+        const parsed = JSON.parse(raw);
+        if (parsed?.version !== TRADE_CACHE_VERSION || !hasValidTradeSnapshot(parsed)) {
+            return null;
         }
 
-        let group = tradeGroups.get(groupKey);
-        if (!group) {
-            group = {
-                hash: groupKey,
-                timestamp: 0,
-                inputTotals: Object.create(null),
-                outputTotals: Object.create(null)
-            };
-            tradeGroups.set(groupKey, group);
+        return {
+            ...parsed,
+            trades: parsed.trades.map((trade) => normalizeTradeSnapshotEntry(trade))
+        };
+    } catch (error) {
+        console.warn("Could not read cached TCL technical trade history", error);
+        return null;
+    }
+}
+
+function saveCachedTradeSnapshot(snapshot) {
+    try {
+        if (!hasValidTradeSnapshot(snapshot)) {
+            return;
         }
 
-        const timestamp = Number(tx.timestamp);
-        if (Number.isFinite(timestamp) && timestamp > group.timestamp) {
-            group.timestamp = timestamp;
-        }
+        window.localStorage.setItem(
+            TRADE_CACHE_KEY,
+            JSON.stringify({
+                version: TRADE_CACHE_VERSION,
+                cachedAt: Date.now(),
+                latestTradeTimestamp: Number(snapshot.latestTradeTimestamp) || 0,
+                fetchMeta: snapshot.fetchMeta || null,
+                trades: snapshot.trades.map((trade) => normalizeTradeSnapshotEntry(trade))
+            })
+        );
+    } catch (error) {
+        console.warn("Could not cache TCL technical trade history", error);
+    }
+}
 
-        if (tx.receiver === pair.pairAddress && tx.function === "swapTokensFixedInput") {
-            const inputTransfer = normalizeTradeTransfer(transfers[0], pair);
-            if (inputTransfer && isPairToken(inputTransfer.token, pair)) {
-                addTradeTokenAmount(group.inputTotals, inputTransfer.token, inputTransfer.amount);
-            }
-        }
+function mergeTradeLists(existingTrades, incomingTrades) {
+    const merged = new Map();
 
-        if (tx.sender === pair.pairAddress) {
-            for (const transfer of transfers) {
-                const normalizedTransfer = normalizeTradeTransfer(transfer, pair);
-                if (normalizedTransfer && isPairToken(normalizedTransfer.token, pair)) {
-                    addTradeTokenAmount(group.outputTotals, normalizedTransfer.token, normalizedTransfer.amount);
-                }
-            }
+    for (const trade of existingTrades || []) {
+        if (isValidTrade(trade)) {
+            merged.set(trade.hash, normalizeTradeSnapshotEntry(trade));
         }
     }
 
-    const tradeList = [];
+    for (const trade of incomingTrades || []) {
+        if (isValidTrade(trade)) {
+            merged.set(trade.hash, normalizeTradeSnapshotEntry(trade));
+        }
+    }
 
-    for (const group of tradeGroups.values()) {
-        const baseInput = group.inputTotals[pair.baseToken.address] ?? 0;
-        const quoteInput = group.inputTotals[pair.quoteToken.address] ?? 0;
-        const baseOutput = group.outputTotals[pair.baseToken.address] ?? 0;
-        const quoteOutput = group.outputTotals[pair.quoteToken.address] ?? 0;
+    return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
+}
+
+async function fetchTransactionHistory() {
+    const transfers = [];
+    const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+    let oldestTimestamp = null;
+    let reachedListingStart = false;
+    let hitPageLimit = false;
+    let exhaustedHistory = false;
+    let beforeCursor = null;
+
+    for (let pageIndex = 0; pageIndex < CONFIG.txMaxPages; pageIndex += 1) {
+        const params = new URLSearchParams({
+            size: String(CONFIG.txPageSize),
+            status: "success",
+            order: "desc"
+        });
+        if (beforeCursor != null) {
+            params.set("before", String(beforeCursor));
+        }
+
+        const url = `${CONFIG.txUrlBase}?${params.toString()}`;
+        const page = await fetchJson(url);
+
+        if (!Array.isArray(page) || !page.length) {
+            exhaustedHistory = true;
+            break;
+        }
+
+        transfers.push(...page);
+
+        const pageTimestamps = page
+            .map((entry) => Number(entry?.timestamp))
+            .filter((timestamp) => Number.isFinite(timestamp));
+        if (pageTimestamps.length) {
+            oldestTimestamp = oldestTimestamp == null
+                ? Math.min(...pageTimestamps)
+                : Math.min(oldestTimestamp, ...pageTimestamps);
+        }
+
+        if (oldestTimestamp != null && oldestTimestamp <= listingTimestamp) {
+            reachedListingStart = true;
+            break;
+        }
+
+        if (page.length < CONFIG.txPageSize) {
+            exhaustedHistory = true;
+            break;
+        }
+
+        beforeCursor = oldestTimestamp != null ? oldestTimestamp - 1 : null;
+        if (!Number.isFinite(beforeCursor) || beforeCursor <= 0) {
+            exhaustedHistory = true;
+            break;
+        }
+
+        if (pageIndex === CONFIG.txMaxPages - 1) {
+            hitPageLimit = true;
+        }
+    }
+
+    return {
+        transfers,
+        reachedListingStart,
+        hitPageLimit,
+        oldestTimestamp,
+        exhaustedHistory
+    };
+}
+
+async function fetchRecentTransactionHistory(afterTimestamp) {
+    if (!Number.isFinite(afterTimestamp)) {
+        return {
+            transfers: [],
+            reachedListingStart: true,
+            hitPageLimit: false,
+            oldestTimestamp: null,
+            exhaustedHistory: true
+        };
+    }
+
+    const transfers = [];
+    let newestTimestamp = null;
+    let hitPageLimit = false;
+    let exhaustedHistory = false;
+    let afterCursor = Math.floor(afterTimestamp) + 1;
+
+    for (let pageIndex = 0; pageIndex < CONFIG.txMaxPages; pageIndex += 1) {
+        const params = new URLSearchParams({
+            size: String(CONFIG.txPageSize),
+            status: "success",
+            order: "asc",
+            after: String(afterCursor)
+        });
+        const url = `${CONFIG.txUrlBase}?${params.toString()}`;
+        const page = await fetchJson(url);
+
+        if (!Array.isArray(page) || !page.length) {
+            exhaustedHistory = true;
+            break;
+        }
+
+        transfers.push(...page);
+
+        const pageTimestamps = page
+            .map((entry) => Number(entry?.timestamp))
+            .filter((timestamp) => Number.isFinite(timestamp));
+        if (pageTimestamps.length) {
+            newestTimestamp = newestTimestamp == null
+                ? Math.max(...pageTimestamps)
+                : Math.max(newestTimestamp, ...pageTimestamps);
+        }
+
+        if (page.length < CONFIG.txPageSize) {
+            exhaustedHistory = true;
+            break;
+        }
+
+        afterCursor = newestTimestamp != null ? newestTimestamp + 1 : afterCursor + 1;
+        if (!Number.isFinite(afterCursor) || afterCursor <= 0) {
+            exhaustedHistory = true;
+            break;
+        }
+
+        if (pageIndex === CONFIG.txMaxPages - 1) {
+            hitPageLimit = true;
+        }
+    }
+
+    return {
+        transfers,
+        reachedListingStart: true,
+        hitPageLimit,
+        oldestTimestamp: transfers.length ? Number(transfers[0]?.timestamp) || null : null,
+        exhaustedHistory
+    };
+}
+
+function parseTrades(transfers, pair) {
+    const tradeList = [];
+    const groupedSwaps = new Map();
+
+    for (const entry of transfers || []) {
+        if (entry?.status !== "success") {
+            continue;
+        }
+
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList) || !transferList.length) {
+            continue;
+        }
+
+        const primaryTransfer = normalizeTradeTransfer(transferList[0], pair);
+        if (!primaryTransfer) {
+            continue;
+        }
+
+        const timestamp = Number(entry.timestamp);
+        if (!Number.isFinite(timestamp)) {
+            continue;
+        }
+
+        const groupHash = String(entry.originalTxHash || entry.txHash || "");
+        if (!groupHash) {
+            continue;
+        }
+
+        let groupedSwap = groupedSwaps.get(groupHash);
+        if (!groupedSwap) {
+            groupedSwap = {
+                hash: groupHash,
+                timestamp,
+                inputToken: null,
+                inputAmount: 0,
+                outputToken: null,
+                outputAmount: 0,
+                description: "",
+                invalid: false
+            };
+            groupedSwaps.set(groupHash, groupedSwap);
+        } else if (timestamp < groupedSwap.timestamp) {
+            groupedSwap.timestamp = timestamp;
+        }
+
+        if (!groupedSwap.description && entry?.action?.description) {
+            groupedSwap.description = entry.action.description;
+        }
+
+        if (entry.receiver === pair?.pairAddress && entry.function === "swapTokensFixedInput") {
+            if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+                groupedSwap.invalid = true;
+                continue;
+            }
+
+            groupedSwap.inputToken = primaryTransfer.token;
+            groupedSwap.inputAmount += primaryTransfer.amount;
+            continue;
+        }
+
+        const isPairOutput =
+            entry.sender === pair?.pairAddress &&
+            entry.function !== "depositSwapFees" &&
+            (primaryTransfer.token === pair?.baseToken?.address || primaryTransfer.token === pair?.quoteToken?.address);
+
+        if (!isPairOutput) {
+            continue;
+        }
+
+        if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+            groupedSwap.invalid = true;
+            continue;
+        }
+
+        groupedSwap.outputToken = primaryTransfer.token;
+        groupedSwap.outputAmount += primaryTransfer.amount;
+    }
+
+    for (const groupedSwap of groupedSwaps.values()) {
+        if (groupedSwap.invalid) {
+            continue;
+        }
+
+        const hasValidInput = groupedSwap.inputAmount > 0 && typeof groupedSwap.inputToken === "string";
+        const hasValidOutput = groupedSwap.outputAmount > 0 && typeof groupedSwap.outputToken === "string";
+        if (!hasValidInput || !hasValidOutput) {
+            continue;
+        }
 
         let tclAmount = 0;
         let usdcAmount = 0;
-        let side = "neutral";
+        let side = null;
 
-        if (baseInput > 0 && quoteOutput > 0 && quoteInput <= 0) {
-            tclAmount = baseInput;
-            usdcAmount = quoteOutput;
-            side = "sell";
-        } else if (quoteInput > 0 && baseOutput > 0 && baseInput <= 0) {
-            usdcAmount = quoteInput;
-            tclAmount = baseOutput;
+        if (
+            groupedSwap.inputToken === pair.quoteToken.address &&
+            groupedSwap.outputToken === pair.baseToken.address
+        ) {
+            usdcAmount = groupedSwap.inputAmount;
+            tclAmount = groupedSwap.outputAmount;
             side = "buy";
+        } else if (
+            groupedSwap.inputToken === pair.baseToken.address &&
+            groupedSwap.outputToken === pair.quoteToken.address
+        ) {
+            tclAmount = groupedSwap.inputAmount;
+            usdcAmount = groupedSwap.outputAmount;
+            side = "sell";
         } else {
             continue;
         }
 
         const price = usdcAmount / tclAmount;
-        if (!Number.isFinite(price) || price <= 0) {
+        if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(usdcAmount) || usdcAmount <= 0) {
             continue;
         }
 
         tradeList.push({
-            hash: group.hash,
-            timestamp: group.timestamp,
+            hash: groupedSwap.hash,
+            timestamp: groupedSwap.timestamp,
+            side,
             price,
             volumeUsd: usdcAmount,
             tclAmount,
-            side
+            description: groupedSwap.description
         });
     }
 
@@ -1180,14 +1515,6 @@ function normalizeTradeTransfer(transfer, pair) {
         token: transfer.token,
         amount
     };
-}
-
-function isPairToken(token, pair) {
-    return token === pair.baseToken.address || token === pair.quoteToken.address;
-}
-
-function addTradeTokenAmount(bucket, token, amount) {
-    bucket[token] = (bucket[token] ?? 0) + amount;
 }
 
 function resolveTokenDecimals(token, pair) {
