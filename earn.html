@@ -1330,7 +1330,7 @@
       </div>
     </section>
 
-    <section class="grid-two fade-up delay-2">
+    <section class="grid-two fade-up delay-2" id="earn-paths">
       <article class="path-card">
         <div class="card-label">Path 1 - Creator income</div>
         <h3>Creator Program: earn 40% revenue share in euro</h3>
@@ -1426,7 +1426,7 @@
       </div>
     </section>
 
-    <section class="section-card fade-up delay-4">
+    <section class="section-card fade-up delay-4" id="creator-fit">
       <div class="section-head">
         <div>
           <div class="section-kicker">Creator fit</div>
@@ -1605,7 +1605,7 @@
       </div>
     </section>
 
-    <section class="section-card fade-up delay-5">
+    <section class="section-card fade-up delay-5" id="web3-shop-flow">
       <div class="section-head">
         <div>
           <div class="section-kicker">Private Web3 Shops</div>
@@ -1652,7 +1652,7 @@
       </div>
     </section>
 
-    <section class="section-card fade-up delay-5">
+    <section class="section-card fade-up delay-5" id="wallet-setup">
       <div class="section-head">
         <div>
           <div class="section-kicker">Getting started with crypto</div>
@@ -1694,7 +1694,7 @@
       </div>
     </section>
 
-    <section class="section-card fade-up delay-5">
+    <section class="section-card fade-up delay-5" id="best-match">
       <div class="section-head">
         <div>
           <div class="section-kicker">Best match</div>
@@ -1724,7 +1724,7 @@
       </div>
     </section>
 
-    <section class="section-card fade-up delay-5">
+    <section class="section-card fade-up delay-5" id="earn-sources">
       <div class="section-head">
         <div>
           <div class="section-kicker">Official sources</div>
@@ -1772,6 +1772,7 @@
     <img id="heroImageOverlayImg" src="images/RMT.png" alt="The Cursed Land private shop screenshot full size">
   </div>
 
+  <script src="lang/earn.bundle.js?v=20260508-1"></script>
   <script>
     function notifyParentReady() {
       if (window.parent && window.parent !== window) {
@@ -1931,6 +1932,269 @@
         }
       });
     })();
+
+    const EARN_LANG_STORAGE_KEY = "lang";
+    const EARN_LANGS = [
+      { code: "en", label: "English", flag: "gb" },
+      { code: "ro", label: "Română", flag: "ro" },
+      { code: "tr", label: "Türkçe", flag: "tr" },
+      { code: "de", label: "Deutsch", flag: "de" },
+      { code: "es", label: "Español", flag: "es" },
+      { code: "fr", label: "Français", flag: "fr" },
+      { code: "it", label: "Italiano", flag: "it" },
+      { code: "pl", label: "Polski", flag: "pl" },
+      { code: "pt", label: "Português", flag: "pt" }
+    ];
+    function isSupportedEarnLang(lang) {
+      return !!lang && EARN_LANGS.some((item) => item.code === lang);
+    }
+
+    function normalizeEarnLang(lang) {
+      if (!lang) return "en";
+      const lowered = String(lang).toLowerCase();
+      if (isSupportedEarnLang(lowered)) return lowered;
+      const baseLang = lowered.split("-")[0];
+      return isSupportedEarnLang(baseLang) ? baseLang : "en";
+    }
+
+    function getEarnTranslationSet(lang) {
+      const fallback = window.TCL_EARN_LANG_DATA?.en || null;
+      return window.TCL_EARN_LANG_DATA?.[lang] || fallback;
+    }
+
+    function detectPreferredEarnLang() {
+      const browserLangs = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || navigator.userLanguage || "en"];
+
+      for (const lang of browserLangs) {
+        const normalized = normalizeEarnLang(lang);
+        if (normalized) return normalized;
+      }
+
+      return "en";
+    }
+
+    function resolveEarnStartupLang() {
+      const storedLang = localStorage.getItem(EARN_LANG_STORAGE_KEY);
+      if (isSupportedEarnLang(storedLang)) {
+        return storedLang;
+      }
+
+      const detectedLang = detectPreferredEarnLang();
+      localStorage.setItem(EARN_LANG_STORAGE_KEY, detectedLang);
+      return detectedLang;
+    }
+
+    function setNodeHtml(node, value) {
+      if (!node || typeof value !== "string") return;
+      node.innerHTML = value;
+    }
+
+    function setNodeAttr(node, attr, value) {
+      if (!node || typeof value !== "string") return;
+      node.setAttribute(attr, value);
+    }
+
+    function applyEarnTranslations(lang) {
+      const data = getEarnTranslationSet(lang);
+      const fallback = getEarnTranslationSet("en");
+      if (!data || !fallback) return;
+
+      document.documentElement.lang = lang;
+      document.title = data.metaTitle || fallback.metaTitle;
+
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute("content", data.metaDescription || fallback.metaDescription);
+      }
+
+      setNodeAttr(document.querySelector(".brand img"), "alt", data.brandLogoAlt || fallback.brandLogoAlt);
+      setNodeHtml(document.querySelector(".brand-sub"), data.brandSub || fallback.brandSub);
+      setNodeHtml(document.querySelector(".topbar-actions .button-ghost"), data.topbarBack || fallback.topbarBack);
+      setNodeHtml(document.querySelector(".topbar-actions .button-secondary"), data.topbarGuide || fallback.topbarGuide);
+
+      const heroImageTrigger = document.getElementById("heroImageTrigger");
+      setNodeAttr(heroImageTrigger, "aria-label", data.heroImageButtonAria || fallback.heroImageButtonAria);
+      setNodeAttr(heroImageTrigger ? heroImageTrigger.querySelector("img") : null, "alt", data.heroImageAlt || fallback.heroImageAlt);
+
+      setNodeHtml(document.getElementById("heroNoteTrigger"), data.heroNoteTrigger || fallback.heroNoteTrigger);
+      setNodeHtml(document.querySelector("#heroNotePanel strong"), data.heroNoteTitle || fallback.heroNoteTitle);
+      setNodeAttr(document.getElementById("heroNoteClose"), "aria-label", data.heroNoteCloseAria || fallback.heroNoteCloseAria);
+      setNodeHtml(document.querySelector("#heroNotePanel span"), data.heroNoteBody || fallback.heroNoteBody);
+
+      setNodeHtml(document.querySelector(".eyebrow"), data.heroEyebrow || fallback.heroEyebrow);
+      setNodeHtml(document.querySelector(".hero h1"), data.heroTitle || fallback.heroTitle);
+      setNodeHtml(document.querySelector(".hero-lead"), data.heroLead || fallback.heroLead);
+
+      const heroPoints = document.querySelectorAll(".hero-point");
+      (data.heroPoints || fallback.heroPoints).forEach((point, index) => {
+        const item = heroPoints[index];
+        if (!item) return;
+        setNodeHtml(item.querySelector("strong"), point.value);
+        setNodeHtml(item.querySelector("span"), point.text);
+      });
+
+      const heroCtas = document.querySelectorAll(".hero .cta-row > *");
+      (data.heroCtas || fallback.heroCtas).forEach((label, index) => {
+        setNodeHtml(heroCtas[index], label);
+      });
+
+      const pathCards = document.querySelectorAll("#earn-paths .path-card");
+      (data.pathCards || fallback.pathCards).forEach((card, index) => {
+        const item = pathCards[index];
+        if (!item) return;
+        setNodeHtml(item.querySelector(".card-label"), card.label);
+        setNodeHtml(item.querySelector("h3"), card.title);
+        setNodeHtml(item.querySelector("p"), card.desc);
+        item.querySelectorAll("li").forEach((li, liIndex) => {
+          setNodeHtml(li, card.bullets[liIndex]);
+        });
+      });
+
+      const creatorSection = document.getElementById("creator-program");
+      if (creatorSection) {
+        setNodeHtml(creatorSection.querySelector(".section-kicker"), data.creator.kicker);
+        setNodeHtml(creatorSection.querySelector(".section-head h2"), data.creator.title);
+        setNodeHtml(creatorSection.querySelector(".section-head p"), data.creator.desc);
+        creatorSection.querySelectorAll(".timeline-step").forEach((stepEl, index) => {
+          const step = data.creator.steps[index];
+          if (!step) return;
+          setNodeHtml(stepEl.querySelector("h3"), step.title);
+          setNodeHtml(stepEl.querySelector("p"), step.desc);
+        });
+        creatorSection.querySelectorAll(".trust-item").forEach((item, index) => {
+          const trust = data.creator.trust[index];
+          if (!trust) return;
+          setNodeHtml(item.querySelector("strong"), trust.label);
+          setNodeHtml(item.querySelector("span"), trust.text);
+        });
+      }
+
+      const creatorFitSection = document.getElementById("creator-fit");
+      if (creatorFitSection) {
+        setNodeHtml(creatorFitSection.querySelector(".section-kicker"), data.creatorFit.kicker);
+        setNodeHtml(creatorFitSection.querySelector(".section-head h2"), data.creatorFit.title);
+        setNodeHtml(creatorFitSection.querySelector(".section-head p"), data.creatorFit.desc);
+        creatorFitSection.querySelectorAll(".fit-card").forEach((cardEl, index) => {
+          const card = data.creatorFit.cards[index];
+          if (!card) return;
+          setNodeHtml(cardEl.querySelector("h3"), card.title);
+          setNodeHtml(cardEl.querySelector("p"), card.text);
+        });
+      }
+
+      const cryptoSection = document.getElementById("crypto-paths");
+      if (cryptoSection) {
+        setNodeHtml(cryptoSection.querySelector(".section-kicker"), data.crypto.kicker);
+        setNodeHtml(cryptoSection.querySelector(".section-head h2"), data.crypto.title);
+        setNodeHtml(cryptoSection.querySelector(".section-head p"), data.crypto.desc);
+        cryptoSection.querySelectorAll(".method-card").forEach((cardEl, index) => {
+          const method = data.crypto.methods[index];
+          if (!method) return;
+          setNodeHtml(cardEl.querySelector(".method-title-wrap h3"), method.title);
+          setNodeHtml(cardEl.querySelector(".method-title-wrap p"), method.subtitle);
+          cardEl.querySelectorAll(".method-badges .badge").forEach((badgeEl, badgeIndex) => {
+            setNodeHtml(badgeEl, method.badges[badgeIndex]);
+          });
+          cardEl.querySelectorAll(".metric-row .metric").forEach((metricEl, metricIndex) => {
+            setNodeHtml(metricEl, method.metrics[metricIndex]);
+          });
+          setNodeHtml(cardEl.querySelector(".method-copy"), method.copy);
+          setNodeHtml(cardEl.querySelector(".method-foot"), method.foot);
+        });
+      }
+
+      const shopSection = document.getElementById("web3-shop-flow");
+      if (shopSection) {
+        setNodeHtml(shopSection.querySelector(".section-kicker"), data.shops.kicker);
+        setNodeHtml(shopSection.querySelector(".section-head h2"), data.shops.title);
+        setNodeHtml(shopSection.querySelector(".section-head p"), data.shops.desc);
+        shopSection.querySelectorAll(".flow-step").forEach((stepEl, index) => {
+          const step = data.shops.steps[index];
+          if (!step) return;
+          setNodeHtml(stepEl.querySelector("h3"), step.title);
+          setNodeHtml(stepEl.querySelector("p"), step.desc);
+        });
+        setNodeHtml(shopSection.querySelector(".flow-footnote"), data.shops.footnote);
+      }
+
+      const walletSection = document.getElementById("wallet-setup");
+      if (walletSection) {
+        setNodeHtml(walletSection.querySelector(".section-kicker"), data.wallet.kicker);
+        setNodeHtml(walletSection.querySelector(".section-head h2"), data.wallet.title);
+        setNodeHtml(walletSection.querySelector(".section-head p"), data.wallet.desc);
+        setNodeHtml(walletSection.querySelector(".wallet-box h3"), data.wallet.boxTitle);
+        setNodeHtml(walletSection.querySelector(".wallet-box p"), data.wallet.boxDesc);
+        walletSection.querySelectorAll(".wallet-actions > *").forEach((buttonEl, index) => {
+          setNodeHtml(buttonEl, data.wallet.buttons[index]);
+        });
+        walletSection.querySelectorAll(".wallet-step").forEach((stepEl, index) => {
+          const step = data.wallet.steps[index];
+          if (!step) return;
+          setNodeHtml(stepEl.querySelector("strong"), step.title);
+          setNodeHtml(stepEl.querySelector("span"), step.text);
+        });
+      }
+
+      const matchSection = document.getElementById("best-match");
+      if (matchSection) {
+        setNodeHtml(matchSection.querySelector(".section-kicker"), data.match.kicker);
+        setNodeHtml(matchSection.querySelector(".section-head h2"), data.match.title);
+        setNodeHtml(matchSection.querySelector(".section-head p"), data.match.desc);
+        matchSection.querySelectorAll(".fit-card").forEach((cardEl, index) => {
+          const card = data.match.cards[index];
+          if (!card) return;
+          setNodeHtml(cardEl.querySelector("h3"), card.title);
+          setNodeHtml(cardEl.querySelector("p"), card.text);
+          setNodeHtml(cardEl.querySelector(".button-ghost, a.button-ghost"), card.button);
+        });
+      }
+
+      const sourcesSection = document.getElementById("earn-sources");
+      if (sourcesSection) {
+        setNodeHtml(sourcesSection.querySelector(".section-kicker"), data.sources.kicker);
+        setNodeHtml(sourcesSection.querySelector(".section-head h2"), data.sources.title);
+        setNodeHtml(sourcesSection.querySelector(".section-head p"), data.sources.desc);
+        sourcesSection.querySelectorAll(".source-card").forEach((cardEl, index) => {
+          const card = data.sources.cards[index];
+          if (!card) return;
+          setNodeHtml(cardEl.querySelector("h3"), card.title);
+          setNodeHtml(cardEl.querySelector("p"), card.text);
+          cardEl.querySelectorAll(".source-links > *").forEach((buttonEl, buttonIndex) => {
+            setNodeHtml(buttonEl, card.buttons[buttonIndex]);
+          });
+        });
+      }
+
+      setNodeHtml(document.querySelector(".footer-note"), data.footerNote);
+      setNodeAttr(document.getElementById("heroImageOverlayClose"), "aria-label", data.overlayCloseAria || fallback.overlayCloseAria);
+      setNodeAttr(document.getElementById("heroImageOverlayImg"), "alt", data.overlayImageAlt || fallback.overlayImageAlt);
+    }
+
+    function setEarnLang(lang) {
+      const normalizedLang = normalizeEarnLang(lang);
+
+      localStorage.setItem(EARN_LANG_STORAGE_KEY, normalizedLang);
+      applyEarnTranslations(normalizedLang);
+    }
+
+    function initEarnTranslations() {
+      setEarnLang(resolveEarnStartupLang());
+    }
+
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (!data || data.type !== "tcl:set-lang") return;
+      setEarnLang(data.lang);
+    });
+
+    window.addEventListener("storage", (event) => {
+      if (event.key !== EARN_LANG_STORAGE_KEY || !event.newValue) return;
+      setEarnLang(event.newValue);
+    });
+
+    initEarnTranslations();
 
     notifyParentReady();
   </script>

@@ -2511,7 +2511,20 @@ window.addEventListener("message", (event) => {
       page.classList.add("embed-ready");
       page.classList.remove("embed-loading");
     }
+    syncInternalPageLang(currentLang);
     schedulePageFits();
+    return;
+  }
+
+  if (data.type === "tcl:set-lang") {
+    const rawLang = typeof data.lang === "string" ? String(data.lang).toLowerCase() : "";
+    const requestedLang = isSupportedLang(rawLang) ? rawLang : rawLang.split("-")[0];
+    if (!isSupportedLang(requestedLang)) return;
+    if (requestedLang === currentLang) {
+      syncInternalPageLang(currentLang);
+      return;
+    }
+    setLang(requestedLang);
     return;
   }
 
@@ -3042,6 +3055,18 @@ function updateCurrentLangButton(lang) {
   currentLangBtn.innerHTML = `<img src="https://flagcdn.com/w20/${meta.flag}.png" alt="${meta.code.toUpperCase()}"> ${meta.label}`;
 }
 
+function syncInternalPageLang(lang) {
+  const frame = document.getElementById("internalPageFrame");
+  const targetWindow = frame?.contentWindow;
+  if (!targetWindow || !isSupportedLang(lang)) return;
+
+  try {
+    targetWindow.postMessage({ type: "tcl:set-lang", lang }, "*");
+  } catch (error) {
+    console.warn("Failed to sync internal page language", error);
+  }
+}
+
 async function ensureFallbackTranslations() {
   if (Object.keys(fallbackTranslations).length > 0) return fallbackTranslations;
 
@@ -3075,6 +3100,7 @@ async function loadTranslations(lang) {
   window.currentLang = currentLang;
   localStorage.setItem("lang", lang);
   updateCurrentLangButton(lang);
+  syncInternalPageLang(lang);
 
   const bundledTranslations = getBundledLangData(lang);
   if (bundledTranslations) {
