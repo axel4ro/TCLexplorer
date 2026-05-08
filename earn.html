@@ -330,9 +330,10 @@
         radial-gradient(circle at 50% 10%, rgba(255, 190, 116, 0.2), transparent 36%),
         linear-gradient(180deg, rgba(21, 17, 14, 0.88), rgba(10, 8, 7, 0.96));
       display: block;
-      overflow: visible;
+      overflow: hidden;
       padding: 14px;
       isolation: isolate;
+      z-index: 1;
     }
 
     .hero-visual::before {
@@ -343,18 +344,38 @@
       border-radius: 999px;
       background: radial-gradient(circle, rgba(255, 190, 116, 0.18), rgba(255, 190, 116, 0));
       filter: blur(24px);
-      z-index: -1;
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .hero-visual img {
+    .hero-image-button {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 26px;
+      background: transparent;
+      cursor: zoom-in;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-image-button:focus-visible {
+      outline: 2px solid rgba(103, 241, 223, 0.7);
+      outline-offset: 4px;
+    }
+
+    .hero-image-button img {
       display: block;
       width: 100%;
       height: auto;
-      position: relative;
-      z-index: 1;
       border-radius: 26px;
       border: 1px solid rgba(255, 255, 255, 0.06);
       box-shadow: 0 26px 46px rgba(0, 0, 0, 0.34);
+    }
+
+    .hero-visual.is-note-open {
+      z-index: 4;
     }
 
     .hero-note-trigger {
@@ -407,9 +428,10 @@
 
     .hero-note-panel {
       position: absolute;
-      right: -10px;
+      right: 16px;
       bottom: 82px;
-      width: min(280px, calc(100% - 48px));
+      width: min(320px, calc(100% - 32px));
+      max-width: calc(100% - 32px);
       padding: 14px 14px 16px;
       border-radius: 18px;
       background: rgba(9, 13, 14, 0.92);
@@ -475,6 +497,63 @@
       color: var(--muted);
       font-size: 0.88rem;
       line-height: 1.5;
+    }
+
+    body.is-hero-image-open {
+      overflow: hidden;
+    }
+
+    .hero-image-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 4vw, 30px);
+      background: rgba(4, 5, 6, 0.94);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1200;
+      overscroll-behavior: contain;
+    }
+
+    .hero-image-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .hero-image-overlay img {
+      max-width: min(96vw, 1320px);
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.56);
+      cursor: zoom-in;
+      transform-origin: center center;
+      transition: transform 0.18s ease;
+    }
+
+    .hero-image-overlay-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      background: rgba(12, 16, 17, 0.86);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
     }
 
     @keyframes heroNoteShake {
@@ -1111,7 +1190,7 @@
         margin-bottom: 18px;
       }
 
-      .hero-visual img {
+      .hero-image-button img {
         margin: 0;
       }
 
@@ -1124,9 +1203,21 @@
       }
 
       .hero-note-panel {
-        right: -6px;
-        bottom: 70px;
-        width: min(250px, calc(100% - 20px));
+        right: 12px;
+        bottom: 66px;
+        width: calc(100% - 24px);
+        max-width: calc(100% - 24px);
+      }
+
+      .hero-image-overlay {
+        padding: 14px;
+      }
+
+      .hero-image-overlay-close {
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
       }
 
       .section-head {
@@ -1188,14 +1279,16 @@
 
     <section class="hero fade-up delay-1">
       <div class="hero-visual">
-        <img src="images/RMT.png" alt="The Cursed Land private shop screenshot">
+        <button type="button" class="hero-image-button" id="heroImageTrigger" aria-label="Open RMT image full size">
+          <img src="images/RMT.png" alt="The Cursed Land private shop screenshot">
+        </button>
         <button type="button" class="hero-note-trigger" id="heroNoteTrigger" aria-expanded="false" aria-controls="heroNotePanel">
           Simple idea
         </button>
         <div class="hero-note-panel" id="heroNotePanel" hidden>
           <div class="hero-note-panel-head">
             <strong>Simple idea</strong>
-            <button type="button" class="hero-note-close" id="heroNoteClose" aria-label="Close simple idea popup">×</button>
+            <button type="button" class="hero-note-close" id="heroNoteClose" aria-label="Close simple idea popup">&times;</button>
           </div>
           <span>Promote the game for euro, or play and trade inside the TCL economy for crypto rewards.</span>
         </div>
@@ -1666,6 +1759,11 @@
     </p>
   </div>
 
+  <div class="hero-image-overlay" id="heroImageOverlay" hidden aria-hidden="true">
+    <button type="button" class="hero-image-overlay-close" id="heroImageOverlayClose" aria-label="Close RMT image preview">&times;</button>
+    <img id="heroImageOverlayImg" src="images/RMT.png" alt="The Cursed Land private shop screenshot full size">
+  </div>
+
   <script>
     function notifyParentReady() {
       if (window.parent && window.parent !== window) {
@@ -1751,6 +1849,75 @@
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           setOpen(false);
+        }
+      });
+    })();
+
+    (function setupHeroImageOverlay() {
+      const trigger = document.getElementById("heroImageTrigger");
+      const triggerImg = trigger ? trigger.querySelector("img") : null;
+      const overlay = document.getElementById("heroImageOverlay");
+      const overlayImg = document.getElementById("heroImageOverlayImg");
+      const closeBtn = document.getElementById("heroImageOverlayClose");
+      const clickZoomScale = 2;
+      let scale = 1;
+
+      if (!trigger || !triggerImg || !overlay || !overlayImg || !closeBtn) return;
+
+      function updateScale(nextScale) {
+        scale = Math.max(1, Math.min(3, nextScale));
+        overlayImg.style.transform = `scale(${scale})`;
+        overlayImg.style.cursor = scale > 1 ? "zoom-out" : "zoom-in";
+      }
+
+      function openOverlay() {
+        overlayImg.src = triggerImg.currentSrc || triggerImg.src;
+        overlay.hidden = false;
+        overlay.setAttribute("aria-hidden", "false");
+        document.body.classList.add("is-hero-image-open");
+        updateScale(1);
+        requestAnimationFrame(() => {
+          overlay.classList.add("is-open");
+        });
+      }
+
+      function closeOverlay() {
+        overlay.classList.remove("is-open");
+        overlay.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("is-hero-image-open");
+        window.setTimeout(() => {
+          if (!overlay.classList.contains("is-open")) {
+            overlay.hidden = true;
+          }
+        }, 200);
+      }
+
+      trigger.addEventListener("click", openOverlay);
+
+      closeBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        closeOverlay();
+      });
+
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+          closeOverlay();
+        }
+      });
+
+      overlayImg.addEventListener("click", (event) => {
+        event.stopPropagation();
+        updateScale(scale > 1 ? 1 : clickZoomScale);
+      });
+
+      overlayImg.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        updateScale(scale + (event.deltaY < 0 ? 0.12 : -0.12));
+      }, { passive: false });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && overlay.classList.contains("is-open")) {
+          closeOverlay();
         }
       });
     })();
