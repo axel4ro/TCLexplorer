@@ -192,8 +192,15 @@
         linear-gradient(180deg, rgba(31, 24, 18, 0.96), rgba(15, 11, 10, 0.96));
     }
 
+    .hero.is-note-open {
+      overflow: visible;
+      z-index: 14;
+    }
+
     .hero-copy {
       display: block;
+      position: relative;
+      z-index: 1;
     }
 
     .eyebrow {
@@ -375,7 +382,8 @@
     }
 
     .hero-visual.is-note-open {
-      z-index: 4;
+      overflow: visible;
+      z-index: 18;
     }
 
     .hero-note-trigger {
@@ -1812,14 +1820,16 @@
     }
 
     (function setupHeroIdeaPopup() {
+      const hero = document.querySelector(".hero");
       const heroVisual = document.querySelector(".hero-visual");
       const trigger = document.getElementById("heroNoteTrigger");
       const panel = document.getElementById("heroNotePanel");
       const closeBtn = document.getElementById("heroNoteClose");
 
-      if (!heroVisual || !trigger || !panel || !closeBtn) return;
+      if (!hero || !heroVisual || !trigger || !panel || !closeBtn) return;
 
       function setOpen(nextOpen) {
+        hero.classList.toggle("is-note-open", nextOpen);
         heroVisual.classList.toggle("is-note-open", nextOpen);
         trigger.setAttribute("aria-expanded", nextOpen ? "true" : "false");
         panel.hidden = !nextOpen;
