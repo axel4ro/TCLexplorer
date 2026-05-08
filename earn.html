@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Earn Money - The Cursed Land</title>
+  <meta name="description" content="Learn how players, streamers and creators can earn in The Cursed Land through the Creator Program, NFTs, Infinity Staking, referral rewards and Private Web3 Shops.">
+  <meta name="theme-color" content="#120d0a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090807;
+      --bg-soft: #13100d;
+      --panel: rgba(24, 19, 15, 0.86);
+      --panel-strong: rgba(31, 24, 18, 0.96);
+      --panel-alt: rgba(18, 26, 28, 0.84);
+      --line: rgba(255, 190, 116, 0.18);
+      --line-strong: rgba(255, 190, 116, 0.3);
+      --text: #f8f3eb;
+      --muted: #d1c3b3;
+      --soft: #9d8f82;
+      --gold: #ffbe74;
+      --gold-strong: #ff8b3d;
+      --teal: #67f1df;
+      --teal-deep: #133738;
+      --green: #9ef8a7;
+      --red: #ff9c86;
+      --shadow: 0 30px 70px rgba(0, 0, 0, 0.34);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+      --font-display: "Cinzel", serif;
+      --font-ui: "Space Grotesk", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        radial-gradient(circle at top left, rgba(255, 139, 61, 0.14), transparent 30%),
+        radial-gradient(circle at 85% 10%, rgba(103, 241, 223, 0.1), transparent 26%),
+        linear-gradient(180deg, #160f0a 0%, #090807 42%, #080909 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 88%);
+      opacity: 0.12;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page-shell {
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 46px;
+    }
+
+    .topbar,
+    .hero,
+    .section-card,
+    .path-card,
+    .method-card,
+    .fit-card,
+    .timeline-step,
+    .flow-step,
+    .source-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(29, 23, 18, 0.94), rgba(14, 11, 10, 0.96));
+      box-shadow: var(--shadow);
+    }
+
+    .topbar,
+    .section-card,
+    .source-card {
+      border-radius: var(--radius-lg);
+    }
+
+    .hero,
+    .path-card,
+    .method-card,
+    .fit-card,
+    .timeline-step,
+    .flow-step {
+      border-radius: var(--radius-xl);
+    }
+
+    .topbar::after,
+    .hero::after,
+    .section-card::after,
+    .path-card::after,
+    .method-card::after,
+    .fit-card::after,
+    .timeline-step::after,
+    .flow-step::after,
+    .source-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 190, 116, 0.7), rgba(103, 241, 223, 0.36), transparent);
+      opacity: 0.65;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      background: rgba(14, 11, 10, 0.76);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32);
+    }
+
+    .brand-title {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      letter-spacing: 0.03em;
+    }
+
+    .brand-sub {
+      display: block;
+      margin-top: 4px;
+      color: var(--soft);
+      font-size: 0.88rem;
+    }
+
+    .topbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .hero {
+      display: block;
+      padding: 30px;
+      margin-bottom: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(103, 241, 223, 0.14), transparent 34%),
+        radial-gradient(circle at 0% 0%, rgba(255, 139, 61, 0.15), transparent 32%),
+        linear-gradient(180deg, rgba(31, 24, 18, 0.96), rgba(15, 11, 10, 0.96));
+    }
+
+    .hero-copy {
+      display: block;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 190, 116, 0.26);
+      background: rgba(255, 190, 116, 0.08);
+      color: var(--gold);
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 16px 0 12px;
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      line-height: 1.02;
+    }
+
+    .hero h1 span {
+      color: var(--gold);
+    }
+
+    .hero-lead {
+      max-width: 700px;
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 1.03rem;
+      line-height: 1.72;
+    }
+
+    .hero-points {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0 0 22px;
+    }
+
+    .hero-point {
+      padding: 14px 14px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hero-point strong {
+      display: block;
+      color: var(--gold);
+      font-size: 1.35rem;
+      line-height: 1;
+      margin-bottom: 7px;
+    }
+
+    .hero-point span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.48;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .button,
+    .button-secondary,
+    .button-ghost {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      isolation: isolate;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .button {
+      color: #130e0a;
+      background: linear-gradient(135deg, var(--gold), var(--gold-strong));
+      box-shadow:
+        0 0 0 1px rgba(255, 190, 116, 0.22),
+        0 0 22px rgba(255, 139, 61, 0.28),
+        0 18px 34px rgba(255, 139, 61, 0.28);
+    }
+
+    .button-secondary {
+      color: #041514;
+      background: linear-gradient(135deg, var(--teal), #39d1bf);
+      box-shadow:
+        0 0 0 1px rgba(103, 241, 223, 0.2),
+        0 0 24px rgba(103, 241, 223, 0.24),
+        0 18px 34px rgba(103, 241, 223, 0.22);
+    }
+
+    .button-ghost {
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 18px rgba(255, 190, 116, 0.12),
+        0 16px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .button:hover,
+    .button-secondary:hover,
+    .button-ghost:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.14),
+        0 0 28px rgba(255, 190, 116, 0.18),
+        0 20px 36px rgba(0, 0, 0, 0.22);
+    }
+
+    .hero-visual {
+      position: relative;
+      min-height: 0;
+      margin: 0 0 26px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(255, 190, 116, 0.2), transparent 36%),
+        linear-gradient(180deg, rgba(21, 17, 14, 0.88), rgba(10, 8, 7, 0.96));
+      display: block;
+      overflow: visible;
+      padding: 14px;
+      isolation: isolate;
+    }
+
+    .hero-visual::before {
+      content: "";
+      position: absolute;
+      inset: 8% 9% auto;
+      height: 58%;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 190, 116, 0.18), rgba(255, 190, 116, 0));
+      filter: blur(24px);
+      z-index: -1;
+    }
+
+    .hero-visual img {
+      display: block;
+      width: 100%;
+      height: auto;
+      position: relative;
+      z-index: 1;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 26px 46px rgba(0, 0, 0, 0.34);
+    }
+
+    .hero-note-trigger {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(103, 241, 223, 0.24);
+      background: rgba(7, 16, 17, 0.88);
+      color: var(--teal);
+      font-weight: 700;
+      font-size: 0.94rem;
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px rgba(103, 241, 223, 0.1),
+        0 0 18px rgba(103, 241, 223, 0.14),
+        0 12px 24px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(12px);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      animation: heroNoteShake 4.6s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    .hero-note-trigger:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(103, 241, 223, 0.16),
+        0 0 24px rgba(103, 241, 223, 0.2),
+        0 14px 26px rgba(0, 0, 0, 0.28);
+    }
+
+    .hero-note-trigger::after {
+      content: "+";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(103, 241, 223, 0.12);
+      color: var(--teal);
+      font-size: 0.92rem;
+      line-height: 1;
+    }
+
+    .hero-note-panel {
+      position: absolute;
+      right: -10px;
+      bottom: 82px;
+      width: min(280px, calc(100% - 48px));
+      padding: 14px 14px 16px;
+      border-radius: 18px;
+      background: rgba(9, 13, 14, 0.92);
+      border: 1px solid rgba(103, 241, 223, 0.18);
+      box-shadow:
+        0 0 0 1px rgba(103, 241, 223, 0.08),
+        0 28px 54px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(14px);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px) scale(0.98);
+      transform-origin: bottom right;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 3;
+    }
+
+    .hero-visual.is-note-open .hero-note-panel {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .hero-visual.is-note-open .hero-note-trigger {
+      animation: none;
+      box-shadow:
+        0 0 0 1px rgba(103, 241, 223, 0.16),
+        0 0 24px rgba(103, 241, 223, 0.2),
+        0 14px 26px rgba(0, 0, 0, 0.28);
+    }
+
+    .hero-visual.is-note-open .hero-note-trigger::after {
+      content: "-";
+    }
+
+    .hero-note-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .hero-note-panel strong {
+      display: block;
+      color: var(--teal);
+      font-size: 0.92rem;
+    }
+
+    .hero-note-close {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .hero-note-panel span {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    @keyframes heroNoteShake {
+      0%, 78%, 100% {
+        transform: translateX(0) rotate(0deg);
+      }
+
+      82% {
+        transform: translateX(-1px) rotate(-1deg);
+      }
+
+      85% {
+        transform: translateX(2px) rotate(1deg);
+      }
+
+      88% {
+        transform: translateX(-2px) rotate(-1deg);
+      }
+
+      91% {
+        transform: translateX(1px) rotate(0.5deg);
+      }
+
+      94% {
+        transform: translateX(0) rotate(0deg);
+      }
+    }
+
+    .grid-two,
+    .grid-three,
+    .methods-grid,
+    .fit-grid,
+    .timeline,
+    .flow-grid,
+    .source-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid-two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .grid-three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .section-card {
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.55rem, 2.8vw, 2.4rem);
+    }
+
+    .section-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 760px;
+    }
+
+    .section-kicker {
+      color: var(--gold);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .path-card,
+    .fit-card,
+    .timeline-step,
+    .flow-step,
+    .source-card {
+      padding: 22px;
+    }
+
+    .path-card {
+      background:
+        linear-gradient(180deg, rgba(34, 27, 20, 0.96), rgba(14, 11, 10, 0.96)),
+        var(--panel);
+    }
+
+    .path-card.path-card--teal {
+      background:
+        linear-gradient(180deg, rgba(12, 23, 25, 0.96), rgba(8, 12, 13, 0.98)),
+        var(--panel-alt);
+      border-color: rgba(103, 241, 223, 0.16);
+    }
+
+    .card-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--gold);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .path-card--teal .card-label {
+      color: var(--teal);
+    }
+
+    .path-card h3,
+    .fit-card h3,
+    .flow-step h3,
+    .timeline-step h3,
+    .source-card h3 {
+      margin: 14px 0 10px;
+      font-size: 1.28rem;
+    }
+
+    .timeline-step h3,
+    .flow-step h3 {
+      margin: 0;
+      font-size: 1.18rem;
+      line-height: 1.2;
+    }
+
+    .path-card p,
+    .fit-card p,
+    .timeline-step p,
+    .flow-step p,
+    .source-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.66;
+    }
+
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 18px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.56;
+    }
+
+    .bullet-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.63em;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.84;
+    }
+
+    .gold-list li {
+      color: #f5d3b1;
+    }
+
+    .teal-list li {
+      color: #baf6ef;
+    }
+
+    .timeline {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .timeline-step {
+      min-height: 100%;
+    }
+
+    .step-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      min-height: 32px;
+    }
+
+    .timeline-number,
+    .flow-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 190, 116, 0.18);
+      background: linear-gradient(135deg, rgba(255, 190, 116, 0.14), rgba(255, 139, 61, 0.16));
+      color: #ffbf79;
+      font-size: 0.92rem;
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .flow-number {
+      border-color: rgba(103, 241, 223, 0.18);
+      background: linear-gradient(135deg, rgba(103, 241, 223, 0.12), rgba(57, 209, 191, 0.14));
+      color: #82f2e4;
+    }
+
+    .trust-band {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .trust-item {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .trust-item strong {
+      display: block;
+      color: var(--gold);
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+
+    .trust-item span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.52;
+      font-size: 0.94rem;
+    }
+
+    .methods-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .method-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 22px;
+      min-height: 100%;
+      background:
+        linear-gradient(180deg, rgba(28, 22, 17, 0.96), rgba(13, 10, 9, 0.98)),
+        var(--panel);
+    }
+
+    .method-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .method-title-wrap {
+      min-width: 0;
+    }
+
+    .method-title-wrap h3 {
+      margin: 0 0 6px;
+      font-size: 1.16rem;
+      line-height: 1.14;
+    }
+
+    .method-title-wrap p {
+      margin: 0;
+      color: var(--soft);
+      font-size: 0.92rem;
+    }
+
+    .method-badges {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: max-content;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .badge[href] {
+      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .badge[href]:hover {
+      transform: translateY(-1px);
+    }
+
+    .badge--active {
+      color: #ffe6c8;
+      background: rgba(255, 139, 61, 0.16);
+    }
+
+    .badge--passive {
+      color: #ccfaf3;
+      background: rgba(103, 241, 223, 0.14);
+    }
+
+    .badge--ingame,
+    .badge--lander,
+    .badge--web3,
+    .badge--community {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .badge[href].badge--ingame {
+      color: #e5f2ff;
+      border-color: rgba(112, 166, 255, 0.28);
+      background: linear-gradient(135deg, rgba(74, 123, 255, 0.18), rgba(81, 191, 255, 0.18));
+      box-shadow:
+        0 0 0 1px rgba(112, 166, 255, 0.16),
+        0 0 20px rgba(81, 191, 255, 0.2),
+        0 10px 22px rgba(54, 99, 214, 0.16);
+    }
+
+    .badge[href].badge--lander {
+      color: #efe3ff;
+      border-color: rgba(176, 127, 255, 0.28);
+      background: linear-gradient(135deg, rgba(144, 98, 255, 0.18), rgba(204, 110, 255, 0.18));
+      box-shadow:
+        0 0 0 1px rgba(176, 127, 255, 0.16),
+        0 0 22px rgba(191, 110, 255, 0.22),
+        0 10px 22px rgba(116, 67, 208, 0.16);
+    }
+
+    .badge[href].badge--ingame:hover {
+      box-shadow:
+        0 0 0 1px rgba(112, 166, 255, 0.24),
+        0 0 26px rgba(81, 191, 255, 0.26),
+        0 12px 24px rgba(54, 99, 214, 0.18);
+    }
+
+    .badge[href].badge--lander:hover {
+      box-shadow:
+        0 0 0 1px rgba(176, 127, 255, 0.24),
+        0 0 28px rgba(191, 110, 255, 0.28),
+        0 12px 24px rgba(116, 67, 208, 0.18);
+    }
+
+    .metric-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .metric {
+      padding: 9px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .method-copy {
+      color: var(--muted);
+      line-height: 1.64;
+      flex: 1;
+    }
+
+    .method-foot {
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--soft);
+      line-height: 1.54;
+      font-size: 0.92rem;
+    }
+
+    .flow-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .flow-step {
+      background:
+        linear-gradient(180deg, rgba(11, 23, 24, 0.96), rgba(8, 11, 11, 0.98)),
+        var(--panel-alt);
+      border-color: rgba(103, 241, 223, 0.16);
+    }
+
+    .flow-step h3 {
+      color: var(--teal);
+    }
+
+    .flow-footnote {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(103, 241, 223, 0.16);
+      background: rgba(10, 25, 26, 0.62);
+      color: var(--muted);
+      line-height: 1.62;
+    }
+
+    .fit-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .fit-card {
+      background:
+        linear-gradient(180deg, rgba(27, 21, 16, 0.96), rgba(11, 9, 8, 0.98)),
+        var(--panel);
+    }
+
+    .fit-card h3 {
+      color: var(--gold);
+    }
+
+    .fit-card .button-ghost {
+      margin-top: 18px;
+      width: 100%;
+    }
+
+    .xportal-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+      gap: 18px;
+      align-items: center;
+    }
+
+    .wallet-box {
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(103, 241, 223, 0.18);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(103, 241, 223, 0.1), transparent 34%),
+        linear-gradient(180deg, rgba(10, 24, 25, 0.96), rgba(9, 11, 11, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .wallet-box h3 {
+      margin: 0 0 12px;
+      font-size: 1.28rem;
+      color: var(--teal);
+    }
+
+    .wallet-box p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.66;
+    }
+
+    .wallet-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .wallet-steps {
+      display: grid;
+      gap: 12px;
+    }
+
+    .wallet-step {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .wallet-step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .wallet-step span {
+      color: var(--muted);
+      line-height: 1.54;
+      font-size: 0.94rem;
+    }
+
+    .source-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .source-card {
+      min-height: 100%;
+    }
+
+    .source-card h3 {
+      color: var(--gold);
+    }
+
+    .source-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--soft);
+      line-height: 1.62;
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: fadeUp 0.68s ease forwards;
+    }
+
+    .delay-1 { animation-delay: 0.08s; }
+    .delay-2 { animation-delay: 0.16s; }
+    .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; }
+    .delay-5 { animation-delay: 0.4s; }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(8px); }
+      50% { transform: translateY(-2px); }
+    }
+
+    @media (max-width: 1120px) {
+      .xportal-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual {
+        min-height: 0;
+      }
+
+      .grid-two,
+      .timeline,
+      .methods-grid,
+      .flow-grid,
+      .fit-grid,
+      .source-grid,
+      .trust-band {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(1240px, calc(100% - 18px));
+        padding-top: 18px;
+      }
+
+      .topbar,
+      .hero,
+      .section-card,
+      .path-card,
+      .method-card,
+      .fit-card,
+      .timeline-step,
+      .flow-step,
+      .source-card,
+      .wallet-box {
+        border-radius: 22px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .topbar-actions,
+      .cta-row,
+      .wallet-actions {
+        justify-content: stretch;
+      }
+
+      .topbar-actions > *,
+      .cta-row > *,
+      .wallet-actions > * {
+        flex: 1 1 100%;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero-points,
+      .grid-two,
+      .grid-three,
+      .timeline,
+      .methods-grid,
+      .flow-grid,
+      .fit-grid,
+      .source-grid,
+      .trust-band {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual {
+        min-height: 0;
+        padding: 12px;
+        margin-bottom: 18px;
+      }
+
+      .hero-visual img {
+        margin: 0;
+      }
+
+      .hero-note-trigger {
+        right: 16px;
+        bottom: 16px;
+        min-height: 38px;
+        padding: 9px 12px;
+        font-size: 0.86rem;
+      }
+
+      .hero-note-panel {
+        right: -6px;
+        bottom: 70px;
+        width: min(250px, calc(100% - 20px));
+      }
+
+      .section-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .method-top {
+        gap: 10px;
+      }
+
+      .step-head {
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .timeline-number,
+      .flow-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        font-size: 0.84rem;
+      }
+
+      .method-title-wrap h3 {
+        font-size: 1.08rem;
+      }
+
+      .method-badges {
+        gap: 5px;
+      }
+
+      .badge {
+        padding: 4px 8px;
+        font-size: 0.68rem;
+      }
+
+      .badge[href] {
+        padding: 5px 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="topbar fade-up">
+      <div class="brand">
+        <img src="images/tcl_icon.png" alt="TCL icon">
+        <div>
+          <span class="brand-title">The Cursed Land</span>
+          <span class="brand-sub">How players, streamers and creators can earn</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="button-ghost" onclick="goBackToTclToken()">Back to TCL Explorer</button>
+        <button type="button" class="button-secondary" onclick="openConnectGuide()">Open xPortal Guide</button>
+      </div>
+    </div>
+
+    <section class="hero fade-up delay-1">
+      <div class="hero-visual">
+        <img src="images/RMT.png" alt="The Cursed Land private shop screenshot">
+        <button type="button" class="hero-note-trigger" id="heroNoteTrigger" aria-expanded="false" aria-controls="heroNotePanel">
+          Simple idea
+        </button>
+        <div class="hero-note-panel" id="heroNotePanel" hidden>
+          <div class="hero-note-panel-head">
+            <strong>Simple idea</strong>
+            <button type="button" class="hero-note-close" id="heroNoteClose" aria-label="Close simple idea popup">×</button>
+          </div>
+          <span>Promote the game for euro, or play and trade inside the TCL economy for crypto rewards.</span>
+        </div>
+      </div>
+      <div class="hero-copy">
+        <div class="eyebrow">Earn in Euro and Crypto</div>
+        <h1>How to <span>earn money</span> in The Cursed Land</h1>
+        <p class="hero-lead">
+          The Cursed Land has two earning lanes. Creators can earn real revenue in euro through the official Creator Program.
+          Players can earn TCL through gameplay, staking, referrals and direct player-to-player Web3 trading. Pick the lane that matches your time, your audience and your play style.
+        </p>
+        <div class="hero-points">
+          <div class="hero-point">
+            <strong>40%</strong>
+            <span>Revenue share for approved creators whose players buy with card payments in game.</span>
+          </div>
+          <div class="hero-point">
+            <strong>6 ways</strong>
+            <span>Main TCL earning methods: NFTs, staking, private shops and referral rewards.</span>
+          </div>
+          <div class="hero-point">
+            <strong>24/7</strong>
+            <span>Private Web3 Shops can keep selling classic items for TCL even while you are offline.</span>
+          </div>
+        </div>
+        <div class="cta-row">
+          <a class="button" href="https://thecursedland.com/creators" target="_blank" rel="noopener noreferrer">Apply for Creator Program</a>
+          <a class="button-secondary" href="https://blog.thecursedland.com/the-cursed-land-creator-program-0cb7124aedb1" target="_blank" rel="noopener noreferrer">Read Creator Program article</a>
+          <button type="button" class="button-ghost" onclick="scrollToSection('crypto-paths')">See TCL earning methods</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-two fade-up delay-2">
+      <article class="path-card">
+        <div class="card-label">Path 1 - Creator income</div>
+        <h3>Creator Program: earn 40% revenue share in euro</h3>
+        <p>
+          If you already make content on TikTok, YouTube, Twitch, Kick, Trovo, Discord, Instagram or Facebook, this is the easiest earning lane to understand.
+          You get a Creator Code, your audience uses it when they create an account, and you receive 40% of the card-payment revenue generated by those players.
+        </p>
+        <ul class="bullet-list gold-list">
+          <li>Your audience gets a Starter Pack with +9 items when they use your code.</li>
+          <li>You get a dedicated dashboard with live tracking for signups, purchases and total revenue.</li>
+          <li>Payout requests start at 50 EUR and can be withdrawn weekly.</li>
+          <li>Payment methods include Wise, PayPal and bank transfer.</li>
+          <li>PopuGames handles self-billing and operates the program under EU legal coverage.</li>
+        </ul>
+      </article>
+
+      <article class="path-card path-card--teal">
+        <div class="card-label">Path 2 - TCL crypto</div>
+        <h3>Play, stake, sell items and earn TCL on-chain</h3>
+        <p>
+          If you are a player, collector, guild leader or trader, you can earn TCL directly through game activity and Web3 tools.
+          Some methods are active and reward daily play. Others are passive and reward long-term conviction.
+        </p>
+        <ul class="bullet-list teal-list">
+          <li>Use NFTs to earn daily rewards with active play or passive lending.</li>
+          <li>Open a Private Web3 Shop and sell classic tradable items for TCL.</li>
+          <li>Invite players with your referral code and earn from their purchases.</li>
+          <li>Use xPortal as your wallet for TCL purchases and rewards.</li>
+          <li>Keep TCL, sell it later, use it in Infinity Staking, or spend it on game utility such as Karma and other items.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="section-card fade-up delay-3" id="creator-program">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">For streamers and creators</div>
+          <h2>Why the Creator Program is attractive</h2>
+          <p>
+            You do not need a complicated setup. If you already post clips, stream gameplay or build community content, each post, live stream or video can keep working for you over time.
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <article class="timeline-step">
+          <div class="step-head">
+            <div class="timeline-number">1</div>
+            <h3>Apply and get your code</h3>
+          </div>
+          <p>Apply on the official creator page and receive your Creator Code after approval.</p>
+        </article>
+        <article class="timeline-step">
+          <div class="step-head">
+            <div class="timeline-number">2</div>
+            <h3>Promote the game</h3>
+          </div>
+          <p>Share posts, clips, streams, short videos and guides on the platforms where your audience already follows you.</p>
+        </article>
+        <article class="timeline-step">
+          <div class="step-head">
+            <div class="timeline-number">3</div>
+            <h3>Players use your code</h3>
+          </div>
+          <p>New players enter your code when they create an account and they receive a Starter Pack with +9 items.</p>
+        </article>
+        <article class="timeline-step">
+          <div class="step-head">
+            <div class="timeline-number">4</div>
+            <h3>You earn instantly</h3>
+          </div>
+          <p>When those players make card purchases in game, 40% of the generated revenue is allocated to you.</p>
+        </article>
+      </div>
+
+      <div class="trust-band">
+        <div class="trust-item">
+          <strong>40% share</strong>
+          <span>High revenue share built for creators who can bring and retain players.</span>
+        </div>
+        <div class="trust-item">
+          <strong>Live dashboard</strong>
+          <span>Track new players, purchases, revenue per purchase and your running total in one place.</span>
+        </div>
+        <div class="trust-item">
+          <strong>Weekly withdrawals</strong>
+          <span>Withdraw from 50 EUR through Wise, PayPal or bank transfer.</span>
+        </div>
+        <div class="trust-item">
+          <strong>Legal structure</strong>
+          <span>PopuGames runs the program with official trademark protection and self-billing support.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card fade-up delay-4">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Creator fit</div>
+          <h2>Who should apply</h2>
+          <p>
+            This is aimed at creators who can move a community, explain games clearly or keep people engaged through streams and videos.
+            The public requirement is 1000+ followers or subscribers, and both individuals and companies can apply.
+          </p>
+        </div>
+      </div>
+      <div class="grid-three">
+        <article class="fit-card">
+          <h3>Best for</h3>
+          <p>Streamers, content creators, Discord leaders, TikTok editors and community builders who already publish consistently.</p>
+        </article>
+        <article class="fit-card">
+          <h3>What makes it work</h3>
+          <p>Clear tutorials, gameplay highlights, beginner guides, update coverage and content that gives your audience a reason to try the game with your code.</p>
+        </article>
+        <article class="fit-card">
+          <h3>What your audience gets</h3>
+          <p>A better starting experience thanks to the Starter Pack with +9 items, which makes your code easier to recommend honestly.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card fade-up delay-5" id="crypto-paths">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">For players and traders</div>
+          <h2>Main ways to earn TCL</h2>
+          <p>
+            These methods come from the official tokenomics and Web3 systems. Some are made for active grinders. Others are made for passive holders who want exposure to the game economy without daily play.
+          </p>
+        </div>
+      </div>
+
+      <div class="methods-grid">
+        <article class="method-card">
+          <div class="method-top">
+            <div class="method-title-wrap">
+              <h3>Own NFT and Play</h3>
+              <p>Daily gameplay route</p>
+            </div>
+            <div class="method-badges">
+              <span class="badge badge--active">Active</span>
+              <a class="badge badge--ingame" href="https://www.thecursedland.com/" target="_blank" rel="noopener noreferrer">In-game</a>
+            </div>
+          </div>
+          <div class="metric-row">
+            <span class="metric">100% daily reward</span>
+            <span class="metric">Approx. 66% withdrawable later</span>
+          </div>
+          <div class="method-copy">
+            Buy and use your NFT yourself. This is the highest daily reward path for players who enjoy doing missions consistently.
+          </div>
+          <div class="method-foot">
+            Tradeoff: around 33% of TCL is consumed for NFT acquisition and storage enhancement, and you must play every day to collect rewards.
+          </div>
+        </article>
+
+        <article class="method-card">
+          <div class="method-top">
+            <div class="method-title-wrap">
+              <h3>Loan NFT</h3>
+              <p>Passive reward route</p>
+            </div>
+            <div class="method-badges">
+              <span class="badge badge--passive">Passive</span>
+              <a class="badge badge--lander" href="https://www.thecursedland.com/lander" target="_blank" rel="noopener noreferrer">Lander app</a>
+            </div>
+          </div>
+          <div class="metric-row">
+            <span class="metric">80% daily reward</span>
+            <span class="metric">Approx. 66% withdrawable later</span>
+          </div>
+          <div class="method-copy">
+            Acquire NFTs and loan them out instead of playing yourself. You still receive daily TCL without needing to log in for missions.
+          </div>
+          <div class="method-foot">
+            Tradeoff: around 33% of TCL is still consumed for NFT acquisition and storage enhancement, and you accept 20% less reward in exchange for passive income.
+          </div>
+        </article>
+
+        <article class="method-card">
+          <div class="method-top">
+            <div class="method-title-wrap">
+              <h3>Borrow NFT</h3>
+              <p>No-invest start</p>
+            </div>
+            <div class="method-badges">
+              <span class="badge badge--active">Active</span>
+              <a class="badge badge--ingame" href="https://www.thecursedland.com/" target="_blank" rel="noopener noreferrer">In-game</a>
+            </div>
+          </div>
+          <div class="metric-row">
+            <span class="metric">20% daily reward</span>
+            <span class="metric">No initial TCL needed</span>
+          </div>
+          <div class="method-copy">
+            Borrow NFTs from other players and start earning without making a big token investment first.
+          </div>
+          <div class="method-foot">
+            Tradeoff: you only receive 20% of the reward and still need daily gameplay and mission completion.
+          </div>
+        </article>
+
+        <article class="method-card">
+          <div class="method-top">
+            <div class="method-title-wrap">
+              <h3>Infinity Staking</h3>
+              <p>Long-term conviction route</p>
+            </div>
+            <div class="method-badges">
+              <span class="badge badge--passive">Passive</span>
+              <a class="badge badge--lander" href="https://www.thecursedland.com/lander" target="_blank" rel="noopener noreferrer">Lander app</a>
+            </div>
+          </div>
+          <div class="metric-row">
+            <span class="metric">100% daily reward</span>
+            <span class="metric">Lifetime of the game</span>
+          </div>
+          <div class="method-copy">
+            Burn TCL once to open a lifetime staking position that can keep generating daily rewards for as long as the game exists.
+          </div>
+          <div class="method-foot">
+            Tradeoff: 100% of the staked TCL is burned permanently, so this is best for players who believe strongly in the long-term future of the game.
+          </div>
+        </article>
+
+        <article class="method-card">
+          <div class="method-top">
+            <div class="method-title-wrap">
+              <h3>Private Web3 Shop</h3>
+              <p>Sell classic items for TCL</p>
+            </div>
+            <div class="method-badges">
+              <span class="badge badge--active">Active</span>
+              <span class="badge badge--web3">Web3 trading</span>
+            </div>
+          </div>
+          <div class="metric-row">
+            <span class="metric">24/7 selling</span>
+            <span class="metric">Direct player-to-player</span>
+          </div>
+          <div class="method-copy">
+            Open a private on-chain shop and sell tradable classic items directly for TCL without middlemen.
+          </div>
+          <div class="method-foot">
+            Tradeoff: there is always a chance that no buyer arrives, but the system stays open around the clock and removes the need to manually search for buyers.
+          </div>
+        </article>
+
+        <article class="method-card">
+          <div class="method-top">
+            <div class="method-title-wrap">
+              <h3>Referral Code</h3>
+              <p>Community growth route</p>
+            </div>
+            <div class="method-badges">
+              <span class="badge badge--passive">Passive</span>
+              <span class="badge badge--community">Community</span>
+            </div>
+          </div>
+          <div class="metric-row">
+            <span class="metric">5% from invitee purchases</span>
+            <span class="metric">2% from private shops</span>
+          </div>
+          <div class="method-copy">
+            Generate your own on-chain referral code and grow your community. Rewards go directly to your wallet when your invitees buy.
+          </div>
+          <div class="method-foot">
+            Tradeoff: you need at least 5 guests before rewards start, and your income depends on how active your invitees are.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card fade-up delay-5">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Private Web3 Shops</div>
+          <h2>How selling items for TCL works</h2>
+          <p>
+            This is the core crypto earning loop for item sellers. You use a Private Shop Web3 item, list classic tradable items for TCL, and buyers pay from xPortal or another supported wallet.
+          </p>
+        </div>
+      </div>
+
+      <div class="flow-grid">
+        <article class="flow-step">
+          <div class="step-head">
+            <div class="flow-number">1</div>
+            <h3>Open your shop</h3>
+          </div>
+          <p>Buy the Private Shop Web3 item with Karma, place it on the map and list the classic tradable items you want to sell for TCL.</p>
+        </article>
+        <article class="flow-step">
+          <div class="step-head">
+            <div class="flow-number">2</div>
+            <h3>Buyer pays with xPortal</h3>
+          </div>
+          <p>The buyer connects a wallet such as xPortal, confirms the TCL payment on-chain and locks the item during checkout.</p>
+        </article>
+        <article class="flow-step">
+          <div class="step-head">
+            <div class="flow-number">3</div>
+            <h3>Item goes to mailbox</h3>
+          </div>
+          <p>After a successful purchase, the buyer receives the item through mailbox delivery while the shop handles the blockchain settlement.</p>
+        </article>
+        <article class="flow-step">
+          <div class="step-head">
+            <div class="flow-number">4</div>
+            <h3>Seller receives TCL</h3>
+          </div>
+          <p>The seller receives TCL directly in the connected wallet and can keep it, sell it later, stake it, or use it on game utility such as Karma and other items.</p>
+        </article>
+      </div>
+
+      <div class="flow-footnote">
+        Official Web3 Shop distribution: 90% goes to the seller, 4% is burned, 2% goes back to the buyer as cashback, 2% goes to the buyer referral if one was used, and 2% goes to the server wallet for blockchain network fees. If a transaction does not complete, the item becomes available again after 3 minutes and token recovery is available after 5 minutes.
+      </div>
+    </section>
+
+    <section class="section-card fade-up delay-5">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Getting started with crypto</div>
+          <h2>You need xPortal for the Web3 side</h2>
+          <p>
+            If you want to buy from Private Web3 Shops, receive TCL or use referral rewards on-chain, start with a wallet.
+            The simplest path is xPortal, and TCL Explorer already has a direct tutorial for it.
+          </p>
+        </div>
+      </div>
+
+      <div class="xportal-shell">
+        <div class="wallet-box">
+          <h3>Quick start</h3>
+          <p>
+            Open the tutorial inside TCL Explorer if you want a guided walkthrough, or open xPortal directly if you already know the setup.
+          </p>
+          <div class="wallet-actions">
+            <button type="button" class="button-secondary" onclick="openConnectGuide()">Open xPortal tutorial</button>
+            <a class="button" href="https://xportal.com/app" target="_blank" rel="noopener noreferrer">Open xPortal app</a>
+            <a class="button-ghost" href="https://www.thecursedland.com/lander" target="_blank" rel="noopener noreferrer">Open Lander app</a>
+          </div>
+        </div>
+
+        <div class="wallet-steps">
+          <div class="wallet-step">
+            <strong>Step 1</strong>
+            <span>Create or open your xPortal wallet.</span>
+          </div>
+          <div class="wallet-step">
+            <strong>Step 2</strong>
+            <span>Connect your wallet when you want to buy from a Private Web3 Shop or receive TCL rewards.</span>
+          </div>
+          <div class="wallet-step">
+            <strong>Step 3</strong>
+            <span>Use TCL in the way that fits you best: hold it, trade it later, use Infinity Staking, or spend it back into the game economy.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card fade-up delay-5">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Best match</div>
+          <h2>Which earning path fits you?</h2>
+          <p>
+            You do not need to use every system. Pick the one that matches how you already behave online or in game.
+          </p>
+        </div>
+      </div>
+
+      <div class="fit-grid">
+        <article class="fit-card">
+          <h3>Streamer / Creator</h3>
+          <p>Best mix: Creator Program for euro income, plus Referral Code if you also want on-chain community rewards.</p>
+          <button type="button" class="button-ghost" onclick="openCreatorProgram()">Apply now</button>
+        </article>
+        <article class="fit-card">
+          <h3>Active Player</h3>
+          <p>Best mix: Own NFT and Play, Borrow NFT if you want a lower barrier, and Private Web3 Shop if you like item trading.</p>
+          <button type="button" class="button-ghost" onclick="scrollToSection('crypto-paths')">Review player methods</button>
+        </article>
+        <article class="fit-card">
+          <h3>Passive Holder</h3>
+          <p>Best mix: Loan NFT for reduced effort or Infinity Staking if you want a stronger long-term bet on the game.</p>
+          <a class="button-ghost" href="https://www.thecursedland.com/lander" target="_blank" rel="noopener noreferrer">Open Lander</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card fade-up delay-5">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Official sources</div>
+          <h2>Read more from the source</h2>
+          <p>
+            Everything on this page is based on The Cursed Land official creator materials, whitepaper and Web3 Shop article.
+          </p>
+        </div>
+      </div>
+
+      <div class="source-grid">
+        <article class="source-card">
+          <h3>Creator Program</h3>
+          <p>Full creator pitch, payout rules, audience requirement and official application page.</p>
+          <div class="source-links">
+            <a class="button" href="https://thecursedland.com/creators" target="_blank" rel="noopener noreferrer">Apply</a>
+            <a class="button-ghost" href="https://blog.thecursedland.com/the-cursed-land-creator-program-0cb7124aedb1" target="_blank" rel="noopener noreferrer">Read article</a>
+          </div>
+        </article>
+        <article class="source-card">
+          <h3>TCL Tokenomics</h3>
+          <p>Official explanation for NFT earning, loaning, borrowing, staking, referrals and Private Web3 Shops.</p>
+          <div class="source-links">
+            <a class="button-secondary" href="https://whitepaper.thecursedland.com/tokenomics/how-to-earn-tcl" target="_blank" rel="noopener noreferrer">Open whitepaper</a>
+          </div>
+        </article>
+        <article class="source-card">
+          <h3>Private Web3 Shop details</h3>
+          <p>Technical flow, commission split, security details, cashback and referral distribution.</p>
+          <div class="source-links">
+            <a class="button-ghost" href="https://blog.thecursedland.com/introducing-private-web3-shops-in-the-cursed-land-d57c5e93160d" target="_blank" rel="noopener noreferrer">Read Web3 Shop article</a>
+            <a class="button-ghost" href="https://euipo.europa.eu/eSearch/#details/trademarks/018896314" target="_blank" rel="noopener noreferrer">EUIPO trademark</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <p class="footer-note fade-up delay-5">
+      The strongest message for players and creators is simple: if you already play, trade or create content, The Cursed Land gives you more than one way to turn that activity into value.
+    </p>
+  </div>
+
+  <script>
+    function notifyParentReady() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        } catch (error) {
+          console.warn("Failed to notify parent page ready", error);
+        }
+      }
+    }
+
+    function goBackToTclToken() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Back navigation through parent failed", error);
+        }
+      }
+
+      window.location.href = "index.html#token";
+    }
+
+    function openConnectGuide() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "connectXportal" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Guide navigation through parent failed", error);
+        }
+      }
+
+      window.location.href = "index.html#connectXportal";
+    }
+
+    function openCreatorProgram() {
+      window.open("https://thecursedland.com/creators", "_blank", "noopener,noreferrer");
+    }
+
+    function scrollToSection(id) {
+      const target = document.getElementById(id);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    (function setupHeroIdeaPopup() {
+      const heroVisual = document.querySelector(".hero-visual");
+      const trigger = document.getElementById("heroNoteTrigger");
+      const panel = document.getElementById("heroNotePanel");
+      const closeBtn = document.getElementById("heroNoteClose");
+
+      if (!heroVisual || !trigger || !panel || !closeBtn) return;
+
+      function setOpen(nextOpen) {
+        heroVisual.classList.toggle("is-note-open", nextOpen);
+        trigger.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+        panel.hidden = !nextOpen;
+      }
+
+      trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const nextOpen = !heroVisual.classList.contains("is-note-open");
+        setOpen(nextOpen);
+      });
+
+      closeBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setOpen(false);
+      });
+
+      panel.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!heroVisual.contains(event.target)) {
+          setOpen(false);
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          setOpen(false);
+        }
+      });
+    })();
+
+    notifyParentReady();
+  </script>
+</body>
+</html>
