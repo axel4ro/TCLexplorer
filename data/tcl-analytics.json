@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updatedAt": "2026-05-09T08:37:32.3246579Z",
+    "updatedAt": "2026-05-09T08:42:21.2931569Z",
     "source": "CryptoRank",
     "endpoints": {
       "coin": "https://api.cryptorank.io/v0/coins/the-cursed-land",
@@ -18,8 +18,8 @@
     }
   },
   "market": {
-    "currentPriceUsd": 0.000979408384,
-    "marketCapUsd": 7541.4445568,
+    "currentPriceUsd": 0.000979404456,
+    "marketCapUsd": 7541.4143112,
     "volume24hUsd": 122937.9667,
     "athPriceUsd": 0.010060211042,
     "atlPriceUsd": 0.000542361537,
@@ -31,40 +31,40 @@
     {
       "label": "1W",
       "key": "7D",
-      "startPrice": 0.000841179009,
-      "currentPrice": 0.000979408384,
-      "change": 0.000138229375,
-      "changePct": 16.43281317,
+      "startPrice": 0.000841180753,
+      "currentPrice": 0.000979404456,
+      "change": 0.000138223703,
+      "changePct": 16.43210481,
       "high": 0.001045618391,
       "low": 0.000841165667
     },
     {
       "label": "1M",
       "key": "30D",
-      "startPrice": 0.000896838135,
-      "currentPrice": 0.000979408384,
-      "change": 8.2570249E-05,
-      "changePct": 9.20681735,
+      "startPrice": 0.000896919167,
+      "currentPrice": 0.000979404456,
+      "change": 8.2485289E-05,
+      "changePct": 9.19651313,
       "high": 0.001045618391,
       "low": 0.000835452668
     },
     {
       "label": "3M",
       "key": "3M",
-      "startPrice": 0.001114913393,
-      "currentPrice": 0.000979408384,
-      "change": -0.000135505009,
-      "changePct": -12.15385965,
+      "startPrice": 0.001114782166,
+      "currentPrice": 0.000979404456,
+      "change": -0.00013537771,
+      "changePct": -12.14387116,
       "high": 0.001127992719,
       "low": 0.000811077553
     },
     {
       "label": "6M",
       "key": "6M",
-      "startPrice": 0.00109412689,
-      "currentPrice": 0.000979408384,
-      "change": -0.000114718506,
-      "changePct": -10.48493617,
+      "startPrice": 0.001094062247,
+      "currentPrice": 0.000979404456,
+      "change": -0.000114657791,
+      "changePct": -10.48000617,
       "high": 0.001321155046,
       "low": 0.000811077553
     },
@@ -72,19 +72,19 @@
       "label": "YTD",
       "key": "YTD",
       "startPrice": 0.001114915852,
-      "currentPrice": 0.000979408384,
-      "change": -0.000135507468,
-      "changePct": -12.1540534,
+      "currentPrice": 0.000979404456,
+      "change": -0.000135511396,
+      "changePct": -12.15440571,
       "high": 0.001203109933,
       "low": 0.000811077553
     },
     {
       "label": "1Y",
       "key": "1Y",
-      "startPrice": 0.003123967228,
-      "currentPrice": 0.000979408384,
-      "change": -0.002144558844,
-      "changePct": -68.64857047,
+      "startPrice": 0.00312414295,
+      "currentPrice": 0.000979404456,
+      "change": -0.002144738494,
+      "changePct": -68.65045961,
       "high": 0.003836686922,
       "low": 0.000542361537
     }
@@ -101,7 +101,7 @@
         "label": "2026",
         "cells": [
           -26.89595017,
-          20.16220686,
+          20.1673781,
           null,
           null
         ]
@@ -186,7 +186,7 @@
           -2.10377533,
           -14.90747882,
           2.88430124,
-          16.79095692,
+          16.79598308,
           null,
           null,
           null,
