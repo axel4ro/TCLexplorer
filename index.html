@@ -175,6 +175,38 @@
       background: rgba(15, 23, 42, 0.42);
     }
 
+    .staking-rank-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+    }
+
+    .staking-rank-icon {
+      display: block;
+      width: 40px;
+      max-width: 40px;
+      height: auto;
+      object-fit: contain;
+      cursor: zoom-in;
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    .staking-rank-icon:hover {
+      transform: scale(1.04);
+      filter: brightness(1.04);
+    }
+
+    .staking-rank-text,
+    .staking-rank-fallback {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      font-weight: 700;
+      color: #eef4ff;
+    }
+
     @media (max-width: 640px) {
       .token-hero-head {
         align-items: stretch;
@@ -1943,6 +1975,25 @@ function buildMergedLeaderboardEntry(primaryEntry, secondaryEntry = null) {
   };
 }
 
+function buildLeaderboardRankHtml(rankDisplay) {
+  const rankText = (rankDisplay === null || rankDisplay === undefined || rankDisplay === "")
+    ? "-"
+    : String(rankDisplay);
+  const normalizedRank = /^\d+$/.test(rankText) ? Number(rankText) : null;
+
+  if (normalizedRank !== null && normalizedRank >= 0 && normalizedRank <= 10) {
+    const rankIconPath = "images/rank" + normalizedRank + ".png";
+    return "<div class='staking-rank-cell'>" +
+      "<img src='" + rankIconPath + "' alt='Rank " + normalizedRank + "' class='staking-rank-icon' " +
+        "onclick=\"openImage(this.src)\" " +
+        "onerror=\"this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';\">" +
+      "<span class='staking-rank-fallback' style='display:none;'>" + rankText + "</span>" +
+    "</div>";
+  }
+
+  return "<div class='staking-rank-cell'><span class='staking-rank-text'>" + rankText + "</span></div>";
+}
+
 function buildLeaderboardRowHtml(entry, options = {}) {
   const address = String(entry?.addr || "");
   const totalRaw = normalizeIntegerLikeValue(entry?.total ?? 0);
@@ -1954,6 +2005,7 @@ function buildLeaderboardRowHtml(entry, options = {}) {
     ? options.rankDisplay
     : ((Number(entry?.rank) > 0) ? Number(entry.rank) : "");
   const renderedRankDisplay = (rankDisplay === null || rankDisplay === undefined) ? "-" : rankDisplay;
+  const rankCellHtml = buildLeaderboardRankHtml(renderedRankDisplay);
   const groupPrimary = String(options.groupPrimary || "");
   const titleText = options.isExpanded ? "Hide linked address" : "Show linked address";
   const toggleIcon = options.isExpanded ? "−" : "+";
@@ -1982,7 +2034,7 @@ function buildLeaderboardRowHtml(entry, options = {}) {
   const groupPrimaryAttr = groupPrimary ? " data-staking-group-primary='" + groupPrimary + "'" : "";
 
   return "<tr" + rowClass + " data-staking-address='" + address + "'" + groupPrimaryAttr + ">" +
-    "<td style='padding:6px;text-align:center;'>" + renderedRankDisplay + "</td>" +
+    "<td style='padding:6px;text-align:center;'>" + rankCellHtml + "</td>" +
     "<td style='padding:6px;'>" + addressCellHtml + "</td>" +
     "<td style='padding:6px;font-weight:bold;'>" + totalCellHtml + "</td>" +
     "<td style='padding:6px;'>" + formatTcl(entry?.nft ?? 0) + "</td>" +
