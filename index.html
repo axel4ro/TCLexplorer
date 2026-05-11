@@ -972,6 +972,11 @@ function openLander() {
   LINKED_STAKING_GROUPS.forEach((group) => {
     linkedStakingSplitState[group.primary] = false;
   });
+  const CUSTOM_STAKING_ADDRESS_RANK_ICONS = new Map([
+    ["erd1tktrm7l8z033aulcrd558zyg74jk72nt40vjzq9xss7ka3dk4j0sfa58n8", "images/PopuGames.png"],
+    ["erd16sm8ez0f8f8t4cuxzspsxmfrt0wkst6gc0zntazu0ef9nyjw9nmsrakr8k", "images/PopuGames.png"],
+    ["erd1uqvfhreupzgjh7ug630pwfxecg50kdv9umfcwq6d5whpadzhheussk9exc", "images/MTZgameStudio.png"]
+  ]);
   const MULTIVERSX_API = "https://api.multiversx.com";
   let currentLeaderboardData = null;
 
@@ -1975,11 +1980,25 @@ function buildMergedLeaderboardEntry(primaryEntry, secondaryEntry = null) {
   };
 }
 
-function buildLeaderboardRankHtml(rankDisplay) {
+function getCustomStakingAddressRankIcon(address) {
+  return CUSTOM_STAKING_ADDRESS_RANK_ICONS.get(String(address || "")) || "";
+}
+
+function buildLeaderboardRankHtml(rankDisplay, address = "") {
   const rankText = (rankDisplay === null || rankDisplay === undefined || rankDisplay === "")
     ? "-"
     : String(rankDisplay);
   const normalizedRank = /^\d+$/.test(rankText) ? Number(rankText) : null;
+  const customIconPath = getCustomStakingAddressRankIcon(address);
+
+  if (customIconPath) {
+    return "<div class='staking-rank-cell'>" +
+      "<img src='" + customIconPath + "' alt='Rank icon' class='staking-rank-icon' " +
+        "onclick=\"openImage(this.src)\" " +
+        "onerror=\"this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';\">" +
+      "<span class='staking-rank-fallback' style='display:none;'>" + rankText + "</span>" +
+    "</div>";
+  }
 
   if (normalizedRank !== null && normalizedRank >= 0 && normalizedRank <= 10) {
     const rankIconPath = "images/rank" + normalizedRank + ".png";
@@ -2005,7 +2024,7 @@ function buildLeaderboardRowHtml(entry, options = {}) {
     ? options.rankDisplay
     : ((Number(entry?.rank) > 0) ? Number(entry.rank) : "");
   const renderedRankDisplay = (rankDisplay === null || rankDisplay === undefined) ? "-" : rankDisplay;
-  const rankCellHtml = buildLeaderboardRankHtml(renderedRankDisplay);
+  const rankCellHtml = buildLeaderboardRankHtml(renderedRankDisplay, address);
   const groupPrimary = String(options.groupPrimary || "");
   const titleText = options.isExpanded ? "Hide linked address" : "Show linked address";
   const toggleIcon = options.isExpanded ? "−" : "+";
