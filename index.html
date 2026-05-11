@@ -83,6 +83,98 @@
       box-shadow: 0 14px 32px rgba(0, 232, 204, 0.12);
     }
 
+    .staking-address-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .staking-address-main {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .staking-toggle-btn {
+      position: relative;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 24px !important;
+      width: 24px !important;
+      min-width: 24px !important;
+      max-width: 24px !important;
+      height: 24px !important;
+      min-height: 24px !important;
+      max-height: 24px !important;
+      padding: 0 !important;
+      border: 1px solid rgba(74, 222, 128, 0.48) !important;
+      border-radius: 999px !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      background-color: #0d3b2a !important;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(187, 247, 208, 0.16), transparent 46%),
+        linear-gradient(135deg, rgba(18, 113, 74, 0.98), rgba(7, 59, 38, 0.98)) !important;
+      color: #d9f99d !important;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 0 1px rgba(34, 197, 94, 0.16),
+        0 0 6px rgba(34, 197, 94, 0.12),
+        0 6px 14px rgba(6, 78, 59, 0.18) !important;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .staking-toggle-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(187, 247, 208, 0.78) !important;
+      background-color: #115e3f !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 0 1px rgba(74, 222, 128, 0.2),
+        0 0 9px rgba(74, 222, 128, 0.18),
+        0 8px 16px rgba(22, 101, 52, 0.2) !important;
+    }
+
+    .staking-toggle-btn:focus-visible {
+      outline: none;
+      border-color: rgba(187, 247, 208, 0.86) !important;
+      box-shadow:
+        0 0 0 3px rgba(34, 197, 94, 0.14),
+        0 0 10px rgba(74, 222, 128, 0.18),
+        0 8px 16px rgba(22, 101, 52, 0.2) !important;
+    }
+
+    .staking-toggle-btn__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-1px);
+      text-shadow: 0 0 8px rgba(134, 239, 172, 0.36);
+    }
+
+    .staking-toggle-btn.is-open .staking-toggle-btn__icon {
+      transform: translateY(-2px);
+    }
+
+    .staking-address-subnote {
+      font-size: 11px;
+      color: #5eead4;
+      letter-spacing: 0.02em;
+    }
+
+    .staking-row-secondary td {
+      background: rgba(15, 23, 42, 0.42);
+    }
+
     @media (max-width: 640px) {
       .token-hero-head {
         align-items: stretch;
@@ -822,7 +914,34 @@ function openLander() {
     "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
   ];
   const LEADERBOARD_CACHE_KEY = "tclExplorer.leaderboard.v1";
+  const LINKED_STAKING_GROUPS = [
+    {
+      primary: "erd199smxrq4gsl9c9747jufe0u903x6n8vymeg8sjqk8l80qpvr78hs64y3nh",
+      secondary: "erd16ac3wklm8tsnxw9kutyznyxyvncsytnfdwhdz0thc5kcr7n27fvsrceuky",
+      primaryLabel: "Primary wallet",
+      secondaryLabel: "Secondary wallet",
+      combinedLabel: "Primary + secondary total"
+    },
+    {
+      primary: "erd1tktrm7l8z033aulcrd558zyg74jk72nt40vjzq9xss7ka3dk4j0sfa58n8",
+      secondary: "erd16sm8ez0f8f8t4cuxzspsxmfrt0wkst6gc0zntazu0ef9nyjw9nmsrakr8k",
+      primaryLabel: "Marketing",
+      secondaryLabel: "Team",
+      combinedLabel: "Marketing + Team total"
+    }
+  ];
+  const linkedStakingGroupsByPrimary = new Map(
+    LINKED_STAKING_GROUPS.map((group) => [group.primary, group])
+  );
+  const linkedStakingGroupsBySecondary = new Map(
+    LINKED_STAKING_GROUPS.map((group) => [group.secondary, group])
+  );
+  const linkedStakingSplitState = Object.create(null);
+  LINKED_STAKING_GROUPS.forEach((group) => {
+    linkedStakingSplitState[group.primary] = false;
+  });
   const MULTIVERSX_API = "https://api.multiversx.com";
+  let currentLeaderboardData = null;
 
   // ===== Utils =====
   function formatNumber(n) {
@@ -1794,6 +1913,103 @@ function formatTclRewardDayValue(val, decimals = 18, preferredRewardsPayload = n
   });
 }
 
+function formatShortAddress(address) {
+  const safeAddress = String(address || "");
+  return safeAddress.length > 10 ? (safeAddress.slice(0, 6) + "..." + safeAddress.slice(-4)) : safeAddress;
+}
+
+function getLinkedStakingGroupByPrimary(address) {
+  return linkedStakingGroupsByPrimary.get(String(address || "")) || null;
+}
+
+function getLinkedStakingGroupBySecondary(address) {
+  return linkedStakingGroupsBySecondary.get(String(address || "")) || null;
+}
+
+function sumStakingRawValues(...values) {
+  return values.reduce((sum, value) => {
+    return sum + BigInt(normalizeIntegerLikeValue(value));
+  }, 0n).toString();
+}
+
+function buildMergedLeaderboardEntry(primaryEntry, secondaryEntry = null) {
+  return {
+    addr: String(primaryEntry?.addr || ""),
+    rank: Number(primaryEntry?.rank) || 0,
+    nft: sumStakingRawValues(primaryEntry?.nft ?? 0, secondaryEntry?.nft ?? 0),
+    loan: sumStakingRawValues(primaryEntry?.loan ?? 0, secondaryEntry?.loan ?? 0),
+    infinity: sumStakingRawValues(primaryEntry?.infinity ?? 0, secondaryEntry?.infinity ?? 0),
+    total: sumStakingRawValues(primaryEntry?.total ?? 0, secondaryEntry?.total ?? 0)
+  };
+}
+
+function buildLeaderboardRowHtml(entry, options = {}) {
+  const address = String(entry?.addr || "");
+  const totalRaw = normalizeIntegerLikeValue(entry?.total ?? 0);
+  const totalUsd = formatTclUsdValue(totalRaw);
+  const rewardDay = formatTclRewardDayValue(totalRaw);
+  const copyLabel = t("common_copy", "Copy");
+  const hasCustomRankDisplay = Object.prototype.hasOwnProperty.call(options, "rankDisplay");
+  const rankDisplay = hasCustomRankDisplay
+    ? options.rankDisplay
+    : ((Number(entry?.rank) > 0) ? Number(entry.rank) : "");
+  const renderedRankDisplay = (rankDisplay === null || rankDisplay === undefined) ? "-" : rankDisplay;
+  const groupPrimary = String(options.groupPrimary || "");
+  const titleText = options.isExpanded ? "Hide linked address" : "Show linked address";
+  const toggleIcon = options.isExpanded ? "−" : "+";
+  const toggleButtonHtml = options.togglePrimaryAddress
+    ? "<button type='button' class='staking-toggle-btn" + (options.isExpanded ? " is-open" : "") + "' title='" + titleText + "' aria-label='" + titleText + "' onclick=\"toggleLinkedStakingAddress('" + options.togglePrimaryAddress + "', event)\"><span class='staking-toggle-btn__icon'>" + toggleIcon + "</span></button>"
+    : "";
+  const subtitleHtml = options.subtitle
+    ? "<div class='staking-address-subnote'>" + options.subtitle + "</div>"
+    : "";
+  const totalCellHtml = totalUsd
+    ? "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'>" + totalUsd + "</div></div>"
+    : "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'></div></div>";
+  const addressCellHtml =
+    "<div class='staking-address-cell'>" +
+      "<div class='staking-address-main'>" +
+        toggleButtonHtml +
+        "<span class='staking-address-text'>" + formatShortAddress(address) + "</span>" +
+        "<button onclick=\"copyAddr('" + address + "', event)\" " +
+          "class='staking-copy-btn' data-copy-label='" + copyLabel + "' data-copied='0' " +
+          "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>" + copyLabel + "</button>" +
+      "</div>" +
+      subtitleHtml +
+      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "'>" + (rewardDay || "") + "</div>" +
+    "</div>";
+  const rowClass = options.rowClass ? " class='" + options.rowClass + "'" : "";
+  const groupPrimaryAttr = groupPrimary ? " data-staking-group-primary='" + groupPrimary + "'" : "";
+
+  return "<tr" + rowClass + " data-staking-address='" + address + "'" + groupPrimaryAttr + ">" +
+    "<td style='padding:6px;text-align:center;'>" + renderedRankDisplay + "</td>" +
+    "<td style='padding:6px;'>" + addressCellHtml + "</td>" +
+    "<td style='padding:6px;font-weight:bold;'>" + totalCellHtml + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(entry?.nft ?? 0) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(entry?.loan ?? 0) + "</td>" +
+    "<td style='padding:6px;'>" + formatTcl(entry?.infinity ?? 0) + "</td>" +
+  "</tr>";
+}
+
+function toggleLinkedStakingAddress(primaryAddress, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const group = getLinkedStakingGroupByPrimary(primaryAddress);
+  if (!group) return;
+
+  linkedStakingSplitState[group.primary] = !linkedStakingSplitState[group.primary];
+
+  const data = currentLeaderboardData || getLeaderboardCache()?.data;
+  if (data) {
+    renderLeaderboardRows(data);
+  }
+
+  requestAnimationFrame(applyStakingPortraitScale);
+}
+
 function refreshLeaderboardMetaValues(options = {}) {
   const priceUsd = options.priceUsd || getCurrentTclPriceUsd();
   const rewardsPayload = getCurrentRewardsStats(options.rewards || null);
@@ -1824,6 +2040,10 @@ function renderLeaderboardRows(data) {
   const body = document.getElementById("stakingBody");
   if (!body) return false;
 
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    currentLeaderboardData = data;
+  }
+
   if (!data || typeof data !== "object" || Array.isArray(data) || Object.keys(data).length === 0) {
     body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
     return false;
@@ -1839,6 +2059,7 @@ function renderLeaderboardRows(data) {
   }));
 
   results.sort((a, b) => a.rank - b.rank);
+  const resultsByAddress = new Map(results.map((entry) => [entry.addr, entry]));
 
   const filtered = results.filter(r =>
     Number(r.total) > 0 ||
@@ -1847,44 +2068,129 @@ function renderLeaderboardRows(data) {
     Number(r.infinity) > 0
   );
 
-  const top100 = filtered.slice(0, 100);
+  const filteredAddressSet = new Set(filtered.map((entry) => entry.addr));
+  const consumedAddresses = new Set();
+  const displayEntries = [];
+
+  filtered.forEach((entry) => {
+    if (consumedAddresses.has(entry.addr)) return;
+
+    const linkedPrimaryGroup = getLinkedStakingGroupByPrimary(entry.addr);
+    if (linkedPrimaryGroup) {
+      const secondaryEntry = resultsByAddress.get(linkedPrimaryGroup.secondary) || {
+        addr: linkedPrimaryGroup.secondary,
+        rank: 0,
+        nft: "0",
+        loan: "0",
+        infinity: "0",
+        total: "0"
+      };
+
+      displayEntries.push({
+        kind: "group",
+        group: linkedPrimaryGroup,
+        primaryEntry: entry,
+        secondaryEntry,
+        mergedEntry: buildMergedLeaderboardEntry(entry, secondaryEntry)
+      });
+
+      consumedAddresses.add(entry.addr);
+      if (filteredAddressSet.has(linkedPrimaryGroup.secondary)) {
+        consumedAddresses.add(linkedPrimaryGroup.secondary);
+      }
+      return;
+    }
+
+    const linkedSecondaryGroup = getLinkedStakingGroupBySecondary(entry.addr);
+    if (linkedSecondaryGroup) {
+      const primaryEntry = resultsByAddress.get(linkedSecondaryGroup.primary);
+      if (primaryEntry && filteredAddressSet.has(primaryEntry.addr)) {
+        return;
+      }
+    }
+
+    displayEntries.push({
+      kind: "single",
+      entry
+    });
+    consumedAddresses.add(entry.addr);
+  });
+
+  displayEntries.sort((a, b) => {
+    const totalA = BigInt(normalizeIntegerLikeValue(a.kind === "group" ? a.mergedEntry.total : a.entry.total));
+    const totalB = BigInt(normalizeIntegerLikeValue(b.kind === "group" ? b.mergedEntry.total : b.entry.total));
+
+    if (totalA !== totalB) {
+      return totalA > totalB ? -1 : 1;
+    }
+
+    const rankA = a.kind === "group"
+      ? (Number(a.primaryEntry?.rank) || Number.MAX_SAFE_INTEGER)
+      : (Number(a.entry?.rank) || Number.MAX_SAFE_INTEGER);
+    const rankB = b.kind === "group"
+      ? (Number(b.primaryEntry?.rank) || Number.MAX_SAFE_INTEGER)
+      : (Number(b.entry?.rank) || Number.MAX_SAFE_INTEGER);
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    const addrA = a.kind === "group" ? String(a.primaryEntry?.addr || "") : String(a.entry?.addr || "");
+    const addrB = b.kind === "group" ? String(b.primaryEntry?.addr || "") : String(b.entry?.addr || "");
+    return addrA.localeCompare(addrB);
+  });
+
+  const top100 = displayEntries.slice(0, 100);
   if (top100.length === 0) {
     body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
     return false;
   }
 
-  const copyLabel = t("common_copy");
   let html = "";
+  let displayRank = 0;
 
-  top100.forEach(r => {
+  top100.forEach((displayEntry) => {
     try {
-      const address = String(r.addr || "");
-      const shortAddr = address.length > 10 ? (address.slice(0, 6) + "..." + address.slice(-4)) : address;
-      const totalRaw = normalizeIntegerLikeValue(r.total);
-      const totalUsd = formatTclUsdValue(totalRaw);
-      const rewardDay = formatTclRewardDayValue(totalRaw);
-      const totalCellHtml = totalUsd
-        ? "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'>" + totalUsd + "</div></div>"
-        : "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'></div></div>";
-      const addressCellHtml =
-        "<div class='staking-address-cell'>" +
-          "<span class='staking-address-text'>" + shortAddr + "</span>" +
-          "<button onclick=\"copyAddr('" + address + "', event)\" " +
-            "class='staking-copy-btn' data-copy-label='" + copyLabel + "' data-copied='0' " +
-            "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>" + copyLabel + "</button>" +
-        "</div>" +
-        "<div class='staking-address-reward' data-raw-total='" + totalRaw + "'>" + (rewardDay || "") + "</div>";
+      const currentDisplayRank = displayRank;
+      if (displayEntry.kind === "group") {
+        const linkedGroup = displayEntry.group;
+        const primaryEntry = displayEntry.primaryEntry;
+        const secondaryEntry = displayEntry.secondaryEntry;
+        const isExpanded = !!linkedStakingSplitState[linkedGroup.primary];
 
-      html += "<tr>" +
-        "<td style='padding:6px;text-align:center;'>" + r.rank + "</td>" +
-        "<td style='padding:6px;'>" + addressCellHtml + "</td>" +
-        "<td style='padding:6px;font-weight:bold;'>" + totalCellHtml + "</td>" +
-        "<td style='padding:6px;'>" + formatTcl(r.nft) + "</td>" +
-        "<td style='padding:6px;'>" + formatTcl(r.loan) + "</td>" +
-        "<td style='padding:6px;'>" + formatTcl(r.infinity) + "</td>" +
-      "</tr>";
+        if (isExpanded) {
+          html += buildLeaderboardRowHtml(primaryEntry, {
+            rankDisplay: currentDisplayRank,
+            togglePrimaryAddress: linkedGroup.primary,
+            isExpanded: true,
+            groupPrimary: linkedGroup.primary,
+            subtitle: linkedGroup.primaryLabel || "Primary wallet"
+          });
+          html += buildLeaderboardRowHtml(secondaryEntry, {
+            rankDisplay: "↳",
+            groupPrimary: linkedGroup.primary,
+            rowClass: "staking-row-secondary",
+            subtitle: linkedGroup.secondaryLabel || "Secondary wallet"
+          });
+        } else {
+          html += buildLeaderboardRowHtml(displayEntry.mergedEntry, {
+            rankDisplay: currentDisplayRank,
+            togglePrimaryAddress: linkedGroup.primary,
+            isExpanded: false,
+            groupPrimary: linkedGroup.primary
+          });
+        }
+
+        displayRank += 1;
+        return;
+      }
+
+      html += buildLeaderboardRowHtml(displayEntry.entry, {
+        rankDisplay: currentDisplayRank
+      });
+      displayRank += 1;
     } catch (rowErr) {
-      console.warn("⚠️ Skipping malformed leaderboard row:", r, rowErr);
+      console.warn("⚠️ Skipping malformed leaderboard row:", displayEntry, rowErr);
     }
   });
 
@@ -1998,7 +2304,16 @@ async function searchStaker() {
 
         // highlight row + scroll
         const rows = Array.from(tableBody.querySelectorAll("tr"));
-        const foundRow = rows.find(r => r.cells[0]?.textContent.trim() === String(staker.rank));
+        let foundRow = tableBody.querySelector("tr[data-staking-address='" + input + "']");
+        if (!foundRow) {
+          const linkedGroup = getLinkedStakingGroupBySecondary(input);
+          if (linkedGroup) {
+            foundRow = tableBody.querySelector("tr[data-staking-address='" + linkedGroup.primary + "']");
+          }
+        }
+        if (!foundRow) {
+          foundRow = rows.find(r => r.cells[0]?.textContent.trim() === String(staker.rank));
+        }
         if (foundRow) {
           foundRow.classList.add("highlight-row");
           foundRow.scrollIntoView({ behavior: "smooth", block: "center" });
