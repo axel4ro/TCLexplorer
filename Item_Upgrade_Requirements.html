@@ -193,9 +193,10 @@ font-size:13px;
 }
 
 </style>
+<link rel="stylesheet" href="css/tcl-premium-pages.css?v=20260512-1">
 </head>
 
-<body>
+<body class="tcl-premium-page tcl-wiki-tool-page tcl-upgrade-page">
 <div class="desktop-scale-shell" id="desktopScaleShell">
 <div class="wiki-container" id="desktopScaleRoot">
 <h1>Item Upgrade Requirements & Bonuses preview </h1>
@@ -212,9 +213,9 @@ font-size:13px;
 </div>
 
 <div class="header-buttons">
-  <button onclick="openCategory('Armors')">Armors</button>
-  <button onclick="openCategory('Weapons')">Weapons</button>
-  <button onclick="openCategory('Accessories')">Accessories</button>
+  <button class="category-btn" data-category="Armors" onclick="openCategory('Armors')">Armors</button>
+  <button class="category-btn" data-category="Weapons" onclick="openCategory('Weapons')">Weapons</button>
+  <button class="category-btn" data-category="Accessories" onclick="openCategory('Accessories')">Accessories</button>
 </div>
 
 <div id="subCards"></div>
@@ -282,19 +283,17 @@ function openCategory(cat) {
   document.getElementById("searchInput").value = "";
 
   const box = document.getElementById("subCards");
-  const wiki = document.getElementById("wiki");
-
   box.innerHTML = `
     <div class="card-grid">
       ${(subCategories[cat] || []).map(s => `
-        <div class="sub-card" onclick="openSub('${s}')">
+        <div class="sub-card" data-sub="${s}" onclick="openSub('${s}')">
           ${getSubLabel(s)}
         </div>
       `).join("")}
     </div>
   `;
 
-  wiki.innerHTML = "";
+  updateSelectionState();
   requestAnimationFrame(applyDesktopPortraitScale);
 }
 
@@ -303,8 +302,19 @@ function openSub(sub) {
 
   document.getElementById("searchInput").value = "";
 
+  updateSelectionState();
   renderItems();
   requestAnimationFrame(applyDesktopPortraitScale);
+}
+
+function updateSelectionState() {
+  document.querySelectorAll(".category-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.category === activeCategory);
+  });
+
+  document.querySelectorAll(".sub-card").forEach(card => {
+    card.classList.toggle("active", card.dataset.sub === activeSub);
+  });
 }
 
 const subCategories = {

@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260512-2" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260512-3" />
   <style>
     .token-hero-head {
       display: flex;
@@ -918,7 +918,7 @@
 
 <script src="lang/lang.bundle.js?v=20260416-3"></script>
 <script src="lang/wiki.bundle.js?v=20260415-1"></script>
-<script src="js/wiki.js?v=20260512-3"></script>
+<script src="js/wiki.js?v=20260512-4"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -2479,6 +2479,33 @@ const INTERNAL_PAGE_ROUTES = {
     loadingSubtitle: "Preparing collections, images and explorer tools.",
     waitForReadyMessage: true
   },
+  "wiki-item-upgrade": {
+    src: "Item_Upgrade_Requirements.html",
+    title: "Items Bonus & Upgrade Requirements",
+    navId: "btn-wiki",
+    routeKey: "wiki-item-upgrade",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Opening Wiki upgrade requirements.",
+    waitForReadyMessage: true
+  },
+  "wiki-blacksmith": {
+    src: "Items_Upgrade_Simulator.html",
+    title: "Blacksmith - Upgrade Simulator %",
+    navId: "btn-wiki",
+    routeKey: "wiki-blacksmith",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Opening Wiki blacksmith simulator.",
+    waitForReadyMessage: true
+  },
+  "wiki-loot": {
+    src: "loot.html",
+    title: "Drop Chance %",
+    navId: "btn-wiki",
+    routeKey: "wiki-loot",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Opening Wiki loot explorer.",
+    waitForReadyMessage: true
+  },
   signal: {
     src: "signal.html",
     title: "Signal",
@@ -2857,6 +2884,15 @@ function closeSidebarMobile() {
   setSidebarOpen(false);
 }
 
+function resetAppScrollPosition() {
+  window.scrollTo({ top: 0, behavior: "auto" });
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }, 0);
+  });
+}
+
 function applyStakingPortraitScale() {
   const shell = document.getElementById("stakingScaleShell");
   const root = document.getElementById("stakingScaleRoot");
@@ -2944,7 +2980,7 @@ function showPage(id, options = {}) {
 
   closeSidebarMobile();
   applyTranslations();
-  window.scrollTo({ top: 0, behavior: "auto" });
+  resetAppScrollPosition();
 
   if (id === "wiki" && typeof loadWiki === "function") {
     loadWiki(currentLang, true);
@@ -3811,6 +3847,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     console.error("❌ App boot error:", bootErr);
   } finally {
     hideAppBootSplash();
+    resetAppScrollPosition();
   }
 });
 
