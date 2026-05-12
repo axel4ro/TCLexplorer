@@ -20,13 +20,21 @@
     return tr("wiki_section_" + key, name.charAt(0).toUpperCase() + name.slice(1));
   }
 
+  const WIKI_INTERNAL_ROUTES = {
+    "Item_Upgrade_Requirements.html": "wiki-item-upgrade",
+    "Items_Upgrade_Simulator.html": "wiki-blacksmith",
+    "loot.html": "wiki-loot"
+  };
+
   window.openWikiInternalPage = function (src, title, description) {
     const lang = window.currentLang || "en";
     const separator = String(src).includes("?") ? "&" : "?";
-    const resolvedSrc = `${src}${separator}lang=${encodeURIComponent(lang)}&v=20260416-1`;
+    const resolvedSrc = `${src}${separator}lang=${encodeURIComponent(lang)}&v=20260512-1`;
+    const routeKey = WIKI_INTERNAL_ROUTES[String(src).split("?")[0]] || "";
     if (typeof window.openInternalPage === "function") {
       window.openInternalPage(resolvedSrc, title, {
         navId: "btn-wiki",
+        routeKey,
         loadingTitle: "Loading <span>TCL Explorer</span>...",
         loadingSubtitle: "Opening Wiki page inside TCL Explorer.",
         waitForReadyMessage: true
@@ -122,6 +130,7 @@
               <h2>⚙️ ${tr("wiki_special_item_bonus_title", "Item Bonus & Upgrade")}</h2>
             </div>
             <p>${tr("wiki_special_item_bonus_desc", "View all bonuses and materials requirements needed to upgrade items.")}</p>
+            <span class="wiki-link-card__icon">↗</span>
           </div>
         </div>
         <div class="wiki-grid-item">
@@ -130,6 +139,7 @@
               <h2>🔄 ${tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %")}</h2>
             </div>
             <p>${tr("wiki_special_blacksmith_desc", "Test your upgrade strategy and calculate expected results before risking your items.")}</p>
+            <span class="wiki-link-card__icon">↗</span>
           </div>
         </div>
         <div class="wiki-grid-item">
@@ -138,6 +148,7 @@
               <h2>📊 ${tr("wiki_special_drop_title", "Drop Chance %")}</h2>
             </div>
             <p>${tr("wiki_special_drop_desc", "View all items and monsters — drop percentages and loot tables.")}</p>
+            <span class="wiki-link-card__icon">↗</span>
           </div>
         </div>
     `;
