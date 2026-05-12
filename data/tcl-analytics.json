@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updatedAt": "2026-05-12T09:52:25.6937804Z",
+    "updatedAt": "2026-05-12T09:57:55.6335044Z",
     "source": "CryptoRank",
     "endpoints": {
       "coin": "https://api.cryptorank.io/v0/coins/the-cursed-land",
