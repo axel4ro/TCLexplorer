@@ -109,7 +109,7 @@
       </div>
     `;
 
-      if (sectionName.toLowerCase() === "classes") {
+      if (sectionName.toLowerCase() === "bonuses") {
         const wikiOpenedText = escapeJsString(tr("wiki_opened_from_explorer", "Opened from Wiki inside TCL Explorer."));
         const itemBonusTitle = escapeJsString(tr("wiki_special_item_bonus_title", "Items Bonus & Upgrade Requirements"));
         const blacksmithTitle = escapeJsString(tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %"));
@@ -118,26 +118,26 @@
         container.innerHTML += `
         <div class="wiki-grid-item">
           <div class="card wiki-link-card" onclick="openWikiInternalPage('Item_Upgrade_Requirements.html', '${itemBonusTitle}', '${wikiOpenedText}')">
-              <div class="wiki-toggle-header">
-                  <h2>⚙️ ${tr("wiki_special_item_bonus_title", "Item Bonus & Upgrade")}</h2>
-              </div>
-              <p>${tr("wiki_special_item_bonus_desc", "View all bonuses and materials requirements needed to upgrade items.")}</p>
+            <div class="wiki-toggle-header">
+              <h2>⚙️ ${tr("wiki_special_item_bonus_title", "Item Bonus & Upgrade")}</h2>
+            </div>
+            <p>${tr("wiki_special_item_bonus_desc", "View all bonuses and materials requirements needed to upgrade items.")}</p>
           </div>
         </div>
         <div class="wiki-grid-item">
           <div class="card wiki-link-card" onclick="openWikiInternalPage('Items_Upgrade_Simulator.html', '${blacksmithTitle}', '${wikiOpenedText}')">
-              <div class="wiki-toggle-header">
-                  <h2>🔄 ${tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %")}</h2>
-              </div>
-              <p>${tr("wiki_special_blacksmith_desc", "Test your upgrade strategy and calculate expected results before risking your items.")}</p>
+            <div class="wiki-toggle-header">
+              <h2>🔄 ${tr("wiki_special_blacksmith_title", "Blacksmith - Upgrade Simulator %")}</h2>
+            </div>
+            <p>${tr("wiki_special_blacksmith_desc", "Test your upgrade strategy and calculate expected results before risking your items.")}</p>
           </div>
         </div>
         <div class="wiki-grid-item">
           <div class="card wiki-link-card" onclick="openWikiInternalPage('loot.html', '${dropTitle}', '${wikiOpenedText}')">
-              <div class="wiki-toggle-header">
-                  <h2>📊 ${tr("wiki_special_drop_title", "Drop Chance %")}</h2>
-              </div>
-              <p>${tr("wiki_special_drop_desc", "View all items and monsters — drop percentages and loot tables.")}</p>
+            <div class="wiki-toggle-header">
+              <h2>📊 ${tr("wiki_special_drop_title", "Drop Chance %")}</h2>
+            </div>
+            <p>${tr("wiki_special_drop_desc", "View all items and monsters — drop percentages and loot tables.")}</p>
           </div>
         </div>
     `;
