@@ -246,11 +246,11 @@
     </div>
     <nav class="sidebar-nav">
       <button type="button" class="nav-item" onclick="openEarnGuidePage()" id="btn-earn" data-i18n="nav_play_and_earn">🎮Play and Earn💰</button>
-      <button type="button" class="nav-item" onclick="showPage('wiki')" id="btn-wiki">📖 Wiki</button>
+      <button type="button" class="nav-item active" onclick="showPage('wiki')" id="btn-wiki">📖 Wiki</button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
       <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide" data-i18n="sidebar_web3_guides">ℹ️ Web3 Guides</button>
-      <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
+      <button type="button" class="nav-item" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 Chart</button>
@@ -281,7 +281,7 @@
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-controls="appSidebar" aria-expanded="false" aria-label="Toggle navigation">☰</button>
       <div id="installGuideContainer"></div>
       <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="openEarnGuidePage()" hidden data-i18n="nav_play_and_earn">🎮Play and Earn💰</button>
-      <h1 class="app-page-title" id="appPageTitle">TCL Token</h1>
+      <h1 class="app-page-title" id="appPageTitle">Wiki</h1>
       <div class="app-topbar-right">
         <div class="lang-dropdown">
           <button type="button" class="lang-btn" id="currentLang">
@@ -305,7 +305,7 @@
     <main class="app-main">
 
  <!-- Token -->
-<div id="token" class="section-page active">
+<div id="token" class="section-page">
   <div class="page-hero">
     <div class="token-hero-head">
       <h2 class="token-hero-title">
@@ -663,7 +663,7 @@
 </div>
 
 <!-- Wiki -->
-<div id="wiki" class="section-page">
+<div id="wiki" class="section-page active">
   <div class="page-hero">
     <h2 data-i18n="wiki_title">📖 The Cursed Land – Wiki</h2>
     <p class="muted" data-i18n="wiki_desc">Classes, races, bonuses, items — search or browse sections below. Language matches your app selection.</p>
@@ -3634,7 +3634,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   try {
     await buildLangDropdown(); // 🌍 construim doar limbile disponibile
-    showPage(document.getElementById(initialHash) ? initialHash : "token");
+    showPage(document.getElementById(initialHash) ? initialHash : "wiki");
 
     currentLang = resolveStartupLang();
     localStorage.setItem(LANG_STORAGE_KEY, currentLang);
