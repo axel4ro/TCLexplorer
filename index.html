@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260512-2" />
   <style>
     .token-hero-head {
       display: flex;
@@ -918,15 +918,11 @@
 
 <script src="lang/lang.bundle.js?v=20260416-3"></script>
 <script src="lang/wiki.bundle.js?v=20260415-1"></script>
-<script src="js/wiki.js?v=20260416-1"></script>
+<script src="js/wiki.js?v=20260512-2"></script>
 <script>
 function openNFTs() {
-  openInternalPage("NFTs.html", "NFTs Explorer", {
-    navId: "btn-nfts",
-    loadingTitle: "Loading NFTs...",
-    loadingSubtitle: "Preparing collections, images and explorer tools.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES.nfts;
+  openInternalPage(route.src, route.title, route);
 }
 
 function openTCL() {
@@ -2447,6 +2443,7 @@ const internalPageState = {
   src: "",
   title: "Explorer Page",
   navId: "",
+  routeKey: "",
   waitForReadyMessage: false,
   readyFallbackTimer: null
 };
@@ -2464,12 +2461,155 @@ const PAGE_PARENT_NAV = {
   redeemAlpha: "btn-web3Guide"
 };
 
+const INTERNAL_PAGE_ROUTES = {
+  earn: {
+    src: "earn.html",
+    title: "Play and Earn",
+    navId: "btn-earn",
+    routeKey: "earn",
+    loadingTitle: "Loading Play and Earn...",
+    loadingSubtitle: "Preparing creator program, staking and web3 shop walkthrough."
+  },
+  nfts: {
+    src: "NFTs.html",
+    title: "NFTs Explorer",
+    navId: "btn-nfts",
+    routeKey: "nfts",
+    loadingTitle: "Loading NFTs...",
+    loadingSubtitle: "Preparing collections, images and explorer tools.",
+    waitForReadyMessage: true
+  },
+  signal: {
+    src: "signal.html",
+    title: "Signal",
+    navId: "btn-token",
+    routeKey: "signal",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing live signal monitor.",
+    waitForReadyMessage: true
+  },
+  technicals: {
+    src: "Technicals.html",
+    title: "Technicals",
+    navId: "btn-token",
+    routeKey: "technicals",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL technical signals.",
+    waitForReadyMessage: true
+  },
+  analytics: {
+    src: "analytics.html",
+    title: "Analytics",
+    navId: "btn-token",
+    routeKey: "analytics",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL analytics.",
+    waitForReadyMessage: true
+  },
+  volume: {
+    src: "volume.html",
+    title: "Volume",
+    navId: "btn-token",
+    routeKey: "volume",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL volume.",
+    waitForReadyMessage: true
+  },
+  "tcl-trades": {
+    src: "TCL_trades.html",
+    title: "TCL Trades Simulator",
+    navId: "btn-token",
+    routeKey: "tcl-trades",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL trades simulator.",
+    waitForReadyMessage: true
+  },
+  "transaction-simulator": {
+    src: "TCL_transaction_simulator.html",
+    title: "Transaction Simulator",
+    navId: "btn-token",
+    routeKey: "transaction-simulator",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing transaction simulator.",
+    waitForReadyMessage: true
+  },
+  "apr-rewards": {
+    src: "TCL_apr_rewards_calculator.html",
+    title: "APR & Rewards Calculator",
+    navId: "btn-token",
+    routeKey: "apr-rewards",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing APR rewards calculator.",
+    waitForReadyMessage: true
+  }
+};
+
+function normalizeRouteKey(value) {
+  const raw = String(value || "").replace(/^#/, "").trim();
+  return raw || "wiki";
+}
+
+function updateRouteUrl(routeKey, historyMode = "push") {
+  const normalizedKey = normalizeRouteKey(routeKey);
+  const nextHash = "#" + normalizedKey;
+  if (window.location.hash === nextHash) return;
+
+  const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+  const method = historyMode === "replace" ? "replaceState" : "pushState";
+
+  if (window.history && typeof window.history[method] === "function") {
+    lastHandledRouteHash = nextHash;
+    window.history[method](null, "", nextUrl);
+    return;
+  }
+
+  lastHandledRouteHash = nextHash;
+  window.location.hash = normalizedKey;
+}
+
+function openRouteFromHash(rawHash = window.location.hash, options = {}) {
+  const normalizedKey = normalizeRouteKey(rawHash);
+  const updateUrl = options.updateUrl === true;
+  const historyMode = options.historyMode || "replace";
+  const internalRoute = INTERNAL_PAGE_ROUTES[normalizedKey];
+
+  if (internalRoute) {
+    openInternalPage(internalRoute.src, internalRoute.title, {
+      ...internalRoute,
+      updateUrl,
+      historyMode
+    });
+    return true;
+  }
+
+  const pageId = normalizedKey === "tokenOverviewSection" || normalizedKey === "tokenStakingSection" || normalizedKey === "tokenCalculatorsSection"
+    ? resolveTokenTargetPage(normalizedKey)
+    : normalizedKey;
+
+  if (document.getElementById(pageId)) {
+    showPage(pageId, {
+      updateUrl,
+      historyMode,
+      routeKey: normalizedKey
+    });
+    return true;
+  }
+
+  showPage("wiki", {
+    updateUrl: true,
+    historyMode: "replace",
+    routeKey: "wiki"
+  });
+  return false;
+}
+
 let eventsLoadPromise = null;
 let stakingLoadPromise = null;
 let stakingRefreshStarted = false;
 let tokenRefreshStarted = false;
 let startupScheduled = false;
 let nonCriticalServicesStarted = false;
+let lastHandledRouteHash = "";
 const appBootStartedAt = performance.now();
 
 function runAfterFirstPaint(task, delay = 0) {
@@ -2760,14 +2900,13 @@ function openTokenStakingPage() {
 }
 
 function openEarnGuidePage() {
-  openInternalPage("earn.html", "Play and Earn", {
-    navId: "btn-earn",
-    loadingTitle: "Loading Play and Earn...",
-    loadingSubtitle: "Preparing creator program, staking and web3 shop walkthrough."
-  });
+  const route = INTERNAL_PAGE_ROUTES.earn;
+  openInternalPage(route.src, route.title, route);
 }
 
-function showPage(id) {
+function showPage(id, options = {}) {
+  const updateUrl = options.updateUrl !== false;
+  const historyMode = options.historyMode || "push";
   if (id === "tokenOverviewSection" || id === "tokenStakingSection" || id === "tokenCalculatorsSection") {
     id = resolveTokenTargetPage(id);
   }
@@ -2823,6 +2962,11 @@ function showPage(id) {
     ensureStakingLoaded();
   }
 
+  const routeKey = options.routeKey || (id === "internalPage" ? internalPageState.routeKey : id);
+  if (updateUrl && routeKey) {
+    updateRouteUrl(routeKey, historyMode);
+  }
+
   schedulePageFits();
 }
 
@@ -2830,6 +2974,7 @@ function openInternalPage(src, title, options = {}) {
   internalPageState.src = src;
   internalPageState.title = title || "Explorer Page";
   internalPageState.navId = options.navId || "";
+  internalPageState.routeKey = options.routeKey || "";
   internalPageState.waitForReadyMessage = !!options.waitForReadyMessage;
   const page = document.getElementById("internalPage");
   const frame = document.getElementById("internalPageFrame");
@@ -2879,7 +3024,11 @@ function openInternalPage(src, title, options = {}) {
     }, 12000);
   }
 
-  showPage("internalPage");
+  showPage("internalPage", {
+    routeKey: internalPageState.routeKey || "internalPage",
+    updateUrl: options.updateUrl !== false,
+    historyMode: options.historyMode || "push"
+  });
   schedulePageFits();
 }
 
@@ -2935,11 +3084,19 @@ window.addEventListener("message", (event) => {
     internalPageState.readyFallbackTimer = null;
   }
 
+  internalPageState.routeKey = "";
   showPage(targetPage);
-  if (window.location.hash.replace("#", "") !== targetPage) {
-    window.location.hash = targetPage;
-  }
 });
+
+function syncRouteFromBrowser() {
+  const activeHash = window.location.hash || "#wiki";
+  if (lastHandledRouteHash === activeHash) return;
+  lastHandledRouteHash = activeHash;
+  openRouteFromHash(activeHash, { updateUrl: false, historyMode: "replace" });
+}
+
+window.addEventListener("hashchange", syncRouteFromBrowser);
+window.addEventListener("popstate", syncRouteFromBrowser);
 
 window.addEventListener("resize", applyStakingPortraitScale);
 
@@ -3634,7 +3791,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   try {
     await buildLangDropdown(); // 🌍 construim doar limbile disponibile
-    showPage(document.getElementById(initialHash) ? initialHash : "wiki");
+    openRouteFromHash(initialHash || "wiki", {
+      updateUrl: !initialHash,
+      historyMode: "replace"
+    });
+    lastHandledRouteHash = window.location.hash || "#wiki";
 
     currentLang = resolveStartupLang();
     localStorage.setItem(LANG_STORAGE_KEY, currentLang);
@@ -4067,66 +4228,38 @@ function closeAprCalculator() {
 }
 
 function openSignalPage() {
-  openInternalPage("signal.html", "Signal", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing live signal monitor.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES.signal;
+  openInternalPage(route.src, route.title, route);
 }
 
 function openTechnicalsPage() {
-  openInternalPage("Technicals.html", "Technicals", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL technical signals.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES.technicals;
+  openInternalPage(route.src, route.title, route);
 }
 
 function openAnalyticsPage() {
-  openInternalPage("analytics.html", "Analytics", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL analytics.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES.analytics;
+  openInternalPage(route.src, route.title, route);
 }
 
 function openVolumePage() {
-  openInternalPage("volume.html", "Volume", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL volume.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES.volume;
+  openInternalPage(route.src, route.title, route);
 }
 
 function openTradeSimulatorPage() {
-  openInternalPage("TCL_trades.html", "TCL Trades Simulator", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL trades simulator.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES["tcl-trades"];
+  openInternalPage(route.src, route.title, route);
 }
 
 function openTransactionSimulatorPage() {
-  openInternalPage("TCL_transaction_simulator.html", "Transaction Simulator", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing transaction simulator.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES["transaction-simulator"];
+  openInternalPage(route.src, route.title, route);
 }
 
 function openAprRewardsCalculatorPage() {
-  openInternalPage("TCL_apr_rewards_calculator.html", "APR & Rewards Calculator", {
-    navId: "btn-token",
-    loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing APR rewards calculator.",
-    waitForReadyMessage: true
-  });
+  const route = INTERNAL_PAGE_ROUTES["apr-rewards"];
+  openInternalPage(route.src, route.title, route);
 }
 
 function openTransactionCalculator() {
