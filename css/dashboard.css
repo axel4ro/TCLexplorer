@@ -20,7 +20,7 @@
   --topbar-h: 56px;
   --font-ui: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
   --font-display: "Orbitron", var(--font-ui);
-  --radius: 12px;
+  --radius: 8px;
   --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.45);
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -757,7 +757,7 @@ body.sidebar-desktop .section-page.fullpage {
   align-items: flex-start;
   gap: 6px;
   padding: 18px 20px !important;
-  border-radius: 14px;
+  border-radius: var(--radius);
   border: 1px solid var(--border-subtle) !important;
   background: linear-gradient(135deg, rgba(18, 21, 31, 0.98), rgba(12, 18, 30, 0.96)) !important;
   color: var(--text) !important;
@@ -1875,7 +1875,7 @@ a {
   justify-content: space-between;
   gap: 8px;
   padding: 24px 22px !important;
-  border-radius: 16px;
+  border-radius: var(--radius);
   border: 1px solid rgba(168, 85, 247, 0.45) !important;
   background: linear-gradient(135deg, rgba(94, 43, 165, 0.38), rgba(12, 71, 88, 0.42)) !important;
   color: #fff !important;
@@ -1902,6 +1902,19 @@ a {
   color: rgba(232, 237, 245, 0.82);
   font-size: 0.86rem;
   line-height: 1.45;
+}
+
+.wiki-link-card__icon {
+  margin-top: auto;
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.wiki-link-card:hover .wiki-link-card__icon {
+  transform: translate(2px, -2px);
 }
 
 .wiki-desc-list {

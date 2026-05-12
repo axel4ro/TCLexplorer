@@ -1,0 +1,481 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap");
+
+:root {
+  --tcl-bg-void: #05070b;
+  --tcl-bg-deep: #090d14;
+  --tcl-panel: #101620;
+  --tcl-panel-strong: #151c29;
+  --tcl-card: #111824;
+  --tcl-card-soft: rgba(17, 24, 36, 0.88);
+  --tcl-border: rgba(39, 242, 220, 0.16);
+  --tcl-border-strong: rgba(39, 242, 220, 0.34);
+  --tcl-accent: #27f2dc;
+  --tcl-accent-strong: #35d9c7;
+  --tcl-accent-violet: #7c5cff;
+  --tcl-gold: #f5b85a;
+  --tcl-good: #52e691;
+  --tcl-danger: #ff6370;
+  --tcl-text: #edf4ff;
+  --tcl-muted: #98a6ba;
+  --tcl-dim: #68748a;
+  --tcl-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  --tcl-font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tcl-font-display: "Orbitron", var(--tcl-font-ui);
+
+  --bg: var(--tcl-bg-void);
+  --bg-soft: var(--tcl-bg-deep);
+  --panel: var(--tcl-card-soft);
+  --panel-strong: var(--tcl-panel-strong);
+  --panel-alt: var(--tcl-panel);
+  --line: var(--tcl-border);
+  --line-strong: var(--tcl-border-strong);
+  --text: var(--tcl-text);
+  --muted: var(--tcl-muted);
+  --soft: var(--tcl-dim);
+  --accent: var(--tcl-accent);
+  --gold: var(--tcl-accent);
+  --gold-strong: var(--tcl-accent-strong);
+  --teal: var(--tcl-accent);
+  --green: var(--tcl-good);
+  --red: var(--tcl-danger);
+  --shadow: var(--tcl-shadow);
+  --font-ui: var(--tcl-font-ui);
+  --font-display: var(--tcl-font-display);
+  --radius-xl: 8px;
+  --radius-lg: 8px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+}
+
+body.tcl-premium-page {
+  color: var(--tcl-text) !important;
+  font-family: var(--tcl-font-ui) !important;
+  letter-spacing: 0;
+  background:
+    linear-gradient(180deg, rgba(16, 22, 32, 0.96) 0%, rgba(7, 10, 16, 0.98) 44%, #04060a 100%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 64px) !important;
+}
+
+body.tcl-premium-page.tcl-wiki-tool-page {
+  padding: 18px !important;
+}
+
+body.tcl-premium-page *,
+body.tcl-premium-page *::before,
+body.tcl-premium-page *::after {
+  box-sizing: border-box;
+}
+
+body.tcl-premium-page h1,
+body.tcl-premium-page h2,
+body.tcl-premium-page h3 {
+  color: var(--tcl-text);
+  letter-spacing: 0;
+}
+
+body.tcl-premium-page h1,
+body.tcl-premium-page .hero h1,
+body.tcl-premium-page .header-title,
+body.tcl-premium-page .title-block h1,
+body.tcl-premium-page .section-head h2 {
+  font-family: var(--tcl-font-display) !important;
+  line-height: 1.08;
+}
+
+body.tcl-premium-page p,
+body.tcl-premium-page li,
+body.tcl-premium-page .subtitle,
+body.tcl-premium-page .hero-lead,
+body.tcl-premium-page .placeholder,
+body.tcl-premium-page .helper-copy,
+body.tcl-premium-page .status-copy,
+body.tcl-premium-page .legend-copy {
+  color: var(--tcl-muted);
+}
+
+body.tcl-premium-page a {
+  color: var(--tcl-accent);
+}
+
+body.tcl-premium-page :is(
+  button,
+  .button,
+  .button-secondary,
+  .button-ghost,
+  .back-btn,
+  .btn,
+  .quick-fill-btn,
+  .segment,
+  .header-buttons a,
+  .header-buttons button,
+  .wiki-btn-link
+) {
+  min-height: 40px;
+  border: 1px solid var(--tcl-border) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, rgba(39, 242, 220, 0.18), rgba(124, 92, 255, 0.16)) !important;
+  color: var(--tcl-text) !important;
+  font-family: var(--tcl-font-ui) !important;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: none !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26) !important;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.tcl-premium-page :is(
+  button,
+  .button,
+  .button-secondary,
+  .button-ghost,
+  .back-btn,
+  .btn,
+  .quick-fill-btn,
+  .segment,
+  .header-buttons a,
+  .header-buttons button,
+  .wiki-btn-link
+):hover {
+  transform: translateY(-1px);
+  border-color: var(--tcl-border-strong) !important;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(39, 242, 220, 0.08) !important;
+}
+
+body.tcl-premium-page :is(.btn-primary, .btn-primary-green, .button-secondary, .segment.active.buy, .event-toggle.active) {
+  background: linear-gradient(135deg, var(--tcl-accent), var(--tcl-accent-strong)) !important;
+  color: #041210 !important;
+  border-color: rgba(39, 242, 220, 0.42) !important;
+}
+
+body.tcl-premium-page :is(.segment.active.sell, .danger-row, .sell) {
+  border-color: rgba(255, 99, 112, 0.34) !important;
+}
+
+body.tcl-premium-page :is(input, select, textarea, .field-input) {
+  border: 1px solid rgba(152, 166, 186, 0.18) !important;
+  border-radius: 8px !important;
+  background: rgba(8, 12, 19, 0.9) !important;
+  color: var(--tcl-text) !important;
+  font-family: var(--tcl-font-ui) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+body.tcl-premium-page :is(input, select, textarea, .field-input):focus {
+  outline: none;
+  border-color: var(--tcl-border-strong) !important;
+  box-shadow: 0 0 0 3px rgba(39, 242, 220, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.tcl-premium-page ::placeholder {
+  color: rgba(152, 166, 186, 0.72);
+}
+
+body.tcl-premium-page :is(
+  .page-shell,
+  .wiki-container,
+  .container
+) {
+  color: var(--tcl-text);
+}
+
+body.tcl-premium-page :is(
+  .hero,
+  .card,
+  .section,
+  .section-card,
+  .source-card,
+  .path-card,
+  .method-card,
+  .fit-card,
+  .timeline-step,
+  .flow-step,
+  .panel,
+  .chart-shell,
+  .result-box,
+  .result-card,
+  .hero-stat,
+  .metric-card,
+  .signal-card,
+  .reason-card,
+  .legend-card,
+  .loot-box,
+  .modal-content
+) ,
+body.tcl-premium-page :is(
+  .hero-card,
+  .summary-card,
+  .table-card,
+  .stat-card,
+  .chart-card,
+  .app-shell > .sidebar,
+  .empty-state,
+  .status-card,
+  .chart-panel
+) {
+  border: 1px solid var(--tcl-border) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, rgba(17, 24, 36, 0.94), rgba(10, 15, 23, 0.96)) !important;
+  box-shadow: var(--tcl-shadow) !important;
+}
+
+body.tcl-premium-page header,
+body.tcl-premium-page .subbar,
+body.tcl-premium-page .toolbar,
+body.tcl-premium-page .topbar {
+  border-color: var(--tcl-border) !important;
+  background: rgba(8, 12, 19, 0.86) !important;
+  backdrop-filter: blur(14px);
+}
+
+body.tcl-premium-page .topbar {
+  border-radius: 8px !important;
+}
+
+body.tcl-technicals-page .topbar {
+  padding: 20px 22px !important;
+  border: 1px solid var(--tcl-border) !important;
+  border-radius: 8px !important;
+  background:
+    linear-gradient(135deg, rgba(18, 26, 39, 0.96), rgba(8, 13, 21, 0.98)) !important;
+  box-shadow: var(--tcl-shadow) !important;
+}
+
+body.tcl-technicals-page .toolbar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body.tcl-technicals-page .title-block h1 {
+  margin-top: 4px;
+}
+
+body.tcl-premium-page :is(.eyebrow, .section-kicker, .card-label, .loot-grid.header, .result-title, .header-title) {
+  color: var(--tcl-accent) !important;
+  letter-spacing: 0 !important;
+}
+
+body.tcl-premium-page :is(.summary-card__label, .stat-card span, .cell-label, .field-label, label) {
+  color: var(--tcl-muted) !important;
+  letter-spacing: 0 !important;
+}
+
+body.tcl-premium-page :is(.summary-card__value, .stat-card strong, .stat-value, .rating-name) {
+  color: var(--tcl-text) !important;
+}
+
+body.tcl-premium-page :is(.action-button, .refresh-btn, .ghost-btn, .disclaimer-btn) {
+  border: 1px solid var(--tcl-border) !important;
+  border-radius: 8px !important;
+  background: rgba(13, 19, 29, 0.86) !important;
+  color: var(--tcl-text) !important;
+}
+
+body.tcl-premium-page :is(.action-button.buy, .positive-text, .positive, .buy-text) {
+  color: var(--tcl-good) !important;
+}
+
+body.tcl-premium-page :is(.action-button.sell, .negative-text, .negative, .sell-text) {
+  color: var(--tcl-danger) !important;
+}
+
+body.tcl-premium-page .header-title {
+  border-bottom: 1px solid var(--tcl-border-strong) !important;
+  text-align: left;
+}
+
+body.tcl-premium-page .hero h1 span,
+body.tcl-premium-page .result-rate,
+body.tcl-premium-page .accent {
+  color: var(--tcl-accent) !important;
+}
+
+body.tcl-premium-page :is(.hero-visual, .hero-image-button img, .card img, .modal-left img) {
+  border-radius: 8px !important;
+}
+
+body.tcl-premium-page table {
+  width: 100%;
+  overflow: hidden;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 1px solid rgba(152, 166, 186, 0.14) !important;
+  border-radius: 8px;
+  background: rgba(8, 12, 19, 0.88) !important;
+}
+
+body.tcl-premium-page th,
+body.tcl-premium-page td {
+  border-color: rgba(152, 166, 186, 0.14) !important;
+  color: var(--tcl-text) !important;
+  background: rgba(15, 22, 33, 0.9) !important;
+}
+
+body.tcl-premium-page th {
+  color: var(--tcl-accent) !important;
+  background: rgba(20, 32, 48, 0.98) !important;
+  font-weight: 800;
+}
+
+body.tcl-premium-page tr:nth-child(even) td {
+  background: rgba(12, 18, 28, 0.92) !important;
+}
+
+body.tcl-premium-page .wiki-item {
+  overflow: hidden;
+  margin-bottom: 18px !important;
+  border: 1px solid var(--tcl-border) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, rgba(17, 24, 36, 0.95), rgba(10, 15, 23, 0.96)) !important;
+  color: var(--tcl-text) !important;
+  box-shadow: var(--tcl-shadow);
+}
+
+body.tcl-premium-page .wiki-header {
+  padding: 12px 14px !important;
+  color: var(--tcl-text) !important;
+  background: linear-gradient(90deg, rgba(39, 242, 220, 0.2), rgba(124, 92, 255, 0.15)) !important;
+  border-bottom: 1px solid var(--tcl-border) !important;
+}
+
+body.tcl-premium-page .wiki-body,
+body.tcl-premium-page .item-group {
+  color: var(--tcl-text) !important;
+  background: transparent !important;
+}
+
+body.tcl-premium-page .plus-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+body.tcl-premium-page .item-card,
+body.tcl-premium-page .sub-card {
+  border: 1px solid rgba(152, 166, 186, 0.16) !important;
+  border-radius: 8px !important;
+  background: rgba(18, 26, 39, 0.96) !important;
+  color: var(--tcl-text) !important;
+}
+
+body.tcl-premium-page .sub-card:hover,
+body.tcl-premium-page .row-click:hover td,
+body.tcl-premium-page .card:hover {
+  border-color: var(--tcl-border-strong) !important;
+}
+
+body.tcl-premium-page .category-btn.active,
+body.tcl-premium-page .sub-card.active {
+  border-color: rgba(39, 242, 220, 0.58) !important;
+  background: linear-gradient(135deg, rgba(39, 242, 220, 0.28), rgba(124, 92, 255, 0.24)) !important;
+  color: var(--tcl-text) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(39, 242, 220, 0.14),
+    0 0 22px rgba(39, 242, 220, 0.10) !important;
+}
+
+body.tcl-premium-page .sub-card.active {
+  color: var(--tcl-accent) !important;
+  font-weight: 800;
+}
+
+body.tcl-premium-page .item-title {
+  color: var(--tcl-gold) !important;
+}
+
+body.tcl-premium-page .stat {
+  color: var(--tcl-accent) !important;
+}
+
+body.tcl-premium-page .loot-grid.row,
+body.tcl-premium-page .result-line {
+  border-color: rgba(152, 166, 186, 0.12) !important;
+}
+
+body.tcl-premium-page .row-click td {
+  border: 1px solid rgba(152, 166, 186, 0.12) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, rgba(17, 24, 36, 0.92), rgba(10, 15, 23, 0.96)) !important;
+}
+
+body.tcl-premium-page .arrow {
+  color: var(--tcl-accent) !important;
+}
+
+body.tcl-premium-page .event-toggle,
+body.tcl-premium-page .result,
+body.tcl-premium-page .upgrade-info-btn {
+  border: 1px solid var(--tcl-border) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, rgba(17, 24, 36, 0.94), rgba(10, 15, 23, 0.96)) !important;
+  color: var(--tcl-text) !important;
+  box-shadow: var(--tcl-shadow) !important;
+}
+
+body.tcl-premium-page .upgrade-info-btn {
+  border-color: rgba(245, 184, 90, 0.32) !important;
+  background: linear-gradient(135deg, rgba(245, 184, 90, 0.18), rgba(255, 99, 112, 0.12)) !important;
+}
+
+body.tcl-premium-page .toggle-indicator {
+  background: var(--tcl-dim) !important;
+}
+
+body.tcl-premium-page .event-toggle.active .toggle-indicator {
+  background: var(--tcl-good) !important;
+  box-shadow: 0 0 12px rgba(82, 230, 145, 0.42) !important;
+}
+
+body.tcl-upgrade-simulator-page .container {
+  width: min(1080px, 100%);
+  max-width: 1080px !important;
+  margin: 0 auto !important;
+  padding: 20px !important;
+}
+
+body.tcl-upgrade-simulator-page .input-wrapper {
+  max-width: 360px;
+  margin: 0 auto 18px !important;
+}
+
+body.tcl-upgrade-simulator-page .header-row {
+  align-items: flex-start !important;
+}
+
+body.tcl-premium-page .grid,
+body.tcl-premium-page .grid-two,
+body.tcl-premium-page .grid-three,
+body.tcl-premium-page .methods-grid,
+body.tcl-premium-page .fit-grid,
+body.tcl-premium-page .timeline,
+body.tcl-premium-page .flow-grid,
+body.tcl-premium-page .source-grid,
+body.tcl-premium-page .result-grid,
+body.tcl-premium-page .hero-stats {
+  gap: 14px !important;
+}
+
+body.tcl-premium-page .hero,
+body.tcl-premium-page .section-card,
+body.tcl-premium-page .section {
+  margin-top: 14px;
+}
+
+@media (max-width: 768px) {
+  body.tcl-premium-page.tcl-wiki-tool-page {
+    padding: 10px !important;
+  }
+
+  body.tcl-premium-page .hero-stats,
+  body.tcl-premium-page .result-grid,
+  body.tcl-premium-page .grid-two,
+  body.tcl-premium-page .grid-three,
+  body.tcl-premium-page .timeline,
+  body.tcl-premium-page .flow-grid,
+  body.tcl-premium-page .source-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.tcl-premium-page .header-title {
+    font-size: 1.35rem !important;
+  }
+}
