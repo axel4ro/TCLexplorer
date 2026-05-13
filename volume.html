@@ -626,21 +626,19 @@
       line-height: 1.7;
     }
 
-    .chart-frame {
-      overflow: hidden;
+    .volume-action-bar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
       margin-top: 22px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      background: rgba(12, 16, 24, 0.96);
-      box-shadow: var(--shadow-panel);
     }
 
-    .chart-frame iframe {
-      display: block;
+    .volume-action-button {
       width: 100%;
-      height: 440px;
-      border: 0;
-      background: #0c0e14;
+      min-height: 50px;
+      border-radius: 8px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .page-footer {
@@ -701,10 +699,6 @@
         border-radius: 20px;
       }
 
-      .chart-frame iframe {
-        height: 360px;
-      }
-
       .status-row,
       .page-footer,
       .footer-source,
@@ -737,6 +731,11 @@
       .source-meta {
         align-items: flex-start;
         text-align: left;
+      }
+
+      .volume-action-button {
+        padding-inline: 12px;
+        font-size: 0.9rem;
       }
     }
 
@@ -774,6 +773,12 @@
       .analytics-table th:first-child,
       .analytics-table td:first-child {
         width: 76px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .volume-action-bar {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -940,13 +945,10 @@
       </section>
     </div>
 
-<div class="chart-frame">
-  <iframe
-    title="DexScreener TCL / USDC"
-    src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTimeframesToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=1D&resetChart=1&t=${Date.now()}"
-    loading="lazy">
-  </iframe>
-</div>
+    <div class="volume-action-bar" aria-label="Volume chart links">
+      <button class="hero-button hero-button--accent volume-action-button" type="button" onclick="goToTclChart()">TCL Live Chart</button>
+      <a class="ghost-btn volume-action-button" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">Source DexScreener</a>
+    </div>
 
     <footer class="page-footer">
       <div class="footer-source">
@@ -2183,6 +2185,19 @@
       }
 
       window.location.href = "index.html#token";
+    }
+
+    function goToTclChart() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "chart" }, "*");
+          return;
+        } catch (error) {
+          console.warn("TCL Chart parent navigation failed", error);
+        }
+      }
+
+      window.location.href = "index.html#chart";
     }
 
     function renderLoadError(message) {

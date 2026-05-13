@@ -945,6 +945,8 @@ const TIMEFRAMES = {
 };
 
 const DIRECT_CALL_B64 = "RGlyZWN0Q2FsbA==";
+const GAUGE_TRANSITION_MS = 220;
+const GAUGE_IDLE_MS = 3200;
 let readyNotified = false;
 
 const state = {
@@ -1072,7 +1074,7 @@ async function loadData(isManual = false) {
             fetchMeta: state.tradeFetchMeta
         });
 
-        recomputeAndRender();
+        await recomputeAndRender();
 
         const sourceText = state.tradeFetchMeta.sourceLabel === "cache"
             ? "cached history"
@@ -1101,16 +1103,16 @@ async function loadData(isManual = false) {
     }
 }
 
-function recomputeAndRender() {
+async function recomputeAndRender() {
     if (!state.pair || !state.trades.length) {
-        return;
+        return false;
     }
 
     const timeframe = TIMEFRAMES[state.timeframe];
     const candles = buildCandles(state.trades, timeframe.seconds, CONFIG.targetCandles, Number(state.pair.priceUsd || 0));
     if (!candles.length) {
         setStatus("Swap history was loaded, but candles could not be built for the selected timeframe.", true);
-        return;
+        return false;
     }
 
     const oscillators = buildOscillatorRows(candles);
@@ -1126,10 +1128,14 @@ function recomputeAndRender() {
     renderTable(ui.oscillatorTableBody, oscillators, formatIndicatorValue);
     renderTable(ui.movingAverageTableBody, movingAverages, formatPriceValue);
     renderPivotTable(pivots);
-    renderSummary("oscillators", oscillatorSummary);
-    renderSummary("moving-averages", movingAverageSummary);
-    renderSummary("summary", combinedSummary);
+    const gaugeReady = [
+        renderSummary("oscillators", oscillatorSummary),
+        renderSummary("moving-averages", movingAverageSummary),
+        renderSummary("summary", combinedSummary)
+    ];
     renderWarning(candles, timeframe);
+    await Promise.allSettled(gaugeReady);
+    return true;
 }
 
 async function fetchJson(url) {
@@ -1734,8 +1740,9 @@ function renderSummary(key, summary) {
     document.getElementById(`rating-${key}`).className = `rating-name ${getActionClass(summary.label)}`;
     document.getElementById(`score-${key}`).textContent = `Score ${summary.score.toFixed(2)}`;
     document.getElementById(`${key === "summary" ? "summary" : key === "oscillators" ? "oscillator" : "ma"}-caption`).textContent = `${summary.count} signals`;
-    updateGaugeVisual(key, summary);
+    const gaugeReady = updateGaugeVisual(key, summary);
     updateGaugeLabels(key, summary.label);
+    return gaugeReady;
 }
 
 function updateGaugeVisual(key, summary) {
@@ -1744,35 +1751,49 @@ function updateGaugeVisual(key, summary) {
     const needle = document.getElementById(`needle-${key}`);
 
     if (!gauge || !progressArc || !needle) {
-        return;
+        return Promise.resolve();
     }
 
     const progress = clampNumber((summary.bias + 1) * 50, 0, 100);
     const angle = clampNumber(summary.bias * 78, -78, 78);
     const progressText = `${progress.toFixed(2)} 100`;
     const angleText = `${angle.toFixed(2)}deg`;
+    const previousProgress = Number(gauge.dataset.progress);
+    const previousAngle = Number(gauge.dataset.angle);
+    const hasPreviousValue = Number.isFinite(previousProgress) && Number.isFinite(previousAngle);
+    const startProgress = hasPreviousValue ? previousProgress : progress;
+    const startAngle = hasPreviousValue ? previousAngle : angle;
+    const startProgressText = `${startProgress.toFixed(2)} 100`;
+    const startAngleText = `${startAngle.toFixed(2)}deg`;
     const wobbleAngle = clampNumber(1.15 + Math.abs(summary.bias) * 0.95, 1.15, 2.35);
     const wobbleProgress = clampNumber(0.7 + Math.abs(summary.bias) * 0.9, 0.7, 1.55);
     const motionToken = String((Number(gauge.dataset.motionToken || "0") + 1));
 
     gauge.dataset.motionToken = motionToken;
+    gauge.dataset.progress = String(progress);
+    gauge.dataset.angle = String(angle);
     progressArc.style.strokeDasharray = progressText;
     needle.style.transform = `translateX(-50%) rotate(${angleText})`;
 
-    if (!progressArc.animate || !needle.animate) {
-        return;
+    if (!progressArc.animate || !needle.animate || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+        return nextAnimationFrame();
     }
 
     progressArc.getAnimations().forEach((animation) => animation.cancel());
     needle.getAnimations().forEach((animation) => animation.cancel());
 
+    if (!hasPreviousValue) {
+        startGaugeIdleMotion(gauge, progressArc, needle, motionToken, progress, angle, wobbleProgress, wobbleAngle);
+        return nextAnimationFrame();
+    }
+
     const introArc = progressArc.animate(
         [
-            { strokeDasharray: "0 100" },
+            { strokeDasharray: startProgressText },
             { strokeDasharray: progressText }
         ],
         {
-            duration: 920,
+            duration: GAUGE_TRANSITION_MS,
             easing: "cubic-bezier(0.22, 0.88, 0.24, 1)",
             fill: "forwards"
         }
@@ -1780,53 +1801,63 @@ function updateGaugeVisual(key, summary) {
 
     const introNeedle = needle.animate(
         [
-            { transform: "translateX(-50%) rotate(0deg)" },
+            { transform: `translateX(-50%) rotate(${startAngleText})` },
             { transform: `translateX(-50%) rotate(${angleText})` }
         ],
         {
-            duration: 920,
+            duration: GAUGE_TRANSITION_MS,
             easing: "cubic-bezier(0.22, 0.88, 0.24, 1)",
             fill: "forwards"
         }
     );
 
-    Promise.allSettled([introArc.finished, introNeedle.finished]).then(() => {
-        if (gauge.dataset.motionToken !== motionToken) {
-            return;
+    return Promise.allSettled([introArc.finished, introNeedle.finished]).then(() => {
+        startGaugeIdleMotion(gauge, progressArc, needle, motionToken, progress, angle, wobbleProgress, wobbleAngle);
+    });
+}
+
+function startGaugeIdleMotion(gauge, progressArc, needle, motionToken, progress, angle, wobbleProgress, wobbleAngle) {
+    if (gauge.dataset.motionToken !== motionToken || !progressArc.animate || !needle.animate) {
+        return;
+    }
+
+    const lowProgress = `${clampNumber(progress - wobbleProgress, 0, 100).toFixed(2)} 100`;
+    const highProgress = `${clampNumber(progress + wobbleProgress, 0, 100).toFixed(2)} 100`;
+    const lowAngle = `${(angle - wobbleAngle).toFixed(2)}deg`;
+    const highAngle = `${(angle + wobbleAngle).toFixed(2)}deg`;
+
+    progressArc.animate(
+        [
+            { strokeDasharray: lowProgress },
+            { strokeDasharray: highProgress }
+        ],
+        {
+            duration: GAUGE_IDLE_MS,
+            direction: "alternate",
+            iterations: Infinity,
+            easing: "ease-in-out",
+            fill: "forwards"
         }
+    );
 
-        const lowProgress = `${clampNumber(progress - wobbleProgress, 0, 100).toFixed(2)} 100`;
-        const highProgress = `${clampNumber(progress + wobbleProgress, 0, 100).toFixed(2)} 100`;
-        const lowAngle = `${(angle - wobbleAngle).toFixed(2)}deg`;
-        const highAngle = `${(angle + wobbleAngle).toFixed(2)}deg`;
+    needle.animate(
+        [
+            { transform: `translateX(-50%) rotate(${lowAngle})` },
+            { transform: `translateX(-50%) rotate(${highAngle})` }
+        ],
+        {
+            duration: GAUGE_IDLE_MS,
+            direction: "alternate",
+            iterations: Infinity,
+            easing: "ease-in-out",
+            fill: "forwards"
+        }
+    );
+}
 
-        progressArc.animate(
-            [
-                { strokeDasharray: lowProgress },
-                { strokeDasharray: highProgress }
-            ],
-            {
-                duration: 3200,
-                direction: "alternate",
-                iterations: Infinity,
-                easing: "ease-in-out",
-                fill: "forwards"
-            }
-        );
-
-        needle.animate(
-            [
-                { transform: `translateX(-50%) rotate(${lowAngle})` },
-                { transform: `translateX(-50%) rotate(${highAngle})` }
-            ],
-            {
-                duration: 3200,
-                direction: "alternate",
-                iterations: Infinity,
-                easing: "ease-in-out",
-                fill: "forwards"
-            }
-        );
+function nextAnimationFrame() {
+    return new Promise((resolve) => {
+        requestAnimationFrame(() => resolve());
     });
 }
 
