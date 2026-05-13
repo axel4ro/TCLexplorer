@@ -2818,7 +2818,8 @@ function startTokenRefresh() {
     fetchExplorerData();
     loadTCLStats();
 
-    const hasValue = parseNumber(document.getElementById('amount').value) > 0;
+    const amountEl = document.getElementById("amount");
+    const hasValue = amountEl && parseNumber(amountEl.value) > 0;
     if (hasValue) calculate();
   }, 300000);
 }
@@ -3134,7 +3135,15 @@ function syncRouteFromBrowser() {
 window.addEventListener("hashchange", syncRouteFromBrowser);
 window.addEventListener("popstate", syncRouteFromBrowser);
 
-window.addEventListener("resize", applyStakingPortraitScale);
+let sidebarLayoutFrame = 0;
+
+function scheduleSidebarLayout() {
+  if (sidebarLayoutFrame) return;
+  sidebarLayoutFrame = requestAnimationFrame(() => {
+    sidebarLayoutFrame = 0;
+    applySidebarLayout();
+  });
+}
 
 const EXP_TABLE_DATA = [
   [2, 300], [3, 800], [4, 1500], [5, 2500], [6, 4300], [7, 7200], [8, 11000], [9, 17000],
@@ -3175,9 +3184,11 @@ setInterval(() => {
 
 // === TCL Sentiment Index ===
 const gauge = document.getElementById("sentimentGauge");
-const gctx = gauge.getContext("2d");
+const gctx = gauge?.getContext?.("2d") || null;
 
 function drawSentimentGauge(score) {
+  if (!gauge || !gctx) return;
+
   const start = Math.PI, end = 2 * Math.PI;
   const mid = start + (end - start) * (score / 100);
   gctx.clearRect(0, 0, gauge.width, gauge.height);
@@ -3239,6 +3250,72 @@ let lastSentimentScore = null;
 let lastSentimentUpdate = null;
 let sentimentUpdatePromise = null;
 let lastSentimentStatus = "idle";
+const SENTIMENT_CACHE_KEY = "tclSentimentCache:v1";
+const SENTIMENT_CACHE_TTL_MS = 5 * 60 * 1000;
+const SENTIMENT_LOCKED_FETCH_CONCURRENCY = 4;
+
+function getSentimentCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(SENTIMENT_CACHE_KEY) || "null");
+    if (!cached || !Number.isFinite(cached.score) || !Number.isFinite(cached.updatedAt)) return null;
+    return cached;
+  } catch (_) {
+    return null;
+  }
+}
+
+function isFreshSentimentCache(cached) {
+  return !!cached && (Date.now() - cached.updatedAt) < SENTIMENT_CACHE_TTL_MS;
+}
+
+function setSentimentCache(score) {
+  const updatedAt = Date.now();
+  try {
+    localStorage.setItem(SENTIMENT_CACHE_KEY, JSON.stringify({ score, updatedAt }));
+  } catch (_) {}
+  return updatedAt;
+}
+
+function applySentimentScore(score, updatedAt = Date.now(), options = {}) {
+  lastSentimentScore = score;
+  lastSentimentUpdate = new Date(updatedAt);
+  lastSentimentStatus = "ready";
+
+  const { text, color } = sentimentLabel(score);
+  drawSentimentGauge(score);
+
+  const scoreEl = document.getElementById("sentimentScore");
+  if (scoreEl) {
+    scoreEl.textContent = score;
+    if (options.animate) {
+      scoreEl.style.transform = "scale(1.08)";
+      setTimeout(() => (scoreEl.style.transform = "scale(1)"), 300);
+    }
+  }
+
+  const label = document.getElementById("sentimentLabel");
+  if (label) {
+    label.textContent = text;
+    label.style.color = color;
+  }
+
+  updateSentimentLastUpdate();
+}
+
+async function mapWithConcurrency(items, limit, mapper) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(Math.max(limit, 1), items.length);
+
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  }));
+
+  return results;
+}
 
 function isSentimentViewActive() {
   return Boolean(
@@ -3270,6 +3347,14 @@ function syncSentimentLabel() {
 
 function updateSentimentIndex() {
   if (sentimentUpdatePromise) return sentimentUpdatePromise;
+
+  const cachedSentiment = getSentimentCache();
+  if (cachedSentiment) {
+    applySentimentScore(cachedSentiment.score, cachedSentiment.updatedAt);
+    if (isFreshSentimentCache(cachedSentiment)) {
+      return Promise.resolve(true);
+    }
+  }
 
   sentimentUpdatePromise = (async () => {
     try {
@@ -3320,37 +3405,32 @@ function updateSentimentIndex() {
 // 🔹 Locked data precisă din assets + verificare live a balanței
 let lockedPct = 0;
 try {
-  const tokenInfo = await fetchJsonWithTimeout("https://api.multiversx.com/tokens/TCL-fe459d", {}, 4000);
+  const tokenInfo = mvxRes || {};
   const lockedAccounts = tokenInfo?.assets?.lockedAccounts || {};
+  const lockedAddresses = Object.keys(lockedAccounts)
+    .filter(addr => addr && addr.startsWith("erd1"));
 
   // 🧹 Filtrăm doar adrese valide și cu minim 1 TCL
-  const balances = await Promise.allSettled(
-    Object.keys(lockedAccounts)
-      .filter(addr => addr && addr.startsWith("erd1"))
-      .map(async addr => {
-        try {
-          const data = await fetchJsonWithTimeout(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`, {}, 2500);
-          const balance = parseFloat(data?.balance || 0) / 1e18;
+  const balances = await mapWithConcurrency(lockedAddresses, SENTIMENT_LOCKED_FETCH_CONCURRENCY, async addr => {
+    try {
+      const data = await fetchJsonWithTimeout(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`, {}, 2500);
+      const balance = parseFloat(data?.balance || 0) / 1e18;
 
-          // 🔥 skip complet dacă are sub 1 TCL
-          if (balance < 1) return 0;
+      // 🔥 skip complet dacă are sub 1 TCL
+      if (balance < 1) return 0;
 
-          return balance;
-        } catch {
-          return 0;
-        }
-      })
-  );
+      return balance;
+    } catch {
+      return 0;
+    }
+  });
 
   // 🧮 Calcul locked %
-  const totalLocked = balances.reduce((sum, result) => {
-    if (result.status === "fulfilled") return sum + (Number(result.value) || 0);
-    return sum;
-  }, 0);
-  const circulating = parseFloat(tokenInfo.circulatingSupply || 1);
-  lockedPct = ((totalLocked / circulating) * 100).toFixed(2);
+  const totalLocked = balances.reduce((sum, value) => sum + (Number(value) || 0), 0);
+  const circulatingSupply = parseFloat(tokenInfo.circulatingSupply || 1);
+  lockedPct = (totalLocked / circulatingSupply) * 100;
 
-  console.log("🔒 Locked TCL total:", totalLocked.toLocaleString(), "≈", lockedPct + "%");
+  console.log("🔒 Locked TCL total:", totalLocked.toLocaleString(), "≈", lockedPct.toFixed(2) + "%");
 } catch (e) {
   console.warn("Locked data error:", e);
   lockedPct = 0;
@@ -3375,43 +3455,29 @@ try {
 
     score = Math.max(0, Math.min(100, Math.round(score)));
 
-    // 🔹 Verifică dacă scorul s-a schimbat semnificativ
     const hasChanged = lastSentimentScore === null || Math.abs(score - lastSentimentScore) >= 1;
-    
     if (hasChanged) {
-      lastSentimentScore = score;
-      lastSentimentUpdate = new Date();
-      
       console.log("🔄 Sentiment score changed:", score);
     }
 
     // 🔹 Actualizare interfață
-    const { text, color } = sentimentLabel(score);
-    drawSentimentGauge(score);
+    const updatedAt = setSentimentCache(score);
+    applySentimentScore(score, updatedAt, { animate: hasChanged });
 
-    const scoreEl = document.getElementById("sentimentScore");
-    scoreEl.textContent = score;
-    scoreEl.style.transform = "scale(1.08)";
-    setTimeout(() => (scoreEl.style.transform = "scale(1)"), 300);
-
-    const label = document.getElementById("sentimentLabel");
-    lastSentimentStatus = "ready";
-    label.textContent = text;
-    label.style.color = color;
-
-    // 🔹 Actualizare last update
-    updateSentimentLastUpdate();
-
-    console.log("✅ Sentiment updated:", score, text, "Changed:", hasChanged);
+    console.log("✅ Sentiment updated:", score, sentimentLabel(score).text, "Changed:", hasChanged);
     return true;
 
   } catch (e) {
     console.error("❌ Sentiment error:", e);
     // Fallback în caz de eroare
     lastSentimentStatus = "error";
-    document.getElementById("sentimentScore").textContent = "?";
-    document.getElementById("sentimentLabel").textContent = "Data unavailable";
-    document.getElementById("sentimentLabel").style.color = "#6b7280";
+    const scoreEl = document.getElementById("sentimentScore");
+    const label = document.getElementById("sentimentLabel");
+    if (scoreEl) scoreEl.textContent = "?";
+    if (label) {
+      label.textContent = "Data unavailable";
+      label.style.color = "#6b7280";
+    }
     return false;
   } finally {
     sentimentUpdatePromise = null;
@@ -3425,6 +3491,7 @@ try {
 function updateSentimentLastUpdate() {
   const sentimentBox = document.getElementById("sentimentBox");
   let updateElement = document.getElementById("sentimentLastUpdate");
+  if (!sentimentBox) return;
   
   // Creează elementul dacă nu există
   if (!updateElement) {
@@ -3462,7 +3529,9 @@ function updateSentimentLastUpdate() {
 // === Inițializare la încărcare ===
 document.addEventListener("DOMContentLoaded", function() {
   // Actualizează la fiecare 5 minute
-  setInterval(updateSentimentIndex, 5 * 60 * 1000);
+  setInterval(() => {
+    if (isSentimentViewActive()) updateSentimentIndex();
+  }, 5 * 60 * 1000);
   
   // Actualizează afișajul "x time ago" la fiecare minut
   setInterval(updateSentimentLastUpdate, 60000);
@@ -3480,7 +3549,7 @@ function applySidebarLayout() {
 
 document.addEventListener("DOMContentLoaded", () => {
   applySidebarLayout();
-  window.addEventListener("resize", applySidebarLayout);
+  window.addEventListener("resize", scheduleSidebarLayout, { passive: true });
 
   const langBtn = document.getElementById("currentLang");
   const langMenu = document.getElementById("langMenu") || document.querySelector(".lang-menu");
