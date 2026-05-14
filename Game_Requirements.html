@@ -187,6 +187,10 @@
       color: var(--accent);
     }
 
+    .hero h1 {
+      margin-top: 0;
+    }
+
     .hero-lead {
       max-width: 780px;
       margin: 14px 0 0;
@@ -195,35 +199,46 @@
       line-height: 1.65;
     }
 
-    .status-strip {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
+    .compatibility-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 18px;
       margin-top: 22px;
-    }
-
-    .status-item {
-      min-width: 0;
-      padding: 13px;
+      padding: 16px 18px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: rgba(8, 17, 20, 0.7);
     }
 
-    .status-item strong,
-    .status-item span {
+    .compatibility-card__copy {
+      flex: 1 1 420px;
+      min-width: 0;
+    }
+
+    .compatibility-card__title,
+    .compatibility-card__text {
       display: block;
     }
 
-    .status-item strong {
+    .compatibility-card__title {
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 1rem;
+      font-weight: 800;
     }
 
-    .status-item span {
-      margin-top: 5px;
+    .compatibility-card__text {
+      max-width: 760px;
+      margin-top: 6px;
       color: var(--soft);
-      font-size: 0.84rem;
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .compatibility-card__button {
+      flex: 0 0 auto;
+      margin-left: auto;
     }
 
     .content-stack {
@@ -384,16 +399,14 @@
       font-weight: 700;
     }
 
-    .footer-note {
-      margin: 18px 0 0;
-      color: var(--soft);
-      font-size: 0.88rem;
-      text-align: center;
-    }
-
     @media (max-width: 860px) {
-      .status-strip {
-        grid-template-columns: 1fr 1fr;
+      .compatibility-card {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .compatibility-card__button {
+        margin-left: 0;
       }
 
       .section-head {
@@ -425,10 +438,6 @@
         padding: 20px;
       }
 
-      .status-strip {
-        grid-template-columns: 1fr;
-      }
-
       th,
       td {
         padding: 13px 14px;
@@ -450,25 +459,13 @@
     </header>
 
     <section class="hero">
-      <span class="kicker" data-i18n="heroKicker">System Access</span>
       <h1 data-i18n="heroTitle">Game <span>Requirements</span></h1>
-      <div class="status-strip" aria-label="Requirements summary">
-        <div class="status-item">
-          <strong data-i18n="statusMobileTitle">Mobile</strong>
-          <span data-i18n="statusMobileText">Android and iOS minimums</span>
+      <div class="compatibility-card" aria-label="Can I Run It compatibility check">
+        <div class="compatibility-card__copy">
+          <strong class="compatibility-card__title" data-i18n="canRunTitle">Can I Run It?</strong>
+          <span class="compatibility-card__text" data-i18n="canRunText">Run a quick browser-based check for your platform, memory, storage, GPU and internet speed before installing The Cursed Land.</span>
         </div>
-        <div class="status-item">
-          <strong data-i18n="statusWindowsTitle">Windows</strong>
-          <span data-i18n="statusWindowsText">PC minimum version required</span>
-        </div>
-        <div class="status-item">
-          <strong data-i18n="statusMacTitle">macOS</strong>
-          <span data-i18n="statusMacText">Not released</span>
-        </div>
-        <div class="status-item">
-          <strong data-i18n="statusInternetTitle">Internet</strong>
-          <span data-i18n="statusInternetText">Download and loaded latency</span>
-        </div>
+        <a class="button-ghost compatibility-card__button" href="CanIrunIt.html#CanIrunIt" onclick="openCanIrunIt(event)" data-i18n="canRunButton">Can I Run It?</a>
       </div>
     </section>
 
@@ -607,11 +604,9 @@
       </section>
 
     </div>
-
-    <p class="footer-note" data-i18n="footerNote">The Cursed Land requirements page is prepared for final release data.</p>
   </main>
 
-  <script src="lang/game-requirements.bundle.js?v=20260514-1"></script>
+  <script src="lang/game-requirements.bundle.js?v=20260514-2"></script>
   <script>
     const REQUIREMENTS_LANG_STORAGE_KEY = "lang";
     const SUPPORTED_LANGS = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
@@ -665,6 +660,18 @@
           window.parent.postMessage({ type: "tcl:page-ready" }, "*");
         } catch (error) {
           console.warn("Failed to notify parent page ready", error);
+        }
+      }
+    }
+
+    function openCanIrunIt(event) {
+      if (window.parent && window.parent !== window) {
+        event.preventDefault();
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "CanIrunIt" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Can I Run It navigation through parent failed", error);
         }
       }
     }
