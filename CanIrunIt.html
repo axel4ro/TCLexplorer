@@ -216,6 +216,121 @@
       line-height: 1.5;
     }
 
+
+    .speed-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .speed-main {
+      text-align: center;
+      padding: 10px 0 4px;
+    }
+
+    .speed-title {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .speed-number {
+      display: inline-flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 10px;
+      color: #fff;
+      font-size: clamp(3.4rem, 12vw, 7.2rem);
+      font-weight: 900;
+      line-height: 0.9;
+      letter-spacing: -0.08em;
+    }
+
+    .speed-unit {
+      color: var(--text);
+      font-size: clamp(1.4rem, 4vw, 2.4rem);
+      font-weight: 900;
+      letter-spacing: 0;
+      margin-bottom: 0.18em;
+    }
+
+    .speed-subgrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      border-top: 1px solid rgba(109,226,210,.16);
+      padding-top: 14px;
+    }
+
+    .speed-metric {
+      min-width: 0;
+    }
+
+    .speed-metric strong {
+      display: block;
+      color: var(--text);
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .speed-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .speed-metric .metric-value {
+      display: inline;
+      color: var(--accent-strong);
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-right: 4px;
+    }
+
+    .speed-loading {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gold);
+      font-weight: 800;
+    }
+
+    .speed-settings {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(109,226,210,.12);
+    }
+
+    .speed-settings small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+    }
+
+    .speed-loading::before {
+      content: "";
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 202, 122, 0.25);
+      border-top-color: var(--gold);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 760px) {
+      .speed-subgrid { grid-template-columns: 1fr; }
+    }
+
     .raw {
       margin: 0;
       padding: 14px;
@@ -279,6 +394,8 @@
         osText: "Windows 10/11 64-bit",
         minRamGb: 6,
         minStorageGb: 2,
+        minDownloadMbps: 50,
+        minLatencyMs: 100,
         minGpuText: "2+ GB VRAM",
         gpuRequired: true
       },
@@ -287,6 +404,8 @@
         osText: "Android 10+",
         minRamGb: 6,
         minStorageGb: 2,
+        minDownloadMbps: 50,
+        minLatencyMs: 100,
         minAntutu: 500000,
         gpuRequired: false
       },
@@ -295,6 +414,8 @@
         osText: "iOS 15+",
         minRamGb: 3,
         minStorageGb: 2,
+        minDownloadMbps: 50,
+        minLatencyMs: 100,
         minAntutu: 500000,
         gpuRequired: false
       }
@@ -531,6 +652,230 @@
       return Number.isFinite(cores) ? cores : null;
     }
 
+    async function measureLatency(url, attempts = 3) {
+      const values = [];
+
+      for (let i = 0; i < attempts; i++) {
+        const start = performance.now();
+
+        try {
+          await fetch(`${url}?latency=${Date.now()}-${i}`, {
+            method: "HEAD",
+            cache: "no-store",
+            mode: "cors"
+          });
+
+          values.push(performance.now() - start);
+        } catch (error) {
+          try {
+            await fetch(`${url}?latency=${Date.now()}-${i}`, {
+              method: "GET",
+              cache: "no-store",
+              mode: "cors"
+            });
+
+            values.push(performance.now() - start);
+          } catch (_) {}
+        }
+      }
+
+      if (!values.length) return null;
+      return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+    }
+
+    async function runInternetSpeedTest() {
+      /*
+        FAST-like browser speed test for GitHub Pages.
+
+        FAST MODE:
+        - Parallel download connections
+        - Parallel upload connections
+        - Test duration between 5 and 30 seconds
+        - Unloaded latency
+        - Loaded latency while traffic is active
+        - Peak/average throughput smoothing
+
+        Uses Cloudflare Speed endpoints:
+        - Download: https://speed.cloudflare.com/__down
+        - Upload: https://speed.cloudflare.com/__up
+        - Latency: https://speed.cloudflare.com/cdn-cgi/trace
+      */
+
+      const BASE = "https://speed.cloudflare.com";
+
+      const SETTINGS = {
+        downloadParallelMin: 1,
+        downloadParallelMax: 10,
+        uploadParallelMin: 1,
+        uploadParallelMax: 6,
+        durationMinSec: 5,
+        durationMaxSec: 30,
+        targetDurationSec: 7,
+        downloadChunkBytes: 25_000_000,
+        uploadChunkBytes: 8_000_000,
+        latencySamples: 5
+      };
+
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+      const hardware = Number(navigator.hardwareConcurrency || 4);
+
+      const downloadConnections = Math.max(
+        SETTINGS.downloadParallelMin,
+        Math.min(SETTINGS.downloadParallelMax, isMobile ? 4 : Math.max(4, Math.min(10, hardware)))
+      );
+
+      const uploadConnections = Math.max(
+        SETTINGS.uploadParallelMin,
+        Math.min(SETTINGS.uploadParallelMax, isMobile ? 2 : Math.max(2, Math.min(6, Math.floor(hardware / 2) || 2)))
+      );
+
+      const durationMs = Math.max(
+        SETTINGS.durationMinSec * 1000,
+        Math.min(SETTINGS.durationMaxSec * 1000, SETTINGS.targetDurationSec * 1000)
+      );
+
+      function now() {
+        return performance.now();
+      }
+
+      async function fetchNoStore(url, options = {}) {
+        return fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}-${Math.random()}`, {
+          cache: "no-store",
+          mode: "cors",
+          ...options
+        });
+      }
+
+      async function latencySample() {
+        const start = now();
+        try {
+          await fetchNoStore(`${BASE}/cdn-cgi/trace`, { method: "GET" });
+          return now() - start;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      async function averageLatency(samples = SETTINGS.latencySamples) {
+        const values = [];
+        for (let i = 0; i < samples; i++) {
+          const value = await latencySample();
+          if (Number.isFinite(value)) values.push(value);
+          await new Promise(resolve => setTimeout(resolve, 80));
+        }
+
+        if (!values.length) return null;
+        values.sort((a, b) => a - b);
+        const trimmed = values.slice(0, Math.max(1, Math.ceil(values.length * 0.8)));
+        return Math.round(trimmed.reduce((a, b) => a + b, 0) / trimmed.length);
+      }
+
+      async function loadedLatencyUntil(doneRef, samples = 12) {
+        const values = [];
+
+        for (let i = 0; i < samples && !doneRef.done; i++) {
+          const value = await latencySample();
+          if (Number.isFinite(value)) values.push(value);
+          await new Promise(resolve => setTimeout(resolve, 160));
+        }
+
+        if (!values.length) return null;
+        values.sort((a, b) => a - b);
+        const p75Index = Math.min(values.length - 1, Math.floor(values.length * 0.75));
+        return Math.round(values[p75Index]);
+      }
+
+      async function downloadWorker(endTime) {
+        let bytes = 0;
+        let requests = 0;
+
+        while (now() < endTime) {
+          const url = `${BASE}/__down?bytes=${SETTINGS.downloadChunkBytes}`;
+          const response = await fetchNoStore(url, { method: "GET" });
+          if (!response.ok) throw new Error(`Download HTTP ${response.status}`);
+          const blob = await response.blob();
+          bytes += blob.size;
+          requests++;
+        }
+
+        return { bytes, requests };
+      }
+
+      async function uploadWorker(endTime) {
+        let bytes = 0;
+        let requests = 0;
+
+        const data = new Uint8Array(SETTINGS.uploadChunkBytes);
+        crypto.getRandomValues(data.subarray(0, Math.min(data.length, 65536)));
+
+        while (now() < endTime) {
+          const response = await fetchNoStore(`${BASE}/__up`, {
+            method: "POST",
+            body: data
+          });
+
+          if (!response.ok) throw new Error(`Upload HTTP ${response.status}`);
+          bytes += data.byteLength;
+          requests++;
+        }
+
+        return { bytes, requests };
+      }
+
+      async function parallelThroughputTest(type) {
+        const isDownload = type === "download";
+        const connections = isDownload ? downloadConnections : uploadConnections;
+        const worker = isDownload ? downloadWorker : uploadWorker;
+
+        const start = now();
+        const endTime = start + durationMs;
+        const doneRef = { done: false };
+
+        const latencyPromise = loadedLatencyUntil(doneRef, 16);
+        const workers = Array.from({ length: connections }, () => worker(endTime));
+
+        const results = await Promise.all(workers);
+        doneRef.done = true;
+
+        const elapsedSec = (now() - start) / 1000;
+        const totalBytes = results.reduce((sum, item) => sum + item.bytes, 0);
+        const totalRequests = results.reduce((sum, item) => sum + item.requests, 0);
+        const mbps = (totalBytes * 8) / elapsedSec / 1000 / 1000;
+        const loadedLatencyMs = await latencyPromise;
+
+        return {
+          mbps: Math.round(mbps * 10) / 10,
+          bytes: totalBytes,
+          requests: totalRequests,
+          seconds: Math.round(elapsedSec * 10) / 10,
+          connections,
+          loadedLatencyMs
+        };
+      }
+
+      const unloadedLatencyMs = await averageLatency(SETTINGS.latencySamples);
+      const download = await parallelThroughputTest("download");
+      const upload = await parallelThroughputTest("upload");
+
+      const loadedLatencyValues = [download.loadedLatencyMs, upload.loadedLatencyMs].filter(Number.isFinite);
+      const loadedLatencyMs = loadedLatencyValues.length
+        ? Math.round(loadedLatencyValues.reduce((a, b) => a + b, 0) / loadedLatencyValues.length)
+        : null;
+
+      return {
+        downloadMbps: download.mbps,
+        uploadMbps: upload.mbps,
+        latencyUnloadedMs: unloadedLatencyMs,
+        latencyLoadedMs: loadedLatencyMs,
+        downloadTestSizeMb: Math.round((download.bytes / 1024 / 1024) * 10) / 10,
+        uploadTestSizeMb: Math.round((upload.bytes / 1024 / 1024) * 10) / 10,
+        downloadConnections: download.connections,
+        uploadConnections: upload.connections,
+        testDurationSec: SETTINGS.targetDurationSec,
+        source: "Cloudflare Speed FAST Mode"
+      };
+    }
+
     function makeBadge(status) {
       const map = {
         pass: ["PASS", "pass"],
@@ -582,14 +927,14 @@
 
     async function runCheck() {
       const results = document.getElementById("results");
-      results.innerHTML = `<div class="notice">Scanning browser-accessible device information...</div>`;
+      results.innerHTML = `<div class="notice">Scanning device information and testing internet speed... Please wait.</div>`;
 
       const osInfo = detectOS();
       const highEntropy = await getHighEntropyUA();
       const webgl = getWebGLInfo();
       const storage = await getStorageInfo();
       const ramGb = getRamInfo();
-      const cores = getCpuInfo();
+      const internetPromise = runInternetSpeedTest();
       const req = MINIMUMS[osInfo.os];
 
       const gpuButton = document.getElementById("gpuAccelBtn");
@@ -641,7 +986,92 @@
         if (storage.freeGb !== null) { if (storage.freeGb >= req.minStorageGb) passCount++; totalScoreChecks++; }
       }
 
-      checks.push(card("CPU", cores ? "info" : "warn", `<span class="value">${cores ? `${cores} logical cores` : "Unknown"}</span><br>Browsers can read logical cores, but not exact CPU model/performance.`));
+      let internet = null;
+      let internetStatus = "warn";
+      let internetBody = `
+        <div class="speed-panel">
+          <div class="speed-main">
+            <div class="speed-title">Internet Speed</div>
+            <div class="speed-loading">FAST Mode: testing download, upload and latency...</div>
+          </div>
+        </div>
+      `;
+
+      try {
+        internet = await internetPromise;
+
+        const speedOk = Number.isFinite(internet.downloadMbps) && internet.downloadMbps >= (req?.minDownloadMbps || 50);
+        const unloadedOk = internet.latencyUnloadedMs === null || internet.latencyUnloadedMs <= (req?.minLatencyMs || 100);
+        const loadedOk = internet.latencyLoadedMs === null || internet.latencyLoadedMs <= (req?.minLatencyMs || 100);
+
+        internetStatus = speedOk && unloadedOk && loadedOk ? "pass" : "fail";
+
+        const speedDisplay = internet.downloadMbps >= 1000
+          ? { value: Math.round((internet.downloadMbps / 1000) * 10) / 10, unit: "Gbps" }
+          : { value: internet.downloadMbps, unit: "Mbps" };
+
+        internetBody = `
+          <div class="speed-panel">
+            <div class="speed-main">
+              <div class="speed-title">Your Internet Speed is</div>
+              <div class="speed-number">
+                ${speedDisplay.value}
+                <span class="speed-unit">${speedDisplay.unit}</span>
+              </div>
+            </div>
+
+            <div class="speed-subgrid">
+              <div class="speed-metric">
+                <strong>Latency</strong>
+                <span>Unloaded</span>
+                <span><span class="metric-value">${internet.latencyUnloadedMs === null ? "?" : internet.latencyUnloadedMs}</span>ms</span>
+              </div>
+
+              <div class="speed-metric">
+                <strong>Latency</strong>
+                <span>Loaded</span>
+                <span><span class="metric-value">${internet.latencyLoadedMs === null ? "?" : internet.latencyLoadedMs}</span>ms</span>
+              </div>
+
+              <div class="speed-metric">
+                <strong>Upload</strong>
+                <span>Speed</span>
+                <span><span class="metric-value">${Number.isFinite(internet.uploadMbps) ? internet.uploadMbps : "?"}</span>Mbps</span>
+              </div>
+            </div>
+
+            <span>
+              Required: ${(req?.minDownloadMbps || 50)}+ Mbps download and under ${(req?.minLatencyMs || 100)} ms latency.
+              Source: ${escapeHtml(internet.source)}.
+            </span>
+
+            <div class="speed-settings">
+              <div>
+                <small>Parallel connections</small>
+                <span>${internet.downloadConnections} download / ${internet.uploadConnections} upload</span>
+              </div>
+              <div>
+                <small>Test duration</small>
+                <span>${internet.testDurationSec}s target</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (speedOk && unloadedOk && loadedOk) passCount++;
+        totalScoreChecks++;
+      } catch (error) {
+        internetBody = `
+          <span class="value">Could not complete speed test</span><br>
+          The browser blocked the internal speed test.
+          <br><br>
+          <button class="button-main" type="button" onclick="window.open('https://fast.com/', '_blank', 'noopener,noreferrer')">
+            Open fast.com
+          </button>
+        `;
+      }
+
+      checks.push(card("Internet Speed", internetStatus, internetBody));
 
       if (osInfo.os === "windows") {
         const graphicsStatus = webgl.detected ? "pass" : "fail";
@@ -689,7 +1119,7 @@
         userAgentDataBrands: osInfo.brands,
         highEntropyUA: highEntropy,
         deviceMemoryGbApprox: ramGb,
-        hardwareConcurrency: cores,
+        internetSpeedTest: internet,
         storageEstimateGb: storage,
         webgl
       };
