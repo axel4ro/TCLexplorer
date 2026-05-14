@@ -246,6 +246,7 @@
     </div>
     <nav class="sidebar-nav">
       <button type="button" class="nav-item" onclick="openEarnGuidePage()" id="btn-earn" data-i18n="nav_play_and_earn">🎮Play and Earn💰</button>
+      <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
       <button type="button" class="nav-item" onclick="showPage('wiki')" id="btn-wiki">📖 Wiki</button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
@@ -667,6 +668,7 @@
   <div class="page-hero">
     <h2 data-i18n="wiki_title">📖 The Cursed Land – Wiki</h2>
     <p class="muted" data-i18n="wiki_desc">Classes, races, bonuses, items — search or browse sections below. Language matches your app selection.</p>
+    <button type="button" class="btn-primary-green wiki-can-run-btn" onclick="openRouteFromHash('CanIrunIt', { updateUrl: true })">Can I Run It ?</button>
   </div>
   <div class="wiki-toolbar">
     <div class="wiki-search-row">
@@ -916,8 +918,8 @@
   <img id="overlayImg" class="overlay-img" alt="" />
 </div>
 
-<script src="lang/lang.bundle.js?v=20260416-3"></script>
-<script src="lang/wiki.bundle.js?v=20260415-1"></script>
+<script src="lang/lang.bundle.js?v=20260514-1"></script>
+<script src="lang/wiki.bundle.js?v=20260514-1"></script>
 <script src="js/wiki.js?v=20260512-4"></script>
 <script>
 function openNFTs() {
@@ -2470,6 +2472,24 @@ const INTERNAL_PAGE_ROUTES = {
     loadingTitle: "Loading Play and Earn...",
     loadingSubtitle: "Preparing creator program, staking and web3 shop walkthrough."
   },
+  "game-requirements": {
+    src: "Game_Requirements.html",
+    title: "Game Requirements",
+    navId: "btn-gameRequirements",
+    routeKey: "game-requirements",
+    loadingTitle: "Loading Game Requirements...",
+    loadingSubtitle: "Preparing mobile, PC and network requirements.",
+    waitForReadyMessage: true
+  },
+  CanIrunIt: {
+    src: "CanIrunIt.html#CanIrunIt",
+    title: "Can I Run It?",
+    navId: "btn-gameRequirements",
+    routeKey: "CanIrunIt",
+    loadingTitle: "Loading Can I Run It?...",
+    loadingSubtitle: "Preparing device compatibility check.",
+    waitForReadyMessage: true
+  },
   nfts: {
     src: "NFTs.html",
     title: "NFTs Explorer",
@@ -2573,6 +2593,7 @@ const INTERNAL_PAGE_ROUTES = {
 
 function normalizeRouteKey(value) {
   const raw = String(value || "").replace(/^#/, "").trim();
+  if (raw.toLowerCase() === "canirunit") return "CanIrunIt";
   return raw || "token";
 }
 
@@ -2941,6 +2962,11 @@ function openEarnGuidePage() {
   openInternalPage(route.src, route.title, route);
 }
 
+function openGameRequirementsPage() {
+  const route = INTERNAL_PAGE_ROUTES["game-requirements"];
+  openInternalPage(route.src, route.title, route);
+}
+
 function showPage(id, options = {}) {
   const updateUrl = options.updateUrl !== false;
   const historyMode = options.historyMode || "push";
@@ -3103,6 +3129,13 @@ window.addEventListener("message", (event) => {
   if (data.type !== "tcl:navigate") return;
 
   const requestedPage = typeof data.page === "string" ? data.page : "wiki";
+  const requestedRouteKey = normalizeRouteKey(requestedPage);
+  const requestedInternalRoute = INTERNAL_PAGE_ROUTES[requestedRouteKey];
+  if (requestedInternalRoute) {
+    openInternalPage(requestedInternalRoute.src, requestedInternalRoute.title, requestedInternalRoute);
+    return;
+  }
+
   const targetSection = typeof data.section === "string" ? data.section : "";
   const targetPage = requestedPage === "token"
     ? resolveTokenTargetPage(targetSection)
