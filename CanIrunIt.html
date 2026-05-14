@@ -420,32 +420,104 @@
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="">
         <div>
           <span class="brand-title">The Cursed Land</span>
-          <span class="brand-sub">Device compatibility check</span>
+          <span class="brand-sub" data-i18n="brandSub">Device compatibility check</span>
         </div>
       </div>
-      <button type="button" class="button-ghost" onclick="goBackToGameRequirements()">Back</button>
+      <button type="button" class="button-ghost" onclick="goBackToGameRequirements()" data-i18n="backButton">Back</button>
     </header>
 
     <section class="checker">
       <div class="checker-head">
         <div class="scan-copy">
           <div class="scan-title-line">
-            <span class="kicker">System Scan</span>
-            <span class="section-label">Compatibility Test</span>
+            <span class="kicker" data-i18n="scanKicker">System Scan</span>
+            <span class="section-label" data-i18n="compatibilityLabel">Compatibility Test</span>
           </div>
-          <h1>Can I <span>Run It?</span></h1>
-          <p>Check if your device meets the minimum requirements for The Cursed Land.</p>
+          <h1 data-i18n="heroTitle">Can I <span>Run It?</span></h1>
+          <p data-i18n="heroDesc">Check if your device meets the minimum requirements for The Cursed Land.</p>
         </div>
-        <div class="actions"><button class="button-main" type="button" onclick="runCheck()">Can I Run It?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
+        <div class="actions"><button class="button-main" type="button" onclick="runCheck()" data-i18n="runButton">Can I Run It?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)" data-i18n="gpuButton">GPU Acceleration</button></div>
       </div>
 
-      <div class="result-box" id="results">
-        <div class="notice">No scan yet. Press <strong>Can I Run It?</strong> to start.</div>
+      <div class="result-box" id="results" data-state="idle">
+        <div class="notice" data-i18n="noScanHtml">No scan yet. Press <strong>Can I Run It?</strong> to start.</div>
       </div>
     </section>
   </main>
 
+  <script src="lang/can-i-run-it.bundle.js?v=20260514-1"></script>
   <script>
+    const CANIRUN_LANG_STORAGE_KEY = "lang";
+    const CANIRUN_SUPPORTED_LANGS = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
+    const CANIRUN_TRANSLATIONS = window.TCL_CANIRUN_LANG_DATA || {};
+    let currentCanIRunLang = "en";
+
+    function normalizeLang(lang) {
+      const raw = String(lang || "").toLowerCase();
+      if (CANIRUN_SUPPORTED_LANGS.includes(raw)) return raw;
+      const base = raw.split("-")[0];
+      return CANIRUN_SUPPORTED_LANGS.includes(base) ? base : "en";
+    }
+
+    function getTranslationSet(lang) {
+      return CANIRUN_TRANSLATIONS[lang] || CANIRUN_TRANSLATIONS.en || {};
+    }
+
+    function tr(key, fallback = "") {
+      const data = getTranslationSet(currentCanIRunLang);
+      const fallbackData = getTranslationSet("en");
+      return data[key] || fallbackData[key] || fallback || key;
+    }
+
+    function applyTranslations(lang) {
+      const normalizedLang = normalizeLang(lang);
+      currentCanIRunLang = normalizedLang;
+      const data = getTranslationSet(normalizedLang);
+      const fallback = getTranslationSet("en");
+
+      document.documentElement.lang = normalizedLang;
+      document.title = data.metaTitle || fallback.metaTitle || document.title;
+
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute("content", data.metaDescription || fallback.metaDescription || metaDescription.content);
+      }
+
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-i18n");
+        const value = data[key] || fallback[key];
+        if (typeof value === "string") node.innerHTML = value;
+      });
+    }
+
+    function setCanIRunLang(lang) {
+      const normalizedLang = normalizeLang(lang);
+      localStorage.setItem(CANIRUN_LANG_STORAGE_KEY, normalizedLang);
+      applyTranslations(normalizedLang);
+      refreshRenderedResultsLanguage();
+    }
+
+    function resolveStartupLang() {
+      const params = new URLSearchParams(window.location.search);
+      return normalizeLang(params.get("lang") || localStorage.getItem(CANIRUN_LANG_STORAGE_KEY) || navigator.language || "en");
+    }
+
+    function refreshRenderedResultsLanguage() {
+      const results = document.getElementById("results");
+      if (!results) return;
+
+      if (results.dataset.state === "running") {
+        results.innerHTML = `<div class="notice">${escapeHtml(tr("scanningDeviceInfo", "Scanning device information..."))}</div>`;
+        return;
+      }
+
+      if (lastScanContext) {
+        renderScanResults(lastScanContext, lastInternetResult, {
+          internetPending: isInternetRefreshRunning || lastInternetResult === undefined
+        });
+      }
+    }
+
     const MINIMUMS = {
       windows: {
         osName: "Windows",
@@ -495,7 +567,7 @@
     }
 
     function formatGb(value) {
-      if (!Number.isFinite(value)) return "Unknown";
+      if (!Number.isFinite(value)) return tr("unknown", "Unknown");
       return `${value.toFixed(value >= 10 ? 0 : 1)} GB`;
     }
 
@@ -555,7 +627,7 @@
         "5.0": "Windows 2000"
       };
 
-      return map[nt] || (nt ? `Windows NT ${nt}` : "Windows detected");
+      return map[nt] || (nt ? `Windows NT ${nt}` : tr("windowsDetected", "Windows detected"));
     }
 
     function getSystemBitness(osKey, ua, highEntropy) {
@@ -576,18 +648,40 @@
       return "";
     }
 
-    function parseAndroidVersion(ua) {
+    function parsePlatformVersionNumber(platformVersion) {
+      const parts = String(platformVersion || "")
+        .split(".")
+        .map(part => Number(part))
+        .filter(Number.isFinite);
+      if (!parts.length || parts.every(part => part === 0)) return "";
+      const [major, minor, patch] = parts;
+      if (Number.isFinite(patch) && patch > 0) return `${major}.${minor || 0}.${patch}`;
+      if (Number.isFinite(minor) && minor > 0) return `${major}.${minor}`;
+      return String(major);
+    }
+
+    function getAndroidVersionLabel(ua, highEntropy) {
+      const highEntropyPlatform = String(highEntropy?.platform || "").toLowerCase();
+      const highEntropyVersion = highEntropyPlatform === "android"
+        ? parsePlatformVersionNumber(highEntropy?.platformVersion)
+        : "";
+
+      if (highEntropyVersion) return `Android ${highEntropyVersion}`;
+
       const match = ua.match(/Android\s+([0-9.]+)/i);
-      return match ? `Android ${match[1]}` : "Android detected";
+      return match ? `Android ${match[1]}` : tr("androidDetected", "Android detected");
     }
 
     function parseIOSVersion(ua) {
-      const match = ua.match(/OS\s([0-9_]+)/i);
-      return match ? `iOS ${match[1].replaceAll("_", ".")}` : "iOS detected";
+      const osMatch = ua.match(/(?:CPU(?: iPhone)? OS|OS)\s+([0-9_]+)/i);
+      if (osMatch) return `iOS ${osMatch[1].replaceAll("_", ".")}`;
+
+      const safariVersionMatch = ua.match(/Version\/([0-9.]+)/i);
+      return safariVersionMatch ? `iOS ${safariVersionMatch[1]}` : tr("iosDetected", "iOS detected");
     }
 
     function cleanGpuName(name) {
-      if (!name) return "Unknown";
+      if (!name) return tr("unknown", "Unknown");
 
       return String(name)
         .replace(/^ANGLE\s*\(/i, "")
@@ -605,7 +699,7 @@
         .replace(/^Intel,\s*Intel\s+/i, "Intel ")
         .replace(/^Intel,\s*/i, "Intel ")
         .replace(/\s+/g, " ")
-        .trim() || "Unknown";
+        .trim() || tr("unknown", "Unknown");
     }
 
     function detectGpuClass(renderer) {
@@ -1193,10 +1287,10 @@
 
     function makeBadge(status) {
       const map = {
-        pass: ["PASS", "pass"],
-        fail: ["FAIL", "fail"],
-        warn: ["CHECK", "warn"],
-        info: ["INFO", "info"]
+        pass: [tr("badgePass", "PASS"), "pass"],
+        fail: [tr("badgeFail", "FAIL"), "fail"],
+        warn: [tr("badgeWarn", "CHECK"), "warn"],
+        info: [tr("badgeInfo", "INFO"), "info"]
       };
       const [text, cls] = map[status] || map.info;
       return `<span class="badge ${cls}">${text}</span>`;
@@ -1234,28 +1328,31 @@
 
     async function handleGraphicsAccelerationButton(button) {
       const url = await copyGraphicsAccelerationLink();
-      button.textContent = "Copied! Paste in address bar";
+      button.textContent = tr("copiedPaste", "Copied! Paste in address bar");
       setTimeout(() => {
-        button.textContent = "GPU Acceleration";
+        button.textContent = tr("gpuButton", "GPU Acceleration");
       }, 3500);
     }
 
 
     let lastDeviceContext = null;
+    let lastScanContext = null;
+    let lastInternetResult;
     let isInternetRefreshRunning = false;
+    let hasAutoRunStarted = false;
 
     function internetLoadingCard() {
       return `
         <article class="card" id="internetSpeedCard">
           <div class="card-top">
-            <h3>Internet Speed</h3>
+            <h3>${escapeHtml(tr("internetSpeedTitle", "Internet Speed"))}</h3>
             ${makeBadge("warn")}
           </div>
           <p>
             <div class="speed-panel">
               <div class="speed-main">
-                <div class="speed-title">Internet Speed</div>
-                <div class="speed-loading">Testing internet speed... Please wait.</div>
+                <div class="speed-title">${escapeHtml(tr("internetSpeedTitle", "Internet Speed"))}</div>
+                <div class="speed-loading">${escapeHtml(tr("internetLoading", "Testing internet speed... Please wait."))}</div>
               </div>
             </div>
           </p>
@@ -1290,18 +1387,18 @@
 
       if (!internet) {
         internetBody = `
-          <span class="value">Could not complete speed test</span><br>
-          The browser blocked the internal speed test.
+          <span class="value">${escapeHtml(tr("speedBlockedTitle", "Could not complete speed test"))}</span><br>
+          ${escapeHtml(tr("speedBlockedText", "The browser blocked the internal speed test."))}
           <br><br>
           <button class="button-main" type="button" onclick="window.open('https://fast.com/', '_blank', 'noopener,noreferrer')">
-            Open fast.com
+            ${escapeHtml(tr("openFast", "Open fast.com"))}
           </button>
         `;
 
         return `
           <article class="card" id="internetSpeedCard">
             <div class="card-top">
-              <h3>Internet Speed</h3>
+              <h3>${escapeHtml(tr("internetSpeedTitle", "Internet Speed"))}</h3>
               ${makeBadge("warn")}
             </div>
             <p>${internetBody}</p>
@@ -1322,7 +1419,7 @@
       internetBody = `
         <div class="speed-panel">
           <div class="speed-main">
-            <div class="speed-title">Your Internet Speed is</div>
+            <div class="speed-title">${escapeHtml(tr("yourInternetSpeedIs", "Your Internet Speed is"))}</div>
             <div class="speed-number">
               ${speedDisplay.value}
               <span class="speed-unit">${speedDisplay.unit}</span>
@@ -1331,47 +1428,47 @@
 
           <div class="speed-subgrid">
             <div class="speed-metric">
-              <strong>Latency</strong>
-              <span>Unloaded</span>
+              <strong>${escapeHtml(tr("latency", "Latency"))}</strong>
+              <span>${escapeHtml(tr("unloaded", "Unloaded"))}</span>
               <span><span class="metric-value">${internet.latencyUnloadedMs === null ? "?" : internet.latencyUnloadedMs}</span>ms</span>
             </div>
 
             <div class="speed-metric">
-              <strong>Latency</strong>
-              <span>Loaded</span>
+              <strong>${escapeHtml(tr("latency", "Latency"))}</strong>
+              <span>${escapeHtml(tr("loaded", "Loaded"))}</span>
               <span><span class="metric-value">${internet.latencyLoadedMs === null ? "?" : internet.latencyLoadedMs}</span>ms</span>
             </div>
 
             <div class="speed-metric">
-              <strong>Upload</strong>
-              <span>Speed</span>
+              <strong>${escapeHtml(tr("upload", "Upload"))}</strong>
+              <span>${escapeHtml(tr("speed", "Speed"))}</span>
               <span><span class="metric-value">${Number.isFinite(internet.uploadMbps) ? internet.uploadMbps : "?"}</span>Mbps</span>
             </div>
           </div>
 
           <span>
-            Required: ${(req?.minDownloadMbps || 50)}+ Mbps download and under ${(req?.minLatencyMs || 100)} ms latency.
-            Source: ${escapeHtml(internet.source)}.
+            ${escapeHtml(tr("requiredLabel", "Required"))}: ${(req?.minDownloadMbps || 50)}+ Mbps ${escapeHtml(tr("downloadLabel", "download"))} / ${(req?.minLatencyMs || 100)} ms ${escapeHtml(tr("latency", "latency"))}.
+            ${escapeHtml(tr("sourceLabel", "Source"))}: ${escapeHtml(internet.source)}.
           </span>
 
           <div class="speed-settings">
             <div>
-              <small>Parallel connections</small>
-              <span>${internet.downloadConnections} download / ${internet.uploadConnections} upload</span>
+              <small>${escapeHtml(tr("parallelConnections", "Parallel connections"))}</small>
+              <span>${internet.downloadConnections} ${escapeHtml(tr("downloadLabel", "download"))} / ${internet.uploadConnections} ${escapeHtml(tr("uploadLabel", "upload"))}</span>
             </div>
             <div>
-              <small>Test duration</small>
-              <span>${internet.testDurationSec}s target</span>
+              <small>${escapeHtml(tr("testDuration", "Test duration"))}</small>
+              <span>${internet.testDurationSec}s ${escapeHtml(tr("targetLabel", "target"))}</span>
             </div>
             <div>
-              <small>Test package size</small>
-              <span>${internet.downloadChunkMb} MB download / ${internet.uploadChunkMb} MB upload</span>
+              <small>${escapeHtml(tr("testPackageSize", "Test package size"))}</small>
+              <span>${internet.downloadChunkMb} MB ${escapeHtml(tr("downloadLabel", "download"))} / ${internet.uploadChunkMb} MB ${escapeHtml(tr("uploadLabel", "upload"))}</span>
             </div>
           </div>
 
           <div class="speed-actions">
-            <button class="button-main" type="button" onclick="runInternetOnly()">↻ Retest Internet Speed</button>
-            <button class="button-ghost" type="button" onclick="window.open('https://fast.com/', '_blank', 'noopener,noreferrer')">Open fast.com</button>
+            <button class="button-main" type="button" onclick="runInternetOnly()">${escapeHtml(tr("retestInternet", "↻ Retest Internet Speed"))}</button>
+            <button class="button-ghost" type="button" onclick="window.open('https://fast.com/', '_blank', 'noopener,noreferrer')">${escapeHtml(tr("openFast", "Open fast.com"))}</button>
           </div>
         </div>
       `;
@@ -1379,12 +1476,143 @@
       return `
         <article class="card" id="internetSpeedCard">
           <div class="card-top">
-            <h3>Internet Speed</h3>
+            <h3>${escapeHtml(tr("internetSpeedTitle", "Internet Speed"))}</h3>
             ${makeBadge(internetStatus)}
           </div>
           <p>${internetBody}</p>
         </article>
       `;
+    }
+
+    function buildScanModel(scanContext) {
+      const { osInfo, highEntropy, webgl, storage, ramGb, req } = scanContext;
+      let osLabel = tr("unknownOS", "Unknown OS");
+      const bitness = getSystemBitness(osInfo.os, osInfo.ua, highEntropy);
+
+      if (osInfo.os === "windows") {
+        osLabel = getWindowsVersionFromUA(osInfo.ua, highEntropy);
+        if (bitness) osLabel += ` ${bitness}`;
+      }
+      if (osInfo.os === "android") osLabel = getAndroidVersionLabel(osInfo.ua, highEntropy);
+      if (osInfo.os === "ios") osLabel = parseIOSVersion(osInfo.ua);
+      if (osInfo.os === "macos") osLabel = tr("macosDetectedNotReleased", "macOS detected - not released");
+
+      const sideCards = [];
+      let passCount = 0;
+      let totalScoreChecks = 0;
+
+      if (!req) {
+        sideCards.push(card(tr("platformTitle", "Platform"), osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>${escapeHtml(tr("unsupportedPlatformText", "This platform is not currently supported by the requirements table."))}`));
+      } else {
+        let osPass = true;
+
+        if (osInfo.os === "windows") {
+          const isWin10Or11 = /Windows 10|Windows 11|Windows 10\/11/i.test(osLabel);
+          const is64 = /64-bit/i.test(osLabel);
+          osPass = isWin10Or11 && is64;
+        }
+
+        if (osInfo.os === "android") osPass = compareVersion(osLabel, 10);
+        if (osInfo.os === "ios") osPass = compareVersion(osLabel, 15);
+
+        sideCards.push(card(tr("platformTitle", "Platform"), osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>${escapeHtml(tr("requiredLabel", "Required"))}: ${escapeHtml(req.osText)}.`));
+        if (osPass) passCount++;
+        totalScoreChecks++;
+      }
+
+      if (req) {
+        const ramStatus = ramGb === null ? "warn" : ramGb >= req.minRamGb ? "pass" : "fail";
+        const storageStatus = storage.freeGb === null ? "warn" : storage.freeGb >= req.minStorageGb ? "pass" : "fail";
+        sideCards.push(card(tr("storageTitle", "Storage"), storageStatus, `<span class="value">${formatGb(storage.freeGb)} ${escapeHtml(tr("availableForBrowserOrigin", "available for browser origin"))}</span><br>${escapeHtml(tr("requiredLabel", "Required"))}: ${req.minStorageGb}+ GB. ${escapeHtml(tr("browserStorageNote", "Browser storage is not the same as full disk free space."))}`));
+        if (storage.freeGb !== null) {
+          if (storage.freeGb >= req.minStorageGb) passCount++;
+          totalScoreChecks++;
+        }
+
+        sideCards.push(card(tr("memoryTitle", "Memory RAM"), ramStatus, `<span class="value">${ramGb === null ? escapeHtml(tr("unknown", "Unknown")) : `${ramGb}+ ${escapeHtml(tr("gbDetected", "GB detected"))}`}</span><br>${escapeHtml(tr("requiredLabel", "Required"))}: ${req.minRamGb}+ GB. ${escapeHtml(tr("browserRamNote", "Browser RAM detection is approximate."))}`));
+        if (ramGb !== null) {
+          if (ramGb >= req.minRamGb) passCount++;
+          totalScoreChecks++;
+        }
+      }
+
+      if (osInfo.os === "windows") {
+        const graphicsStatus = webgl.detected ? "pass" : "fail";
+        const graphicsFix = webgl.gpuClass.includes("Acceleration OFF")
+          ? `<br><br><button class="button-main" type="button" onclick="handleGraphicsAccelerationButton(this)">${escapeHtml(tr("gpuButton", "GPU Acceleration"))}</button>`
+          : "";
+
+        sideCards.push(card(tr("graphicsTitle", "Graphic Card / GPU"), graphicsStatus, `
+          <span class="value">${escapeHtml(webgl.cleanRenderer)}</span><br>
+          ${escapeHtml(tr("typeLabel", "Type"))}: ${escapeHtml(webgl.gpuClass)}.<br>
+          ${escapeHtml(tr("vendorLabel", "Vendor"))}: ${escapeHtml(webgl.vendor)}.<br>
+          ${escapeHtml(tr("requiredLabel", "Required"))}: ${escapeHtml(req?.minGpuText || tr("graphicCardRequired", "Graphic card required"))}.
+          ${graphicsFix}
+        `));
+
+        if (req?.gpuRequired) {
+          if (webgl.detected) passCount++;
+          totalScoreChecks++;
+        }
+      }
+
+      return { osLabel, sideCards, passCount, totalScoreChecks };
+    }
+
+    function renderScanResults(scanContext, internet, options = {}) {
+      const results = document.getElementById("results");
+      if (!results || !scanContext) return;
+
+      const model = buildScanModel(scanContext);
+      lastDeviceContext = {
+        basePassCount: model.passCount,
+        baseTotalScoreChecks: model.totalScoreChecks,
+        req: scanContext.req,
+        webgl: scanContext.webgl
+      };
+
+      const internetCard = options.internetPending
+        ? internetLoadingCard()
+        : buildInternetCard(internet, scanContext.req);
+
+      const mainCardsHtml = model.sideCards.length
+        ? `
+          <div class="check-main-grid">
+            <div class="check-side-stack">${model.sideCards.join("")}</div>
+            ${internetCard}
+          </div>
+        `
+        : `<div class="grid">${internetCard}</div>`;
+
+      results.dataset.state = "scan";
+      results.innerHTML = `
+        <div class="summary">
+          <div class="score-ring" id="scoreRing">...</div>
+          <div>
+            <h3 id="verdictTitle">${escapeHtml(tr("testingInternetTitle", "Testing Internet Speed"))}</h3>
+            <p id="verdictText">${escapeHtml(tr("deviceDetectedText", "Device information has been detected. Internet speed is now being tested."))}</p>
+          </div>
+        </div>
+
+        ${mainCardsHtml}
+
+        <details>
+          <summary class="button-ghost" style="display:inline-flex; width:auto; margin-bottom:10px;">${escapeHtml(tr("showRawData", "Show raw browser data"))}</summary>
+          <pre class="raw">${escapeHtml(JSON.stringify({
+            detectedOS: scanContext.osInfo.os,
+            osLabel: model.osLabel,
+            userAgent: scanContext.osInfo.ua,
+            platform: scanContext.osInfo.platform,
+            userAgentDataBrands: scanContext.osInfo.brands,
+            highEntropyUA: scanContext.highEntropy,
+            deviceMemoryGbApprox: scanContext.ramGb,
+            storageEstimateGb: scanContext.storage,
+            webgl: scanContext.webgl
+          }, null, 2))}</pre>
+        </details>
+      `;
+
+      if (!options.internetPending) updateSummaryAfterInternet(internet);
     }
 
     function updateSummaryAfterInternet(internet) {
@@ -1410,21 +1638,21 @@
 
       if (scoreEl) scoreEl.textContent = `${score}%`;
 
-      let verdict = "Manual check required";
-      let verdictText = "Your browser blocked or does not expose enough data for a complete compatibility result.";
+      let verdict = tr("manualCheckRequired", "Manual check required");
+      let verdictText = tr("manualCheckText", "Your browser blocked or does not expose enough data for a complete compatibility result.");
 
       if (webgl.gpuClass.includes("Acceleration OFF")) {
-        verdict = "Enable GPU Acceleration";
-        verdictText = "Your browser is using a basic/software renderer. Enable graphics acceleration, restart the browser and scan again.";
+        verdict = tr("enableGpuAcceleration", "Enable GPU Acceleration");
+        verdictText = tr("enableGpuText", "Your browser is using a basic/software renderer. Enable graphics acceleration, restart the browser and scan again.");
       } else if (req && score >= 90) {
-        verdict = "Looks compatible";
-        verdictText = "Your device appears to match the browser-detectable minimum requirements.";
+        verdict = tr("looksCompatible", "Looks compatible");
+        verdictText = tr("looksCompatibleText", "Your device appears to match the browser-detectable minimum requirements.");
       } else if (req && score >= 60) {
-        verdict = "Probably playable, but check details";
-        verdictText = "Some required data is missing or borderline. Check the cards below before installing.";
+        verdict = tr("probablyPlayable", "Probably playable, but check details");
+        verdictText = tr("probablyPlayableText", "Some required data is missing or borderline. Check the cards below before installing.");
       } else if (req) {
-        verdict = "Below or unknown minimums";
-        verdictText = "At least one browser-detectable requirement is missing or below the minimum.";
+        verdict = tr("belowMinimums", "Below or unknown minimums");
+        verdictText = tr("belowMinimumsText", "At least one browser-detectable requirement is missing or below the minimum.");
       }
 
       if (titleEl) titleEl.textContent = verdict;
@@ -1435,6 +1663,7 @@
       if (isInternetRefreshRunning || !lastDeviceContext) return;
 
       isInternetRefreshRunning = true;
+      lastInternetResult = undefined;
       const cardEl = document.getElementById("internetSpeedCard");
       if (cardEl) cardEl.outerHTML = internetLoadingCard();
 
@@ -1446,6 +1675,7 @@
         internet = null;
       }
 
+      lastInternetResult = internet;
       const newCard = buildInternetCard(internet, lastDeviceContext.req);
       const freshCard = document.getElementById("internetSpeedCard");
       if (freshCard) freshCard.outerHTML = newCard;
@@ -1456,7 +1686,8 @@
 
     async function runCheck() {
       const results = document.getElementById("results");
-      results.innerHTML = `<div class="notice">Scanning device information...</div>`;
+      results.dataset.state = "running";
+      results.innerHTML = `<div class="notice">${escapeHtml(tr("scanningDeviceInfo", "Scanning device information..."))}</div>`;
 
       const osInfo = detectOS();
       const highEntropy = await getHighEntropyUA();
@@ -1470,114 +1701,23 @@
         gpuButton.style.display = osInfo.os === "windows" ? "inline-flex" : "none";
       }
 
-      let osLabel = "Unknown OS";
-      const bitness = getSystemBitness(osInfo.os, osInfo.ua, highEntropy);
-
-      if (osInfo.os === "windows") {
-        osLabel = getWindowsVersionFromUA(osInfo.ua, highEntropy);
-        if (bitness) osLabel += ` ${bitness}`;
-      }
-      if (osInfo.os === "android") osLabel = parseAndroidVersion(osInfo.ua);
-      if (osInfo.os === "ios") osLabel = parseIOSVersion(osInfo.ua);
-      if (osInfo.os === "macos") osLabel = "macOS detected - not released";
-
-      const sideCards = [];
-      let passCount = 0;
-      let totalScoreChecks = 0;
-
-      if (!req) {
-        sideCards.push(card("Platform", osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>This platform is not currently supported by the requirements table.`));
-      } else {
-        let osPass = true;
-
-        if (osInfo.os === "windows") {
-          const isWin10Or11 = /Windows 10|Windows 11|Windows 10\/11/i.test(osLabel);
-          const is64 = /64-bit/i.test(osLabel);
-          osPass = isWin10Or11 && is64;
-        }
-
-        if (osInfo.os === "android") osPass = compareVersion(osLabel, 10);
-        if (osInfo.os === "ios") osPass = compareVersion(osLabel, 15);
-
-        sideCards.push(card("Platform", osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>Required: ${escapeHtml(req.osText)}.`));
-        if (osPass) passCount++;
-        totalScoreChecks++;
-      }
-
-      if (req) {
-        const ramStatus = ramGb === null ? "warn" : ramGb >= req.minRamGb ? "pass" : "fail";
-        const storageStatus = storage.freeGb === null ? "warn" : storage.freeGb >= req.minStorageGb ? "pass" : "fail";
-        sideCards.push(card("Storage", storageStatus, `<span class="value">${formatGb(storage.freeGb)} available for browser origin</span><br>Required: ${req.minStorageGb}+ GB. Browser storage is not the same as full disk free space.`));
-        if (storage.freeGb !== null) { if (storage.freeGb >= req.minStorageGb) passCount++; totalScoreChecks++; }
-
-        sideCards.push(card("Memory RAM", ramStatus, `<span class="value">${ramGb === null ? "Unknown" : `${ramGb}+ GB detected`}</span><br>Required: ${req.minRamGb}+ GB. Browser RAM detection is approximate.`));
-        if (ramGb !== null) { if (ramGb >= req.minRamGb) passCount++; totalScoreChecks++; }
-      }
-
-      if (osInfo.os === "windows") {
-        const graphicsStatus = webgl.detected ? "pass" : "fail";
-        const graphicsFix = webgl.gpuClass.includes("Acceleration OFF")
-          ? `<br><br><button class="button-main" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button>`
-          : "";
-
-        sideCards.push(card("Graphic Card / GPU", graphicsStatus, `
-          <span class="value">${escapeHtml(webgl.cleanRenderer)}</span><br>
-          Type: ${escapeHtml(webgl.gpuClass)}.<br>
-          Vendor: ${escapeHtml(webgl.vendor)}.<br>
-          Required: ${escapeHtml(req?.minGpuText || "Graphic card required")}.
-          ${graphicsFix}
-        `));
-
-        if (req?.gpuRequired) {
-          if (webgl.detected) passCount++;
-          totalScoreChecks++;
-        }
-      }
-
-      const mainCardsHtml = sideCards.length
-        ? `
-          <div class="check-main-grid">
-            <div class="check-side-stack">${sideCards.join("")}</div>
-            ${internetLoadingCard()}
-          </div>
-        `
-        : `<div class="grid">${internetLoadingCard()}</div>`;
-
-      lastDeviceContext = {
-        basePassCount: passCount,
-        baseTotalScoreChecks: totalScoreChecks,
-        req,
-        webgl
-      };
-
-      results.innerHTML = `
-        <div class="summary">
-          <div class="score-ring" id="scoreRing">...</div>
-          <div>
-            <h3 id="verdictTitle">Testing Internet Speed</h3>
-            <p id="verdictText">Device information has been detected. Internet speed is now being tested.</p>
-          </div>
-        </div>
-
-        ${mainCardsHtml}
-
-        <details>
-          <summary class="button-ghost" style="display:inline-flex; width:auto; margin-bottom:10px;">Show raw browser data</summary>
-          <pre class="raw">${escapeHtml(JSON.stringify({
-            detectedOS: osInfo.os,
-            osLabel,
-            userAgent: osInfo.ua,
-            platform: osInfo.platform,
-            userAgentDataBrands: osInfo.brands,
-            highEntropyUA: highEntropy,
-            deviceMemoryGbApprox: ramGb,
-            storageEstimateGb: storage,
-            webgl
-          }, null, 2))}</pre>
-        </details>
-      `;
-
+      lastScanContext = { osInfo, highEntropy, webgl, storage, ramGb, req };
+      lastInternetResult = undefined;
+      renderScanResults(lastScanContext, undefined, { internetPending: true });
       await runInternetOnly();
+    }
+
+    function shouldAutoRunCheck() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("autorun") === "1";
+    }
+
+    function startAutoRunCheck() {
+      if (hasAutoRunStarted || !shouldAutoRunCheck()) return;
+      hasAutoRunStarted = true;
+      window.setTimeout(() => {
+        if (!lastScanContext && !isInternetRefreshRunning) runCheck();
+      }, 120);
     }
 
     function notifyParentReady() {
@@ -1608,6 +1748,19 @@
       window.location.href = "Game_Requirements.html";
     }
 
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (!data || data.type !== "tcl:set-lang") return;
+      setCanIRunLang(data.lang);
+    });
+
+    window.addEventListener("storage", (event) => {
+      if (event.key !== CANIRUN_LANG_STORAGE_KEY || !event.newValue) return;
+      setCanIRunLang(event.newValue);
+    });
+
+    setCanIRunLang(resolveStartupLang());
+
     document.addEventListener("DOMContentLoaded", () => {
       const osInfo = detectOS();
       const gpuButton = document.getElementById("gpuAccelBtn");
@@ -1615,6 +1768,7 @@
         gpuButton.style.display = osInfo.os === "windows" ? "inline-flex" : "none";
       }
       notifyParentReady();
+      startAutoRunCheck();
     });
 
   </script>
