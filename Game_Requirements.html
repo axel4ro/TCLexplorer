@@ -668,7 +668,7 @@
       if (window.parent && window.parent !== window) {
         event.preventDefault();
         try {
-          window.parent.postMessage({ type: "tcl:navigate", page: "CanIrunIt" }, "*");
+          window.parent.postMessage({ type: "tcl:navigate", page: "CanIrunIt", autorun: true }, "*");
           return;
         } catch (error) {
           console.warn("Can I Run It navigation through parent failed", error);

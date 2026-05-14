@@ -3141,7 +3141,16 @@ window.addEventListener("message", (event) => {
   const requestedRouteKey = normalizeRouteKey(requestedPage);
   const requestedInternalRoute = INTERNAL_PAGE_ROUTES[requestedRouteKey];
   if (requestedInternalRoute) {
-    openInternalPage(requestedInternalRoute.src, requestedInternalRoute.title, requestedInternalRoute);
+    const shouldAutorunCanIrunIt = requestedRouteKey === "CanIrunIt" && data.autorun === true;
+    const autorunSrc = "CanIrunIt.html?autorun=1#CanIrunIt";
+    openInternalPage(
+      shouldAutorunCanIrunIt ? autorunSrc : requestedInternalRoute.src,
+      requestedInternalRoute.title,
+      {
+        ...requestedInternalRoute,
+        src: shouldAutorunCanIrunIt ? autorunSrc : requestedInternalRoute.src
+      }
+    );
     return;
   }
 
