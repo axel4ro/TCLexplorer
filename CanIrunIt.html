@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Can I Run? - The Cursed Land</title>
+  <title>Can I Run It? - The Cursed Land</title>
   <meta name="description" content="Device compatibility test for The Cursed Land minimum requirements." />
   <meta name="theme-color" content="#07100f" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -414,7 +414,7 @@
   </style>
 </head>
 <body>
-  <main class="page-shell">
+  <main class="page-shell" id="CanIrunIt">
     <header class="topbar">
       <div class="brand">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="">
@@ -423,7 +423,7 @@
           <span class="brand-sub">Device compatibility check</span>
         </div>
       </div>
-      <button type="button" class="button-ghost" onclick="history.back()">← Back</button>
+      <button type="button" class="button-ghost" onclick="goBackToGameRequirements()">Back</button>
     </header>
 
     <section class="checker">
@@ -433,14 +433,14 @@
             <span class="kicker">System Scan</span>
             <span class="section-label">Compatibility Test</span>
           </div>
-          <h1>Can I <span>Run?</span></h1>
+          <h1>Can I <span>Run It?</span></h1>
           <p>Check if your device meets the minimum requirements for The Cursed Land.</p>
         </div>
-        <div class="actions"><button class="button-main" type="button" onclick="runCheck()">⚙️ Can I Run?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
+        <div class="actions"><button class="button-main" type="button" onclick="runCheck()">Can I Run It?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
       </div>
 
       <div class="result-box" id="results">
-        <div class="notice">No scan yet. Press <strong>Can I Run?</strong> to start.</div>
+        <div class="notice">No scan yet. Press <strong>Can I Run It?</strong> to start.</div>
       </div>
     </section>
   </main>
@@ -1580,12 +1580,41 @@
       await runInternetOnly();
     }
 
+    function notifyParentReady() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        } catch (error) {
+          console.warn("Failed to notify parent page ready", error);
+        }
+      }
+    }
+
+    function goBackToGameRequirements() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "game-requirements" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Back navigation through parent failed", error);
+        }
+      }
+
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
+      window.location.href = "Game_Requirements.html";
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const osInfo = detectOS();
       const gpuButton = document.getElementById("gpuAccelBtn");
       if (gpuButton) {
         gpuButton.style.display = osInfo.os === "windows" ? "inline-flex" : "none";
       }
+      notifyParentReady();
     });
 
   </script>
