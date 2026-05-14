@@ -668,7 +668,7 @@
   <div class="page-hero">
     <h2 data-i18n="wiki_title">📖 The Cursed Land – Wiki</h2>
     <p class="muted" data-i18n="wiki_desc">Classes, races, bonuses, items — search or browse sections below. Language matches your app selection.</p>
-    <button type="button" class="btn-primary-green wiki-can-run-btn" onclick="openRouteFromHash('CanIrunIt', { updateUrl: true })">Can I Run It ?</button>
+    <button type="button" class="btn-primary-green wiki-can-run-btn" onclick="openCanIrunItAutoRunPage()">Can I Run It ?</button>
   </div>
   <div class="wiki-toolbar">
     <div class="wiki-search-row">
@@ -2965,6 +2965,15 @@ function openEarnGuidePage() {
 function openGameRequirementsPage() {
   const route = INTERNAL_PAGE_ROUTES["game-requirements"];
   openInternalPage(route.src, route.title, route);
+}
+
+function openCanIrunItAutoRunPage() {
+  const route = INTERNAL_PAGE_ROUTES.CanIrunIt;
+  const src = "CanIrunIt.html?autorun=1#CanIrunIt";
+  openInternalPage(src, route.title, {
+    ...route,
+    src
+  });
 }
 
 function showPage(id, options = {}) {
