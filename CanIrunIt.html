@@ -214,7 +214,31 @@
     .summary h3 { font-size: 1.45rem; color: #fff; }
     .summary p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
 
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .grid,
+    .check-grid,
+    .check-main-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .check-grid { align-items: start; }
+
+    .check-main-grid { align-items: stretch; }
+
+    .check-side-stack {
+      display: grid;
+      gap: 12px;
+      align-self: stretch;
+    }
+
+    .check-side-stack.split {
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .check-side-stack .card {
+      min-height: 0;
+    }
 
     .card {
       padding: 15px;
@@ -390,7 +414,8 @@
       .button-main, .button-ghost { width: 100%; }
       .actions { width: 100%; }
       .summary { grid-template-columns: 1fr; }
-      .grid { grid-template-columns: 1fr; }
+      .grid, .check-grid, .check-main-grid { grid-template-columns: 1fr; }
+      .check-side-stack.split { grid-template-rows: none; }
     }
   </style>
 </head>
@@ -1462,12 +1487,13 @@
       if (osInfo.os === "ios") osLabel = parseIOSVersion(osInfo.ua);
       if (osInfo.os === "macos") osLabel = "macOS detected - not released";
 
-      const checks = [];
+      const topCards = [];
+      const sideCards = [];
       let passCount = 0;
       let totalScoreChecks = 0;
 
       if (!req) {
-        checks.push(card("Platform", osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>This platform is not currently supported by the requirements table.`));
+        topCards.push(card("Platform", osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>This platform is not currently supported by the requirements table.`));
       } else {
         let osPass = true;
 
@@ -1480,22 +1506,20 @@
         if (osInfo.os === "android") osPass = compareVersion(osLabel, 10);
         if (osInfo.os === "ios") osPass = compareVersion(osLabel, 15);
 
-        checks.push(card("Platform", osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>Required: ${escapeHtml(req.osText)}.`));
+        topCards.push(card("Platform", osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>Required: ${escapeHtml(req.osText)}.`));
         if (osPass) passCount++;
         totalScoreChecks++;
       }
 
       if (req) {
         const ramStatus = ramGb === null ? "warn" : ramGb >= req.minRamGb ? "pass" : "fail";
-        checks.push(card("Memory RAM", ramStatus, `<span class="value">${ramGb === null ? "Unknown" : `${ramGb}+ GB detected`}</span><br>Required: ${req.minRamGb}+ GB. Browser RAM detection is approximate.`));
+        topCards.push(card("Memory RAM", ramStatus, `<span class="value">${ramGb === null ? "Unknown" : `${ramGb}+ GB detected`}</span><br>Required: ${req.minRamGb}+ GB. Browser RAM detection is approximate.`));
         if (ramGb !== null) { if (ramGb >= req.minRamGb) passCount++; totalScoreChecks++; }
 
         const storageStatus = storage.freeGb === null ? "warn" : storage.freeGb >= req.minStorageGb ? "pass" : "fail";
-        checks.push(card("Storage", storageStatus, `<span class="value">${formatGb(storage.freeGb)} available for browser origin</span><br>Required: ${req.minStorageGb}+ GB. Browser storage is not the same as full disk free space.`));
+        sideCards.push(card("Storage", storageStatus, `<span class="value">${formatGb(storage.freeGb)} available for browser origin</span><br>Required: ${req.minStorageGb}+ GB. Browser storage is not the same as full disk free space.`));
         if (storage.freeGb !== null) { if (storage.freeGb >= req.minStorageGb) passCount++; totalScoreChecks++; }
       }
-
-      checks.push(internetLoadingCard());
 
       if (osInfo.os === "windows") {
         const graphicsStatus = webgl.detected ? "pass" : "fail";
@@ -1503,7 +1527,7 @@
           ? `<br><br><button class="button-main" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button>`
           : "";
 
-        checks.push(card("Graphic Card / GPU", graphicsStatus, `
+        sideCards.push(card("Graphic Card / GPU", graphicsStatus, `
           <span class="value">${escapeHtml(webgl.cleanRenderer)}</span><br>
           Type: ${escapeHtml(webgl.gpuClass)}.<br>
           Vendor: ${escapeHtml(webgl.vendor)}.<br>
@@ -1516,6 +1540,16 @@
           totalScoreChecks++;
         }
       }
+
+      const sideStackClass = sideCards.length > 1 ? "check-side-stack split" : "check-side-stack";
+      const mainCardsHtml = sideCards.length
+        ? `
+          <div class="check-main-grid">
+            <div class="${sideStackClass}">${sideCards.join("")}</div>
+            ${internetLoadingCard()}
+          </div>
+        `
+        : `<div class="grid">${internetLoadingCard()}</div>`;
 
       lastDeviceContext = {
         basePassCount: passCount,
@@ -1533,7 +1567,8 @@
           </div>
         </div>
 
-        <div class="grid">${checks.join("")}</div>
+        <div class="check-grid">${topCards.join("")}</div>
+        ${mainCardsHtml}
 
         <details>
           <summary class="button-ghost" style="display:inline-flex; width:auto; margin-bottom:10px;">Show raw browser data</summary>
