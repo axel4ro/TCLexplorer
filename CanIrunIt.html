@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Can I Run? - The Cursed Land</title>
+  <meta name="description" content="Device compatibility test for The Cursed Land minimum requirements." />
+  <meta name="theme-color" content="#07100f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07100f;
+      --panel: #10181c;
+      --panel-strong: #151c25;
+      --line: rgba(109, 226, 210, 0.18);
+      --line-strong: rgba(109, 226, 210, 0.34);
+      --text: #eef7f5;
+      --muted: #a9bbb9;
+      --soft: #768985;
+      --accent: #2ff6de;
+      --accent-strong: #91fff0;
+      --gold: #ffca7a;
+      --green: #84f5a0;
+      --red: #ff9e8f;
+      --blue: #8eb8ff;
+      --shadow: 0 22px 56px rgba(0, 0, 0, 0.34);
+      --radius: 8px;
+      --font-display: "Cinzel", serif;
+      --font-ui: "Space Grotesk", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        linear-gradient(180deg, rgba(18, 31, 35, 0.96), rgba(7, 16, 15, 1) 48%, #070b0d 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 54px 54px;
+      opacity: 0.12;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    .page-shell {
+      position: relative;
+      width: min(980px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 48px;
+      z-index: 1;
+    }
+
+    .topbar, .hero, .checker, .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      background: rgba(10, 17, 20, 0.84);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand img { width: 42px; height: 42px; border-radius: 8px; display: block; }
+    .brand-title { display: block; font-family: var(--font-display); color: var(--accent); font-size: 1rem; line-height: 1.1; }
+    .brand-sub { display: block; margin-top: 4px; color: var(--muted); font-size: 0.86rem; }
+
+    .hero {
+      margin-bottom: 16px;
+      padding: 28px;
+      background: linear-gradient(135deg, rgba(22, 32, 43, 0.96), rgba(11, 27, 30, 0.96));
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 202, 122, 0.28);
+      background: rgba(255, 202, 122, 0.08);
+      color: var(--gold);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 { margin: 0; font-family: var(--font-display); }
+    h1 { margin-top: 14px; color: #fff; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.02; }
+    h1 span { color: var(--accent); }
+    .hero p { max-width: 760px; margin: 14px 0 0; color: var(--muted); font-size: 1.06rem; line-height: 1.62; }
+
+    .checker {
+      overflow: hidden;
+      background: rgba(12, 20, 24, 0.88);
+    }
+
+    .checker-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(47, 246, 222, 0.08), rgba(255, 202, 122, 0.04));
+    }
+
+    .checker-head p { margin: 7px 0 0; color: var(--muted); line-height: 1.52; }
+
+    .button-main, .button-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: transform 0.18s, border-color 0.18s, background 0.18s;
+      white-space: nowrap;
+    }
+
+    .button-main {
+      border: 1px solid rgba(47, 246, 222, 0.62);
+      color: #031412;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      font-weight: 800;
+      box-shadow: 0 12px 26px rgba(47, 246, 222, 0.16);
+    }
+
+    .button-ghost {
+      border: 1px solid var(--line-strong);
+      color: var(--text);
+      background: rgba(21, 30, 36, 0.86);
+    }
+
+    .button-main:hover, .button-ghost:hover { transform: translateY(-1px); }
+
+    .result-box { padding: 20px; display: grid; gap: 14px; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(8, 17, 20, 0.7);
+    }
+
+    .score-ring {
+      width: 106px;
+      height: 106px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(47, 246, 222, 0.3);
+      background: radial-gradient(circle, rgba(47, 246, 222, 0.18), rgba(47, 246, 222, 0.04));
+      color: var(--accent-strong);
+      font-size: 1.8rem;
+      font-weight: 900;
+    }
+
+    .summary h3 { font-size: 1.45rem; color: #fff; }
+    .summary p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+    .card {
+      padding: 15px;
+      background: rgba(8, 17, 20, 0.7);
+      box-shadow: none;
+    }
+
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .card h3 { font-size: 1rem; color: #fff; }
+    .badge { padding: 5px 9px; border-radius: 999px; font-size: 0.78rem; font-weight: 800; border: 1px solid var(--line); color: var(--muted); }
+    .pass { color: var(--green); border-color: rgba(132, 245, 160, 0.35); background: rgba(132, 245, 160, 0.08); }
+    .fail { color: var(--red); border-color: rgba(255, 158, 143, 0.35); background: rgba(255, 158, 143, 0.08); }
+    .warn { color: var(--gold); border-color: rgba(255, 202, 122, 0.35); background: rgba(255, 202, 122, 0.08); }
+    .info { color: var(--blue); border-color: rgba(142, 184, 255, 0.35); background: rgba(142, 184, 255, 0.08); }
+    .card p { margin: 0; color: var(--muted); line-height: 1.46; font-size: 0.94rem; }
+    .value { color: var(--accent-strong); font-weight: 800; }
+
+    .notice {
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 202, 122, 0.24);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: rgba(255, 202, 122, 0.06);
+      line-height: 1.5;
+    }
+
+    .raw {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      max-height: 220px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: rgba(0, 0, 0, 0.22);
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 760px) {
+      .topbar, .checker-head { align-items: flex-start; flex-direction: column; }
+      .button-main, .button-ghost { width: 100%; }
+      .hero { padding: 20px; }
+      .summary { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt="">
+        <div>
+          <span class="brand-title">The Cursed Land</span>
+          <span class="brand-sub">Device compatibility check</span>
+        </div>
+      </div>
+      <button type="button" class="button-ghost" onclick="history.back()">← Back</button>
+    </header>
+
+    <section class="hero">
+      <span class="kicker">System Scan</span>
+      <h1>Can I <span>Run?</span></h1>
+      <p>This browser-based test detects Windows correctly where possible, checks 32/64-bit, reads RAM/storage estimates and detects the Graphic Card through WebGL.</p>
+    </section>
+
+    <section class="checker">
+      <div class="checker-head">
+        <div>
+          <h2>Compatibility Test</h2>
+          <p>Press the button to compare your device with the current minimum requirements.</p>
+        </div>
+        <div class="actions" style="margin-top:0;"><button class="button-main" type="button" onclick="runCheck()">⚙️ Can I Run?</button><button class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
+      </div>
+
+      <div class="result-box" id="results">
+        <div class="notice">No scan yet. Press <strong>Can I Run?</strong> to start.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const MINIMUMS = {
+      windows: {
+        osName: "Windows",
+        osText: "Windows 10/11 64-bit",
+        minRamGb: 6,
+        minStorageGb: 2,
+        minGpuText: "2+ GB VRAM",
+        gpuRequired: true
+      },
+      android: {
+        osName: "Android",
+        osText: "Android 10+",
+        minRamGb: 6,
+        minStorageGb: 2,
+        minAntutu: 500000,
+        gpuRequired: false
+      },
+      ios: {
+        osName: "iOS",
+        osText: "iOS 15+",
+        minRamGb: 3,
+        minStorageGb: 2,
+        minAntutu: 500000,
+        gpuRequired: false
+      }
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;"
+      }[char]));
+    }
+
+    function bytesToGb(bytes) {
+      if (!Number.isFinite(bytes)) return null;
+      return bytes / 1024 / 1024 / 1024;
+    }
+
+    function formatGb(value) {
+      if (!Number.isFinite(value)) return "Unknown";
+      return `${value.toFixed(value >= 10 ? 0 : 1)} GB`;
+    }
+
+    function detectOS() {
+      const ua = navigator.userAgent || "";
+      const platform = navigator.platform || "";
+      const brands = navigator.userAgentData?.brands?.map(b => `${b.brand} ${b.version}`).join(", ") || "";
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(ua);
+      const isWindows = /Windows/i.test(ua) || /Win/i.test(platform);
+      const isMac = /Macintosh|Mac OS X/i.test(ua) && !isIOS;
+
+      let os = "unknown";
+      if (isWindows) os = "windows";
+      else if (isAndroid) os = "android";
+      else if (isIOS) os = "ios";
+      else if (isMac) os = "macos";
+
+      return { os, ua, platform, brands };
+    }
+
+    async function getHighEntropyUA() {
+      if (!navigator.userAgentData?.getHighEntropyValues) return null;
+      try {
+        return await navigator.userAgentData.getHighEntropyValues([
+          "platform",
+          "platformVersion",
+          "architecture",
+          "bitness",
+          "model",
+          "uaFullVersion"
+        ]);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function getWindowsVersionFromUA(ua, highEntropy) {
+      const ntMatch = ua.match(/Windows NT\s+([0-9.]+)/i);
+      const nt = ntMatch ? ntMatch[1] : "";
+      const platformVersion = highEntropy?.platformVersion || "";
+      const platformMajor = Number(String(platformVersion).split(".")[0]);
+
+      if (nt === "10.0") {
+        if (platformMajor >= 13) return "Windows 11";
+        if (platformMajor > 0) return "Windows 10";
+        return "Windows 10/11";
+      }
+
+      const map = {
+        "6.3": "Windows 8.1",
+        "6.2": "Windows 8",
+        "6.1": "Windows 7",
+        "6.0": "Windows Vista",
+        "5.2": "Windows XP / Server 2003",
+        "5.1": "Windows XP",
+        "5.0": "Windows 2000"
+      };
+
+      return map[nt] || (nt ? `Windows NT ${nt}` : "Windows detected");
+    }
+
+    function getSystemBitness(osKey, ua, highEntropy) {
+      const bitness = highEntropy?.bitness;
+      const architecture = String(highEntropy?.architecture || "").toLowerCase();
+
+      if (bitness === "64") return "64-bit";
+      if (bitness === "32") return "32-bit";
+
+      if (architecture.includes("64")) return "64-bit";
+      if (architecture.includes("x86") || architecture.includes("arm")) return "32-bit";
+
+      if (osKey === "windows") {
+        if (/WOW64|Win64|x64|x86_64|amd64/i.test(ua)) return "64-bit";
+        if (/Win32|i686|i386/i.test(ua)) return "32-bit";
+      }
+
+      return "";
+    }
+
+    function parseAndroidVersion(ua) {
+      const match = ua.match(/Android\s+([0-9.]+)/i);
+      return match ? `Android ${match[1]}` : "Android detected";
+    }
+
+    function parseIOSVersion(ua) {
+      const match = ua.match(/OS\s([0-9_]+)/i);
+      return match ? `iOS ${match[1].replaceAll("_", ".")}` : "iOS detected";
+    }
+
+    function cleanGpuName(name) {
+      if (!name) return "Unknown";
+
+      return String(name)
+        .replace(/^ANGLE\s*\(/i, "")
+        .replace(/\s*Direct3D.*$/i, "")
+        .replace(/\s*D3D11.*$/i, "")
+        .replace(/\s*vs_.*$/i, "")
+        .replace(/\s*ps_.*$/i, "")
+        .replace(/\s*\(0x[0-9a-fA-F]+\)/g, "")
+        .replace(/\s*\([^)]+GPU[^)]*\)/gi, "")
+        .replace(/\)$/g, "")
+        .replace(/^NVIDIA,\s*NVIDIA\s+/i, "NVIDIA ")
+        .replace(/^NVIDIA,\s*/i, "NVIDIA ")
+        .replace(/^AMD,\s*AMD\s+/i, "AMD ")
+        .replace(/^AMD,\s*/i, "AMD ")
+        .replace(/^Intel,\s*Intel\s+/i, "Intel ")
+        .replace(/^Intel,\s*/i, "Intel ")
+        .replace(/\s+/g, " ")
+        .trim() || "Unknown";
+    }
+
+    function detectGpuClass(renderer) {
+      const text = String(renderer || "").toLowerCase();
+
+      if (!renderer) return { detected: false, type: "Unknown" };
+
+      if (
+        text.includes("swiftshader") ||
+        text.includes("llvmpipe") ||
+        text.includes("software") ||
+        text.includes("basic render driver") ||
+        text.includes("microsoft basic")
+      ) {
+        return { detected: false, type: "Graphics Acceleration OFF / Basic Renderer" };
+      }
+
+      if (text.includes("nvidia") || text.includes("geforce") || text.includes("rtx") || text.includes("gtx")) {
+        return { detected: true, type: "NVIDIA GPU" };
+      }
+
+      if (text.includes("radeon") || text.includes("amd")) {
+        return { detected: true, type: "AMD GPU" };
+      }
+
+      if (text.includes("intel")) {
+        return { detected: true, type: "Intel GPU" };
+      }
+
+      if (text.includes("apple")) {
+        return { detected: true, type: "Apple GPU" };
+      }
+
+      if (text.includes("mali") || text.includes("adreno") || text.includes("powervr")) {
+        return { detected: true, type: "Mobile GPU" };
+      }
+
+      return { detected: true, type: "GPU detected" };
+    }
+
+    function getWebGLInfo() {
+      try {
+        const canvas = document.createElement("canvas");
+        const gl = canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        if (!gl) {
+          return {
+            renderer: "Unavailable",
+            vendor: "Unavailable",
+            cleanRenderer: "Unavailable",
+            gpuClass: "Unknown",
+            detected: false,
+            supported: false
+          };
+        }
+
+        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR);
+        const cleanRenderer = cleanGpuName(renderer);
+        const gpuClass = detectGpuClass(`${renderer} ${vendor} ${cleanRenderer}`);
+
+        return {
+          renderer: renderer || "Unknown",
+          vendor: vendor || "Unknown",
+          cleanRenderer,
+          gpuClass: gpuClass.type,
+          detected: gpuClass.detected,
+          supported: true
+        };
+      } catch (error) {
+        return {
+          renderer: "Blocked",
+          vendor: "Blocked",
+          cleanRenderer: "Blocked",
+          gpuClass: "Blocked",
+          detected: false,
+          supported: false
+        };
+      }
+    }
+
+    async function getStorageInfo() {
+      if (!navigator.storage?.estimate) return { quotaGb: null, usageGb: null, freeGb: null };
+      try {
+        const estimate = await navigator.storage.estimate();
+        const quotaGb = bytesToGb(estimate.quota);
+        const usageGb = bytesToGb(estimate.usage);
+        const freeGb = Number.isFinite(quotaGb) && Number.isFinite(usageGb) ? quotaGb - usageGb : null;
+        return { quotaGb, usageGb, freeGb };
+      } catch (error) {
+        return { quotaGb: null, usageGb: null, freeGb: null };
+      }
+    }
+
+    function getRamInfo() {
+      const ram = Number(navigator.deviceMemory);
+      return Number.isFinite(ram) ? ram : null;
+    }
+
+    function getCpuInfo() {
+      const cores = Number(navigator.hardwareConcurrency);
+      return Number.isFinite(cores) ? cores : null;
+    }
+
+    function makeBadge(status) {
+      const map = {
+        pass: ["PASS", "pass"],
+        fail: ["FAIL", "fail"],
+        warn: ["CHECK", "warn"],
+        info: ["INFO", "info"]
+      };
+      const [text, cls] = map[status] || map.info;
+      return `<span class="badge ${cls}">${text}</span>`;
+    }
+
+    function card(title, status, body) {
+      return `
+        <article class="card">
+          <div class="card-top">
+            <h3>${escapeHtml(title)}</h3>
+            ${makeBadge(status)}
+          </div>
+          <p>${body}</p>
+        </article>
+      `;
+    }
+
+    function compareVersion(currentText, minMajor) {
+      const match = String(currentText).match(/([0-9]+)(?:\.[0-9]+)?/);
+      if (!match) return null;
+      return Number(match[1]) >= minMajor;
+    }
+
+    async function copyGraphicsAccelerationLink() {
+      const ua = navigator.userAgent || "";
+      const settingsUrl = /Edg\//i.test(ua) ? "edge://settings/system" : "chrome://settings/system";
+
+      try {
+        await navigator.clipboard.writeText(settingsUrl);
+        return settingsUrl;
+      } catch (error) {
+        return settingsUrl;
+      }
+    }
+
+    async function handleGraphicsAccelerationButton(button) {
+      const url = await copyGraphicsAccelerationLink();
+      button.textContent = "Copied! Paste in address bar";
+      setTimeout(() => {
+        button.textContent = "GPU Acceleration";
+      }, 3500);
+    }
+
+    async function runCheck() {
+      const results = document.getElementById("results");
+      results.innerHTML = `<div class="notice">Scanning browser-accessible device information...</div>`;
+
+      const osInfo = detectOS();
+      const highEntropy = await getHighEntropyUA();
+      const webgl = getWebGLInfo();
+      const storage = await getStorageInfo();
+      const ramGb = getRamInfo();
+      const cores = getCpuInfo();
+      const req = MINIMUMS[osInfo.os];
+
+      let osLabel = "Unknown OS";
+      const bitness = getSystemBitness(osInfo.os, osInfo.ua, highEntropy);
+
+      if (osInfo.os === "windows") {
+        osLabel = getWindowsVersionFromUA(osInfo.ua, highEntropy);
+        if (bitness) osLabel += ` ${bitness}`;
+      }
+      if (osInfo.os === "android") osLabel = parseAndroidVersion(osInfo.ua);
+      if (osInfo.os === "ios") osLabel = parseIOSVersion(osInfo.ua);
+      if (osInfo.os === "macos") osLabel = "macOS detected - not released";
+
+      const checks = [];
+      let passCount = 0;
+      let totalScoreChecks = 0;
+
+      if (!req) {
+        checks.push(card("Platform", osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>This platform is not currently supported by the requirements table.`));
+      } else {
+        let osPass = true;
+
+        if (osInfo.os === "windows") {
+          const isWin10Or11 = /Windows 10|Windows 11|Windows 10\/11/i.test(osLabel);
+          const is64 = /64-bit/i.test(osLabel);
+          osPass = isWin10Or11 && is64;
+        }
+
+        if (osInfo.os === "android") osPass = compareVersion(osLabel, 10);
+        if (osInfo.os === "ios") osPass = compareVersion(osLabel, 15);
+
+        checks.push(card("Platform", osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>Required: ${escapeHtml(req.osText)}.`));
+        if (osPass) passCount++;
+        totalScoreChecks++;
+      }
+
+      if (req) {
+        const ramStatus = ramGb === null ? "warn" : ramGb >= req.minRamGb ? "pass" : "fail";
+        checks.push(card("Memory RAM", ramStatus, `<span class="value">${ramGb === null ? "Unknown" : `${ramGb}+ GB detected`}</span><br>Required: ${req.minRamGb}+ GB. Browser RAM detection is approximate.`));
+        if (ramGb !== null) { if (ramGb >= req.minRamGb) passCount++; totalScoreChecks++; }
+
+        const storageStatus = storage.freeGb === null ? "warn" : storage.freeGb >= req.minStorageGb ? "pass" : "fail";
+        checks.push(card("Storage", storageStatus, `<span class="value">${formatGb(storage.freeGb)} available for browser origin</span><br>Required: ${req.minStorageGb}+ GB. Browser storage is not the same as full disk free space.`));
+        if (storage.freeGb !== null) { if (storage.freeGb >= req.minStorageGb) passCount++; totalScoreChecks++; }
+      }
+
+      checks.push(card("CPU", cores ? "info" : "warn", `<span class="value">${cores ? `${cores} logical cores` : "Unknown"}</span><br>Browsers can read logical cores, but not exact CPU model/performance.`));
+
+      const graphicsStatus = webgl.detected ? "pass" : "fail";
+      const graphicsFix = webgl.gpuClass.includes("Acceleration OFF")
+        ? `<br><br><button class="button-main" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button>`
+        : "";
+
+      checks.push(card("Graphic Card / GPU", graphicsStatus, `
+        <span class="value">${escapeHtml(webgl.cleanRenderer)}</span><br>
+        Type: ${escapeHtml(webgl.gpuClass)}.<br>
+        Vendor: ${escapeHtml(webgl.vendor)}.<br>
+        Required: ${escapeHtml(req?.minGpuText || "Graphic card required")}.
+        ${graphicsFix}
+      `));
+
+      if (req?.gpuRequired) {
+        if (webgl.detected) passCount++;
+        totalScoreChecks++;
+      }
+
+      const score = totalScoreChecks ? Math.round((passCount / totalScoreChecks) * 100) : 0;
+      let verdict = "Manual check required";
+      let verdictText = "Your browser blocked or does not expose enough data for a complete compatibility result.";
+
+      if (webgl.gpuClass.includes("Acceleration OFF")) {
+        verdict = "Enable GPU Acceleration";
+        verdictText = "Your browser is using a basic/software renderer. Enable graphics acceleration, restart the browser and scan again.";
+      } else if (req && score >= 90) {
+        verdict = "Looks compatible";
+        verdictText = "Your device appears to match the browser-detectable minimum requirements.";
+      } else if (req && score >= 60) {
+        verdict = "Probably playable, but check details";
+        verdictText = "Some required data is missing or borderline. Check the cards below before installing.";
+      } else if (req) {
+        verdict = "Below or unknown minimums";
+        verdictText = "At least one browser-detectable requirement is missing or below the minimum.";
+      }
+
+      const rawData = {
+        detectedOS: osInfo.os,
+        osLabel,
+        userAgent: osInfo.ua,
+        platform: osInfo.platform,
+        userAgentDataBrands: osInfo.brands,
+        highEntropyUA: highEntropy,
+        deviceMemoryGbApprox: ramGb,
+        hardwareConcurrency: cores,
+        storageEstimateGb: storage,
+        webgl
+      };
+
+      results.innerHTML = `
+        <div class="summary">
+          <div class="score-ring">${score}%</div>
+          <div>
+            <h3>${escapeHtml(verdict)}</h3>
+            <p>${escapeHtml(verdictText)}</p>
+          </div>
+        </div>
+
+        <div class="grid">${checks.join("")}</div>
+
+        <div class="notice">
+          <strong>Important:</strong> A browser can detect Windows version, 32/64-bit in many cases and the Graphic Card name through WebGL. It cannot turn ON GPU acceleration automatically and cannot reliably read real GPU VRAM. The button copies the browser settings link because <code>chrome://</code> and <code>edge://</code> pages cannot be opened directly from a normal website.
+        </div>
+
+        <details>
+          <summary class="button-ghost" style="display:inline-flex; width:auto; margin-bottom:10px;">Show raw browser data</summary>
+          <pre class="raw">${escapeHtml(JSON.stringify(rawData, null, 2))}</pre>
+        </details>
+      `;
+    }
+  </script>
+</body>
+</html>
