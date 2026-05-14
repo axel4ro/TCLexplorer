@@ -726,7 +726,7 @@
         uploadParallelMax: 6,
         durationMinSec: 5,
         durationMaxSec: 30,
-        targetDurationSec: 6,
+        targetDurationSec: 20,
         downloadChunkBytes: 25_000_000,
         uploadChunkBytes: 8_000_000,
         latencySamples: 5
@@ -956,7 +956,7 @@
             <div class="speed-panel">
               <div class="speed-main">
                 <div class="speed-title">Internet Speed</div>
-                <div class="speed-loading">Testing twice for a more stable result...</div>
+                <div class="speed-loading">Testing internet speed... Please wait.</div>
               </div>
             </div>
           </p>
@@ -980,34 +980,9 @@
     }
 
     async function runInternetSpeedTestStable() {
-      const results = [];
-
-      for (let i = 0; i < 2; i++) {
-        try {
-          const result = await runInternetSpeedTest();
-          result.runNumber = i + 1;
-          results.push(result);
-        } catch (error) {
-          results.push(null);
-        }
-
-        if (i === 0) {
-          await new Promise(resolve => setTimeout(resolve, 650));
-        }
-      }
-
-      const best = chooseBestInternetResult(results);
-      if (!best) throw new Error("Speed test failed twice.");
-
-      best.allRuns = results.filter(Boolean).map(item => ({
-        runNumber: item.runNumber,
-        downloadMbps: item.downloadMbps,
-        uploadMbps: item.uploadMbps,
-        latencyUnloadedMs: item.latencyUnloadedMs,
-        latencyLoadedMs: item.latencyLoadedMs
-      }));
-
-      return best;
+      const result = await runInternetSpeedTest();
+      result.runNumber = 1;
+      return result;
     }
 
     function buildInternetCard(internet, req) {
@@ -1087,12 +1062,12 @@
             </div>
             <div>
               <small>Test duration</small>
-              <span>${internet.testDurationSec}s target × 2 runs</span>
+              <span>${internet.testDurationSec}s target</span>
             </div>
           </div>
 
           <div class="speed-actions">
-            <button class="button-main" type="button" onclick="runInternetOnly()">↻ Refresh Internet Test</button>
+            <button class="button-main" type="button" onclick="runInternetOnly()">↻ Retest Internet Speed</button>
             <button class="button-ghost" type="button" onclick="window.open('https://fast.com/', '_blank', 'noopener,noreferrer')">Open fast.com</button>
           </div>
         </div>
@@ -1270,7 +1245,7 @@
           <div class="score-ring" id="scoreRing">...</div>
           <div>
             <h3 id="verdictTitle">Testing Internet Speed</h3>
-            <p id="verdictText">Device information has been detected. Internet speed is now being tested twice for a more stable result.</p>
+            <p id="verdictText">Device information has been detected. Internet speed is now being tested.</p>
           </div>
         </div>
 
