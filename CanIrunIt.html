@@ -719,30 +719,70 @@
 
       const BASE = "https://speed.cloudflare.com";
 
-      const SETTINGS = {
-        downloadParallelMin: 1,
-        downloadParallelMax: 10,
-        uploadParallelMin: 1,
-        uploadParallelMax: 6,
-        durationMinSec: 5,
-        durationMaxSec: 30,
-        targetDurationSec: 20,
-        downloadChunkBytes: 25_000_000,
-        uploadChunkBytes: 8_000_000,
-        latencySamples: 5
+      const osKey = detectOS().os;
+
+      const SPEED_PROFILES = {
+        android: {
+          downloadParallelMin: 1,
+          downloadParallelMax: 3,
+          uploadParallelMin: 1,
+          uploadParallelMax: 1,
+          durationMinSec: 5,
+          durationMaxSec: 30,
+          targetDurationSec: 10,
+          downloadChunkBytes: 3_000_000,
+          uploadChunkBytes: 1_000_000,
+          latencySamples: 5
+        },
+        ios: {
+          downloadParallelMin: 1,
+          downloadParallelMax: 3,
+          uploadParallelMin: 1,
+          uploadParallelMax: 1,
+          durationMinSec: 5,
+          durationMaxSec: 10,
+          targetDurationSec: 6,
+          downloadChunkBytes: 3_000_000,
+          uploadChunkBytes: 1_000_000,
+          latencySamples: 5
+        },
+        windows: {
+          downloadParallelMin: 4,
+          downloadParallelMax: 10,
+          uploadParallelMin: 2,
+          uploadParallelMax: 4,
+          durationMinSec: 8,
+          durationMaxSec: 15,
+          targetDurationSec: 12,
+          downloadChunkBytes: 16_000_000,
+          uploadChunkBytes: 4_000_000,
+          latencySamples: 5
+        },
+        default: {
+          downloadParallelMin: 1,
+          downloadParallelMax: 3,
+          uploadParallelMin: 1,
+          uploadParallelMax: 1,
+          durationMinSec: 5,
+          durationMaxSec: 10,
+          targetDurationSec: 6,
+          downloadChunkBytes: 3_000_000,
+          uploadChunkBytes: 1_000_000,
+          latencySamples: 5
+        }
       };
 
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+      const SETTINGS = SPEED_PROFILES[osKey] || SPEED_PROFILES.default;
       const hardware = Number(navigator.hardwareConcurrency || 4);
 
       const downloadConnections = Math.max(
         SETTINGS.downloadParallelMin,
-        Math.min(SETTINGS.downloadParallelMax, isMobile ? 4 : Math.max(4, Math.min(10, hardware)))
+        Math.min(SETTINGS.downloadParallelMax, Math.max(1, hardware))
       );
 
       const uploadConnections = Math.max(
         SETTINGS.uploadParallelMin,
-        Math.min(SETTINGS.uploadParallelMax, isMobile ? 2 : Math.max(2, Math.min(4, Math.floor(hardware / 2) || 2)))
+        Math.min(SETTINGS.uploadParallelMax, Math.max(1, Math.floor(hardware / 2) || 1))
       );
 
       const durationMs = Math.max(
@@ -809,8 +849,19 @@
           const url = `${BASE}/__down?bytes=${SETTINGS.downloadChunkBytes}`;
           const response = await fetchNoStore(url, { method: "GET" });
           if (!response.ok) throw new Error(`Download HTTP ${response.status}`);
-          const blob = await response.blob();
-          bytes += blob.size;
+
+          if (response.body?.getReader) {
+            const reader = response.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              bytes += value?.byteLength || 0;
+            }
+          } else {
+            const blob = await response.blob();
+            bytes += blob.size;
+          }
+
           requests++;
         }
 
@@ -888,7 +939,9 @@
         downloadConnections: download.connections,
         uploadConnections: upload.connections,
         testDurationSec: SETTINGS.targetDurationSec,
-        source: "Cloudflare Speed FAST Mode"
+        downloadChunkMb: Math.round((SETTINGS.downloadChunkBytes / 1000 / 1000) * 10) / 10,
+        uploadChunkMb: Math.round((SETTINGS.uploadChunkBytes / 1000 / 1000) * 10) / 10,
+        source: osKey === "windows" ? "Cloudflare Speed Performance Mode" : "Cloudflare Speed Safe Mode"
       };
     }
 
@@ -1063,6 +1116,10 @@
             <div>
               <small>Test duration</small>
               <span>${internet.testDurationSec}s target</span>
+            </div>
+            <div>
+              <small>Test package size</small>
+              <span>${internet.downloadChunkMb} MB download / ${internet.uploadChunkMb} MB upload</span>
             </div>
           </div>
 
