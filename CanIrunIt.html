@@ -215,25 +215,20 @@
     .summary p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
 
     .grid,
-    .check-grid,
     .check-main-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
 
-    .check-grid { align-items: start; }
-
-    .check-main-grid { align-items: stretch; }
+    .check-main-grid {
+      align-items: start;
+    }
 
     .check-side-stack {
       display: grid;
       gap: 12px;
-      align-self: stretch;
-    }
-
-    .check-side-stack.split {
-      grid-template-rows: auto minmax(0, 1fr);
+      align-self: start;
     }
 
     .check-side-stack .card {
@@ -414,8 +409,7 @@
       .button-main, .button-ghost { width: 100%; }
       .actions { width: 100%; }
       .summary { grid-template-columns: 1fr; }
-      .grid, .check-grid, .check-main-grid { grid-template-columns: 1fr; }
-      .check-side-stack.split { grid-template-rows: none; }
+      .grid, .check-main-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1487,13 +1481,12 @@
       if (osInfo.os === "ios") osLabel = parseIOSVersion(osInfo.ua);
       if (osInfo.os === "macos") osLabel = "macOS detected - not released";
 
-      const topCards = [];
       const sideCards = [];
       let passCount = 0;
       let totalScoreChecks = 0;
 
       if (!req) {
-        topCards.push(card("Platform", osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>This platform is not currently supported by the requirements table.`));
+        sideCards.push(card("Platform", osInfo.os === "macos" ? "fail" : "warn", `<span class="value">${escapeHtml(osLabel)}</span><br>This platform is not currently supported by the requirements table.`));
       } else {
         let osPass = true;
 
@@ -1506,19 +1499,19 @@
         if (osInfo.os === "android") osPass = compareVersion(osLabel, 10);
         if (osInfo.os === "ios") osPass = compareVersion(osLabel, 15);
 
-        topCards.push(card("Platform", osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>Required: ${escapeHtml(req.osText)}.`));
+        sideCards.push(card("Platform", osPass === null ? "warn" : osPass ? "pass" : "fail", `<span class="value">${escapeHtml(osLabel)}</span><br>Required: ${escapeHtml(req.osText)}.`));
         if (osPass) passCount++;
         totalScoreChecks++;
       }
 
       if (req) {
         const ramStatus = ramGb === null ? "warn" : ramGb >= req.minRamGb ? "pass" : "fail";
-        topCards.push(card("Memory RAM", ramStatus, `<span class="value">${ramGb === null ? "Unknown" : `${ramGb}+ GB detected`}</span><br>Required: ${req.minRamGb}+ GB. Browser RAM detection is approximate.`));
-        if (ramGb !== null) { if (ramGb >= req.minRamGb) passCount++; totalScoreChecks++; }
-
         const storageStatus = storage.freeGb === null ? "warn" : storage.freeGb >= req.minStorageGb ? "pass" : "fail";
         sideCards.push(card("Storage", storageStatus, `<span class="value">${formatGb(storage.freeGb)} available for browser origin</span><br>Required: ${req.minStorageGb}+ GB. Browser storage is not the same as full disk free space.`));
         if (storage.freeGb !== null) { if (storage.freeGb >= req.minStorageGb) passCount++; totalScoreChecks++; }
+
+        sideCards.push(card("Memory RAM", ramStatus, `<span class="value">${ramGb === null ? "Unknown" : `${ramGb}+ GB detected`}</span><br>Required: ${req.minRamGb}+ GB. Browser RAM detection is approximate.`));
+        if (ramGb !== null) { if (ramGb >= req.minRamGb) passCount++; totalScoreChecks++; }
       }
 
       if (osInfo.os === "windows") {
@@ -1541,11 +1534,10 @@
         }
       }
 
-      const sideStackClass = sideCards.length > 1 ? "check-side-stack split" : "check-side-stack";
       const mainCardsHtml = sideCards.length
         ? `
           <div class="check-main-grid">
-            <div class="${sideStackClass}">${sideCards.join("")}</div>
+            <div class="check-side-stack">${sideCards.join("")}</div>
             ${internetLoadingCard()}
           </div>
         `
@@ -1567,7 +1559,6 @@
           </div>
         </div>
 
-        <div class="check-grid">${topCards.join("")}</div>
         ${mainCardsHtml}
 
         <details>
