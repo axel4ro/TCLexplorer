@@ -747,15 +747,15 @@
           latencySamples: 5
         },
         windows: {
-          downloadParallelMin: 4,
-          downloadParallelMax: 10,
-          uploadParallelMin: 2,
-          uploadParallelMax: 4,
-          durationMinSec: 8,
-          durationMaxSec: 15,
-          targetDurationSec: 12,
-          downloadChunkBytes: 16_000_000,
-          uploadChunkBytes: 4_000_000,
+          downloadParallelMin: 1,
+          downloadParallelMax: 5,
+          uploadParallelMin: 1,
+          uploadParallelMax: 2,
+          durationMinSec: 5,
+          durationMaxSec: 12,
+          targetDurationSec: 10,
+          downloadChunkBytes: 5_000_000,
+          uploadChunkBytes: 2_000_000,
           latencySamples: 5
         },
         default: {
@@ -849,19 +849,8 @@
           const url = `${BASE}/__down?bytes=${SETTINGS.downloadChunkBytes}`;
           const response = await fetchNoStore(url, { method: "GET" });
           if (!response.ok) throw new Error(`Download HTTP ${response.status}`);
-
-          if (response.body?.getReader) {
-            const reader = response.body.getReader();
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              bytes += value?.byteLength || 0;
-            }
-          } else {
-            const blob = await response.blob();
-            bytes += blob.size;
-          }
-
+          const blob = await response.blob();
+          bytes += blob.size;
           requests++;
         }
 
@@ -941,7 +930,7 @@
         testDurationSec: SETTINGS.targetDurationSec,
         downloadChunkMb: Math.round((SETTINGS.downloadChunkBytes / 1000 / 1000) * 10) / 10,
         uploadChunkMb: Math.round((SETTINGS.uploadChunkBytes / 1000 / 1000) * 10) / 10,
-        source: osKey === "windows" ? "Cloudflare Speed Performance Mode" : "Cloudflare Speed Safe Mode"
+        source: "Cloudflare Speed Safe Mode"
       };
     }
 
