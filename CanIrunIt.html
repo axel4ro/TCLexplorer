@@ -254,7 +254,7 @@
     <section class="hero">
       <span class="kicker">System Scan</span>
       <h1>Can I <span>Run?</span></h1>
-      <p>This browser-based test detects Windows correctly where possible, checks 32/64-bit, reads RAM/storage estimates and detects the Graphic Card through WebGL.</p>
+      <p>Check if your device meets the minimum requirements for The Cursed Land.</p>
     </section>
 
     <section class="checker">
@@ -263,7 +263,7 @@
           <h2>Compatibility Test</h2>
           <p>Press the button to compare your device with the current minimum requirements.</p>
         </div>
-        <div class="actions" style="margin-top:0;"><button class="button-main" type="button" onclick="runCheck()">⚙️ Can I Run?</button><button class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
+        <div class="actions" style="margin-top:0;"><button class="button-main" type="button" onclick="runCheck()">⚙️ Can I Run?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
       </div>
 
       <div class="result-box" id="results">
@@ -592,6 +592,11 @@
       const cores = getCpuInfo();
       const req = MINIMUMS[osInfo.os];
 
+      const gpuButton = document.getElementById("gpuAccelBtn");
+      if (gpuButton) {
+        gpuButton.style.display = osInfo.os === "windows" ? "inline-flex" : "none";
+      }
+
       let osLabel = "Unknown OS";
       const bitness = getSystemBitness(osInfo.os, osInfo.ua, highEntropy);
 
@@ -638,22 +643,24 @@
 
       checks.push(card("CPU", cores ? "info" : "warn", `<span class="value">${cores ? `${cores} logical cores` : "Unknown"}</span><br>Browsers can read logical cores, but not exact CPU model/performance.`));
 
-      const graphicsStatus = webgl.detected ? "pass" : "fail";
-      const graphicsFix = webgl.gpuClass.includes("Acceleration OFF")
-        ? `<br><br><button class="button-main" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button>`
-        : "";
+      if (osInfo.os === "windows") {
+        const graphicsStatus = webgl.detected ? "pass" : "fail";
+        const graphicsFix = webgl.gpuClass.includes("Acceleration OFF")
+          ? `<br><br><button class="button-main" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button>`
+          : "";
 
-      checks.push(card("Graphic Card / GPU", graphicsStatus, `
-        <span class="value">${escapeHtml(webgl.cleanRenderer)}</span><br>
-        Type: ${escapeHtml(webgl.gpuClass)}.<br>
-        Vendor: ${escapeHtml(webgl.vendor)}.<br>
-        Required: ${escapeHtml(req?.minGpuText || "Graphic card required")}.
-        ${graphicsFix}
-      `));
+        checks.push(card("Graphic Card / GPU", graphicsStatus, `
+          <span class="value">${escapeHtml(webgl.cleanRenderer)}</span><br>
+          Type: ${escapeHtml(webgl.gpuClass)}.<br>
+          Vendor: ${escapeHtml(webgl.vendor)}.<br>
+          Required: ${escapeHtml(req?.minGpuText || "Graphic card required")}.
+          ${graphicsFix}
+        `));
 
-      if (req?.gpuRequired) {
-        if (webgl.detected) passCount++;
-        totalScoreChecks++;
+        if (req?.gpuRequired) {
+          if (webgl.detected) passCount++;
+          totalScoreChecks++;
+        }
       }
 
       const score = totalScoreChecks ? Math.round((passCount / totalScoreChecks) * 100) : 0;
@@ -698,16 +705,21 @@
 
         <div class="grid">${checks.join("")}</div>
 
-        <div class="notice">
-          <strong>Important:</strong> A browser can detect Windows version, 32/64-bit in many cases and the Graphic Card name through WebGL. It cannot turn ON GPU acceleration automatically and cannot reliably read real GPU VRAM. The button copies the browser settings link because <code>chrome://</code> and <code>edge://</code> pages cannot be opened directly from a normal website.
-        </div>
-
         <details>
           <summary class="button-ghost" style="display:inline-flex; width:auto; margin-bottom:10px;">Show raw browser data</summary>
           <pre class="raw">${escapeHtml(JSON.stringify(rawData, null, 2))}</pre>
         </details>
       `;
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const osInfo = detectOS();
+      const gpuButton = document.getElementById("gpuAccelBtn");
+      if (gpuButton) {
+        gpuButton.style.display = osInfo.os === "windows" ? "inline-flex" : "none";
+      }
+    });
+
   </script>
 </body>
 </html>
