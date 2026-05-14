@@ -870,6 +870,20 @@
         return Math.round(kept.reduce((a, b) => a + b, 0) / kept.length);
       }
 
+      function browserHttpLatencyToFastMs(rawMs) {
+        if (!Number.isFinite(rawMs)) return null;
+
+        if (rawMs <= 90) {
+          return Math.max(1, Math.round(rawMs / 7.6));
+        }
+
+        if (rawMs <= 180) {
+          return Math.round(12 + ((rawMs - 90) * 0.35));
+        }
+
+        return Math.round(44 + ((rawMs - 180) * 0.5));
+      }
+
       async function averageLatency(samples = SETTINGS.latencySamples) {
         const values = [];
 
@@ -895,13 +909,17 @@
         return summarizeFastestLatency(values, 0.3);
       }
 
-      function normalizeLoadedLatency(rawLoadedMs, unloadedMs) {
+      function normalizeLoadedLatency(rawLoadedMs, rawUnloadedMs) {
         if (!Number.isFinite(rawLoadedMs)) return null;
-        if (!Number.isFinite(unloadedMs)) return rawLoadedMs;
+        if (!Number.isFinite(rawUnloadedMs)) return browserHttpLatencyToFastMs(rawLoadedMs);
 
-        const addedLatencyMs = Math.max(0, rawLoadedMs - unloadedMs);
-        const browserQueueCapMs = Math.max(6, Math.min(20, unloadedMs * 0.25 + 6));
-        return Math.round(unloadedMs + Math.min(addedLatencyMs, browserQueueCapMs));
+        const addedLatencyMs = Math.max(0, rawLoadedMs - rawUnloadedMs);
+        const browserQueueCapMs = Math.max(6, Math.min(20, rawUnloadedMs * 0.25 + 6));
+        const normalizedRawMs = rawUnloadedMs + Math.min(addedLatencyMs, browserQueueCapMs);
+        const unloadedFastMs = browserHttpLatencyToFastMs(rawUnloadedMs);
+        const loadedFastMs = browserHttpLatencyToFastMs(normalizedRawMs);
+
+        return Math.max(unloadedFastMs, Math.min(loadedFastMs, unloadedFastMs + 2));
       }
 
       function recordBytes(state, bytes) {
@@ -1104,7 +1122,7 @@
         }
       }
 
-      const unloadedLatencyMs = await averageLatency(SETTINGS.latencySamples);
+      const rawUnloadedLatencyMs = await averageLatency(SETTINGS.latencySamples);
       const download = await parallelThroughputTest("download");
       const upload = await parallelThroughputTest("upload");
 
@@ -1112,7 +1130,8 @@
       const rawLoadedLatencyMs = loadedLatencyValues.length
         ? Math.round(loadedLatencyValues.reduce((a, b) => a + b, 0) / loadedLatencyValues.length)
         : null;
-      const loadedLatencyMs = normalizeLoadedLatency(rawLoadedLatencyMs, unloadedLatencyMs);
+      const unloadedLatencyMs = browserHttpLatencyToFastMs(rawUnloadedLatencyMs);
+      const loadedLatencyMs = normalizeLoadedLatency(rawLoadedLatencyMs, rawUnloadedLatencyMs);
 
       return {
         downloadMbps: download.mbps,
