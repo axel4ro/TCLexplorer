@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updatedAt": "2026-05-14T09:17:31.7119620Z",
+    "updatedAt": "2026-05-14T09:22:25.3142282Z",
     "source": "CryptoRank",
     "endpoints": {
       "coin": "https://api.cryptorank.io/v0/coins/the-cursed-land",
@@ -31,40 +31,40 @@
     {
       "label": "1W",
       "key": "7D",
-      "startPrice": 0.000853109478,
+      "startPrice": 0.000853119778,
       "currentPrice": 0.000936212411,
-      "change": 8.3102933E-05,
-      "changePct": 9.74118037,
+      "change": 8.3092633E-05,
+      "changePct": 9.73985543,
       "high": 0.001045618391,
       "low": 0.000853055304
     },
     {
       "label": "1M",
       "key": "30D",
-      "startPrice": 0.000906477711,
+      "startPrice": 0.000906486427,
       "currentPrice": 0.000936212411,
-      "change": 2.97347E-05,
-      "changePct": 3.28024613,
+      "change": 2.9725984E-05,
+      "changePct": 3.27925307,
       "high": 0.001045618391,
       "low": 0.000835452668
     },
     {
       "label": "3M",
       "key": "3M",
-      "startPrice": 0.000888727096,
+      "startPrice": 0.000888735747,
       "currentPrice": 0.000936212411,
-      "change": 4.7485315E-05,
-      "changePct": 5.34307047,
+      "change": 4.7476664E-05,
+      "changePct": 5.34204505,
       "high": 0.001045618391,
       "low": 0.000811077553
     },
     {
       "label": "6M",
       "key": "6M",
-      "startPrice": 0.001095971758,
+      "startPrice": 0.001095889373,
       "currentPrice": 0.000936212411,
-      "change": -0.000159759347,
-      "changePct": -14.57695838,
+      "change": -0.000159676962,
+      "changePct": -14.57053658,
       "high": 0.001321155046,
       "low": 0.000811077553
     },
@@ -81,10 +81,10 @@
     {
       "label": "1Y",
       "key": "1Y",
-      "startPrice": 0.003058358339,
+      "startPrice": 0.00305833194,
       "currentPrice": 0.000936212411,
-      "change": -0.002122145928,
-      "changePct": -69.38840034,
+      "change": -0.002122119529,
+      "changePct": -69.3881361,
       "high": 0.003836686922,
       "low": 0.000542361537
     }
@@ -186,7 +186,7 @@
           -2.10377533,
           -14.90747882,
           2.88430124,
-          11.64436876,
+          11.64338173,
           null,
           null,
           null,
