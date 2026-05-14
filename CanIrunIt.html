@@ -66,7 +66,7 @@
       z-index: 1;
     }
 
-    .topbar, .hero, .checker, .card {
+    .topbar, .checker, .card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -88,12 +88,6 @@
     .brand-title { display: block; font-family: var(--font-display); color: var(--accent); font-size: 1rem; line-height: 1.1; }
     .brand-sub { display: block; margin-top: 4px; color: var(--muted); font-size: 0.86rem; }
 
-    .hero {
-      margin-bottom: 16px;
-      padding: 28px;
-      background: linear-gradient(135deg, rgba(22, 32, 43, 0.96), rgba(11, 27, 30, 0.96));
-    }
-
     .kicker {
       display: inline-flex;
       align-items: center;
@@ -110,9 +104,8 @@
     }
 
     h1, h2, h3 { margin: 0; font-family: var(--font-display); }
-    h1 { margin-top: 14px; color: #fff; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.02; }
+    h1 { margin-top: 7px; color: #fff; font-size: clamp(2rem, 4.6vw, 3.3rem); line-height: 1.02; }
     h1 span { color: var(--accent); }
-    .hero p { max-width: 760px; margin: 14px 0 0; color: var(--muted); font-size: 1.06rem; line-height: 1.62; }
 
     .checker {
       overflow: hidden;
@@ -123,13 +116,45 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 20px;
+      gap: 14px;
+      padding: 18px 20px;
       border-bottom: 1px solid var(--line);
       background: linear-gradient(90deg, rgba(47, 246, 222, 0.08), rgba(255, 202, 122, 0.04));
     }
 
-    .checker-head p { margin: 7px 0 0; color: var(--muted); line-height: 1.52; }
+    .scan-copy {
+      min-width: 0;
+      max-width: 720px;
+    }
+
+    .scan-title-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .checker-head p {
+      max-width: 720px;
+      margin: 7px 0 0;
+      color: var(--muted);
+      line-height: 1.48;
+    }
+
+    .actions {
+      display: grid;
+      gap: 8px;
+      width: min(220px, 100%);
+      flex: 0 0 auto;
+    }
 
     .button-main, .button-ghost {
       display: inline-flex;
@@ -363,7 +388,7 @@
     @media (max-width: 760px) {
       .topbar, .checker-head { align-items: flex-start; flex-direction: column; }
       .button-main, .button-ghost { width: 100%; }
-      .hero { padding: 20px; }
+      .actions { width: 100%; }
       .summary { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr; }
     }
@@ -382,19 +407,17 @@
       <button type="button" class="button-ghost" onclick="history.back()">← Back</button>
     </header>
 
-    <section class="hero">
-      <span class="kicker">System Scan</span>
-      <h1>Can I <span>Run?</span></h1>
-      <p>Check if your device meets the minimum requirements for The Cursed Land.</p>
-    </section>
-
     <section class="checker">
       <div class="checker-head">
-        <div>
-          <h2>Compatibility Test</h2>
-          <p>Press the button to compare your device with the current minimum requirements.</p>
+        <div class="scan-copy">
+          <div class="scan-title-line">
+            <span class="kicker">System Scan</span>
+            <span class="section-label">Compatibility Test</span>
+          </div>
+          <h1>Can I <span>Run?</span></h1>
+          <p>Check if your device meets the minimum requirements for The Cursed Land.</p>
         </div>
-        <div class="actions" style="margin-top:0;"><button class="button-main" type="button" onclick="runCheck()">⚙️ Can I Run?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
+        <div class="actions"><button class="button-main" type="button" onclick="runCheck()">⚙️ Can I Run?</button><button id="gpuAccelBtn" class="button-ghost" type="button" onclick="handleGraphicsAccelerationButton(this)">GPU Acceleration</button></div>
       </div>
 
       <div class="result-box" id="results">
