@@ -918,7 +918,7 @@
   <img id="overlayImg" class="overlay-img" alt="" />
 </div>
 
-<script src="lang/lang.bundle.js?v=20260514-1"></script>
+<script src="lang/lang.bundle.js?v=20260515-1"></script>
 <script src="lang/wiki.bundle.js?v=20260514-1"></script>
 <script src="js/wiki.js?v=20260512-4"></script>
 <script>
@@ -2475,6 +2475,7 @@ const INTERNAL_PAGE_ROUTES = {
   "game-requirements": {
     src: "Game_Requirements.html",
     title: "Game Requirements",
+    titleKey: "nav_game_requirements",
     navId: "btn-gameRequirements",
     routeKey: "game-requirements",
     loadingTitle: "Loading Game Requirements...",
@@ -2484,6 +2485,7 @@ const INTERNAL_PAGE_ROUTES = {
   CanIrunIt: {
     src: "CanIrunIt.html#CanIrunIt",
     title: "Can I Run It?",
+    titleKey: "canRunButton",
     navId: "btn-gameRequirements",
     routeKey: "CanIrunIt",
     loadingTitle: "Loading Can I Run It?...",
@@ -2590,6 +2592,32 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   }
 };
+
+function getLocalizedInternalPageTitle() {
+  const route = INTERNAL_PAGE_ROUTES[internalPageState.routeKey];
+  if (!route) return internalPageState.title || "Explorer Page";
+  return route.titleKey ? t(route.titleKey, route.title || "Explorer Page") : (route.title || "Explorer Page");
+}
+
+function syncInternalPageChrome() {
+  const internalPage = document.getElementById("internalPage");
+  if (!internalPage?.classList.contains("active")) return;
+
+  const titleEl = document.getElementById("appPageTitle");
+  if (titleEl) {
+    titleEl.textContent = getLocalizedInternalPageTitle();
+  }
+
+  const route = INTERNAL_PAGE_ROUTES[internalPageState.routeKey];
+  const navBtn = route?.navId ? document.getElementById(route.navId) : null;
+  const navKey = navBtn?.getAttribute("data-i18n");
+  if (!navKey) return;
+
+  const navLabel = t(navKey, null);
+  if (navLabel && navLabel !== navKey) {
+    navBtn.innerHTML = navLabel;
+  }
+}
 
 function normalizeRouteKey(value) {
   const raw = String(value || "").replace(/^#/, "").trim();
@@ -3004,7 +3032,7 @@ function showPage(id, options = {}) {
   const titleEl = document.getElementById("appPageTitle");
   if (titleEl) {
     titleEl.textContent = id === "internalPage"
-      ? internalPageState.title
+      ? getLocalizedInternalPageTitle()
       : (PAGE_TITLES[id] || "TCL Explorer");
   }
 
@@ -3928,6 +3956,8 @@ function applyTranslations() {
     console.log("🔄 Refreshing sentiment index via applyTranslations...");
     updateSentimentIndex();
   }
+
+  syncInternalPageChrome();
 }
 
 
