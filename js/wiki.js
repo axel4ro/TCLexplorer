@@ -1,7 +1,5 @@
 ﻿/* Wiki — embedded in TCL Explorer (expects global showPage, setLang, currentLang from index) */
 (function () {
-  const WIKI_BASE_URL = "./lang/";
-
   window.wikiData = {};
   let wikiSearchQuery = "";
 
@@ -75,19 +73,14 @@
       return;
     }
 
-    try {
-      const res = await fetch(WIKI_BASE_URL + "wiki_" + lang + ".json?t=" + Date.now(), { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      window.wikiData = await res.json();
+    const englishWiki = getBundledWikiData("en");
+    if (fallback && lang !== "en" && englishWiki) {
+      window.wikiData = englishWiki;
       window.renderWiki(window.wikiData, false);
-    } catch (e) {
-      console.error("Wiki load error", e);
-      if (fallback && lang !== "en" && typeof setLang === "function") {
-        setLang("en");
-      } else {
-        container.innerHTML = "<p>❌ " + tr("wiki_failed_load", "Failed to load Wiki data for lang:") + " " + lang + "</p>";
-      }
+      return;
     }
+
+    container.innerHTML = "<p>❌ " + tr("wiki_failed_load", "Failed to load Wiki data for lang:") + " " + lang + "</p>";
   };
 
   window.renderWiki = function (data, forceOpen) {
