@@ -1709,7 +1709,10 @@
 
     function shouldAutoRunCheck() {
       const params = new URLSearchParams(window.location.search);
-      return params.get("autorun") === "1";
+      const autorun = params.get("autorun");
+      if (autorun === "0") return false;
+      if (autorun === "1") return true;
+      return window.parent === window;
     }
 
     function startAutoRunCheck() {

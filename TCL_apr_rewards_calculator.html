@@ -55,6 +55,9 @@ input{width:100%;border:1px solid rgba(126,152,188,.18);border-radius:16px;paddi
 <link rel="stylesheet" href="css/tcl-premium-pages.css?v=20260512-1">
 </head>
 <body class="tcl-premium-page tcl-token-tool-page">
+<script src="lang/page-common.bundle.js?v=20260515-3"></script>
+<script src="lang/apr-rewards.bundle.js?v=20260515-3"></script>
+<script src="js/page-i18n.js?v=20260515-3"></script>
 <div class="page-shell">
   <button class="back-btn" type="button" onclick="goBackToTclToken()">⬅ Back to TCL Token</button>
   <section class="hero">
@@ -76,8 +79,8 @@ input{width:100%;border:1px solid rgba(126,152,188,.18);border-radius:16px;paddi
       <button class="btn" type="button" id="calculateAprBtn">Calculate</button>
     </div>
     <div class="summary">
-      <div>🧮 Simulated amount: <b id="simulatedAmount">—</b></div>
-      <div class="accent">🔋 Current APR: <b id="summaryApr">—</b></div>
+      <div>🧮 <span>Simulated amount:</span> <b id="simulatedAmount">—</b></div>
+      <div class="accent">🔋 <span>Current APR:</span> <b id="summaryApr">—</b></div>
     </div>
     <div id="aprResultGrid" class="result-grid" style="display:none;"></div>
     <div id="aprPlaceholder" class="placeholder">Enter a TCL amount to estimate rewards and APR impact.</div>
@@ -100,6 +103,135 @@ document.getElementById("aprInput").addEventListener("input",(e)=>{let value=e.t
 document.getElementById("aprInput").addEventListener("keydown",(event)=>{if(event.key==="Enter")simulateApr()});
 document.getElementById("calculateAprBtn").addEventListener("click",simulateApr);
 loadRewardsData();
+</script>
+<script>
+(function(){
+  let lastAprSimulationInput = null;
+  let aprPlaceholderKey = "Enter a TCL amount to estimate rewards and APR impact.";
+  const oldSimulateApr = window.simulateApr;
+  const oldRenderRewardsSummary = renderRewardsSummary;
+
+  function normalizePageLang(lang){
+    const raw = String(lang || "en").toLowerCase();
+    const supported = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
+    if (supported.includes(raw)) return raw;
+    const base = raw.split("-")[0];
+    return supported.includes(base) ? base : "en";
+  }
+
+  function getCurrentPageLang(){
+    return normalizePageLang(document.documentElement.lang || localStorage.getItem("lang") || "en");
+  }
+
+  function trText(source){
+    const lang = getCurrentPageLang();
+    if (lang === "en") return source;
+    return window.TCL_PAGE_I18N?.[lang]?.[source] || source;
+  }
+
+  function setAprPlaceholder(key){
+    aprPlaceholderKey = key;
+    const placeholder = document.getElementById("aprPlaceholder");
+    const grid = document.getElementById("aprResultGrid");
+    placeholder.textContent = trText(key);
+    placeholder.style.display = "block";
+    grid.style.display = "none";
+  }
+
+  function getAprBoosts(newApr){
+    return [
+      { icon: "📊", label: "New APR", value: newApr },
+      { icon: "🚀", label: "With +5% boost", value: newApr * 1.05 },
+      { icon: "⚡", label: "With +7% boost", value: newApr * 1.07 },
+      { icon: "🔥", label: "With +10% boost", value: newApr * 1.10 }
+    ];
+  }
+
+  function renderAprResult(input){
+    const grid = document.getElementById("aprResultGrid");
+    const placeholder = document.getElementById("aprPlaceholder");
+    const totalStaked = rewardsState.totalStaked;
+    const aprNow = rewardsState.apr;
+
+    if (!totalStaked || !aprNow) {
+      setAprPlaceholder("Live APR data is not loaded yet.");
+      return;
+    }
+
+    const newStaked = totalStaked + input;
+    const newApr = (aprNow * totalStaked) / newStaked;
+    const fmt = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    document.getElementById("simulatedAmount").textContent = `${input.toLocaleString("en-US")} TCL`;
+    document.getElementById("summaryApr").textContent = `${aprNow.toFixed(2)}%`;
+    grid.innerHTML = getAprBoosts(newApr).map((boost) => {
+      const apr = boost.value / 100;
+      const yearly = input * apr;
+      const monthly = yearly / 12;
+      const weekly = yearly / 52;
+      const daily = yearly / 365;
+
+      return `<div class="result-card">
+        <div class="result-head">
+          <span class="result-title">${boost.icon} ${trText(boost.label)}</span>
+          <span class="result-rate">${boost.value.toFixed(2)}%</span>
+        </div>
+        <div class="result-line">💵 ${trText("Daily")}: <b>${fmt(daily)}</b> TCL</div>
+        <div class="result-line">📅 ${trText("Weekly")}: <b>${fmt(weekly)}</b> TCL</div>
+        <div class="result-line">🪙 ${trText("Monthly")}: <b>${fmt(monthly)}</b> TCL</div>
+        <div class="result-line">🎯 ${trText("Yearly")}: <b>${fmt(yearly)}</b> TCL</div>
+      </div>`;
+    }).join("");
+
+    placeholder.style.display = "none";
+    grid.style.display = "grid";
+  }
+
+  function nextSimulateApr(){
+    const raw = document.getElementById("aprInput").value.replace(/,/g, "");
+    const input = parseFloat(raw);
+    if (isNaN(input) || input <= 0) {
+      lastAprSimulationInput = null;
+      setAprPlaceholder("Please enter a valid TCL amount.");
+      return;
+    }
+
+    lastAprSimulationInput = input;
+    renderAprResult(input);
+  }
+
+  function refreshAprLanguage(){
+    if (lastAprSimulationInput) {
+      renderAprResult(lastAprSimulationInput);
+      return;
+    }
+
+    setAprPlaceholder(aprPlaceholderKey);
+    oldRenderRewardsSummary();
+  }
+
+  renderRewardsSummary = function(){
+    oldRenderRewardsSummary();
+    if (lastAprSimulationInput) renderAprResult(lastAprSimulationInput);
+  };
+
+  window.simulateApr = nextSimulateApr;
+  simulateApr = nextSimulateApr;
+
+  const calculateAprBtn = document.getElementById("calculateAprBtn");
+  if (calculateAprBtn && oldSimulateApr) {
+    calculateAprBtn.removeEventListener("click", oldSimulateApr);
+    calculateAprBtn.addEventListener("click", nextSimulateApr);
+  }
+
+  window.addEventListener("message", (event) => {
+    if (event.data?.type === "tcl:set-lang") setTimeout(refreshAprLanguage, 0);
+  });
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === "lang") setTimeout(refreshAprLanguage, 0);
+  });
+})();
 </script>
 </body>
 </html>

@@ -918,9 +918,17 @@
   <img id="overlayImg" class="overlay-img" alt="" />
 </div>
 
-<script src="lang/lang.bundle.js?v=20260515-1"></script>
+<script src="lang/common.bundle.js?v=20260515-3"></script>
+<script src="lang/events.bundle.js?v=20260515-3"></script>
+<script src="lang/exp-table.bundle.js?v=20260515-3"></script>
+<script src="lang/web3.bundle.js?v=20260515-3"></script>
+<script src="lang/token.bundle.js?v=20260515-3"></script>
+<script src="lang/wiki-ui.bundle.js?v=20260515-3"></script>
 <script src="lang/wiki.bundle.js?v=20260515-2"></script>
+<script src="lang/page-common.bundle.js?v=20260515-3"></script>
+<script src="lang/dashboard.bundle.js?v=20260515-3"></script>
 <script src="js/wiki.js?v=20260515-2"></script>
+<script src="js/page-i18n.js?v=20260515-3"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -3692,7 +3700,6 @@ overlayImg?.addEventListener("wheel", e => {
   overlayImg.style.transform = `scale(${scale})`;
 });
 
-const BASE_URL = "./lang/";
 translations = {};
 fallbackTranslations = {};
 currentLang = localStorage.getItem("lang") || "en";
@@ -3804,19 +3811,9 @@ async function ensureFallbackTranslations() {
     return fallbackTranslations;
   }
 
-  try {
-    const res = await fetch(`${BASE_URL}en.json?t=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} for en.json`);
-    }
-    fallbackTranslations = await res.json();
-    window.fallbackTranslations = fallbackTranslations;
-  } catch (err) {
-    console.error("❌ Fallback translation load error:", err);
-    fallbackTranslations = {};
-    window.fallbackTranslations = fallbackTranslations;
-  }
-
+  console.error("❌ Missing bundled fallback translations: common.bundle.js must include English.");
+  fallbackTranslations = {};
+  window.fallbackTranslations = fallbackTranslations;
   return fallbackTranslations;
 }
 
@@ -3839,6 +3836,7 @@ async function loadTranslations(lang) {
 
     try {
       applyTranslations();
+      window.applyPageTranslations?.(lang);
     } catch (applyErr) {
       console.error("❌ applyTranslations error:", applyErr);
     }
@@ -3860,46 +3858,15 @@ async function loadTranslations(lang) {
     return;
   }
 
+  console.error("❌ Missing bundled translations for lang:", lang);
+  translations = { ...fallbackTranslations };
+  window.translations = translations;
+  updateCurrentLangButton(lang);
   try {
-    const res = await fetch(`${BASE_URL}${lang}.json?t=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} for ${lang}.json`);
-    }
-    translations = {
-      ...fallbackTranslations,
-      ...(await res.json())
-    };
-    window.translations = translations;
-    try {
-      applyTranslations();
-    } catch (applyErr) {
-      console.error("❌ applyTranslations error:", applyErr);
-    }
-
-    try {
-      updateSentimentIndex();
-    } catch (sentimentErr) {
-      console.error("❌ updateSentimentIndex error:", sentimentErr);
-    }
-
-    try {
-      if (document.getElementById("wiki")?.classList.contains("active") && typeof loadWiki === "function") {
-        loadWiki(lang, true);
-      }
-    } catch (wikiErr) {
-      console.error("❌ loadWiki error:", wikiErr);
-    }
-
-  } catch (err) {
-    console.error("❌ Translation load error:", err);
-    translations = { ...fallbackTranslations };
-    window.translations = translations;
-    updateCurrentLangButton(lang);
-    try {
-      applyTranslations();
-    } catch (applyErr) {
-      console.error("❌ applyTranslations fallback error:", applyErr);
-    }
+    applyTranslations();
+    window.applyPageTranslations?.(lang);
+  } catch (applyErr) {
+    console.error("❌ applyTranslations fallback error:", applyErr);
   }
 }
 
