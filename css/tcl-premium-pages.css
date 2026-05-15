@@ -45,6 +45,7 @@
   --radius-lg: 8px;
   --radius-md: 8px;
   --radius-sm: 6px;
+  --tcl-card-padding: 16px;
 }
 
 body.tcl-premium-page {
@@ -216,6 +217,48 @@ body.tcl-premium-page :is(
   border-radius: 8px !important;
   background: linear-gradient(180deg, rgba(17, 24, 36, 0.94), rgba(10, 15, 23, 0.96)) !important;
   box-shadow: var(--tcl-shadow) !important;
+}
+
+:where(body.tcl-premium-page) :where(
+  .hero,
+  .card,
+  .section,
+  .section-card,
+  .source-card,
+  .path-card,
+  .method-card,
+  .fit-card,
+  .timeline-step,
+  .flow-step,
+  .panel,
+  .chart-shell,
+  .chart-panel,
+  .chart-card,
+  .result-box,
+  .result-card,
+  .hero-card,
+  .hero-stat,
+  .metric-card,
+  .signal-card,
+  .reason-card,
+  .legend-card,
+  .summary-card,
+  .table-card,
+  .stat-card,
+  .status-card,
+  .loot-box,
+  .modal-content,
+  .empty-state,
+  .apr-card,
+  .calc-card-panel,
+  .compatibility-card,
+  .event-card,
+  .panel-card,
+  .performance-card,
+  .token-accordion-card,
+  .token-overview-panel
+) {
+  padding: var(--tcl-card-padding);
 }
 
 body.tcl-premium-page header,
