@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260512-3" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260518-1" />
   <script>
     (() => {
       const ua = navigator.userAgent || "";
@@ -297,8 +297,9 @@
   <div class="app-content">
     <header class="app-topbar">
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-controls="appSidebar" aria-expanded="false" aria-label="Toggle navigation">☰</button>
-      <div id="installGuideContainer"></div>
-      <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="openEarnGuidePage()" hidden data-i18n="nav_play_and_earn">🎮Play and Earn💰</button>
+      <div class="topbar-cta-rail" id="topbarCtaRail" aria-label="Quick actions">
+        <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="handleTopbarCtaClick()" hidden>🎮Play and Earn💰</button>
+      </div>
       <h1 class="app-page-title" id="appPageTitle">TCL Token</h1>
       <div class="app-topbar-right">
         <div class="lang-dropdown">
@@ -2935,16 +2936,101 @@ function scheduleAppStartup() {
 }
 
 const STAKING_SCALE_WIDTH = 980;
+let topbarCtaRotationTimer = null;
+let topbarCtaMode = "earn";
+let topbarInstallActionType = null;
+const WINDOWS_INSTALLER_URL = "https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe";
+
+function stopTopbarCtaRotation() {
+  if (!topbarCtaRotationTimer) return;
+  clearInterval(topbarCtaRotationTimer);
+  topbarCtaRotationTimer = null;
+}
+
+function getTopbarCtaModes() {
+  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows") {
+    return ["install"];
+  }
+  return topbarInstallActionType ? ["earn", "install"] : ["earn"];
+}
+
+function getTopbarInstallLabel() {
+  if (topbarInstallActionType === "android") return "📲 Install";
+  if (topbarInstallActionType === "ios") return "📲 Add";
+  if (topbarInstallActionType === "windows") return "💻 Download";
+  return "";
+}
+
+function renderTopbarCtaButton() {
+  const topbarEarnBtn = document.getElementById("topbarEarnBtn");
+  if (!topbarEarnBtn) return;
+
+  const isInstallMode = topbarCtaMode === "install" && !!topbarInstallActionType;
+  topbarEarnBtn.innerHTML = isInstallMode
+    ? getTopbarInstallLabel()
+    : t("nav_play_and_earn", {}, "🎮Play and Earn💰");
+  topbarEarnBtn.dataset.ctaMode = isInstallMode ? topbarInstallActionType : "earn";
+  topbarEarnBtn.setAttribute("aria-label", topbarEarnBtn.textContent.trim());
+}
+
+function syncTopbarCtaRail() {
+  const topbarEarnBtn = document.getElementById("topbarEarnBtn");
+  if (!topbarEarnBtn) return;
+
+  const modes = getTopbarCtaModes();
+  if (!modes.includes(topbarCtaMode)) {
+    topbarCtaMode = modes[0] || "earn";
+  }
+  renderTopbarCtaButton();
+
+  if (modes.length <= 1 || topbarEarnBtn.hidden) {
+    stopTopbarCtaRotation();
+    return;
+  }
+
+  if (topbarCtaRotationTimer) return;
+
+  topbarCtaRotationTimer = setInterval(() => {
+    const currentModes = getTopbarCtaModes();
+    if (currentModes.length <= 1) {
+      syncTopbarCtaRail();
+      return;
+    }
+
+    const currentIndex = Math.max(0, currentModes.indexOf(topbarCtaMode));
+    topbarCtaMode = currentModes[(currentIndex + 1) % currentModes.length];
+    renderTopbarCtaButton();
+  }, 5000);
+}
+
+function handleTopbarCtaClick() {
+  if (topbarCtaMode !== "install" || !topbarInstallActionType) {
+    openEarnGuidePage();
+    return;
+  }
+
+  if (topbarInstallActionType === "android") {
+    installPWA();
+  } else if (topbarInstallActionType === "ios") {
+    showGuide("ios");
+  } else if (topbarInstallActionType === "windows") {
+    window.open(WINDOWS_INSTALLER_URL, "_blank", "noopener");
+  }
+}
 
 function syncTopbarEarnButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
 
   const shouldHide = document.body.classList.contains("sidebar-open")
-    || document.body.classList.contains("sidebar-desktop");
+    || (
+      document.body.classList.contains("sidebar-desktop")
+      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows")
+    );
 
   topbarEarnBtn.hidden = shouldHide;
   topbarEarnBtn.setAttribute("aria-hidden", shouldHide ? "true" : "false");
+  syncTopbarCtaRail();
 }
 
 function setSidebarOpen(open) {
@@ -3654,6 +3740,7 @@ function applySidebarLayout() {
 document.addEventListener("DOMContentLoaded", () => {
   applySidebarLayout();
   window.addEventListener("resize", scheduleSidebarLayout, { passive: true });
+  window.addEventListener("resize", syncTopbarCtaRail, { passive: true });
 
   const langBtn = document.getElementById("currentLang");
   const langMenu = document.getElementById("langMenu") || document.querySelector(".lang-menu");
@@ -3941,6 +4028,7 @@ function applyTranslations() {
     updateSentimentIndex();
   }
 
+  syncTopbarCtaRail();
   syncInternalPageChrome();
 }
 
@@ -4232,18 +4320,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function showInstallButton(type) {
-  const container = document.getElementById("installGuideContainer");
-  if (!container) return;
-
-  let btnHtml = "";
-  if (type === "android") {
-    btnHtml = `<button class="install-btn" onclick="installPWA()">📲 Install</button>`;
-  } else if (type === "ios") {
-    btnHtml = `<button class="install-btn" onclick="showGuide('ios')">📲 Add</button>`;
-  } else if (type === "windows") {
-    btnHtml = `<a href="https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe" target="_blank" class="install-btn">💻 Download</a>`;
-  }
-  container.innerHTML = btnHtml;
+  topbarInstallActionType = ["android", "ios", "windows"].includes(type) ? type : null;
+  syncTopbarEarnButton();
 }
 
 async function installPWA() {
