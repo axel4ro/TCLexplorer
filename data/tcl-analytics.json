@@ -1,6 +1,6 @@
 {
   "meta": {
-    "updatedAt": "2026-05-18T08:22:25.8880314Z",
+    "updatedAt": "2026-05-18T08:27:46.5040025Z",
     "source": "CryptoRank",
     "endpoints": {
       "coin": "https://api.cryptorank.io/v0/coins/the-cursed-land",
@@ -31,40 +31,40 @@
     {
       "label": "1W",
       "key": "7D",
-      "startPrice": 0.000951973713,
+      "startPrice": 0.000951992061,
       "currentPrice": 0.000920358023,
-      "change": -3.161569E-05,
-      "changePct": -3.32106754,
+      "change": -3.1634038E-05,
+      "changePct": -3.32293086,
       "high": 0.000963598051,
       "low": 0.000903029615
     },
     {
       "label": "1M",
       "key": "30D",
-      "startPrice": 0.00086698827,
+      "startPrice": 0.000867004821,
       "currentPrice": 0.000920358023,
-      "change": 5.3369753E-05,
-      "changePct": 6.15576414,
+      "change": 5.3353202E-05,
+      "changePct": 6.15373764,
       "high": 0.001045618391,
       "low": 0.000835452668
     },
     {
       "label": "3M",
       "key": "3M",
-      "startPrice": 0.001004050726,
+      "startPrice": 0.001004065997,
       "currentPrice": 0.000920358023,
-      "change": -8.3692703E-05,
-      "changePct": -8.33550545,
+      "change": -8.3707974E-05,
+      "changePct": -8.33689959,
       "high": 0.001045618391,
       "low": 0.000811077553
     },
     {
       "label": "6M",
       "key": "6M",
-      "startPrice": 0.001153892677,
+      "startPrice": 0.001153887406,
       "currentPrice": 0.000920358023,
-      "change": -0.000233534654,
-      "changePct": -20.23885398,
+      "change": -0.000233529383,
+      "changePct": -20.23848963,
       "high": 0.001321155046,
       "low": 0.000811077553
     },
@@ -81,10 +81,10 @@
     {
       "label": "1Y",
       "key": "1Y",
-      "startPrice": 0.003360430326,
+      "startPrice": 0.003360576303,
       "currentPrice": 0.000920358023,
-      "change": -0.002440072303,
-      "changePct": -72.61189985,
+      "change": -0.00244021828,
+      "changePct": -72.61308954,
       "high": 0.003836686922,
       "low": 0.000542361537
     }
@@ -101,7 +101,7 @@
         "label": "2026",
         "cells": [
           -26.89595017,
-          12.92025219,
+          12.92083228,
           null,
           null
         ]
@@ -186,7 +186,7 @@
           -2.10377533,
           -14.90747882,
           2.88430124,
-          9.75218127,
+          9.75274509,
           null,
           null,
           null,
