@@ -19,7 +19,24 @@
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/dashboard.css?v=20260512-3" />
+  <script>
+    (() => {
+      const ua = navigator.userAgent || "";
+      const platform = navigator.platform || "";
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isIOS) document.documentElement.classList.add("is-ios");
+    })();
+  </script>
   <style>
+    html.is-ios .app-topbar {
+      padding-top: calc(20px + env(safe-area-inset-top, 0px));
+      min-height: calc(var(--topbar-h) + 12px + env(safe-area-inset-top, 0px));
+    }
+
+    html.is-ios .sidebar {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
     .token-hero-head {
       display: flex;
       align-items: center;
