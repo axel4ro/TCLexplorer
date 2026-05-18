@@ -18,25 +18,8 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260518-1" />
-  <script>
-    (() => {
-      const ua = navigator.userAgent || "";
-      const platform = navigator.platform || "";
-      const isIOS = /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      if (isIOS) document.documentElement.classList.add("is-ios");
-    })();
-  </script>
+  <link rel="stylesheet" href="css/dashboard.css?v=20260512-3" />
   <style>
-    html.is-ios .app-topbar {
-      padding-top: calc(20px + env(safe-area-inset-top, 0px));
-      min-height: calc(var(--topbar-h) + 12px + env(safe-area-inset-top, 0px));
-    }
-
-    html.is-ios .sidebar {
-      padding-top: env(safe-area-inset-top, 0px);
-    }
-
     .token-hero-head {
       display: flex;
       align-items: center;
@@ -271,7 +254,7 @@
       <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
-      <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Live Chart</button>
+      <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Chart</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck" data-i18n="sidebar_wallet_check">🔎 Wallet Check</button>
       <button type="button" class="nav-item" onclick="showPage('explorerIframe')" id="btn-explorerIframe">
@@ -297,9 +280,8 @@
   <div class="app-content">
     <header class="app-topbar">
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-controls="appSidebar" aria-expanded="false" aria-label="Toggle navigation">☰</button>
-      <div class="topbar-cta-rail" id="topbarCtaRail" aria-label="Quick actions">
-        <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="handleTopbarCtaClick()" hidden>🎮Play and Earn💰</button>
-      </div>
+      <div id="installGuideContainer"></div>
+      <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="openEarnGuidePage()" hidden data-i18n="nav_play_and_earn">🎮Play and Earn💰</button>
       <h1 class="app-page-title" id="appPageTitle">TCL Token</h1>
       <div class="app-topbar-right">
         <div class="lang-dropdown">
@@ -788,12 +770,12 @@
 
 <!-- TCL Token Chart -->
 <div id="chart" class="section-page">
-  <div class="fullpage-embed-placeholder" id="chartPlaceholder">Loading chart...</div>
+  <div class="fullpage-embed-placeholder" id="chartPlaceholder">Loading TCL Chart...</div>
   <iframe
     id="chartFrame"
     loading="lazy"
     src="about:blank"
-    data-src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&info=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=15&resetChart=1&t=12345">
+    data-src="TCL_chart.html">
   </iframe>
 </div>
 
@@ -947,7 +929,6 @@
 <script src="lang/dashboard.bundle.js?v=20260515-3"></script>
 <script src="js/wiki.js?v=20260515-2"></script>
 <script src="js/page-i18n.js?v=20260515-3"></script>
-<script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -2474,7 +2455,6 @@ const internalPageState = {
   navId: "",
   routeKey: "",
   waitForReadyMessage: false,
-  readyFallbackMs: 12000,
   readyFallbackTimer: null
 };
 
@@ -2566,14 +2546,13 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   technicals: {
-    src: "Technicals.html?v=20260518-2",
+    src: "Technicals.html",
     title: "Technicals",
     navId: "btn-token",
     routeKey: "technicals",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Syncing TCL on-chain swap history and technical signals.",
-    waitForReadyMessage: true,
-    readyFallbackMs: 120000
+    loadingSubtitle: "Preparing TCL technical signals.",
+    waitForReadyMessage: true
   },
   analytics: {
     src: "analytics.html",
@@ -2585,14 +2564,13 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   volume: {
-    src: "volume.html?v=20260518-2",
+    src: "volume.html",
     title: "Volume",
     navId: "btn-token",
     routeKey: "volume",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Syncing TCL on-chain swaps and volume history.",
-    waitForReadyMessage: true,
-    readyFallbackMs: 120000
+    loadingSubtitle: "Preparing TCL volume.",
+    waitForReadyMessage: true
   },
   "tcl-trades": {
     src: "TCL_trades.html",
@@ -2880,33 +2858,6 @@ function ensureStakingLoaded(options = {}) {
   return stakingLoadPromise;
 }
 
-let tokenRealtimeRefreshBound = false;
-
-function refreshTokenOverviewFromRealtime() {
-  fetchPoolData({ force: true });
-  fetchExplorerData({ force: true });
-  loadTCLStats({ force: true });
-  fetchGeckoAthAtl();
-
-  const amountEl = document.getElementById("amount");
-  const hasValue = amountEl && parseNumber(amountEl.value) > 0;
-  if (hasValue) calculate();
-}
-
-function bindTokenRealtimeRefresh() {
-  if (tokenRealtimeRefreshBound) return;
-  tokenRealtimeRefreshBound = true;
-
-  if (window.TCLRealtime?.onRefresh) {
-    window.TCLRealtime.onRefresh(() => {
-      refreshTokenOverviewFromRealtime();
-    });
-    return;
-  }
-
-  window.setInterval(refreshTokenOverviewFromRealtime, 300000);
-}
-
 function startTokenRefresh() {
   if (tokenRefreshStarted) return;
   tokenRefreshStarted = true;
@@ -2918,7 +2869,16 @@ function startTokenRefresh() {
     loadTCLStats({ force: true });
   }, 40);
 
-  bindTokenRealtimeRefresh();
+  window.setInterval(() => {
+    fetchPoolData();
+    fetchGeckoAthAtl();
+    fetchExplorerData();
+    loadTCLStats();
+
+    const amountEl = document.getElementById("amount");
+    const hasValue = amountEl && parseNumber(amountEl.value) > 0;
+    if (hasValue) calculate();
+  }, 300000);
 }
 
 function loadNonCriticalServices() {
@@ -2958,101 +2918,16 @@ function scheduleAppStartup() {
 }
 
 const STAKING_SCALE_WIDTH = 980;
-let topbarCtaRotationTimer = null;
-let topbarCtaMode = "earn";
-let topbarInstallActionType = null;
-const WINDOWS_INSTALLER_URL = "https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe";
-
-function stopTopbarCtaRotation() {
-  if (!topbarCtaRotationTimer) return;
-  clearInterval(topbarCtaRotationTimer);
-  topbarCtaRotationTimer = null;
-}
-
-function getTopbarCtaModes() {
-  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows") {
-    return ["install"];
-  }
-  return topbarInstallActionType ? ["earn", "install"] : ["earn"];
-}
-
-function getTopbarInstallLabel() {
-  if (topbarInstallActionType === "android") return "📲 Install";
-  if (topbarInstallActionType === "ios") return "📲 Add";
-  if (topbarInstallActionType === "windows") return "💻 Download";
-  return "";
-}
-
-function renderTopbarCtaButton() {
-  const topbarEarnBtn = document.getElementById("topbarEarnBtn");
-  if (!topbarEarnBtn) return;
-
-  const isInstallMode = topbarCtaMode === "install" && !!topbarInstallActionType;
-  topbarEarnBtn.innerHTML = isInstallMode
-    ? getTopbarInstallLabel()
-    : t("nav_play_and_earn", {}, "🎮Play and Earn💰");
-  topbarEarnBtn.dataset.ctaMode = isInstallMode ? topbarInstallActionType : "earn";
-  topbarEarnBtn.setAttribute("aria-label", topbarEarnBtn.textContent.trim());
-}
-
-function syncTopbarCtaRail() {
-  const topbarEarnBtn = document.getElementById("topbarEarnBtn");
-  if (!topbarEarnBtn) return;
-
-  const modes = getTopbarCtaModes();
-  if (!modes.includes(topbarCtaMode)) {
-    topbarCtaMode = modes[0] || "earn";
-  }
-  renderTopbarCtaButton();
-
-  if (modes.length <= 1 || topbarEarnBtn.hidden) {
-    stopTopbarCtaRotation();
-    return;
-  }
-
-  if (topbarCtaRotationTimer) return;
-
-  topbarCtaRotationTimer = setInterval(() => {
-    const currentModes = getTopbarCtaModes();
-    if (currentModes.length <= 1) {
-      syncTopbarCtaRail();
-      return;
-    }
-
-    const currentIndex = Math.max(0, currentModes.indexOf(topbarCtaMode));
-    topbarCtaMode = currentModes[(currentIndex + 1) % currentModes.length];
-    renderTopbarCtaButton();
-  }, 5000);
-}
-
-function handleTopbarCtaClick() {
-  if (topbarCtaMode !== "install" || !topbarInstallActionType) {
-    openEarnGuidePage();
-    return;
-  }
-
-  if (topbarInstallActionType === "android") {
-    installPWA();
-  } else if (topbarInstallActionType === "ios") {
-    showGuide("ios");
-  } else if (topbarInstallActionType === "windows") {
-    window.open(WINDOWS_INSTALLER_URL, "_blank", "noopener");
-  }
-}
 
 function syncTopbarEarnButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
 
   const shouldHide = document.body.classList.contains("sidebar-open")
-    || (
-      document.body.classList.contains("sidebar-desktop")
-      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows")
-    );
+    || document.body.classList.contains("sidebar-desktop");
 
   topbarEarnBtn.hidden = shouldHide;
   topbarEarnBtn.setAttribute("aria-hidden", shouldHide ? "true" : "false");
-  syncTopbarCtaRail();
 }
 
 function setSidebarOpen(open) {
@@ -3209,9 +3084,6 @@ function openInternalPage(src, title, options = {}) {
   internalPageState.navId = options.navId || "";
   internalPageState.routeKey = options.routeKey || "";
   internalPageState.waitForReadyMessage = !!options.waitForReadyMessage;
-  internalPageState.readyFallbackMs = Number.isFinite(Number(options.readyFallbackMs))
-    ? Math.max(0, Number(options.readyFallbackMs))
-    : 12000;
   const page = document.getElementById("internalPage");
   const frame = document.getElementById("internalPageFrame");
   const placeholder = document.getElementById("internalPagePlaceholder");
@@ -3257,7 +3129,7 @@ function openInternalPage(src, title, options = {}) {
       }
       schedulePageFits();
       internalPageState.readyFallbackTimer = null;
-    }, internalPageState.readyFallbackMs);
+    }, 12000);
   }
 
   showPage("internalPage", {
@@ -3331,7 +3203,6 @@ window.addEventListener("message", (event) => {
   internalPageState.src = "";
   internalPageState.title = "Explorer Page";
   internalPageState.waitForReadyMessage = false;
-  internalPageState.readyFallbackMs = 12000;
   if (internalPageState.readyFallbackTimer) {
     clearTimeout(internalPageState.readyFallbackTimer);
     internalPageState.readyFallbackTimer = null;
@@ -3561,13 +3432,13 @@ function syncSentimentLabel() {
   label.style.color = "";
 }
 
-function updateSentimentIndex(options = {}) {
+function updateSentimentIndex() {
   if (sentimentUpdatePromise) return sentimentUpdatePromise;
 
   const cachedSentiment = getSentimentCache();
   if (cachedSentiment) {
     applySentimentScore(cachedSentiment.score, cachedSentiment.updatedAt);
-    if (!options.force && isFreshSentimentCache(cachedSentiment)) {
+    if (isFreshSentimentCache(cachedSentiment)) {
       return Promise.resolve(true);
     }
   }
@@ -3744,15 +3615,10 @@ function updateSentimentLastUpdate() {
 
 // === Inițializare la încărcare ===
 document.addEventListener("DOMContentLoaded", function() {
-  const refreshSentimentWhenVisible = () => {
-    if (isSentimentViewActive()) updateSentimentIndex({ force: true });
-  };
-
-  if (window.TCLRealtime?.onRefresh) {
-    window.TCLRealtime.onRefresh(refreshSentimentWhenVisible);
-  } else {
-    setInterval(refreshSentimentWhenVisible, 5 * 60 * 1000);
-  }
+  // Actualizează la fiecare 5 minute
+  setInterval(() => {
+    if (isSentimentViewActive()) updateSentimentIndex();
+  }, 5 * 60 * 1000);
   
   // Actualizează afișajul "x time ago" la fiecare minut
   setInterval(updateSentimentLastUpdate, 60000);
@@ -3771,7 +3637,6 @@ function applySidebarLayout() {
 document.addEventListener("DOMContentLoaded", () => {
   applySidebarLayout();
   window.addEventListener("resize", scheduleSidebarLayout, { passive: true });
-  window.addEventListener("resize", syncTopbarCtaRail, { passive: true });
 
   const langBtn = document.getElementById("currentLang");
   const langMenu = document.getElementById("langMenu") || document.querySelector(".lang-menu");
@@ -4059,7 +3924,6 @@ function applyTranslations() {
     updateSentimentIndex();
   }
 
-  syncTopbarCtaRail();
   syncInternalPageChrome();
 }
 
@@ -4351,8 +4215,18 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function showInstallButton(type) {
-  topbarInstallActionType = ["android", "ios", "windows"].includes(type) ? type : null;
-  syncTopbarEarnButton();
+  const container = document.getElementById("installGuideContainer");
+  if (!container) return;
+
+  let btnHtml = "";
+  if (type === "android") {
+    btnHtml = `<button class="install-btn" onclick="installPWA()">📲 Install</button>`;
+  } else if (type === "ios") {
+    btnHtml = `<button class="install-btn" onclick="showGuide('ios')">📲 Add</button>`;
+  } else if (type === "windows") {
+    btnHtml = `<a href="https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe" target="_blank" class="install-btn">💻 Download</a>`;
+  }
+  container.innerHTML = btnHtml;
 }
 
 async function installPWA() {
