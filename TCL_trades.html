@@ -704,6 +704,7 @@ canvas{
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
   <script src="lang/tcl-trades.bundle.js?v=20260515-3"></script>
   <script src="js/page-i18n.js?v=20260515-3"></script>
+  <script src="js/tcl-realtime.js?v=20260518-1"></script>
 
 <div class="app-shell">
     <aside class="sidebar">
@@ -1482,7 +1483,10 @@ function isPristineSimulationState(){
 }
 
 async function fetchLiveMarketSnapshot(){
-    const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?v=" + Date.now(), {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+    });
     if(!response.ok){
         throw new Error("Price request failed");
     }
@@ -1638,6 +1642,26 @@ async function init(){
     save();
     render();
     notifyReady();
+}
+
+let liveMarketRefreshInFlight = false;
+
+async function refreshLiveMarketFromRealtime(){
+    if(liveMarketRefreshInFlight || !isPristineSimulationState()){
+        return;
+    }
+
+    liveMarketRefreshInFlight = true;
+    try{
+        applyMarketSnapshot(await fetchLiveMarketSnapshot());
+        updateTradeControls();
+        save();
+        render();
+    }catch(error){
+        console.warn("Live market refresh skipped", error);
+    }finally{
+        liveMarketRefreshInFlight = false;
+    }
 }
 
 function resizeCanvas(){
@@ -2474,6 +2498,12 @@ function endTouchGesture(){
 
 canvas.addEventListener("touchend", endTouchGesture, { passive: true });
 canvas.addEventListener("touchcancel", endTouchGesture, { passive: true });
+
+if(window.TCLRealtime?.onRefresh){
+    window.TCLRealtime.onRefresh(refreshLiveMarketFromRealtime);
+}else{
+    window.setInterval(refreshLiveMarketFromRealtime, 300000);
+}
 
 init();
 </script>

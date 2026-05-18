@@ -947,6 +947,7 @@
 <script src="lang/dashboard.bundle.js?v=20260515-3"></script>
 <script src="js/wiki.js?v=20260515-2"></script>
 <script src="js/page-i18n.js?v=20260515-3"></script>
+<script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -2582,7 +2583,7 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   volume: {
-    src: "volume.html",
+    src: "volume.html?v=20260518-2",
     title: "Volume",
     navId: "btn-token",
     routeKey: "volume",
@@ -2876,6 +2877,33 @@ function ensureStakingLoaded(options = {}) {
   return stakingLoadPromise;
 }
 
+let tokenRealtimeRefreshBound = false;
+
+function refreshTokenOverviewFromRealtime() {
+  fetchPoolData({ force: true });
+  fetchExplorerData({ force: true });
+  loadTCLStats({ force: true });
+  fetchGeckoAthAtl();
+
+  const amountEl = document.getElementById("amount");
+  const hasValue = amountEl && parseNumber(amountEl.value) > 0;
+  if (hasValue) calculate();
+}
+
+function bindTokenRealtimeRefresh() {
+  if (tokenRealtimeRefreshBound) return;
+  tokenRealtimeRefreshBound = true;
+
+  if (window.TCLRealtime?.onRefresh) {
+    window.TCLRealtime.onRefresh(() => {
+      refreshTokenOverviewFromRealtime();
+    });
+    return;
+  }
+
+  window.setInterval(refreshTokenOverviewFromRealtime, 300000);
+}
+
 function startTokenRefresh() {
   if (tokenRefreshStarted) return;
   tokenRefreshStarted = true;
@@ -2887,16 +2915,7 @@ function startTokenRefresh() {
     loadTCLStats({ force: true });
   }, 40);
 
-  window.setInterval(() => {
-    fetchPoolData();
-    fetchGeckoAthAtl();
-    fetchExplorerData();
-    loadTCLStats();
-
-    const amountEl = document.getElementById("amount");
-    const hasValue = amountEl && parseNumber(amountEl.value) > 0;
-    if (hasValue) calculate();
-  }, 300000);
+  bindTokenRealtimeRefresh();
 }
 
 function loadNonCriticalServices() {
@@ -3535,13 +3554,13 @@ function syncSentimentLabel() {
   label.style.color = "";
 }
 
-function updateSentimentIndex() {
+function updateSentimentIndex(options = {}) {
   if (sentimentUpdatePromise) return sentimentUpdatePromise;
 
   const cachedSentiment = getSentimentCache();
   if (cachedSentiment) {
     applySentimentScore(cachedSentiment.score, cachedSentiment.updatedAt);
-    if (isFreshSentimentCache(cachedSentiment)) {
+    if (!options.force && isFreshSentimentCache(cachedSentiment)) {
       return Promise.resolve(true);
     }
   }
@@ -3718,10 +3737,15 @@ function updateSentimentLastUpdate() {
 
 // === Inițializare la încărcare ===
 document.addEventListener("DOMContentLoaded", function() {
-  // Actualizează la fiecare 5 minute
-  setInterval(() => {
-    if (isSentimentViewActive()) updateSentimentIndex();
-  }, 5 * 60 * 1000);
+  const refreshSentimentWhenVisible = () => {
+    if (isSentimentViewActive()) updateSentimentIndex({ force: true });
+  };
+
+  if (window.TCLRealtime?.onRefresh) {
+    window.TCLRealtime.onRefresh(refreshSentimentWhenVisible);
+  } else {
+    setInterval(refreshSentimentWhenVisible, 5 * 60 * 1000);
+  }
   
   // Actualizează afișajul "x time ago" la fiecare minut
   setInterval(updateSentimentLastUpdate, 60000);

@@ -489,6 +489,7 @@ iframe{
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
   <script src="lang/signal.bundle.js?v=20260515-3"></script>
   <script src="js/page-i18n.js?v=20260515-3"></script>
+  <script src="js/tcl-realtime.js?v=20260518-1"></script>
 <div class="page">
     <aside class="panel">
         <section class="hero">
@@ -1289,6 +1290,20 @@ function evaluateSignal(snapshot){
 }
 
 function updateRefreshStatus(){
+    if(window.TCLRealtime?.onRefresh){
+        if(refreshInFlight){
+            refreshStatus.textContent = lastGoodRefreshAt > 0
+                ? `Updated ${formatClockTime(lastGoodRefreshAt)} | Refreshing...`
+                : "Refreshing...";
+            return;
+        }
+
+        refreshStatus.textContent = lastGoodRefreshAt > 0
+            ? `Updated ${formatClockTime(lastGoodRefreshAt)} | Watching TCL swaps`
+            : "Watching TCL swaps";
+        return;
+    }
+
     const countdown = formatCountdown(nextRefreshAt - Date.now());
 
     if(refreshInFlight){
@@ -1320,6 +1335,12 @@ function startCountdown(){
 function scheduleNextRefresh(){
     if(refreshTimer != null){
         window.clearTimeout(refreshTimer);
+    }
+
+    if(window.TCLRealtime?.onRefresh){
+        nextRefreshAt = 0;
+        updateRefreshStatus();
+        return;
     }
 
     nextRefreshAt = Date.now() + REFRESH_MS;
@@ -1383,7 +1404,10 @@ function renderSnapshot(snapshot, signal){
 }
 
 async function fetchSnapshot(){
-    const response = await fetch(DEXSCREENER_PAIR_API_URL);
+    const response = await fetch(`${DEXSCREENER_PAIR_API_URL}?v=${Date.now()}`, {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+    });
     if(!response.ok){
         throw new Error("DexScreener request failed");
     }
@@ -1435,6 +1459,10 @@ async function refreshSignal(){
 }
 
 refreshButton.addEventListener("click", refreshSignal);
+
+if(window.TCLRealtime?.onRefresh){
+    window.TCLRealtime.onRefresh(() => refreshSignal());
+}
 
 notifyReady();
 startCountdown();

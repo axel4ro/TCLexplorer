@@ -788,6 +788,7 @@
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
   <script src="lang/volume.bundle.js?v=20260515-3"></script>
   <script src="js/page-i18n.js?v=20260515-3"></script>
+  <script src="js/tcl-realtime.js?v=20260518-1"></script>
   <div class="page-shell">
     <header class="hero-card">
       <div class="hero-actions">
@@ -973,34 +974,16 @@
       dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
       transferUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
       transferPageSize: 2000,
-      transferMaxPages: 18,
+      transferMaxPages: 24,
+      recentTransferPageSize: 500,
+      recentTransferMaxPages: 4,
       refreshMs: 10 * 60 * 1000
     };
 
     const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const MONTHLY_VOLUME_OVERRIDES = {
-      "2024-06": { totalUsd: 24184, side: "buy" },
-      "2024-07": { totalUsd: 15836, side: "sell" },
-      "2024-08": { totalUsd: 7693, side: "buy" },
-      "2024-09": { totalUsd: 23518, side: "buy" },
-      "2024-10": { totalUsd: 23835, side: "sell" },
-      "2024-11": { totalUsd: 15419, side: "sell" },
-      "2024-12": { totalUsd: 16513, side: "sell" },
-      "2025-01": { totalUsd: 21555, side: "sell" },
-      "2025-02": { totalUsd: 16938, side: "buy" },
-      "2025-03": { totalUsd: 29114, side: "sell" },
-      "2025-04": { totalUsd: 22682, side: "buy" },
-      "2025-05": { totalUsd: 29667, side: "sell" },
-      "2025-06": { totalUsd: 23488, side: "sell" },
-      "2025-07": { totalUsd: 18292, side: "sell" },
-      "2025-08": { totalUsd: 12471, side: "sell" },
-      "2025-09": { totalUsd: 10900, side: "sell" },
-      "2025-10": { totalUsd: 24980, side: "buy" },
-      "2025-11": { totalUsd: 7838, side: "buy" },
-      "2025-12": { totalUsd: 7328, side: "sell" }
-    };
-    const VOLUME_CACHE_KEY = "tcl-volume-snapshot-v1";
-    const VOLUME_SNAPSHOT_VERSION = 1;
+    const VOLUME_CACHE_KEY = "tcl-volume-snapshot-v2";
+    const CHART_TRADE_CACHE_KEY = "tcl-chart-trades-v1";
+    const VOLUME_SNAPSHOT_VERSION = 2;
     const PRELOADED_VOLUME_SNAPSHOT = {
       version: VOLUME_SNAPSHOT_VERSION,
       buyRows: [
@@ -1247,22 +1230,76 @@
     }
 
     function getPreferredAggregatedSnapshot() {
-      const embeddedSnapshot = hasValidAggregatedShape(PRELOADED_VOLUME_SNAPSHOT)
-        ? PRELOADED_VOLUME_SNAPSHOT
-        : null;
+      const chartSnapshot = getAggregatedChartTradeSnapshot();
+      if (chartSnapshot) {
+        return chartSnapshot;
+      }
+
       const cachedSnapshot = loadCachedAggregatedSnapshot();
+      return cachedSnapshot ? cloneJson(cachedSnapshot) : null;
+    }
 
-      if (!embeddedSnapshot) {
-        return cachedSnapshot ? cloneJson(cachedSnapshot) : null;
+    function sanitizeTradeForSharedCache(trade) {
+      return {
+        hash: String(trade?.hash || ""),
+        timestamp: Number(trade?.timestamp),
+        side: trade?.side === "buy" ? "buy" : "sell",
+        price: Number(trade?.price),
+        volumeUsd: Number(trade?.volumeUsd),
+        tclAmount: Number(trade?.tclAmount),
+        description: String(trade?.description || "")
+      };
+    }
+
+    function getCachedChartTrades() {
+      try {
+        const raw = window.localStorage.getItem(CHART_TRADE_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed?.version !== 1 || !Array.isArray(parsed.trades) || !parsed.trades.length) {
+          return null;
+        }
+
+        const trades = parsed.trades
+          .map(sanitizeTradeForSharedCache)
+          .filter((trade) =>
+            trade.hash &&
+            Number.isFinite(trade.timestamp) &&
+            Number.isFinite(trade.price) &&
+            Number.isFinite(trade.volumeUsd)
+          )
+          .sort((left, right) => left.timestamp - right.timestamp);
+
+        return trades.length ? { ...parsed, trades } : null;
+      } catch (error) {
+        console.warn("Could not read cached TCL chart trades", error);
+        return null;
       }
+    }
 
-      if (!cachedSnapshot) {
-        return cloneJson(embeddedSnapshot);
+    function getAggregatedChartTradeSnapshot() {
+      const cached = getCachedChartTrades();
+      if (!cached?.trades?.length) return null;
+
+      return aggregateMonthlyVolumes(cached.trades, {
+        fullHistory: cached.fullHistory === true,
+        snapshotAt: Number(cached.savedAt) || Math.floor(Date.now() / 1000),
+        sourceLabel: cached.fullHistory === true ? "TCL chart cache" : "TCL chart cache (partial)"
+      });
+    }
+
+    function saveSharedChartTradeCache(trades, meta = {}) {
+      try {
+        if (!Array.isArray(trades) || !trades.length) return;
+        window.localStorage.setItem(CHART_TRADE_CACHE_KEY, JSON.stringify({
+          version: 1,
+          savedAt: Math.floor(Date.now() / 1000),
+          fullHistory: meta.fullHistory === true,
+          trades: trades.map(sanitizeTradeForSharedCache)
+        }));
+      } catch (error) {
+        console.warn("Could not cache shared TCL chart trades", error);
       }
-
-      const embeddedTimestamp = Number(embeddedSnapshot?.latestTrade?.timestamp) || 0;
-      const cachedTimestamp = Number(cachedSnapshot?.latestTrade?.timestamp) || 0;
-      return cloneJson(cachedTimestamp >= embeddedTimestamp ? cachedSnapshot : embeddedSnapshot);
     }
 
     async function fetchJson(url) {
@@ -1364,10 +1401,12 @@
       let hitPageLimit = false;
       let exhaustedHistory = false;
       let afterCursor = Math.floor(afterTimestamp) + 1;
+      const pageSize = CONFIG.recentTransferPageSize || CONFIG.transferPageSize;
+      const maxPages = CONFIG.recentTransferMaxPages || CONFIG.transferMaxPages;
 
-      for (let pageIndex = 0; pageIndex < CONFIG.transferMaxPages; pageIndex += 1) {
+      for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
         const params = new URLSearchParams({
-          size: String(CONFIG.transferPageSize),
+          size: String(pageSize),
           status: "success",
           order: "asc",
           after: String(afterCursor)
@@ -1392,7 +1431,7 @@
             : Math.max(newestTimestamp, ...pageTimestamps);
         }
 
-        if (page.length < CONFIG.transferPageSize) {
+        if (page.length < pageSize) {
           exhaustedHistory = true;
           break;
         }
@@ -1403,7 +1442,7 @@
           break;
         }
 
-        if (pageIndex === CONFIG.transferMaxPages - 1) {
+        if (pageIndex === maxPages - 1) {
           hitPageLimit = true;
         }
       }
@@ -1680,67 +1719,6 @@
       return total;
     }
 
-    function sumDefinedCells(cells) {
-      let total = 0;
-      for (const cell of cells) {
-        if (typeof cell === "number" && !Number.isNaN(cell)) {
-          total += cell;
-        }
-      }
-      return total;
-    }
-
-    function applyMonthlyVolumeOverrides(buyMap, sellMap, totalMap) {
-      const rawBuyByYear = new Map(
-        Array.from(buyMap.entries(), ([yearKey, row]) => [yearKey, row.cells.slice()])
-      );
-      const rawSellByYear = new Map(
-        Array.from(sellMap.entries(), ([yearKey, row]) => [yearKey, row.cells.slice()])
-      );
-      const globalLiveBuy = Array.from(rawBuyByYear.values()).reduce((sum, cells) => sum + sumDefinedCells(cells), 0);
-      const globalLiveSell = Array.from(rawSellByYear.values()).reduce((sum, cells) => sum + sumDefinedCells(cells), 0);
-
-      for (const [monthKey, override] of Object.entries(MONTHLY_VOLUME_OVERRIDES)) {
-        const [yearKey, monthNumber] = monthKey.split("-");
-        const monthIndex = Number(monthNumber) - 1;
-        const buyRow = buyMap.get(yearKey);
-        const sellRow = sellMap.get(yearKey);
-        const totalRow = totalMap.get(yearKey);
-        if (!buyRow || !sellRow || !totalRow) {
-          continue;
-        }
-
-        if (buyRow.cells[monthIndex] == null || sellRow.cells[monthIndex] == null || totalRow.cells[monthIndex] == null) {
-          continue;
-        }
-
-        const liveBuy = Number(buyRow.cells[monthIndex]) || 0;
-        const liveSell = Number(sellRow.cells[monthIndex]) || 0;
-        const monthLiveTotal = liveBuy + liveSell;
-        const yearLiveBuy = sumDefinedCells(rawBuyByYear.get(yearKey) || []);
-        const yearLiveSell = sumDefinedCells(rawSellByYear.get(yearKey) || []);
-        const yearLiveTotal = yearLiveBuy + yearLiveSell;
-        const globalLiveTotal = globalLiveBuy + globalLiveSell;
-
-        let buyShare;
-        if (liveBuy > 0 && liveSell > 0 && monthLiveTotal > 0) {
-          buyShare = liveBuy / monthLiveTotal;
-        } else if (yearLiveBuy > 0 && yearLiveSell > 0 && yearLiveTotal > 0) {
-          buyShare = yearLiveBuy / yearLiveTotal;
-        } else if (globalLiveBuy > 0 && globalLiveSell > 0 && globalLiveTotal > 0) {
-          buyShare = globalLiveBuy / globalLiveTotal;
-        } else {
-          buyShare = override.side === "buy" ? 0.58 : 0.42;
-        }
-
-        const scaledBuy = Math.round(override.totalUsd * buyShare * 100) / 100;
-        const scaledSell = Math.max(0, Math.round((override.totalUsd - scaledBuy) * 100) / 100);
-        buyRow.cells[monthIndex] = scaledBuy;
-        sellRow.cells[monthIndex] = scaledSell;
-        totalRow.cells[monthIndex] = override.totalUsd;
-      }
-    }
-
     function aggregateMonthlyVolumes(trades, fetchMeta) {
       const startDate = new Date(CONFIG.listingDate);
       const endDate = new Date();
@@ -1805,8 +1783,6 @@
           latestTrade = trade;
         }
       }
-
-      applyMonthlyVolumeOverrides(buyMap, sellMap, totalMap);
 
       const totalVolume = sumMatrixValues(totalRows);
       buyVolume = sumMatrixValues(buyRows);
@@ -2060,13 +2036,15 @@
     }
 
     function renderHeroStats(aggregated) {
-      setCardValue(ui.totalVolumeValue, formatCompactCurrency(aggregated.totalVolume), formatCurrency(aggregated.totalVolume, 2));
-      ui.totalVolumeMeta.textContent = `${formatCount(aggregated.coveredMonths)} covered months.`;
+      setCardValue(ui.totalVolumeValue, formatCurrency(aggregated.totalVolume, 2), formatCompactCurrency(aggregated.totalVolume));
+      ui.totalVolumeMeta.textContent = aggregated.oldestTrade && aggregated.latestTrade
+        ? `All-time: ${formatDateDmy(aggregated.oldestTrade.timestamp * 1000)} -> ${formatDateTime(aggregated.latestTrade.timestamp * 1000)}`
+        : "All-time from first swap to latest.";
 
-      setCardValue(ui.buyVolumeValue, formatCompactCurrency(aggregated.buyVolume), formatCurrency(aggregated.buyVolume, 2));
+      setCardValue(ui.buyVolumeValue, formatCurrency(aggregated.buyVolume, 2), formatCompactCurrency(aggregated.buyVolume));
       ui.buyVolumeMeta.textContent = `${formatCount(aggregated.buyTrades)} buy swaps.`;
 
-      setCardValue(ui.sellVolumeValue, formatCompactCurrency(aggregated.sellVolume), formatCurrency(aggregated.sellVolume, 2));
+      setCardValue(ui.sellVolumeValue, formatCurrency(aggregated.sellVolume, 2), formatCompactCurrency(aggregated.sellVolume));
       ui.sellVolumeMeta.textContent = `${formatCount(aggregated.sellTrades)} sell swaps.`;
 
       setCardValue(ui.buyDominanceValue, formatPercent(aggregated.buyDominancePct));
@@ -2164,7 +2142,7 @@
 
       ui.snapshotTimestamp.textContent = `Last Update: ${formatDateTime(effectiveRefreshTimestamp * 1000)}`;
       ui.flowSnapshotMeta.textContent = `${formatCount(aggregated.totalTrades)} swaps | ${sourceLabel}`;
-      ui.totalTableNote.textContent = "USDC volume by UTC month. Total = buy + sell. 2024-2025 use fixed monthly totals. 2026 updates from live pool transfers.";
+      ui.totalTableNote.textContent = "Monthly breakdown of the all-time USDC volume. Total = buy + sell, built from the same parsed TCL / USDC swaps as TCL Chart.";
     }
 
     function notifyParentReady() {
@@ -2215,7 +2193,14 @@
       ui.totalVolumeMount.innerHTML = markup;
     }
 
+    let volumeLoadInFlight = false;
+
     async function loadVolumePage(isManual = false) {
+      if (volumeLoadInFlight) {
+        return;
+      }
+
+      volumeLoadInFlight = true;
       const bootstrapAggregated = getPreferredAggregatedSnapshot();
 
       if (bootstrapAggregated) {
@@ -2286,6 +2271,9 @@
               sourceLabel: "live"
             }
           );
+          saveSharedChartTradeCache(trades, {
+            fullHistory: transferHistory.reachedListingStart || transferHistory.exhaustedHistory
+          });
         }
 
         renderHeroStats(aggregated);
@@ -2314,14 +2302,21 @@
         setStatus(`Volume load failed. ${error.message}`, "error");
       } finally {
         ui.refreshButton.disabled = false;
+        volumeLoadInFlight = false;
         notifyParentReady();
       }
     }
 
     loadVolumePage();
-    window.setInterval(() => {
-      loadVolumePage(false);
-    }, CONFIG.refreshMs);
+    if (window.TCLRealtime?.onRefresh) {
+      window.TCLRealtime.onRefresh(() => {
+        loadVolumePage(false);
+      });
+    } else {
+      window.setInterval(() => {
+        loadVolumePage(false);
+      }, CONFIG.refreshMs);
+    }
   </script>
 </body>
 </html>
