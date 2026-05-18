@@ -2474,6 +2474,7 @@ const internalPageState = {
   navId: "",
   routeKey: "",
   waitForReadyMessage: false,
+  readyFallbackMs: 12000,
   readyFallbackTimer: null
 };
 
@@ -2565,13 +2566,14 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   technicals: {
-    src: "Technicals.html",
+    src: "Technicals.html?v=20260518-2",
     title: "Technicals",
     navId: "btn-token",
     routeKey: "technicals",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL technical signals.",
-    waitForReadyMessage: true
+    loadingSubtitle: "Syncing TCL on-chain swap history and technical signals.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 120000
   },
   analytics: {
     src: "analytics.html",
@@ -2588,8 +2590,9 @@ const INTERNAL_PAGE_ROUTES = {
     navId: "btn-token",
     routeKey: "volume",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL volume.",
-    waitForReadyMessage: true
+    loadingSubtitle: "Syncing TCL on-chain swaps and volume history.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 120000
   },
   "tcl-trades": {
     src: "TCL_trades.html",
@@ -3206,6 +3209,9 @@ function openInternalPage(src, title, options = {}) {
   internalPageState.navId = options.navId || "";
   internalPageState.routeKey = options.routeKey || "";
   internalPageState.waitForReadyMessage = !!options.waitForReadyMessage;
+  internalPageState.readyFallbackMs = Number.isFinite(Number(options.readyFallbackMs))
+    ? Math.max(0, Number(options.readyFallbackMs))
+    : 12000;
   const page = document.getElementById("internalPage");
   const frame = document.getElementById("internalPageFrame");
   const placeholder = document.getElementById("internalPagePlaceholder");
@@ -3251,7 +3257,7 @@ function openInternalPage(src, title, options = {}) {
       }
       schedulePageFits();
       internalPageState.readyFallbackTimer = null;
-    }, 12000);
+    }, internalPageState.readyFallbackMs);
   }
 
   showPage("internalPage", {
@@ -3325,6 +3331,7 @@ window.addEventListener("message", (event) => {
   internalPageState.src = "";
   internalPageState.title = "Explorer Page";
   internalPageState.waitForReadyMessage = false;
+  internalPageState.readyFallbackMs = 12000;
   if (internalPageState.readyFallbackTimer) {
     clearTimeout(internalPageState.readyFallbackTimer);
     internalPageState.readyFallbackTimer = null;
