@@ -18,8 +18,25 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260512-3" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260518-3" />
+  <script>
+    (() => {
+      const ua = navigator.userAgent || "";
+      const platform = navigator.platform || "";
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isIOS) document.documentElement.classList.add("is-ios");
+    })();
+  </script>
   <style>
+    html.is-ios .app-topbar {
+      padding-top: calc(20px + env(safe-area-inset-top, 0px));
+      min-height: calc(var(--topbar-h) + 12px + env(safe-area-inset-top, 0px));
+    }
+
+    html.is-ios .sidebar {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
     .token-hero-head {
       display: flex;
       align-items: center;
@@ -254,7 +271,7 @@
       <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
-      <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Chart</button>
+      <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Live Chart</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck" data-i18n="sidebar_wallet_check">🔎 Wallet Check</button>
       <button type="button" class="nav-item" onclick="showPage('explorerIframe')" id="btn-explorerIframe">
@@ -280,11 +297,13 @@
   <div class="app-content">
     <header class="app-topbar">
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-controls="appSidebar" aria-expanded="false" aria-label="Toggle navigation">☰</button>
-      <div id="installGuideContainer"></div>
-      <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="openEarnGuidePage()" hidden data-i18n="nav_play_and_earn">🎮Play and Earn💰</button>
+      <div class="topbar-cta-rail" id="topbarCtaRail" aria-label="Quick actions">
+        <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="handleTopbarCtaClick()" hidden>🎮Play and Earn💰</button>
+      </div>
       <h1 class="app-page-title" id="appPageTitle">TCL Token</h1>
       <div class="app-topbar-right">
-        <div class="lang-dropdown">
+        <div class="topbar-utility-switcher" id="topbarUtilitySwitcher" data-active="lang">
+        <div class="lang-dropdown" id="topbarLangControl">
           <button type="button" class="lang-btn" id="currentLang">
             <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
           </button>
@@ -299,6 +318,15 @@
             <div class="lang-option" onclick="setLang('pl')"><img src="https://flagcdn.com/w20/pl.png" alt=""> Polski</div>
             <div class="lang-option" onclick="setLang('pt')"><img src="https://flagcdn.com/w20/pt.png" alt=""> Português</div>
           </div>
+        </div>
+        <div class="share-dropdown" id="topbarShareControl">
+          <button type="button" class="share-btn" id="shareButton" aria-expanded="false" aria-controls="shareMenu">Share</button>
+          <div class="share-menu" id="shareMenu" aria-label="Share this page">
+            <button type="button" class="share-action" id="copyShareLinkButton">Copy Link</button>
+            <button type="button" class="share-action" id="moreShareAppsButton">More apps</button>
+            <div class="share-feedback" id="shareFeedback" aria-live="polite"></div>
+          </div>
+        </div>
         </div>
       </div>
     </header>
@@ -770,12 +798,12 @@
 
 <!-- TCL Token Chart -->
 <div id="chart" class="section-page">
-  <div class="fullpage-embed-placeholder" id="chartPlaceholder">Loading TCL Chart...</div>
+  <div class="fullpage-embed-placeholder" id="chartPlaceholder">Loading chart...</div>
   <iframe
     id="chartFrame"
     loading="lazy"
     src="about:blank"
-    data-src="TCL_chart.html">
+    data-src="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&info=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=15&resetChart=1&t=12345">
   </iframe>
 </div>
 
@@ -929,6 +957,7 @@
 <script src="lang/dashboard.bundle.js?v=20260515-3"></script>
 <script src="js/wiki.js?v=20260515-2"></script>
 <script src="js/page-i18n.js?v=20260515-3"></script>
+<script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -2455,6 +2484,7 @@ const internalPageState = {
   navId: "",
   routeKey: "",
   waitForReadyMessage: false,
+  readyFallbackMs: 12000,
   readyFallbackTimer: null
 };
 
@@ -2546,13 +2576,14 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   technicals: {
-    src: "Technicals.html",
+    src: "Technicals.html?v=20260518-2",
     title: "Technicals",
     navId: "btn-token",
     routeKey: "technicals",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL technical signals.",
-    waitForReadyMessage: true
+    loadingSubtitle: "Syncing TCL on-chain swap history and technical signals.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 120000
   },
   analytics: {
     src: "analytics.html",
@@ -2564,13 +2595,14 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   volume: {
-    src: "volume.html",
+    src: "volume.html?v=20260518-2",
     title: "Volume",
     navId: "btn-token",
     routeKey: "volume",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
-    loadingSubtitle: "Preparing TCL volume.",
-    waitForReadyMessage: true
+    loadingSubtitle: "Syncing TCL on-chain swaps and volume history.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 120000
   },
   "tcl-trades": {
     src: "TCL_trades.html",
@@ -2858,6 +2890,33 @@ function ensureStakingLoaded(options = {}) {
   return stakingLoadPromise;
 }
 
+let tokenRealtimeRefreshBound = false;
+
+function refreshTokenOverviewFromRealtime() {
+  fetchPoolData({ force: true });
+  fetchExplorerData({ force: true });
+  loadTCLStats({ force: true });
+  fetchGeckoAthAtl();
+
+  const amountEl = document.getElementById("amount");
+  const hasValue = amountEl && parseNumber(amountEl.value) > 0;
+  if (hasValue) calculate();
+}
+
+function bindTokenRealtimeRefresh() {
+  if (tokenRealtimeRefreshBound) return;
+  tokenRealtimeRefreshBound = true;
+
+  if (window.TCLRealtime?.onRefresh) {
+    window.TCLRealtime.onRefresh(() => {
+      refreshTokenOverviewFromRealtime();
+    });
+    return;
+  }
+
+  window.setInterval(refreshTokenOverviewFromRealtime, 300000);
+}
+
 function startTokenRefresh() {
   if (tokenRefreshStarted) return;
   tokenRefreshStarted = true;
@@ -2869,16 +2928,7 @@ function startTokenRefresh() {
     loadTCLStats({ force: true });
   }, 40);
 
-  window.setInterval(() => {
-    fetchPoolData();
-    fetchGeckoAthAtl();
-    fetchExplorerData();
-    loadTCLStats();
-
-    const amountEl = document.getElementById("amount");
-    const hasValue = amountEl && parseNumber(amountEl.value) > 0;
-    if (hasValue) calculate();
-  }, 300000);
+  bindTokenRealtimeRefresh();
 }
 
 function loadNonCriticalServices() {
@@ -2918,16 +2968,280 @@ function scheduleAppStartup() {
 }
 
 const STAKING_SCALE_WIDTH = 980;
+let topbarCtaRotationTimer = null;
+let topbarCtaMode = "earn";
+let topbarInstallActionType = null;
+const WINDOWS_INSTALLER_URL = "https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe";
+const PUBLIC_SHARE_BASE_URL = "https://axel4ro.github.io/TCLexplorer/";
+let topbarUtilityRotationTimer = null;
+let topbarUtilityMode = "lang";
+
+function stopTopbarCtaRotation() {
+  if (!topbarCtaRotationTimer) return;
+  clearInterval(topbarCtaRotationTimer);
+  topbarCtaRotationTimer = null;
+}
+
+function getTopbarCtaModes() {
+  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows") {
+    return ["install"];
+  }
+  return topbarInstallActionType ? ["earn", "install"] : ["earn"];
+}
+
+function getTopbarInstallLabel() {
+  if (topbarInstallActionType === "android") return "📲 Install";
+  if (topbarInstallActionType === "ios") return "📲 Add";
+  if (topbarInstallActionType === "windows") return "💻 Download";
+  return "";
+}
+
+function pulseTopbarButton(element) {
+  if (!element) return;
+  element.classList.remove("topbar-attention");
+  void element.offsetWidth;
+  element.classList.add("topbar-attention");
+}
+
+function renderTopbarCtaButton() {
+  const topbarEarnBtn = document.getElementById("topbarEarnBtn");
+  if (!topbarEarnBtn) return;
+
+  const isInstallMode = topbarCtaMode === "install" && !!topbarInstallActionType;
+  topbarEarnBtn.innerHTML = isInstallMode
+    ? getTopbarInstallLabel()
+    : t("nav_play_and_earn", {}, "🎮Play and Earn💰");
+  topbarEarnBtn.dataset.ctaMode = isInstallMode ? topbarInstallActionType : "earn";
+  topbarEarnBtn.setAttribute("aria-label", topbarEarnBtn.textContent.trim());
+}
+
+function syncTopbarCtaRail() {
+  const topbarEarnBtn = document.getElementById("topbarEarnBtn");
+  if (!topbarEarnBtn) return;
+
+  const modes = getTopbarCtaModes();
+  if (!modes.includes(topbarCtaMode)) {
+    topbarCtaMode = modes[0] || "earn";
+  }
+  renderTopbarCtaButton();
+
+  if (modes.length <= 1 || topbarEarnBtn.hidden) {
+    stopTopbarCtaRotation();
+    return;
+  }
+
+  if (topbarCtaRotationTimer) return;
+
+  topbarCtaRotationTimer = setInterval(() => {
+    const currentModes = getTopbarCtaModes();
+    if (currentModes.length <= 1) {
+      syncTopbarCtaRail();
+      return;
+    }
+
+    const currentIndex = Math.max(0, currentModes.indexOf(topbarCtaMode));
+    topbarCtaMode = currentModes[(currentIndex + 1) % currentModes.length];
+    renderTopbarCtaButton();
+    pulseTopbarButton(topbarEarnBtn);
+  }, 5000);
+}
+
+function handleTopbarCtaClick() {
+  if (topbarCtaMode !== "install" || !topbarInstallActionType) {
+    openEarnGuidePage();
+    return;
+  }
+
+  if (topbarInstallActionType === "android") {
+    installPWA();
+  } else if (topbarInstallActionType === "ios") {
+    showGuide("ios");
+  } else if (topbarInstallActionType === "windows") {
+    window.open(WINDOWS_INSTALLER_URL, "_blank", "noopener");
+  }
+}
 
 function syncTopbarEarnButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
 
   const shouldHide = document.body.classList.contains("sidebar-open")
-    || document.body.classList.contains("sidebar-desktop");
+    || (
+      document.body.classList.contains("sidebar-desktop")
+      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows")
+    );
 
   topbarEarnBtn.hidden = shouldHide;
   topbarEarnBtn.setAttribute("aria-hidden", shouldHide ? "true" : "false");
+  syncTopbarCtaRail();
+}
+
+function getCurrentShareRouteKey() {
+  const hashRoute = String(window.location.hash || "").replace(/^#/, "").trim();
+  if (hashRoute) return hashRoute;
+
+  const activePage = document.querySelector(".section-page.active");
+  if (activePage?.id === "internalPage" && internalPageState.routeKey) {
+    return internalPageState.routeKey;
+  }
+
+  return activePage?.id || "token";
+}
+
+function getCurrentShareUrl() {
+  return `${PUBLIC_SHARE_BASE_URL}#${encodeURIComponent(getCurrentShareRouteKey())}`;
+}
+
+function getCurrentShareTitle() {
+  const routeTitle = document.getElementById("appPageTitle")?.textContent?.trim();
+  return routeTitle ? `${routeTitle} - TCL Explorer` : "TCL Explorer";
+}
+
+function setShareFeedback(message) {
+  const feedback = document.getElementById("shareFeedback");
+  if (!feedback) return;
+
+  feedback.textContent = message || "";
+  if (message) {
+    window.setTimeout(() => {
+      if (feedback.textContent === message) feedback.textContent = "";
+    }, 2400);
+  }
+}
+
+async function copyCurrentShareLink() {
+  const url = getCurrentShareUrl();
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const copyArea = document.createElement("textarea");
+      copyArea.value = url;
+      copyArea.setAttribute("readonly", "");
+      copyArea.style.position = "fixed";
+      copyArea.style.left = "-9999px";
+      document.body.appendChild(copyArea);
+      copyArea.select();
+      const copied = document.execCommand("copy");
+      copyArea.remove();
+      if (!copied) throw new Error("execCommand copy failed");
+    }
+    setShareFeedback(t("common_copied", "Copied!"));
+    return true;
+  } catch (error) {
+    console.warn("Clipboard share copy failed", error);
+    setShareFeedback(url);
+    return false;
+  }
+}
+
+async function openMoreShareApps() {
+  const url = getCurrentShareUrl();
+  const title = getCurrentShareTitle();
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title,
+        text: "TCL Explorer",
+        url
+      });
+      setShareFeedback("Shared");
+      closeSharePanel();
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      console.warn("Native share failed", error);
+    }
+  }
+
+  await copyCurrentShareLink();
+}
+
+function closeSharePanel() {
+  const shareDropdown = document.getElementById("topbarShareControl");
+  const shareButton = document.getElementById("shareButton");
+  shareDropdown?.classList.remove("open");
+  shareButton?.setAttribute("aria-expanded", "false");
+}
+
+function closeLangPanel() {
+  const langDropdownEl = document.querySelector(".lang-dropdown");
+  const langMenu = document.getElementById("langMenu") || document.querySelector(".lang-menu");
+  langDropdownEl?.classList.remove("open");
+  if (langMenu) langMenu.style.display = "none";
+}
+
+function isTopbarUtilityPanelOpen() {
+  const langMenu = document.getElementById("langMenu") || document.querySelector(".lang-menu");
+  const shareDropdown = document.getElementById("topbarShareControl");
+  return Boolean(
+    shareDropdown?.classList.contains("open") ||
+    langMenu?.style.display === "block"
+  );
+}
+
+function setTopbarUtilityMode(mode) {
+  const switcher = document.getElementById("topbarUtilitySwitcher");
+  if (!switcher) return;
+
+  topbarUtilityMode = mode === "share" ? "share" : "lang";
+  switcher.dataset.active = topbarUtilityMode;
+
+  if (topbarUtilityMode === "share") {
+    closeLangPanel();
+    pulseTopbarButton(document.getElementById("shareButton"));
+  } else {
+    closeSharePanel();
+    pulseTopbarButton(document.getElementById("currentLang"));
+  }
+}
+
+function syncTopbarUtilityRotation() {
+  const switcher = document.getElementById("topbarUtilitySwitcher");
+  if (!switcher || topbarUtilityRotationTimer) return;
+
+  setTopbarUtilityMode(topbarUtilityMode);
+  topbarUtilityRotationTimer = window.setInterval(() => {
+    if (isTopbarUtilityPanelOpen()) return;
+    setTopbarUtilityMode(topbarUtilityMode === "lang" ? "share" : "lang");
+  }, 5000);
+}
+
+function bindTopbarShareControls() {
+  const shareButton = document.getElementById("shareButton");
+  const copyButton = document.getElementById("copyShareLinkButton");
+  const moreAppsButton = document.getElementById("moreShareAppsButton");
+  const shareDropdown = document.getElementById("topbarShareControl");
+  const shareMenu = document.getElementById("shareMenu");
+
+  if (!shareButton || !shareDropdown || !shareMenu) return;
+
+  shareButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const isOpen = shareDropdown.classList.toggle("open");
+    shareButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    if (isOpen) closeLangPanel();
+  });
+
+  copyButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    copyCurrentShareLink();
+  });
+
+  moreAppsButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openMoreShareApps();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!shareDropdown.contains(event.target)) {
+      closeSharePanel();
+    }
+  });
 }
 
 function setSidebarOpen(open) {
@@ -3084,6 +3398,9 @@ function openInternalPage(src, title, options = {}) {
   internalPageState.navId = options.navId || "";
   internalPageState.routeKey = options.routeKey || "";
   internalPageState.waitForReadyMessage = !!options.waitForReadyMessage;
+  internalPageState.readyFallbackMs = Number.isFinite(Number(options.readyFallbackMs))
+    ? Math.max(0, Number(options.readyFallbackMs))
+    : 12000;
   const page = document.getElementById("internalPage");
   const frame = document.getElementById("internalPageFrame");
   const placeholder = document.getElementById("internalPagePlaceholder");
@@ -3129,7 +3446,7 @@ function openInternalPage(src, title, options = {}) {
       }
       schedulePageFits();
       internalPageState.readyFallbackTimer = null;
-    }, 12000);
+    }, internalPageState.readyFallbackMs);
   }
 
   showPage("internalPage", {
@@ -3203,6 +3520,7 @@ window.addEventListener("message", (event) => {
   internalPageState.src = "";
   internalPageState.title = "Explorer Page";
   internalPageState.waitForReadyMessage = false;
+  internalPageState.readyFallbackMs = 12000;
   if (internalPageState.readyFallbackTimer) {
     clearTimeout(internalPageState.readyFallbackTimer);
     internalPageState.readyFallbackTimer = null;
@@ -3432,13 +3750,13 @@ function syncSentimentLabel() {
   label.style.color = "";
 }
 
-function updateSentimentIndex() {
+function updateSentimentIndex(options = {}) {
   if (sentimentUpdatePromise) return sentimentUpdatePromise;
 
   const cachedSentiment = getSentimentCache();
   if (cachedSentiment) {
     applySentimentScore(cachedSentiment.score, cachedSentiment.updatedAt);
-    if (isFreshSentimentCache(cachedSentiment)) {
+    if (!options.force && isFreshSentimentCache(cachedSentiment)) {
       return Promise.resolve(true);
     }
   }
@@ -3615,10 +3933,15 @@ function updateSentimentLastUpdate() {
 
 // === Inițializare la încărcare ===
 document.addEventListener("DOMContentLoaded", function() {
-  // Actualizează la fiecare 5 minute
-  setInterval(() => {
-    if (isSentimentViewActive()) updateSentimentIndex();
-  }, 5 * 60 * 1000);
+  const refreshSentimentWhenVisible = () => {
+    if (isSentimentViewActive()) updateSentimentIndex({ force: true });
+  };
+
+  if (window.TCLRealtime?.onRefresh) {
+    window.TCLRealtime.onRefresh(refreshSentimentWhenVisible);
+  } else {
+    setInterval(refreshSentimentWhenVisible, 5 * 60 * 1000);
+  }
   
   // Actualizează afișajul "x time ago" la fiecare minut
   setInterval(updateSentimentLastUpdate, 60000);
@@ -3637,6 +3960,9 @@ function applySidebarLayout() {
 document.addEventListener("DOMContentLoaded", () => {
   applySidebarLayout();
   window.addEventListener("resize", scheduleSidebarLayout, { passive: true });
+  window.addEventListener("resize", syncTopbarCtaRail, { passive: true });
+  bindTopbarShareControls();
+  syncTopbarUtilityRotation();
 
   const langBtn = document.getElementById("currentLang");
   const langMenu = document.getElementById("langMenu") || document.querySelector(".lang-menu");
@@ -3647,6 +3973,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
       const isOpen = langMenu.style.display === "block";
       document.querySelectorAll(".lang-menu").forEach((m) => (m.style.display = "none"));
+      closeSharePanel();
       langMenu.style.display = isOpen ? "none" : "block";
     });
 
@@ -3924,6 +4251,7 @@ function applyTranslations() {
     updateSentimentIndex();
   }
 
+  syncTopbarCtaRail();
   syncInternalPageChrome();
 }
 
@@ -4215,18 +4543,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function showInstallButton(type) {
-  const container = document.getElementById("installGuideContainer");
-  if (!container) return;
-
-  let btnHtml = "";
-  if (type === "android") {
-    btnHtml = `<button class="install-btn" onclick="installPWA()">📲 Install</button>`;
-  } else if (type === "ios") {
-    btnHtml = `<button class="install-btn" onclick="showGuide('ios')">📲 Add</button>`;
-  } else if (type === "windows") {
-    btnHtml = `<a href="https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe" target="_blank" class="install-btn">💻 Download</a>`;
-  }
-  container.innerHTML = btnHtml;
+  topbarInstallActionType = ["android", "ios", "windows"].includes(type) ? type : null;
+  syncTopbarEarnButton();
 }
 
 async function installPWA() {
