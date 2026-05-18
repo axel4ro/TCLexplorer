@@ -1,6 +1,6 @@
 window.TCL_ANALYTICS_SNAPSHOT = {
   "meta": {
-    "updatedAt": "2026-05-18T17:12:46.8390367Z",
+    "updatedAt": "2026-05-18T17:17:54.5424024Z",
     "source": "CryptoRank",
     "endpoints": {
       "coin": "https://api.cryptorank.io/v0/coins/the-cursed-land",
@@ -31,40 +31,40 @@ window.TCL_ANALYTICS_SNAPSHOT = {
     {
       "label": "1W",
       "key": "7D",
-      "startPrice": 0.000941281663,
+      "startPrice": 0.000941274792,
       "currentPrice": 0.000918380106,
-      "change": -2.2901557E-05,
-      "changePct": -2.4330185,
+      "change": -2.2894686E-05,
+      "changePct": -2.43230629,
       "high": 0.000963598051,
       "low": 0.000903029615
     },
     {
       "label": "1M",
       "key": "30D",
-      "startPrice": 0.000873021084,
+      "startPrice": 0.000873019126,
       "currentPrice": 0.000918380106,
-      "change": 4.5359022E-05,
-      "changePct": 5.19563878,
+      "change": 4.536098E-05,
+      "changePct": 5.19587471,
       "high": 0.001045618391,
       "low": 0.000835452668
     },
     {
       "label": "3M",
       "key": "3M",
-      "startPrice": 0.001009130262,
+      "startPrice": 0.001009139599,
       "currentPrice": 0.000918380106,
-      "change": -9.0750156E-05,
-      "changePct": -8.99290799,
+      "change": -9.0759493E-05,
+      "changePct": -8.99375003,
       "high": 0.001045618391,
       "low": 0.000811077553
     },
     {
       "label": "6M",
       "key": "6M",
-      "startPrice": 0.001151247134,
+      "startPrice": 0.001151245036,
       "currentPrice": 0.000918380106,
-      "change": -0.000232867028,
-      "changePct": -20.22737092,
+      "change": -0.00023286493,
+      "changePct": -20.22722554,
       "high": 0.001321155046,
       "low": 0.000811077553
     },
@@ -81,10 +81,10 @@ window.TCL_ANALYTICS_SNAPSHOT = {
     {
       "label": "1Y",
       "key": "1Y",
-      "startPrice": 0.003370155845,
+      "startPrice": 0.003370167147,
       "currentPrice": 0.000918380106,
-      "change": -0.002451775739,
-      "changePct": -72.749625,
+      "change": -0.002451787041,
+      "changePct": -72.74971638,
       "high": 0.003836686922,
       "low": 0.000542361537
     }
@@ -101,7 +101,7 @@ window.TCL_ANALYTICS_SNAPSHOT = {
         "label": "2026",
         "cells": [
           -26.89595017,
-          12.67815712,
+          12.67908443,
           null,
           null
         ]
@@ -186,7 +186,7 @@ window.TCL_ANALYTICS_SNAPSHOT = {
           -2.10377533,
           -14.90747882,
           2.88430124,
-          9.51687838,
+          9.51777967,
           null,
           null,
           null,
