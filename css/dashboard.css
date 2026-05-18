@@ -339,7 +339,8 @@ body.sidebar-desktop .app-content {
   background: rgba(10, 12, 18, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: visible;
 }
 
 .sidebar-toggle {
@@ -362,10 +363,36 @@ body.sidebar-desktop .app-content {
   box-shadow: 0 0 20px rgba(0, 232, 204, 0.2);
 }
 
-#installGuideContainer {
-  position: static !important;
-  left: auto !important;
-  top: auto !important;
+.topbar-cta-rail {
+  flex: 1 1 130px;
+  min-width: 64px;
+  max-width: min(38vw, 170px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.topbar-cta-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.topbar-cta-rail .install-btn {
+  flex: 0 0 auto;
+  max-width: 100%;
+  scroll-snap-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-cta-rail .install-btn[hidden] {
+  display: none !important;
 }
 
 .topbar-earn-btn {
@@ -387,6 +414,7 @@ body.sidebar-desktop .topbar-earn-btn {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
 }
 
 .app-main {
@@ -1736,6 +1764,12 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 @media (max-width: 1023px) {
   body:not(.sidebar-open):not(.sidebar-desktop) .topbar-earn-btn {
     display: inline-flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  body.sidebar-desktop .topbar-earn-btn[data-cta-mode="windows"] {
+    display: inline-flex !important;
   }
 }
 
