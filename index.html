@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260518-3" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260518-4" />
   <script>
     (() => {
       const ua = navigator.userAgent || "";
@@ -320,10 +320,36 @@
           </div>
         </div>
         <div class="share-dropdown" id="topbarShareControl">
-          <button type="button" class="share-btn" id="shareButton" aria-expanded="false" aria-controls="shareMenu">Share</button>
+          <button type="button" class="share-btn" id="shareButton" aria-expanded="false" aria-controls="shareMenu">
+            <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="M8.7 10.7 15.3 6.3"></path>
+              <path d="M8.7 13.3 15.3 17.7"></path>
+            </svg>
+            <span>Share</span>
+          </button>
           <div class="share-menu" id="shareMenu" aria-label="Share this page">
-            <button type="button" class="share-action" id="copyShareLinkButton">Copy Link</button>
-            <button type="button" class="share-action" id="moreShareAppsButton">More apps</button>
+            <button type="button" class="share-action" id="copyShareLinkButton">
+              <span class="share-action__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+                  <path d="M5 15V7a2 2 0 0 1 2-2h8"></path>
+                </svg>
+              </span>
+              <span>Copy Link</span>
+            </button>
+            <button type="button" class="share-action" id="moreShareAppsButton">
+              <span class="share-action__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 16V5"></path>
+                  <path d="m7 10 5-5 5 5"></path>
+                  <path d="M5 19h14"></path>
+                </svg>
+              </span>
+              <span>More apps</span>
+            </button>
             <div class="share-feedback" id="shareFeedback" aria-live="polite"></div>
           </div>
         </div>
