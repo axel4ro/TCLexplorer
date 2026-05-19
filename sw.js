@@ -49,9 +49,18 @@ function clearLocalTimers() {
   localTimers.clear();
 }
 
+function getDisplayTitle(payload) {
+  if (payload.type !== "reminder" || !payload.titleTemplate || !payload.startAt) {
+    return payload.title || "TCL Event";
+  }
+
+  const minutes = Math.max(0, Math.ceil((Number(payload.startAt) - Date.now()) / 60000));
+  return String(payload.titleTemplate).split("{minutes}").join(String(minutes));
+}
+
 async function showEventNotification(payload) {
   const targetUrl = new URL(payload.url || "index.html#events", self.registration.scope).href;
-  await self.registration.showNotification(payload.title || "TCL Event", {
+  await self.registration.showNotification(getDisplayTitle(payload), {
     body: payload.body || "The Cursed Land event reminder",
     icon: payload.icon || ICON_URL,
     badge: payload.badge || ICON_URL,

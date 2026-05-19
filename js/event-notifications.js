@@ -1,6 +1,7 @@
 (function () {
   const SETTINGS_KEY = "tclEventNotificationSettings";
-  const DEFAULT_REMINDER_MINUTES = 10;
+  const DEFAULT_REMINDER_MINUTES = 15;
+  const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
   const DAY_MS = 24 * 60 * 60 * 1000;
   const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -80,12 +81,16 @@
 
   function getSettings() {
     try {
-      return {
+      const settings = {
         enabled: false,
         mode: "off",
         reminderMinutes: DEFAULT_REMINDER_MINUTES,
         ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") || {})
       };
+      if (settings.reminderMinutes === LEGACY_DEFAULT_REMINDER_MINUTES) {
+        settings.reminderMinutes = DEFAULT_REMINDER_MINUTES;
+      }
+      return settings;
     } catch (_) {
       return {
         enabled: false,
@@ -231,7 +236,7 @@
   async function getServiceWorkerRegistration() {
     if (!supportsNotifications()) return null;
     const swUrl = new URL("sw.js", window.location.href);
-    const registration = await navigator.serviceWorker.register(swUrl);
+    const registration = await navigator.serviceWorker.register(swUrl, { updateViaCache: "none" });
     return registration.active ? registration : navigator.serviceWorker.ready;
   }
 
@@ -348,12 +353,16 @@
         const reminderAt = startAt - reminderMinutes * 60 * 1000;
         const baseId = `${day}:${event.name}:${event.start}:${startAt}`;
         const body = translated.description;
+        const reminderTitleTemplate = tr("reminderTitle", { name: translated.name, minutes: "{minutes}" });
 
         [
           {
             id: `${baseId}:reminder:${reminderMinutes}`,
             triggerAt: reminderAt,
+            type: "reminder",
+            startAt,
             title: tr("reminderTitle", { name: translated.name, minutes: reminderMinutes }),
+            titleTemplate: reminderTitleTemplate,
             body
           },
           {

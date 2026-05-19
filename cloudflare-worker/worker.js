@@ -1,6 +1,7 @@
 const SUBSCRIPTION_PREFIX = "subscription:";
 const SENT_PREFIX = "sent:";
-const DEFAULT_REMINDER_MINUTES = 10;
+const DEFAULT_REMINDER_MINUTES = 15;
+const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SENT_TTL_SECONDS = 14 * 24 * 60 * 60;
@@ -150,7 +151,7 @@ async function handleSubscribe(request, env) {
     subscription,
     timezone: String(body.timezone || ""),
     lang: normalizeLang(body.lang),
-    reminderMinutes: normalizeReminderMinutes(body.reminderMinutes),
+    reminderMinutes: resolveReminderMinutes(body.reminderMinutes),
     userAgent: String(body.userAgent || "").slice(0, 500),
     createdAt: now,
     updatedAt: now
@@ -338,11 +339,11 @@ async function loadEvents(env) {
 }
 
 function dueNotificationsForRecord(record, eventsData, now, env) {
-  const reminderMinutes = normalizeReminderMinutes(record.reminderMinutes ?? DEFAULT_REMINDER_MINUTES);
+  const reminderMinutes = resolveReminderMinutes(record.reminderMinutes);
   const lang = normalizeLang(record.lang);
   const templates = EVENT_COPY[lang] || EVENT_COPY.en;
   const lookbackMs = Number(env.EVENT_PUSH_LOOKBACK_MINUTES || 6) * 60 * 1000;
-  const lookaheadMs = Number(env.EVENT_PUSH_LOOKAHEAD_MINUTES || 6) * 60 * 1000;
+  const nowMs = now.getTime();
   const due = [];
 
   Object.entries(eventsData || {}).forEach(([day, events]) => {
@@ -352,6 +353,7 @@ function dueNotificationsForRecord(record, eventsData, now, env) {
 
       const startAt = occurrence.start.getTime();
       const reminderAt = startAt - reminderMinutes * 60 * 1000;
+      const actualReminderMinutes = minutesUntil(startAt, nowMs);
       const eventName = event.name || "TCL Event";
       const base = {
         body: event.description || templates.defaultBody,
@@ -363,7 +365,7 @@ function dueNotificationsForRecord(record, eventsData, now, env) {
         {
           type: "reminder",
           triggerAt: reminderAt,
-          title: formatTemplate(templates.reminderTitle, { name: eventName, minutes: reminderMinutes })
+          title: formatTemplate(templates.reminderTitle, { name: eventName, minutes: actualReminderMinutes })
         },
         {
           type: "live",
@@ -371,8 +373,8 @@ function dueNotificationsForRecord(record, eventsData, now, env) {
           title: formatTemplate(templates.liveTitle, { name: eventName })
         }
       ].forEach((notification) => {
-        if (notification.triggerAt < now.getTime() - lookbackMs) return;
-        if (notification.triggerAt > now.getTime() + lookaheadMs) return;
+        if (notification.triggerAt > nowMs) return;
+        if (notification.triggerAt < nowMs - lookbackMs) return;
 
         const sentKeySource = [
           record.id,
@@ -454,6 +456,10 @@ function formatTemplate(template, vars) {
   return value;
 }
 
+function minutesUntil(timestamp, nowMs) {
+  return Math.max(0, Math.ceil((timestamp - nowMs) / 60000));
+}
+
 function normalizeLang(value) {
   const lang = String(value || "en").toLowerCase().split("-")[0];
   return lang === "ro" ? "ro" : "en";
@@ -463,6 +469,11 @@ function normalizeReminderMinutes(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return DEFAULT_REMINDER_MINUTES;
   return Math.min(120, Math.max(0, Math.round(parsed)));
+}
+
+function resolveReminderMinutes(value) {
+  const normalized = normalizeReminderMinutes(value);
+  return normalized === LEGACY_DEFAULT_REMINDER_MINUTES ? DEFAULT_REMINDER_MINUTES : normalized;
 }
 
 function isValidSubscription(subscription) {
