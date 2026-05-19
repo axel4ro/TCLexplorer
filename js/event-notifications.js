@@ -3,6 +3,7 @@
   const DEFAULT_REMINDER_MINUTES = 15;
   const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const STATS_POLL_INTERVAL_MS = 5 * 60 * 1000;
   const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   const copy = {
@@ -225,7 +226,7 @@
   function startSubscriberStatsPolling() {
     if (state.statsTimer) return;
     refreshSubscriberStats();
-    state.statsTimer = window.setInterval(refreshSubscriberStats, 15000);
+    state.statsTimer = window.setInterval(refreshSubscriberStats, STATS_POLL_INTERVAL_MS);
 
     window.addEventListener("focus", refreshSubscriberStats);
     document.addEventListener("visibilitychange", () => {

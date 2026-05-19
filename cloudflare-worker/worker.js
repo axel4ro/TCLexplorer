@@ -1,5 +1,6 @@
 const SUBSCRIPTION_PREFIX = "subscription:";
 const SENT_PREFIX = "sent:";
+const STATS_KEY = "stats:subscriptions";
 const DEFAULT_REMINDER_MINUTES = 15;
 const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -22,11 +23,21 @@ const EVENT_COPY = {
 
 export default {
   async fetch(request, env) {
-    return handleRequest(request, env);
+    try {
+      return await handleRequest(request, env || {});
+    } catch (error) {
+      return emergencyJsonResponse(request, 500, {
+        ok: false,
+        error: error?.message || "Worker error"
+      });
+    }
   },
 
   async scheduled(_event, env, ctx) {
-    ctx.waitUntil(dispatchDueNotifications(env));
+    ctx.waitUntil(dispatchDueNotifications(env).catch((error) => ({
+      ok: false,
+      error: error?.message || "Scheduled dispatch failed"
+    })));
   }
 };
 
@@ -93,6 +104,25 @@ function corsHeaders(request, env) {
   };
 }
 
+function emergencyCorsHeaders(request) {
+  return {
+    "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+    "Access-Control-Max-Age": "86400"
+  };
+}
+
+function emergencyJsonResponse(request, status, payload) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      ...emergencyCorsHeaders(request),
+      "Content-Type": "application/json; charset=utf-8"
+    }
+  });
+}
+
 function emptyResponse(request, env) {
   return new Response(null, {
     status: 204,
@@ -145,6 +175,7 @@ async function handleSubscribe(request, env) {
   }
 
   const id = await subscriptionId(subscription.endpoint);
+  const existing = await kv.get(`${SUBSCRIPTION_PREFIX}${id}`);
   const now = new Date().toISOString();
   const record = {
     id,
@@ -158,6 +189,9 @@ async function handleSubscribe(request, env) {
   };
 
   await kv.put(`${SUBSCRIPTION_PREFIX}${id}`, JSON.stringify(record));
+  if (!existing) {
+    await adjustSubscriberCount(kv, 1);
+  }
   return jsonResponse(request, env, 200, { ok: true, id });
 }
 
@@ -175,7 +209,11 @@ async function handleUnsubscribe(request, env) {
     return jsonResponse(request, env, 400, { ok: false, error: "Missing subscription id" });
   }
 
+  const existing = await kv.get(`${SUBSCRIPTION_PREFIX}${id}`);
   await kv.delete(`${SUBSCRIPTION_PREFIX}${id}`);
+  if (existing) {
+    await adjustSubscriberCount(kv, -1);
+  }
   return jsonResponse(request, env, 200, { ok: true });
 }
 
@@ -206,11 +244,23 @@ async function handleStats(request, env) {
     return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
   }
 
-  const kv = requireKv(env);
-  const subscribers = await countSubscriptions(kv);
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 200, {
+      ok: true,
+      subscribers: 0,
+      configured: false,
+      warning: "TCL_EVENT_PUSH_KV binding is not configured",
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  const stats = await readSubscriberStats(kv);
   return jsonResponse(request, env, 200, {
     ok: true,
-    subscribers,
+    subscribers: stats.subscribers,
+    configured: true,
+    source: stats.source,
     updatedAt: new Date().toISOString()
   });
 }
@@ -327,6 +377,29 @@ async function countSubscriptions(kv) {
   } while (cursor);
 
   return count;
+}
+
+async function readSubscriberStats(kv) {
+  const raw = await kv.get(STATS_KEY, "json").catch(() => null);
+  const count = Number(raw?.subscribers);
+  return {
+    subscribers: Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0,
+    source: raw ? "counter" : "default"
+  };
+}
+
+async function writeSubscriberStats(kv, subscribers) {
+  const safeCount = Math.max(0, Math.floor(Number(subscribers) || 0));
+  await kv.put(STATS_KEY, JSON.stringify({
+    subscribers: safeCount,
+    updatedAt: new Date().toISOString()
+  }));
+  return safeCount;
+}
+
+async function adjustSubscriberCount(kv, delta) {
+  const current = await readSubscriberStats(kv);
+  return writeSubscriberStats(kv, current.subscribers + Number(delta || 0));
 }
 
 async function loadEvents(env) {

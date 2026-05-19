@@ -1005,7 +1005,7 @@
 <script src="js/page-i18n.js?v=20260515-3"></script>
 <script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script src="js/event-push-config.js?v=20260519-1"></script>
-<script src="js/event-notifications.js?v=20260519-3"></script>
+<script src="js/event-notifications.js?v=20260519-4"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -2087,7 +2087,7 @@ function buildLeaderboardRankHtml(rankDisplay, address = "") {
     "</div>";
   }
 
-  if (normalizedRank !== null && normalizedRank >= 0 && normalizedRank <= 10) {
+  if (normalizedRank !== null && normalizedRank >= 0 && normalizedRank <= 3) {
     const rankIconPath = "images/rank" + normalizedRank + ".png";
     return "<div class='staking-rank-cell'>" +
       "<img src='" + rankIconPath + "' alt='Rank " + normalizedRank + "' class='staking-rank-icon' " +
