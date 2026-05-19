@@ -1,6 +1,7 @@
 const SUBSCRIPTION_PREFIX = "subscription:";
 const SENT_PREFIX = "sent:";
 const STATS_KEY = "stats:subscriptions";
+const STATS_HISTORY_PREFIX = "stats:history:";
 const DEFAULT_REMINDER_MINUTES = 15;
 const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -62,6 +63,10 @@ async function handleRequest(request, env) {
 
     if (path.endsWith("/api/push/test")) {
       return handleTest(request, env);
+    }
+
+    if (path.endsWith("/api/push/stats/history")) {
+      return handleStatsHistory(request, env);
     }
 
     if (path.endsWith("/api/push/stats")) {
@@ -256,12 +261,48 @@ async function handleStats(request, env) {
   }
 
   const stats = await readSubscriberStats(kv);
+  await recordSubscriberStatsHistory(kv, stats.subscribers).catch(() => {});
   return jsonResponse(request, env, 200, {
     ok: true,
     subscribers: stats.subscribers,
     configured: true,
     source: stats.source,
     updatedAt: new Date().toISOString()
+  });
+}
+
+async function handleStatsHistory(request, env) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 200, {
+      ok: true,
+      history: [],
+      configured: false,
+      warning: "TCL_EVENT_PUSH_KV binding is not configured"
+    });
+  }
+
+  const days = Math.min(Math.max(Number(new URL(request.url).searchParams.get("days") || 30), 1), 90);
+  const history = [];
+  const now = new Date();
+
+  for (let index = days - 1; index >= 0; index -= 1) {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - index));
+    const day = date.toISOString().slice(0, 10);
+    const row = await kv.get(`${STATS_HISTORY_PREFIX}${day}`, "json").catch(() => null);
+    if (row) {
+      history.push(row);
+    }
+  }
+
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    configured: true,
+    history
   });
 }
 
@@ -390,16 +431,35 @@ async function readSubscriberStats(kv) {
 
 async function writeSubscriberStats(kv, subscribers) {
   const safeCount = Math.max(0, Math.floor(Number(subscribers) || 0));
-  await kv.put(STATS_KEY, JSON.stringify({
+  const payload = {
     subscribers: safeCount,
     updatedAt: new Date().toISOString()
-  }));
+  };
+  await kv.put(STATS_KEY, JSON.stringify(payload));
+  await recordSubscriberStatsHistory(kv, safeCount);
   return safeCount;
 }
 
 async function adjustSubscriberCount(kv, delta) {
   const current = await readSubscriberStats(kv);
   return writeSubscriberStats(kv, current.subscribers + Number(delta || 0));
+}
+
+async function recordSubscriberStatsHistory(kv, subscribers) {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = `${STATS_HISTORY_PREFIX}${day}`;
+  const previous = await kv.get(key, "json").catch(() => null);
+  const count = Math.max(0, Math.floor(Number(subscribers) || 0));
+  const payload = {
+    date: day,
+    subscribers: count,
+    min: Number.isFinite(Number(previous?.min)) ? Math.min(Number(previous.min), count) : count,
+    max: Number.isFinite(Number(previous?.max)) ? Math.max(Number(previous.max), count) : count,
+    updatedAt: new Date().toISOString()
+  };
+  await kv.put(key, JSON.stringify(payload), {
+    expirationTtl: 120 * 24 * 60 * 60
+  });
 }
 
 async function loadEvents(env) {

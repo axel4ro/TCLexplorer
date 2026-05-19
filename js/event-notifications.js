@@ -274,6 +274,24 @@
     return subscription;
   }
 
+  async function restoreServerSubscription() {
+    const settings = getSettings();
+    if (!settings.enabled || settings.mode !== "push" || !supportsPush()) return null;
+    if (Notification.permission !== "granted") return null;
+
+    try {
+      const registration = await getServiceWorkerRegistration();
+      const subscription = await subscribePush(registration);
+      if (subscription) {
+        await refreshSubscriberStats();
+      }
+      return subscription;
+    } catch (error) {
+      console.warn("Push subscription restore failed", error);
+      return null;
+    }
+  }
+
   async function unregisterPush(registration) {
     if (!supportsPush() || !registration) return;
     const subscription = await registration.pushManager.getSubscription();
@@ -624,6 +642,7 @@
     startSubscriberStatsPolling();
 
     if (getSettings().enabled) {
+      await restoreServerSubscription();
       await syncEvents(window.eventsData || null);
     }
   }
