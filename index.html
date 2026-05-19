@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260518-4" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260518-5" />
   <script>
     (() => {
       const ua = navigator.userAgent || "";
@@ -815,6 +815,18 @@
   <h2 data-i18n="events_title"></h2>
   <small style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;" data-i18n="events_desc"></small>
 
+  <div class="event-notification-panel" id="eventsNotificationPanel" data-state="checking">
+    <div class="event-notification-panel__copy">
+      <div class="event-notification-panel__title" id="eventsNotificationTitle">Event notifications</div>
+      <div class="event-notification-panel__status" id="eventsNotificationStatus">Checking notification support...</div>
+    </div>
+    <div class="event-notification-panel__actions">
+      <button type="button" class="event-notification-btn event-notification-btn--primary" id="enableEventNotificationsBtn">Enable</button>
+      <button type="button" class="event-notification-btn" id="testEventNotificationsBtn" hidden>Test</button>
+      <button type="button" class="event-notification-btn event-notification-btn--ghost" id="disableEventNotificationsBtn" hidden>Disable</button>
+    </div>
+  </div>
+
   <div id="eventContainer" data-i18n="events_loading"></div>
 
   <div style="margin-top:15px; display:flex; gap:6px; flex-wrap:wrap;" id="eventButtons"></div>
@@ -984,6 +996,8 @@
 <script src="js/wiki.js?v=20260515-2"></script>
 <script src="js/page-i18n.js?v=20260515-3"></script>
 <script src="js/tcl-realtime.js?v=20260518-1"></script>
+<script src="js/event-push-config.js?v=20260518-1"></script>
+<script src="js/event-notifications.js?v=20260518-1"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -1500,11 +1514,13 @@ async function loadEvents() {
   try {
     const res = await fetch(EVENTS_URL + "?t=" + Date.now());
     eventsData = await res.json();
+    window.eventsData = eventsData;
 
     currentDay = weekdays[getTodayIndex()];
     console.log("✅ Today:", currentDay); // debug
     renderDayButtons(currentDay);
     showEventsForDay(currentDay);
+    window.TCLEventNotifications?.syncEvents(eventsData, { lang: currentLang });
     return eventsData;
 
   } catch (err) {
@@ -1646,6 +1662,7 @@ function showEventsForDay(day) {
   });
 
   container.innerHTML = html;
+  window.TCLEventNotifications?.syncEvents(eventsData, { lang: currentLang });
 }
 
 showEventsForDay = function(day) {
@@ -1773,6 +1790,7 @@ showEventsForDay = function(day) {
   });
 
   container.innerHTML = html;
+  window.TCLEventNotifications?.syncEvents(eventsData, { lang: currentLang });
 }
 
   // ===== Data Fetch =====
@@ -4279,6 +4297,10 @@ function applyTranslations() {
 
   syncTopbarCtaRail();
   syncInternalPageChrome();
+  window.TCLEventNotifications?.setLanguage?.(currentLang);
+  if (Object.keys(eventsData || {}).length > 0) {
+    window.TCLEventNotifications?.syncEvents(eventsData, { lang: currentLang });
+  }
 }
 
 
@@ -4522,14 +4544,15 @@ function notify(title, message) {
   }
 
   try {
+    if (window.TCLEventNotifications?.showImmediate) {
+      window.TCLEventNotifications.showImmediate(title, message, {
+        tag: "tcl-event-active-inline"
+      });
+      return;
+    }
+
     if (Notification.permission === "granted") {
       new Notification(title, { body: message, icon: "images/tcl_icon.png" });
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          new Notification(title, { body: message, icon: "images/tcl_icon.png" });
-        }
-      });
     }
   } catch (err) {
     console.error("❌ Notification error:", err);
