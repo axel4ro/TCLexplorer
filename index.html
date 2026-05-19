@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260519-1" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260519-2" />
   <script>
     (() => {
       const ua = navigator.userAgent || "";
@@ -812,12 +812,13 @@
 
 <!-- Events -->
 <div id="events" class="section-page">
-  <h2 data-i18n="events_title"></h2>
-  <div class="event-subscriber-card" id="eventSubscriberCard" aria-live="polite">
-    <div class="event-subscriber-card__label" id="eventSubscriberLabel">Notification subscribers</div>
-    <div class="event-subscriber-card__body">
+  <div class="events-heading-row">
+    <h2 class="events-heading" data-i18n="events_title"></h2>
+    <div class="event-subscriber-card" id="eventSubscriberCard" aria-live="polite" aria-label="Subscribers">
       <span class="event-subscriber-card__count" id="eventSubscriberCount">--</span>
-      <span class="event-subscriber-card__meta" id="eventSubscriberMeta">Live count</span>
+      <span class="event-subscriber-card__unit" id="eventSubscriberUnit">Subs</span>
+      <span class="event-subscriber-card__pulse" aria-hidden="true"></span>
+      <span class="event-subscriber-card__meta" id="eventSubscriberMeta">Live</span>
     </div>
   </div>
   <small style="color:#6b7280; display:block; margin-bottom:10px; font-size:13px;" data-i18n="events_desc"></small>
@@ -1004,7 +1005,7 @@
 <script src="js/page-i18n.js?v=20260515-3"></script>
 <script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script src="js/event-push-config.js?v=20260519-1"></script>
-<script src="js/event-notifications.js?v=20260519-1"></script>
+<script src="js/event-notifications.js?v=20260519-2"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;

@@ -18,8 +18,8 @@
       enable: "Enable",
       disable: "Disable",
       test: "Test",
-      subscribersLabel: "Notification subscribers",
-      subscribersMeta: "Live count",
+      subscribersUnit: "Subs",
+      subscribersMeta: "Live",
       subscribersError: "Unavailable",
       enabledTitle: "Event notifications enabled",
       enabledBody: "You will receive reminders for weekly events on this device.",
@@ -41,7 +41,7 @@
       enable: "Activeaza",
       disable: "Opreste",
       test: "Test",
-      subscribersLabel: "Subscribers notificari",
+      subscribersUnit: "Subs",
       subscribersMeta: "Live",
       subscribersError: "Indisponibil",
       enabledTitle: "Notificari events activate",
@@ -179,18 +179,19 @@
 
   function setSubscriberCard(status, count) {
     const card = document.getElementById("eventSubscriberCard");
-    const label = document.getElementById("eventSubscriberLabel");
     const countEl = document.getElementById("eventSubscriberCount");
+    const unit = document.getElementById("eventSubscriberUnit");
     const meta = document.getElementById("eventSubscriberMeta");
-    if (!card || !label || !countEl || !meta) return;
+    if (!card || !countEl || !meta) return;
 
-    label.textContent = tr("subscribersLabel");
     card.dataset.state = status || "loading";
+    if (unit) unit.textContent = tr("subscribersUnit");
 
     if (Number.isFinite(count)) {
       state.subscriberCount = count;
       countEl.textContent = String(count);
       meta.textContent = tr("subscribersMeta");
+      card.setAttribute("aria-label", `${count} ${tr("subscribersUnit")} ${tr("subscribersMeta")}`);
       return;
     }
 
@@ -200,6 +201,7 @@
       countEl.textContent = "--";
     }
     meta.textContent = status === "error" ? tr("subscribersError") : tr("subscribersMeta");
+    card.setAttribute("aria-label", `${countEl.textContent} ${tr("subscribersUnit")} ${meta.textContent}`);
   }
 
   async function refreshSubscriberStats() {
