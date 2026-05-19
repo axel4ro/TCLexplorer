@@ -163,8 +163,7 @@
     }
 
     .hero,
-    .balances-panel,
-    .lookup-panel {
+    .balances-panel {
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius);
       background: linear-gradient(180deg, rgba(20, 24, 36, 0.95), rgba(12, 15, 23, 0.96));
@@ -229,8 +228,7 @@
     }
 
     .hero-actions,
-    .address-actions,
-    .lookup-form {
+    .address-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
@@ -515,31 +513,6 @@
       overflow-wrap: anywhere;
     }
 
-    .lookup-panel {
-      padding: 18px;
-    }
-
-    .lookup-form {
-      margin-top: 12px;
-    }
-
-    .address-input {
-      flex: 1 1 360px;
-      min-width: min(100%, 260px);
-      min-height: 42px;
-      padding: 10px 12px;
-      border: 1px solid rgba(139, 149, 168, 0.22);
-      border-radius: var(--radius);
-      background: rgba(4, 6, 10, 0.64);
-      color: var(--text);
-      outline: none;
-    }
-
-    .address-input:focus {
-      border-color: var(--border-strong);
-      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
-    }
-
     .small-note {
       margin: 12px 0 0;
       color: var(--text-soft);
@@ -635,8 +608,7 @@
       .topbar,
       .hero-actions,
       .address-actions,
-      .qr-actions,
-      .lookup-form {
+      .qr-actions {
         align-items: stretch;
       }
 
@@ -671,7 +643,6 @@
         <span>TCL Explorer</span>
       </a>
       <div class="topbar-actions">
-        <button class="btn" id="refreshBtn" type="button">Actualizeaza</button>
         <button class="btn btn-danger" id="disconnectBtn" type="button">Deconecteaza</button>
       </div>
     </header>
@@ -686,7 +657,7 @@
           <h1 id="pageTitle">Balanta xPortal</h1>
           <p class="hero-copy">Conecteaza xPortal si vezi balanta pentru EGLD, USDC si TCL, cu valoarea estimata in dolari langa amount.</p>
         </div>
-        <div class="hero-actions">
+        <div class="hero-actions" id="heroActions">
           <button class="btn btn-primary" id="connectBtn" type="button">Conecteaza xPortal</button>
           <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Instaleaza xPortal</a>
         </div>
@@ -749,7 +720,6 @@
           <h2 class="panel-title" id="balancesTitle">Balante</h2>
           <p class="panel-subtitle">Amount-ul tokenului si valoarea aproximativa in USD.</p>
         </div>
-        <a class="btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">TCL Market</a>
       </div>
 
       <div class="token-grid">
@@ -809,14 +779,6 @@
       </div>
     </section>
 
-    <section class="lookup-panel" aria-labelledby="lookupTitle">
-      <h2 class="panel-title" id="lookupTitle">Cauta adresa</h2>
-      <form class="lookup-form" id="lookupForm">
-        <input class="address-input" id="addressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." aria-label="MultiversX address">
-        <button class="btn" type="submit">Afiseaza</button>
-      </form>
-      <p class="small-note">Conectarea prin xPortal intoarce doar adresa publica. Balantele sunt citite din MultiversX API si nu se cere seed phrase sau parola.</p>
-    </section>
   </main>
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
@@ -862,13 +824,12 @@
 
       const dom = {
         connectBtn: document.getElementById("connectBtn"),
+        heroActions: document.getElementById("heroActions"),
         refreshBtn: document.getElementById("refreshBtn"),
         disconnectBtn: document.getElementById("disconnectBtn"),
         copyBtn: document.getElementById("copyBtn"),
         copyUriBtn: document.getElementById("copyUriBtn"),
         cancelPairingBtn: document.getElementById("cancelPairingBtn"),
-        lookupForm: document.getElementById("lookupForm"),
-        addressInput: document.getElementById("addressInput"),
         addressText: document.getElementById("addressText"),
         explorerLink: document.getElementById("explorerLink"),
         statusText: document.getElementById("statusText"),
@@ -891,7 +852,7 @@
       function syncLoadingState() {
         const isLoading = state.connecting || state.balanceLoading;
         state.loading = isLoading;
-        dom.refreshBtn.disabled = isLoading || !state.address;
+        if (dom.refreshBtn) dom.refreshBtn.disabled = isLoading || !state.address;
         dom.connectBtn.disabled = isLoading;
         dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
       }
@@ -1103,7 +1064,6 @@
         state.sessionTopic = "";
         window.localStorage.removeItem(CONFIG.storageKey);
         window.localStorage.removeItem(CONFIG.sessionTopicKey);
-        dom.addressInput.value = "";
         hideQrPanel();
         renderAddress();
         renderEmptyBalances();
@@ -1124,10 +1084,11 @@
       function renderAddress() {
         const address = state.address;
         dom.addressText.textContent = address || "Neconectat";
-        dom.addressInput.value = address || "";
+        dom.heroActions.hidden = Boolean(address);
         dom.copyBtn.disabled = !address;
         dom.disconnectBtn.disabled = !address;
-        dom.refreshBtn.disabled = !address || state.loading;
+        dom.disconnectBtn.hidden = !address;
+        if (dom.refreshBtn) dom.refreshBtn.disabled = !address || state.loading;
         dom.explorerLink.href = address
           ? `https://explorer.multiversx.com/accounts/${address}`
           : "https://explorer.multiversx.com/";
@@ -1337,7 +1298,7 @@
           setStatus("ready", `Balante actualizate pentru ${truncateAddress(state.address)}`);
         } catch (error) {
           console.error(error);
-          setStatus("error", "Nu am putut citi balantele. Incearca refresh.");
+          setStatus("error", "Nu am putut citi balantele. Reconecteaza xPortal si incearca din nou.");
         } finally {
           setBalanceLoading(false);
           renderAddress();
@@ -1361,19 +1322,6 @@
         setStatus(state.address ? "connected" : "idle", state.address ? `Conectat: ${truncateAddress(state.address)}` : "Conectarea xPortal a fost anulata.");
       }
 
-      function handleLookup(event) {
-        event.preventDefault();
-        const address = dom.addressInput.value.trim();
-        if (!isAddress(address)) {
-          setStatus("error", "Adresa MultiversX nu este valida.");
-          return;
-        }
-        state.address = address;
-        window.localStorage.setItem(CONFIG.storageKey, address);
-        renderAddress();
-        loadBalances();
-      }
-
       function boot() {
         state.address = getInitialAddress();
         renderAddress();
@@ -1385,12 +1333,11 @@
         }
 
         dom.connectBtn.addEventListener("click", connectWallet);
-        dom.refreshBtn.addEventListener("click", loadBalances);
+        if (dom.refreshBtn) dom.refreshBtn.addEventListener("click", loadBalances);
         dom.disconnectBtn.addEventListener("click", disconnectWallet);
         dom.copyBtn.addEventListener("click", copyAddress);
         dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
         dom.cancelPairingBtn.addEventListener("click", cancelPairing);
-        dom.lookupForm.addEventListener("submit", handleLookup);
       }
 
       boot();
