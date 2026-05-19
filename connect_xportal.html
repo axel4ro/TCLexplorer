@@ -51,6 +51,10 @@
       overflow-x: hidden;
     }
 
+    body.is-balance-loading {
+      overflow: hidden;
+    }
+
     a {
       color: inherit;
       text-decoration: none;
@@ -69,6 +73,57 @@
       width: min(1180px, calc(100% - 28px));
       margin: 0 auto;
       padding: 24px 0 40px;
+    }
+
+    .page-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(4, 6, 10, 0.72);
+      backdrop-filter: blur(8px);
+      transition: opacity 160ms ease, visibility 160ms ease;
+    }
+
+    .page-loading.is-active {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .loading-dialog {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: min(360px, 100%);
+      padding: 18px 20px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: rgba(18, 21, 31, 0.96);
+      color: var(--text);
+      font-weight: 800;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border: 3px solid rgba(255, 255, 255, 0.16);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 850ms linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .topbar {
@@ -602,6 +657,13 @@
   </style>
 </head>
 <body data-state="idle">
+  <div class="page-loading" id="balanceOverlay" aria-hidden="true">
+    <div class="loading-dialog" role="status" aria-live="polite">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span>Se actualizeaza balanta...</span>
+    </div>
+  </div>
+
   <main class="page-shell">
     <header class="topbar">
       <a class="brand-link" href="index.html" aria-label="TCL Explorer">
@@ -793,6 +855,8 @@
         signClientProjectId: "",
         connectionRunId: 0,
         prices: { egld: 0, usdc: 1, tcl: 0 },
+        connecting: false,
+        balanceLoading: false,
         loading: false
       };
 
@@ -812,6 +876,7 @@
         qrCode: document.getElementById("qrCode"),
         wcUriText: document.getElementById("wcUriText"),
         xportalDeepLink: document.getElementById("xportalDeepLink"),
+        balanceOverlay: document.getElementById("balanceOverlay"),
         totalUsd: document.getElementById("totalUsd"),
         tclPrice: document.getElementById("tclPrice"),
         updatedAt: document.getElementById("updatedAt"),
@@ -823,11 +888,25 @@
         dom.statusText.textContent = message;
       }
 
-      function setLoading(isLoading) {
+      function syncLoadingState() {
+        const isLoading = state.connecting || state.balanceLoading;
         state.loading = isLoading;
         dom.refreshBtn.disabled = isLoading || !state.address;
         dom.connectBtn.disabled = isLoading;
-        dom.cancelPairingBtn.disabled = !isLoading && !state.pendingUri;
+        dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
+      }
+
+      function setConnectionLoading(isLoading) {
+        state.connecting = Boolean(isLoading);
+        syncLoadingState();
+      }
+
+      function setBalanceLoading(isLoading) {
+        state.balanceLoading = Boolean(isLoading);
+        dom.balanceOverlay.classList.toggle("is-active", state.balanceLoading);
+        dom.balanceOverlay.setAttribute("aria-hidden", String(!state.balanceLoading));
+        document.body.classList.toggle("is-balance-loading", state.balanceLoading);
+        syncLoadingState();
       }
 
       function isAddress(value) {
@@ -878,6 +957,8 @@
         });
         state.signClientProjectId = projectId;
         state.signClient.on("session_delete", () => {
+          setConnectionLoading(false);
+          setBalanceLoading(false);
           state.sessionTopic = "";
           state.address = "";
           window.localStorage.removeItem(CONFIG.sessionTopicKey);
@@ -948,7 +1029,7 @@
         }
 
         const runId = ++state.connectionRunId;
-        setLoading(true);
+        setConnectionLoading(true);
         setStatus("loading", "Generez sesiunea WalletConnect...");
 
         try {
@@ -987,7 +1068,8 @@
 
           hideQrPanel();
           renderAddress();
-          setStatus("connected", `Conectat prin xPortal: ${truncateAddress(address)}`);
+          setConnectionLoading(false);
+          setStatus("loading", `Conectat prin xPortal. Se actualizeaza balanta pentru ${truncateAddress(address)}...`);
           await loadBalances();
         } catch (error) {
           console.error(error);
@@ -996,7 +1078,7 @@
           }
         } finally {
           if (runId === state.connectionRunId) {
-            setLoading(false);
+            setConnectionLoading(false);
             renderAddress();
           }
         }
@@ -1015,6 +1097,8 @@
           }).catch(() => {});
         }
         state.connectionRunId++;
+        setConnectionLoading(false);
+        setBalanceLoading(false);
         state.address = "";
         state.sessionTopic = "";
         window.localStorage.removeItem(CONFIG.storageKey);
@@ -1204,9 +1288,9 @@
       }
 
       async function loadBalances() {
-        if (!state.address || state.loading) return;
+        if (!state.address || state.balanceLoading) return;
 
-        setLoading(true);
+        setBalanceLoading(true);
         setStatus("loading", "Se citesc balantele...");
 
         try {
@@ -1255,7 +1339,7 @@
           console.error(error);
           setStatus("error", "Nu am putut citi balantele. Incearca refresh.");
         } finally {
-          setLoading(false);
+          setBalanceLoading(false);
           renderAddress();
         }
       }
@@ -1273,7 +1357,7 @@
       function cancelPairing() {
         state.connectionRunId++;
         hideQrPanel();
-        setLoading(false);
+        setConnectionLoading(false);
         setStatus(state.address ? "connected" : "idle", state.address ? `Conectat: ${truncateAddress(state.address)}` : "Conectarea xPortal a fost anulata.");
       }
 
