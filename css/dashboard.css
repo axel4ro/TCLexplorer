@@ -632,6 +632,58 @@ body.sidebar-desktop .section-page.fullpage {
   gap: 10px;
 }
 
+.event-subscriber-card {
+  width: min(100%, 285px);
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 232, 204, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(16, 24, 37, 0.96), rgba(13, 18, 28, 0.98));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.event-subscriber-card__label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.event-subscriber-card__body {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+.event-subscriber-card__count {
+  color: var(--text);
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.event-subscriber-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #a6f4df;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.event-subscriber-card__meta::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #34d399;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+}
+
 .event-notification-panel {
   display: flex;
   align-items: center;

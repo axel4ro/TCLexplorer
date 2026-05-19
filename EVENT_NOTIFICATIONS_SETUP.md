@@ -110,6 +110,7 @@ Useful endpoints:
 
 ```text
 GET  /api/push/config
+GET  /api/push/stats
 POST /api/push/subscribe
 POST /api/push/unsubscribe
 POST /api/push/test

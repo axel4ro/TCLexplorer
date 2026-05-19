@@ -2,6 +2,15 @@
 
 Cloudflare Worker backend for TCL Explorer event notifications.
 
+Public endpoints:
+
+- `GET /api/push/config`
+- `GET /api/push/stats`
+- `POST /api/push/subscribe`
+- `POST /api/push/unsubscribe`
+- `POST /api/push/test`
+- `POST /api/push/dispatch-events`
+
 Files:
 
 - `worker.js`: API + scheduled push dispatcher

@@ -18,6 +18,9 @@
       enable: "Enable",
       disable: "Disable",
       test: "Test",
+      subscribersLabel: "Notification subscribers",
+      subscribersMeta: "Live count",
+      subscribersError: "Unavailable",
       enabledTitle: "Event notifications enabled",
       enabledBody: "You will receive reminders for weekly events on this device.",
       testTitle: "TCL event notification test",
@@ -38,6 +41,9 @@
       enable: "Activeaza",
       disable: "Opreste",
       test: "Test",
+      subscribersLabel: "Subscribers notificari",
+      subscribersMeta: "Live",
+      subscribersError: "Indisponibil",
       enabledTitle: "Notificari events activate",
       enabledBody: "Vei primi remindere pentru weekly events pe acest device.",
       testTitle: "Test notificare TCL event",
@@ -53,7 +59,9 @@
     publicKey: "",
     pushServerConfigured: null,
     latestEvents: null,
-    lang: "en"
+    lang: "en",
+    subscriberCount: null,
+    statsTimer: null
   };
 
   function getLang() {
@@ -167,6 +175,55 @@
       state.pushServerConfigured = false;
       return "";
     }
+  }
+
+  function setSubscriberCard(status, count) {
+    const card = document.getElementById("eventSubscriberCard");
+    const label = document.getElementById("eventSubscriberLabel");
+    const countEl = document.getElementById("eventSubscriberCount");
+    const meta = document.getElementById("eventSubscriberMeta");
+    if (!card || !label || !countEl || !meta) return;
+
+    label.textContent = tr("subscribersLabel");
+    card.dataset.state = status || "loading";
+
+    if (Number.isFinite(count)) {
+      state.subscriberCount = count;
+      countEl.textContent = String(count);
+      meta.textContent = tr("subscribersMeta");
+      return;
+    }
+
+    if (Number.isFinite(state.subscriberCount)) {
+      countEl.textContent = String(state.subscriberCount);
+    } else {
+      countEl.textContent = "--";
+    }
+    meta.textContent = status === "error" ? tr("subscribersError") : tr("subscribersMeta");
+  }
+
+  async function refreshSubscriberStats() {
+    setSubscriberCard("loading");
+    try {
+      const stats = await requestApi("stats", { method: "GET" });
+      setSubscriberCard("ready", Number(stats.subscribers));
+      return stats;
+    } catch (error) {
+      console.warn("Subscriber stats refresh failed", error);
+      setSubscriberCard("error");
+      return null;
+    }
+  }
+
+  function startSubscriberStatsPolling() {
+    if (state.statsTimer) return;
+    refreshSubscriberStats();
+    state.statsTimer = window.setInterval(refreshSubscriberStats, 15000);
+
+    window.addEventListener("focus", refreshSubscriberStats);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshSubscriberStats();
+    });
   }
 
   async function getServiceWorkerRegistration() {
@@ -434,6 +491,7 @@
 
       saveSettings({ enabled: true, mode });
       await syncEvents(state.latestEvents || window.eventsData || null);
+      await refreshSubscriberStats();
       await showImmediate(tr("enabledTitle"), tr("enabledBody"), {
         force: true,
         tag: "tcl-event-notifications-enabled"
@@ -452,6 +510,7 @@
       await unregisterPush(registration);
       await clearLocalSchedule();
       saveSettings({ enabled: false, mode: "off" });
+      await refreshSubscriberStats();
     } finally {
       state.busy = false;
       refreshStatus();
@@ -547,8 +606,10 @@
     state.lang = getLang();
     bindControls();
     refreshStatus();
+    setSubscriberCard("loading");
     await getPushConfig();
     refreshStatus();
+    startSubscriberStatsPolling();
 
     if (getSettings().enabled) {
       await syncEvents(window.eventsData || null);
@@ -559,11 +620,13 @@
     enable: enableNotifications,
     disable: disableNotifications,
     refreshStatus,
+    refreshSubscriberStats,
     showImmediate,
     syncEvents,
     setLanguage(lang) {
       state.lang = lang || getLang();
       refreshStatus();
+      setSubscriberCard("ready", state.subscriberCount);
     }
   };
 

@@ -52,6 +52,10 @@ async function handleRequest(request, env) {
       return handleTest(request, env);
     }
 
+    if (path.endsWith("/api/push/stats")) {
+      return handleStats(request, env);
+    }
+
     if (path.endsWith("/api/push/dispatch-events")) {
       return handleDispatch(request, env);
     }
@@ -196,6 +200,20 @@ async function handleTest(request, env) {
   return jsonResponse(request, env, 200, { ok: true });
 }
 
+async function handleStats(request, env) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = requireKv(env);
+  const subscribers = await countSubscriptions(kv);
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    subscribers,
+    updatedAt: new Date().toISOString()
+  });
+}
+
 async function handleDispatch(request, env) {
   if (request.method !== "GET" && request.method !== "POST") {
     return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
@@ -292,6 +310,22 @@ async function listSubscriptions(kv) {
   } while (cursor);
 
   return records;
+}
+
+async function countSubscriptions(kv) {
+  let count = 0;
+  let cursor;
+
+  do {
+    const page = await kv.list({
+      prefix: SUBSCRIPTION_PREFIX,
+      cursor
+    });
+    count += page.keys.length;
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  return count;
 }
 
 async function loadEvents(env) {
