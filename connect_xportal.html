@@ -163,7 +163,8 @@
     }
 
     .hero,
-    .balances-panel {
+    .balances-panel,
+    .market-panel {
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius);
       background: linear-gradient(180deg, rgba(20, 24, 36, 0.95), rgba(12, 15, 23, 0.96));
@@ -379,7 +380,8 @@
       font-size: 0.88rem;
     }
 
-    .balances-panel {
+    .balances-panel,
+    .market-panel {
       padding: 18px;
       margin-bottom: 18px;
     }
@@ -513,6 +515,179 @@
       overflow-wrap: anywhere;
     }
 
+    .market-panel[hidden] {
+      display: none;
+    }
+
+    .market-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .market-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .market-input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(139, 149, 168, 0.22);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.64);
+      color: var(--text);
+      outline: none;
+    }
+
+    .market-input:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
+    }
+
+    .nft-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      max-height: 620px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .nft-card {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text);
+      text-align: left;
+    }
+
+    .nft-card.is-selected {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
+    }
+
+    .nft-media,
+    .selected-media {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.24);
+    }
+
+    .nft-media {
+      aspect-ratio: 1;
+    }
+
+    .nft-media img,
+    .selected-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .nft-placeholder {
+      color: var(--text-soft);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+    }
+
+    .nft-title {
+      margin: 0;
+      color: var(--text);
+      font-size: 0.94rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .nft-id {
+      margin: 3px 0 0;
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      overflow-wrap: anywhere;
+    }
+
+    .nft-badge {
+      width: fit-content;
+      padding: 4px 7px;
+      border: 1px solid rgba(0, 232, 204, 0.18);
+      border-radius: 999px;
+      color: var(--accent-strong);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .nft-empty {
+      grid-column: 1 / -1;
+      padding: 18px;
+      border: 1px dashed rgba(139, 149, 168, 0.25);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .transfer-panel {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .selected-nft {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .selected-media {
+      width: 78px;
+      height: 78px;
+    }
+
+    .transfer-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-field label {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .send-status {
+      min-height: 20px;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .tx-link[hidden] {
+      display: none;
+    }
+
     .small-note {
       margin: 12px 0 0;
       color: var(--text-soft);
@@ -585,7 +760,9 @@
       .hero,
       .qr-panel,
       .summary-grid,
-      .token-grid {
+      .token-grid,
+      .market-layout,
+      .nft-grid {
         grid-template-columns: 1fr;
       }
 
@@ -632,7 +809,7 @@
   <div class="page-loading" id="balanceOverlay" aria-hidden="true">
     <div class="loading-dialog" role="status" aria-live="polite">
       <span class="loading-spinner" aria-hidden="true"></span>
-      <span>Se actualizeaza balanta...</span>
+      <span id="pageOverlayText">Se actualizeaza balanta...</span>
     </div>
   </div>
 
@@ -779,6 +956,56 @@
       </div>
     </section>
 
+    <section class="market-panel" id="nftMarketPanel" aria-labelledby="nftMarketTitle" hidden>
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title" id="nftMarketTitle">NFT P2P</h2>
+          <p class="panel-subtitle"><span id="nftCount">0</span> NFT-uri in wallet</p>
+        </div>
+      </div>
+
+      <div class="market-layout">
+        <div>
+          <div class="market-toolbar">
+            <input class="market-input" id="nftSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Cauta NFT..." aria-label="Cauta NFT">
+          </div>
+          <div class="nft-grid" id="nftGrid" aria-live="polite">
+            <div class="nft-empty">Conecteaza xPortal pentru NFT-uri.</div>
+          </div>
+        </div>
+
+        <aside class="transfer-panel" aria-label="Transfer NFT P2P">
+          <div>
+            <h3 class="panel-title">Trimite P2P</h3>
+            <p class="panel-subtitle">NFT selectat</p>
+          </div>
+          <div class="selected-nft">
+            <div class="selected-media" id="selectedNftMedia">
+              <span class="nft-placeholder">NFT</span>
+            </div>
+            <div>
+              <p class="nft-title" id="selectedNftName">Nimic selectat</p>
+              <p class="nft-id" id="selectedNftId">--</p>
+            </div>
+          </div>
+
+          <form class="transfer-form" id="nftTransferForm">
+            <div class="form-field">
+              <label for="nftRecipientInput">Destinatar</label>
+              <input class="market-input" id="nftRecipientInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
+            </div>
+            <div class="form-field">
+              <label for="nftQuantityInput">Cantitate</label>
+              <input class="market-input" id="nftQuantityInput" type="number" min="1" step="1" value="1" required>
+            </div>
+            <button class="btn btn-primary" id="nftSendBtn" type="submit" disabled>Trimite NFT</button>
+          </form>
+          <p class="send-status" id="nftSendStatus">Selecteaza un NFT.</p>
+          <a class="btn tx-link" id="nftTxLink" href="#" target="_blank" rel="noreferrer" hidden>Vezi tranzactia</a>
+        </aside>
+      </div>
+    </section>
+
   </main>
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
@@ -790,11 +1017,17 @@
       const CONFIG = {
         walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
         apiBase: "https://api.multiversx.com",
+        gatewayBase: "https://gateway.multiversx.com",
         dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         storageKey: "tclExplorer.xportal.address.v1",
         sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
         relayUrl: "wss://relay.walletconnect.com",
         chainId: "mvx:1",
+        chainID: "1",
+        gasPrice: 1000000000,
+        nftPageSize: 1000,
+        nftTransferGasBase: 1000000,
+        nftTransferGasPerByte: 1500,
         walletConnectMethods: [
           "mvx_signTransaction",
           "mvx_signTransactions",
@@ -817,8 +1050,13 @@
         signClientProjectId: "",
         connectionRunId: 0,
         prices: { egld: 0, usdc: 1, tcl: 0 },
+        nfts: [],
+        filteredNfts: [],
+        selectedNft: null,
         connecting: false,
         balanceLoading: false,
+        nftLoading: false,
+        nftSending: false,
         loading: false
       };
 
@@ -838,10 +1076,24 @@
         wcUriText: document.getElementById("wcUriText"),
         xportalDeepLink: document.getElementById("xportalDeepLink"),
         balanceOverlay: document.getElementById("balanceOverlay"),
+        pageOverlayText: document.getElementById("pageOverlayText"),
         totalUsd: document.getElementById("totalUsd"),
         tclPrice: document.getElementById("tclPrice"),
         updatedAt: document.getElementById("updatedAt"),
-        usdcIcon: document.getElementById("usdcIcon")
+        usdcIcon: document.getElementById("usdcIcon"),
+        nftMarketPanel: document.getElementById("nftMarketPanel"),
+        nftCount: document.getElementById("nftCount"),
+        nftSearch: document.getElementById("nftSearch"),
+        nftGrid: document.getElementById("nftGrid"),
+        selectedNftMedia: document.getElementById("selectedNftMedia"),
+        selectedNftName: document.getElementById("selectedNftName"),
+        selectedNftId: document.getElementById("selectedNftId"),
+        nftTransferForm: document.getElementById("nftTransferForm"),
+        nftRecipientInput: document.getElementById("nftRecipientInput"),
+        nftQuantityInput: document.getElementById("nftQuantityInput"),
+        nftSendBtn: document.getElementById("nftSendBtn"),
+        nftSendStatus: document.getElementById("nftSendStatus"),
+        nftTxLink: document.getElementById("nftTxLink")
       };
 
       function setStatus(kind, message) {
@@ -850,11 +1102,12 @@
       }
 
       function syncLoadingState() {
-        const isLoading = state.connecting || state.balanceLoading;
+        const isLoading = state.connecting || state.balanceLoading || state.nftSending;
         state.loading = isLoading;
         if (dom.refreshBtn) dom.refreshBtn.disabled = isLoading || !state.address;
         dom.connectBtn.disabled = isLoading;
         dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
+        dom.nftSendBtn.disabled = isLoading || !state.address || !state.selectedNft;
       }
 
       function setConnectionLoading(isLoading) {
@@ -864,10 +1117,23 @@
 
       function setBalanceLoading(isLoading) {
         state.balanceLoading = Boolean(isLoading);
-        dom.balanceOverlay.classList.toggle("is-active", state.balanceLoading);
-        dom.balanceOverlay.setAttribute("aria-hidden", String(!state.balanceLoading));
-        document.body.classList.toggle("is-balance-loading", state.balanceLoading);
+        syncPageOverlay();
         syncLoadingState();
+      }
+
+      function setNftSending(isSending) {
+        state.nftSending = Boolean(isSending);
+        syncPageOverlay();
+        syncLoadingState();
+      }
+
+      function syncPageOverlay() {
+        const isActive = state.balanceLoading || state.nftSending;
+        const message = state.nftSending ? "Se trimite NFT-ul..." : "Se actualizeaza balanta...";
+        dom.pageOverlayText.textContent = message;
+        dom.balanceOverlay.classList.toggle("is-active", isActive);
+        dom.balanceOverlay.setAttribute("aria-hidden", String(!isActive));
+        document.body.classList.toggle("is-balance-loading", isActive);
       }
 
       function isAddress(value) {
@@ -920,12 +1186,17 @@
         state.signClient.on("session_delete", () => {
           setConnectionLoading(false);
           setBalanceLoading(false);
+          setNftSending(false);
           state.sessionTopic = "";
           state.address = "";
+          state.nfts = [];
+          state.filteredNfts = [];
+          state.selectedNft = null;
           window.localStorage.removeItem(CONFIG.sessionTopicKey);
           window.localStorage.removeItem(CONFIG.storageKey);
           renderAddress();
           renderEmptyBalances();
+          renderNftMarketplace();
           setStatus("idle", "Sesiunea xPortal a fost inchisa.");
         });
         return state.signClient;
@@ -1032,6 +1303,7 @@
           setConnectionLoading(false);
           setStatus("loading", `Conectat prin xPortal. Se actualizeaza balanta pentru ${truncateAddress(address)}...`);
           await loadBalances();
+          await loadWalletNfts();
         } catch (error) {
           console.error(error);
           if (runId === state.connectionRunId) {
@@ -1060,13 +1332,18 @@
         state.connectionRunId++;
         setConnectionLoading(false);
         setBalanceLoading(false);
+        setNftSending(false);
         state.address = "";
         state.sessionTopic = "";
+        state.nfts = [];
+        state.filteredNfts = [];
+        state.selectedNft = null;
         window.localStorage.removeItem(CONFIG.storageKey);
         window.localStorage.removeItem(CONFIG.sessionTopicKey);
         hideQrPanel();
         renderAddress();
         renderEmptyBalances();
+        renderNftMarketplace();
         setStatus("idle", "Neconectat");
       }
 
@@ -1088,6 +1365,7 @@
         dom.copyBtn.disabled = !address;
         dom.disconnectBtn.disabled = !address;
         dom.disconnectBtn.hidden = !address;
+        dom.nftMarketPanel.hidden = !address;
         if (dom.refreshBtn) dom.refreshBtn.disabled = !address || state.loading;
         dom.explorerLink.href = address
           ? `https://explorer.multiversx.com/accounts/${address}`
@@ -1305,6 +1583,430 @@
         }
       }
 
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[char]));
+      }
+
+      function getNftCollection(nft) {
+        if (nft?.collection) return String(nft.collection);
+        const identifier = String(nft?.identifier || "");
+        return identifier.split("-").slice(0, -1).join("-");
+      }
+
+      function getNftName(nft) {
+        return nft?.name || nft?.metadata?.name || nft?.identifier || "NFT";
+      }
+
+      function getNftImage(nft) {
+        return nft?.media?.[0]?.thumbnailUrl ||
+          nft?.media?.[0]?.url ||
+          nft?.assets?.pngUrl ||
+          nft?.assets?.svgUrl ||
+          nft?.url ||
+          "";
+      }
+
+      function getNftBalance(nft) {
+        const raw = String(nft?.balance || nft?.supply || "1").replace(/[^\d]/g, "");
+        try {
+          return BigInt(raw || "1");
+        } catch (_) {
+          return 1n;
+        }
+      }
+
+      function displayNftBalance(nft) {
+        const balance = getNftBalance(nft);
+        return balance > 1n ? `x${balance.toString()}` : "NFT";
+      }
+
+      function renderNftMarketplace() {
+        dom.nftMarketPanel.hidden = !state.address;
+        dom.nftCount.textContent = state.nfts.length.toLocaleString("ro-RO");
+
+        if (!state.address) {
+          state.filteredNfts = [];
+          state.selectedNft = null;
+          renderSelectedNft();
+          dom.nftGrid.innerHTML = `<div class="nft-empty">Conecteaza xPortal pentru NFT-uri.</div>`;
+          return;
+        }
+
+        if (state.nftLoading) {
+          dom.nftGrid.innerHTML = `<div class="nft-empty">Se incarca NFT-urile...</div>`;
+          renderSelectedNft();
+          return;
+        }
+
+        const term = dom.nftSearch.value.trim().toLowerCase();
+        state.filteredNfts = term
+          ? state.nfts.filter((nft) => {
+            const haystack = `${getNftName(nft)} ${nft.identifier || ""} ${getNftCollection(nft)}`.toLowerCase();
+            return haystack.includes(term);
+          })
+          : state.nfts.slice();
+
+        if (state.selectedNft && !state.nfts.some((nft) => nft.identifier === state.selectedNft.identifier)) {
+          state.selectedNft = null;
+        }
+        if (!state.selectedNft && state.filteredNfts.length) {
+          state.selectedNft = state.filteredNfts[0];
+        }
+
+        if (!state.filteredNfts.length) {
+          dom.nftGrid.innerHTML = `<div class="nft-empty">${state.nfts.length ? "Niciun NFT gasit." : "Nu exista NFT-uri in wallet."}</div>`;
+        } else {
+          dom.nftGrid.innerHTML = state.filteredNfts.map(renderNftCard).join("");
+          dom.nftGrid.querySelectorAll("[data-nft-id]").forEach((card) => {
+            card.addEventListener("click", () => selectNft(card.dataset.nftId));
+          });
+        }
+
+        renderSelectedNft();
+      }
+
+      function renderNftCard(nft) {
+        const image = getNftImage(nft);
+        const name = getNftName(nft);
+        const collection = getNftCollection(nft);
+        const identifier = nft.identifier || "";
+        const isSelected = state.selectedNft?.identifier === identifier;
+        const media = image
+          ? `<img src="${escapeHtml(image)}" alt="">`
+          : `<span class="nft-placeholder">NFT</span>`;
+
+        return `
+          <button class="nft-card${isSelected ? " is-selected" : ""}" type="button" data-nft-id="${escapeHtml(identifier)}">
+            <div class="nft-media">${media}</div>
+            <div>
+              <p class="nft-title">${escapeHtml(name)}</p>
+              <p class="nft-id">${escapeHtml(identifier)}</p>
+            </div>
+            <span class="nft-badge">${escapeHtml(collection)} ${escapeHtml(displayNftBalance(nft))}</span>
+          </button>
+        `;
+      }
+
+      function renderSelectedNft() {
+        const nft = state.selectedNft;
+        if (!nft) {
+          dom.selectedNftMedia.innerHTML = `<span class="nft-placeholder">NFT</span>`;
+          dom.selectedNftName.textContent = "Nimic selectat";
+          dom.selectedNftId.textContent = "--";
+          dom.nftQuantityInput.value = "1";
+          dom.nftQuantityInput.max = "1";
+          dom.nftSendStatus.textContent = state.address ? "Selecteaza un NFT." : "Conecteaza xPortal.";
+          dom.nftTxLink.hidden = true;
+          syncLoadingState();
+          return;
+        }
+
+        const image = getNftImage(nft);
+        const balance = getNftBalance(nft);
+        dom.selectedNftMedia.innerHTML = image
+          ? `<img src="${escapeHtml(image)}" alt="">`
+          : `<span class="nft-placeholder">NFT</span>`;
+        dom.selectedNftName.textContent = getNftName(nft);
+        dom.selectedNftId.textContent = nft.identifier || "--";
+        dom.nftQuantityInput.max = balance.toString();
+        let currentQuantity = 1n;
+        try {
+          currentQuantity = BigInt(String(dom.nftQuantityInput.value || "1").replace(/[^\d]/g, "") || "1");
+        } catch (_) {
+          currentQuantity = 1n;
+        }
+        if (currentQuantity > balance) {
+          dom.nftQuantityInput.value = balance.toString();
+        }
+        dom.nftQuantityInput.disabled = balance <= 1n;
+        dom.nftSendStatus.textContent = "Gata de transfer.";
+        dom.nftTxLink.hidden = true;
+        syncLoadingState();
+      }
+
+      function selectNft(identifier) {
+        state.selectedNft = state.nfts.find((nft) => nft.identifier === identifier) || null;
+        renderNftMarketplace();
+      }
+
+      async function loadWalletNfts() {
+        if (!state.address || state.nftLoading) return;
+
+        state.nftLoading = true;
+        renderNftMarketplace();
+
+        try {
+          const url = buildApiUrl(`/accounts/${state.address}/nfts`, {
+            from: 0,
+            size: CONFIG.nftPageSize
+          });
+          const payload = await fetchJson(url);
+          state.nfts = (Array.isArray(payload) ? payload : [])
+            .filter((nft) => nft?.identifier && getNftBalance(nft) > 0n)
+            .sort((a, b) => String(getNftName(a)).localeCompare(String(getNftName(b))));
+          state.selectedNft = state.nfts[0] || null;
+        } catch (error) {
+          console.error(error);
+          state.nfts = [];
+          state.selectedNft = null;
+          dom.nftSendStatus.textContent = "Nu am putut incarca NFT-urile.";
+        } finally {
+          state.nftLoading = false;
+          renderNftMarketplace();
+        }
+      }
+
+      function textToHex(value) {
+        return Array.from(new TextEncoder().encode(String(value)))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      function normalizeEvenHex(hex) {
+        const clean = String(hex || "").replace(/^0x/i, "").toLowerCase();
+        return clean.length % 2 ? `0${clean}` : clean;
+      }
+
+      function bigintToEvenHex(value) {
+        const amount = BigInt(value);
+        return normalizeEvenHex(amount.toString(16));
+      }
+
+      function getNftNonceHex(nft) {
+        const collection = getNftCollection(nft);
+        const identifier = String(nft?.identifier || "");
+        const suffix = identifier.startsWith(`${collection}-`)
+          ? identifier.slice(collection.length + 1)
+          : "";
+        if (/^[0-9a-fA-F]+$/.test(suffix)) {
+          return normalizeEvenHex(suffix);
+        }
+        return bigintToEvenHex(BigInt(nft?.nonce || 0));
+      }
+
+      function bech32Polymod(values) {
+        const generators = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+        let checksum = 1;
+        values.forEach((value) => {
+          const top = checksum >> 25;
+          checksum = ((checksum & 0x1ffffff) << 5) ^ value;
+          for (let index = 0; index < generators.length; index += 1) {
+            if ((top >> index) & 1) {
+              checksum ^= generators[index];
+            }
+          }
+        });
+        return checksum;
+      }
+
+      function bech32HrpExpand(hrp) {
+        const high = Array.from(hrp).map((char) => char.charCodeAt(0) >> 5);
+        const low = Array.from(hrp).map((char) => char.charCodeAt(0) & 31);
+        return high.concat([0], low);
+      }
+
+      function convertBits(data, fromBits, toBits, pad) {
+        let acc = 0;
+        let bits = 0;
+        const result = [];
+        const maxv = (1 << toBits) - 1;
+        data.forEach((value) => {
+          if (value < 0 || value >> fromBits) {
+            throw new Error("Adresa destinatarului nu este valida.");
+          }
+          acc = (acc << fromBits) | value;
+          bits += fromBits;
+          while (bits >= toBits) {
+            bits -= toBits;
+            result.push((acc >> bits) & maxv);
+          }
+        });
+        if (pad) {
+          if (bits > 0) {
+            result.push((acc << (toBits - bits)) & maxv);
+          }
+        } else if (bits >= fromBits || ((acc << (toBits - bits)) & maxv)) {
+          throw new Error("Adresa destinatarului nu este valida.");
+        }
+        return result;
+      }
+
+      function bech32AddressToHex(address) {
+        const charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+        const raw = String(address || "").trim();
+        if (raw !== raw.toLowerCase() && raw !== raw.toUpperCase()) {
+          throw new Error("Adresa destinatarului nu este valida.");
+        }
+        const value = raw.toLowerCase();
+        const separator = value.lastIndexOf("1");
+        if (separator < 1 || separator + 7 > value.length) {
+          throw new Error("Adresa destinatarului nu este valida.");
+        }
+        const hrp = value.slice(0, separator);
+        const data = Array.from(value.slice(separator + 1)).map((char) => charset.indexOf(char));
+        if (hrp !== "erd" || data.some((part) => part < 0)) {
+          throw new Error("Adresa destinatarului nu este valida.");
+        }
+        if (bech32Polymod(bech32HrpExpand(hrp).concat(data)) !== 1) {
+          throw new Error("Adresa destinatarului nu este valida.");
+        }
+        const bytes = convertBits(data.slice(0, -6), 5, 8, false);
+        if (bytes.length !== 32) {
+          throw new Error("Adresa destinatarului nu este valida.");
+        }
+        return bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      }
+
+      function buildNftTransferData(nft, recipient, quantity) {
+        const collectionHex = textToHex(getNftCollection(nft));
+        const nonceHex = getNftNonceHex(nft);
+        const quantityHex = bigintToEvenHex(quantity);
+        const recipientHex = bech32AddressToHex(recipient);
+        return `ESDTNFTTransfer@${collectionHex}@${nonceHex}@${quantityHex}@${recipientHex}`;
+      }
+
+      function getActiveSession(client) {
+        const savedTopic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
+        if (savedTopic) {
+          try {
+            const session = client.session.get(savedTopic);
+            if (extractAddressFromSession(session) === state.address) {
+              state.sessionTopic = savedTopic;
+              return session;
+            }
+          } catch (_) {}
+        }
+
+        const sessions = typeof client.session.getAll === "function" ? client.session.getAll() : [];
+        const session = sessions.find((item) => extractAddressFromSession(item) === state.address);
+        if (session?.topic) {
+          state.sessionTopic = session.topic;
+          window.localStorage.setItem(CONFIG.sessionTopicKey, session.topic);
+          return session;
+        }
+        return null;
+      }
+
+      async function buildNftTransferTransaction(nft, recipient, quantity) {
+        const account = await fetchJson(buildApiUrl(`/accounts/${state.address}`));
+        const data = buildNftTransferData(nft, recipient, quantity);
+        const dataBase64 = btoa(data);
+        const gasLimit = CONFIG.nftTransferGasBase + (new TextEncoder().encode(data).length * CONFIG.nftTransferGasPerByte);
+
+        return {
+          nonce: Number(account?.nonce || 0),
+          value: "0",
+          receiver: state.address,
+          sender: state.address,
+          gasPrice: CONFIG.gasPrice,
+          gasLimit,
+          data: dataBase64,
+          chainID: CONFIG.chainID,
+          version: 1
+        };
+      }
+
+      async function signNftTransaction(transaction) {
+        const client = await getSignClient();
+        const session = getActiveSession(client);
+        if (!session?.topic) {
+          throw new Error("Reconecteaza xPortal pentru semnarea transferului.");
+        }
+
+        const result = await client.request({
+          topic: session.topic,
+          chainId: CONFIG.chainId,
+          request: {
+            method: "mvx_signTransaction",
+            params: { transaction }
+          }
+        });
+
+        const signaturePayload = result?.signature ? result : result?.result;
+        if (!signaturePayload?.signature) {
+          throw new Error("xPortal nu a returnat semnatura tranzactiei.");
+        }
+
+        return {
+          ...transaction,
+          ...signaturePayload
+        };
+      }
+
+      async function broadcastTransaction(transaction) {
+        const response = await fetch(`${CONFIG.gatewayBase}/transaction/send`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(transaction)
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || (payload.code && payload.code !== "successful")) {
+          throw new Error(payload.error || `Tranzactia nu a fost trimisa. HTTP ${response.status}`);
+        }
+        return payload?.data?.txHash || payload?.data?.hash || payload?.txHash || "";
+      }
+
+      function readTransferQuantity(nft) {
+        const balance = getNftBalance(nft);
+        const raw = String(dom.nftQuantityInput.value || "1").replace(/[^\d]/g, "");
+        const quantity = BigInt(raw || "1");
+        if (quantity < 1n || quantity > balance) {
+          throw new Error(`Cantitatea trebuie sa fie intre 1 si ${balance.toString()}.`);
+        }
+        return quantity;
+      }
+
+      async function sendSelectedNft(event) {
+        event.preventDefault();
+        if (!state.address || !state.selectedNft) return;
+
+        const recipient = dom.nftRecipientInput.value.trim();
+        if (!isAddress(recipient)) {
+          dom.nftSendStatus.textContent = "Adresa destinatarului nu este valida.";
+          return;
+        }
+        if (recipient === state.address) {
+          dom.nftSendStatus.textContent = "Destinatarul trebuie sa fie diferit de walletul conectat.";
+          return;
+        }
+
+        try {
+          const quantity = readTransferQuantity(state.selectedNft);
+          setNftSending(true);
+          dom.nftSendStatus.textContent = "Aproba transferul in xPortal.";
+          dom.nftTxLink.hidden = true;
+
+          const transaction = await buildNftTransferTransaction(state.selectedNft, recipient, quantity);
+          const signedTransaction = await signNftTransaction(transaction);
+          const txHash = await broadcastTransaction(signedTransaction);
+
+          dom.nftSendStatus.textContent = "Transfer trimis.";
+          if (txHash) {
+            dom.nftTxLink.href = `https://explorer.multiversx.com/transactions/${txHash}`;
+            dom.nftTxLink.hidden = false;
+          }
+          setStatus("ready", "Transfer NFT trimis.");
+          setNftSending(false);
+          await loadBalances();
+          await loadWalletNfts();
+        } catch (error) {
+          console.error(error);
+          dom.nftSendStatus.textContent = error?.message || "Transferul NFT a esuat.";
+          setStatus("error", error?.message || "Transferul NFT a esuat.");
+        } finally {
+          setNftSending(false);
+        }
+      }
+
       async function copyWalletConnectUri() {
         if (!state.pendingUri) return;
         try {
@@ -1330,6 +2032,7 @@
         if (state.address) {
           setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
           loadBalances();
+          loadWalletNfts();
         }
 
         dom.connectBtn.addEventListener("click", connectWallet);
@@ -1338,6 +2041,9 @@
         dom.copyBtn.addEventListener("click", copyAddress);
         dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
         dom.cancelPairingBtn.addEventListener("click", cancelPairing);
+        dom.nftSearch.addEventListener("input", renderNftMarketplace);
+        dom.nftTransferForm.addEventListener("submit", sendSelectedNft);
+        dom.nftQuantityInput.addEventListener("input", syncLoadingState);
       }
 
       boot();
