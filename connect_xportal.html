@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Balanta xPortal - TCL Explorer</title>
+  <meta name="theme-color" content="#07080c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #07080c;
+      --bg-deep: #0c0e14;
+      --bg-panel: #12151f;
+      --bg-elevated: #181c28;
+      --bg-card: #141824;
+      --border-subtle: rgba(0, 245, 212, 0.14);
+      --border-strong: rgba(0, 245, 212, 0.34);
+      --accent: #00e8cc;
+      --accent-strong: #3df7df;
+      --accent-purple: #a855f7;
+      --accent-warn: #fbbf24;
+      --danger: #fb7185;
+      --success: #4be2a3;
+      --text: #e8edf5;
+      --text-muted: #8b95a8;
+      --text-soft: #687287;
+      --shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.38);
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        linear-gradient(180deg, rgba(16, 22, 32, 0.96) 0%, rgba(7, 10, 16, 0.98) 46%, #04060a 100%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 64px);
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text);
+      font-weight: 800;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .brand-link img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hero,
+    .balances-panel,
+    .lookup-panel {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(20, 24, 36, 0.95), rgba(12, 15, 23, 0.96));
+      box-shadow: var(--shadow-panel);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+      gap: 22px;
+      align-items: stretch;
+      padding: 22px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .hero-main {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+      min-height: 48px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .lockup img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: clamp(1rem, 2vw, 1.12rem);
+      line-height: 1.7;
+    }
+
+    .hero-actions,
+    .address-actions,
+    .lookup-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 800;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .btn-primary {
+      color: #041210;
+      border-color: rgba(0, 245, 212, 0.46);
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 12px 28px rgba(0, 232, 204, 0.18);
+    }
+
+    .btn-danger {
+      color: #fff;
+      border-color: rgba(251, 113, 133, 0.28);
+      background: rgba(251, 113, 133, 0.12);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.56;
+      transform: none;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 32px;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--text-soft);
+      box-shadow: 0 0 0 4px rgba(104, 114, 135, 0.1);
+    }
+
+    body[data-state="connected"] .status-dot,
+    body[data-state="ready"] .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(75, 226, 163, 0.12);
+    }
+
+    body[data-state="loading"] .status-dot {
+      background: var(--accent-warn);
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12);
+    }
+
+    body[data-state="error"] .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12);
+    }
+
+    .address-panel {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .eyebrow {
+      color: var(--text-soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .address-value {
+      display: block;
+      min-height: 58px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(0, 245, 212, 0.12);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.18);
+      color: var(--text);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-item {
+      min-height: 106px;
+      padding: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: rgba(20, 24, 36, 0.86);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .summary-label {
+      margin: 0 0 8px;
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 3vw, 2.1rem);
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-meta {
+      margin: 7px 0 0;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .balances-panel {
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2.4vw, 1.7rem);
+      letter-spacing: 0;
+    }
+
+    .panel-subtitle {
+      margin: 5px 0 0;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .token-card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      min-height: 230px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .token-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .token-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.18);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .token-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .token-name {
+      min-width: 0;
+    }
+
+    .token-name h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .token-name p {
+      margin: 4px 0 0;
+      color: var(--text-soft);
+      font-size: 0.84rem;
+      overflow-wrap: anywhere;
+    }
+
+    .token-amount {
+      align-self: center;
+      min-width: 0;
+    }
+
+    .amount {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.28rem, 3vw, 2rem);
+      line-height: 1.18;
+      overflow-wrap: anywhere;
+    }
+
+    .usd-value {
+      margin: 8px 0 0;
+      color: var(--success);
+      font-size: 1.02rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .token-meta {
+      display: grid;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .meta-row span:last-child {
+      color: var(--text);
+      font-weight: 700;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .lookup-panel {
+      padding: 18px;
+    }
+
+    .lookup-form {
+      margin-top: 12px;
+    }
+
+    .address-input {
+      flex: 1 1 360px;
+      min-width: min(100%, 260px);
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(139, 149, 168, 0.22);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.64);
+      color: var(--text);
+      outline: none;
+    }
+
+    .address-input:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
+    }
+
+    .small-note {
+      margin: 12px 0 0;
+      color: var(--text-soft);
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    .qr-panel {
+      grid-column: 1 / -1;
+      display: none;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      padding: 18px;
+      border: 1px solid rgba(0, 245, 212, 0.18);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .qr-panel.is-active {
+      display: grid;
+    }
+
+    .qr-code {
+      display: grid;
+      place-items: center;
+      width: 240px;
+      min-height: 240px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .qr-code img,
+    .qr-code canvas {
+      width: 220px;
+      height: 220px;
+    }
+
+    .qr-info {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .qr-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .wc-uri {
+      display: block;
+      max-height: 84px;
+      padding: 10px;
+      overflow: auto;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(139, 149, 168, 0.18);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.64);
+      color: var(--text-muted);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 920px) {
+      .hero,
+      .qr-panel,
+      .summary-grid,
+      .token-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .panel-head {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell {
+        width: min(100% - 18px, 1180px);
+        padding-top: 12px;
+      }
+
+      .topbar,
+      .hero-actions,
+      .address-actions,
+      .qr-actions,
+      .lookup-form {
+        align-items: stretch;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .topbar-actions,
+      .brand-link,
+      .btn {
+        width: 100%;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 14vw, 3.2rem);
+      }
+    }
+  </style>
+</head>
+<body data-state="idle">
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand-link" href="index.html" aria-label="TCL Explorer">
+        <img src="images/thecursedland.png" alt="">
+        <span>TCL Explorer</span>
+      </a>
+      <div class="topbar-actions">
+        <button class="btn" id="refreshBtn" type="button">Actualizeaza</button>
+        <button class="btn btn-danger" id="disconnectBtn" type="button">Deconecteaza</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-main">
+        <div class="lockup">
+          <img src="images/xPortal.png" alt="">
+          <span>xPortal</span>
+        </div>
+        <div>
+          <h1 id="pageTitle">Balanta xPortal</h1>
+          <p class="hero-copy">Conecteaza xPortal si vezi balanta pentru EGLD, USDC si TCL, cu valoarea estimata in dolari langa amount.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="connectBtn" type="button">Conecteaza xPortal</button>
+          <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Instaleaza xPortal</a>
+        </div>
+        <div class="status-line" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusText">Neconectat</span>
+        </div>
+      </div>
+
+      <aside class="address-panel" aria-label="Wallet address">
+        <div>
+          <div class="eyebrow">Adresa conectata</div>
+          <code class="address-value" id="addressText">Neconectat</code>
+        </div>
+        <div class="address-actions">
+          <button class="btn" id="copyBtn" type="button">Copy</button>
+          <a class="btn" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
+        </div>
+      </aside>
+
+      <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect pairing">
+        <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code"></div>
+        <div class="qr-info">
+          <div>
+            <h2 class="panel-title">Scaneaza cu xPortal</h2>
+            <p class="panel-subtitle">QR-ul este generat local din sesiunea WalletConnect. Nu parasesti pagina TCL Explorer.</p>
+          </div>
+          <div class="qr-actions">
+            <a class="btn btn-primary" id="xportalDeepLink" href="#" rel="noreferrer">Deschide in xPortal</a>
+            <button class="btn" id="copyUriBtn" type="button">Copiaza URI</button>
+            <button class="btn btn-danger" id="cancelPairingBtn" type="button">Anuleaza</button>
+          </div>
+          <code class="wc-uri" id="wcUriText">Astept generarea URI-ului...</code>
+          <p class="small-note">Pe desktop, scaneaza QR-ul cu xPortal. Pe telefon, apasa butonul xPortal sau copiaza URI-ul WalletConnect.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="summary-grid" aria-label="Portfolio summary">
+      <article class="summary-item">
+        <p class="summary-label">Total estimat</p>
+        <p class="summary-value" id="totalUsd">--</p>
+        <p class="summary-meta">EGLD + USDC + TCL</p>
+      </article>
+      <article class="summary-item">
+        <p class="summary-label">Pret TCL</p>
+        <p class="summary-value" id="tclPrice">--</p>
+        <p class="summary-meta">Sursa: DexScreener / MultiversX</p>
+      </article>
+      <article class="summary-item">
+        <p class="summary-label">Ultimul update</p>
+        <p class="summary-value" id="updatedAt">--</p>
+        <p class="summary-meta">Date live din API</p>
+      </article>
+    </section>
+
+    <section class="balances-panel" aria-labelledby="balancesTitle">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title" id="balancesTitle">Balante</h2>
+          <p class="panel-subtitle">Amount-ul tokenului si valoarea aproximativa in USD.</p>
+        </div>
+        <a class="btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">TCL Market</a>
+      </div>
+
+      <div class="token-grid">
+        <article class="token-card" data-token-card="egld">
+          <div class="token-head">
+            <div class="token-icon"><img src="images/EGLD.png" alt=""></div>
+            <div class="token-name">
+              <h3>EGLD</h3>
+              <p>Native MultiversX</p>
+            </div>
+          </div>
+          <div class="token-amount">
+            <p class="amount" data-token-amount="egld">--</p>
+            <p class="usd-value" data-token-usd="egld">--</p>
+          </div>
+          <div class="token-meta">
+            <div class="meta-row"><span>Pret</span><span data-token-price="egld">--</span></div>
+            <div class="meta-row"><span>Token</span><span>EGLD</span></div>
+          </div>
+        </article>
+
+        <article class="token-card" data-token-card="usdc">
+          <div class="token-head">
+            <div class="token-icon" id="usdcIcon">USDC</div>
+            <div class="token-name">
+              <h3>USDC</h3>
+              <p>USDC-c76f1f</p>
+            </div>
+          </div>
+          <div class="token-amount">
+            <p class="amount" data-token-amount="usdc">--</p>
+            <p class="usd-value" data-token-usd="usdc">--</p>
+          </div>
+          <div class="token-meta">
+            <div class="meta-row"><span>Pret</span><span data-token-price="usdc">--</span></div>
+            <div class="meta-row"><span>Token</span><span>USDC-c76f1f</span></div>
+          </div>
+        </article>
+
+        <article class="token-card" data-token-card="tcl">
+          <div class="token-head">
+            <div class="token-icon"><img src="images/tcl_icon.png" alt=""></div>
+            <div class="token-name">
+              <h3>TCL</h3>
+              <p>TCL-fe459d</p>
+            </div>
+          </div>
+          <div class="token-amount">
+            <p class="amount" data-token-amount="tcl">--</p>
+            <p class="usd-value" data-token-usd="tcl">--</p>
+          </div>
+          <div class="token-meta">
+            <div class="meta-row"><span>Pret</span><span data-token-price="tcl">--</span></div>
+            <div class="meta-row"><span>Token</span><span>TCL-fe459d</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="lookup-panel" aria-labelledby="lookupTitle">
+      <h2 class="panel-title" id="lookupTitle">Cauta adresa</h2>
+      <form class="lookup-form" id="lookupForm">
+        <input class="address-input" id="addressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." aria-label="MultiversX address">
+        <button class="btn" type="submit">Afiseaza</button>
+      </form>
+      <p class="small-note">Conectarea prin xPortal intoarce doar adresa publica. Balantele sunt citite din MultiversX API si nu se cere seed phrase sau parola.</p>
+    </section>
+  </main>
+
+  <script src="lib/walletconnect-sign-client.umd.js"></script>
+  <script src="lib/qrcode.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const CONFIG = {
+        walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+        apiBase: "https://api.multiversx.com",
+        dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        storageKey: "tclExplorer.xportal.address.v1",
+        sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
+        relayUrl: "wss://relay.walletconnect.com",
+        chainId: "mvx:1",
+        walletConnectMethods: [
+          "mvx_signTransaction",
+          "mvx_signTransactions",
+          "mvx_signMessage",
+          "mvx_signLoginToken"
+        ],
+        tokens: {
+          egld: { symbol: "EGLD", decimals: 18 },
+          usdc: { symbol: "USDC", identifier: "USDC-c76f1f", decimals: 6 },
+          tcl: { symbol: "TCL", identifier: "TCL-fe459d", decimals: 18 }
+        },
+        requestTimeoutMs: 10000
+      };
+
+      const state = {
+        address: "",
+        sessionTopic: "",
+        pendingUri: "",
+        signClient: null,
+        signClientProjectId: "",
+        connectionRunId: 0,
+        prices: { egld: 0, usdc: 1, tcl: 0 },
+        loading: false
+      };
+
+      const dom = {
+        connectBtn: document.getElementById("connectBtn"),
+        refreshBtn: document.getElementById("refreshBtn"),
+        disconnectBtn: document.getElementById("disconnectBtn"),
+        copyBtn: document.getElementById("copyBtn"),
+        copyUriBtn: document.getElementById("copyUriBtn"),
+        cancelPairingBtn: document.getElementById("cancelPairingBtn"),
+        lookupForm: document.getElementById("lookupForm"),
+        addressInput: document.getElementById("addressInput"),
+        addressText: document.getElementById("addressText"),
+        explorerLink: document.getElementById("explorerLink"),
+        statusText: document.getElementById("statusText"),
+        qrPanel: document.getElementById("qrPanel"),
+        qrCode: document.getElementById("qrCode"),
+        wcUriText: document.getElementById("wcUriText"),
+        xportalDeepLink: document.getElementById("xportalDeepLink"),
+        totalUsd: document.getElementById("totalUsd"),
+        tclPrice: document.getElementById("tclPrice"),
+        updatedAt: document.getElementById("updatedAt"),
+        usdcIcon: document.getElementById("usdcIcon")
+      };
+
+      function setStatus(kind, message) {
+        document.body.dataset.state = kind;
+        dom.statusText.textContent = message;
+      }
+
+      function setLoading(isLoading) {
+        state.loading = isLoading;
+        dom.refreshBtn.disabled = isLoading || !state.address;
+        dom.connectBtn.disabled = isLoading;
+        dom.cancelPairingBtn.disabled = !isLoading && !state.pendingUri;
+      }
+
+      function isAddress(value) {
+        return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(value || "").trim());
+      }
+
+      function getConfiguredProjectId() {
+        return String(CONFIG.walletConnectProjectId || "").trim();
+      }
+
+      function getWalletConnectGlobal() {
+        const walletConnect = window["@walletconnect/sign-client"];
+        return walletConnect?.SignClient || walletConnect?.default || null;
+      }
+
+      function getAppMetadata() {
+        const baseUrl = window.location.origin && window.location.origin !== "null"
+          ? window.location.origin
+          : "https://axel4ro.github.io";
+        const appUrl = new URL(window.location.pathname || "/TCLexplorer/connect_xportal.html", baseUrl).href;
+        const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
+        return {
+          name: "TCL Explorer",
+          description: "xPortal balance reader for EGLD, USDC and TCL",
+          url: appUrl,
+          icons: [iconUrl]
+        };
+      }
+
+      async function getSignClient() {
+        const projectId = getConfiguredProjectId();
+        if (!projectId) {
+          throw new Error("Conexiunea WalletConnect nu este configurata.");
+        }
+        if (state.signClient && state.signClientProjectId === projectId) {
+          return state.signClient;
+        }
+
+        const SignClient = getWalletConnectGlobal();
+        if (!SignClient?.init) {
+          throw new Error("WalletConnect nu s-a incarcat. Verifica conexiunea la internet.");
+        }
+
+        state.signClient = await SignClient.init({
+          projectId,
+          relayUrl: CONFIG.relayUrl,
+          metadata: getAppMetadata()
+        });
+        state.signClientProjectId = projectId;
+        state.signClient.on("session_delete", () => {
+          state.sessionTopic = "";
+          state.address = "";
+          window.localStorage.removeItem(CONFIG.sessionTopicKey);
+          window.localStorage.removeItem(CONFIG.storageKey);
+          renderAddress();
+          renderEmptyBalances();
+          setStatus("idle", "Sesiunea xPortal a fost inchisa.");
+        });
+        return state.signClient;
+      }
+
+      function showQrPanel() {
+        dom.qrPanel.classList.add("is-active");
+      }
+
+      function hideQrPanel() {
+        dom.qrPanel.classList.remove("is-active");
+        dom.qrCode.innerHTML = "";
+        dom.wcUriText.textContent = "Astept generarea URI-ului...";
+        dom.xportalDeepLink.href = "#";
+        state.pendingUri = "";
+      }
+
+      function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent || "");
+      }
+
+      function getXPortalDeepLink(uri) {
+        return isIOS() ? `xportal://wc?uri=${encodeURIComponent(uri)}` : uri;
+      }
+
+      function renderWalletConnectUri(uri) {
+        state.pendingUri = uri;
+        dom.qrCode.innerHTML = "";
+        dom.wcUriText.textContent = uri;
+        dom.xportalDeepLink.href = getXPortalDeepLink(uri);
+
+        if (!window.QRCode) {
+          throw new Error("QR library nu s-a incarcat.");
+        }
+
+        new window.QRCode(dom.qrCode, {
+          text: uri,
+          width: 220,
+          height: 220,
+          colorDark: "#020408",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M
+        });
+      }
+
+      function extractAddressFromSession(session) {
+        const namespaces = session?.namespaces || {};
+        const accounts = Object.values(namespaces).flatMap((namespace) => namespace?.accounts || []);
+        const mvxAccount = accounts.find((account) => String(account).startsWith(`${CONFIG.chainId}:`)) ||
+          accounts.find((account) => String(account).includes(":erd1"));
+        const address = String(mvxAccount || "").split(":").pop();
+        return isAddress(address) ? address : "";
+      }
+
+      async function connectWallet() {
+        const projectId = getConfiguredProjectId();
+        showQrPanel();
+
+        if (!projectId) {
+          setStatus("error", "Conexiunea WalletConnect nu este configurata.");
+          return;
+        }
+
+        const runId = ++state.connectionRunId;
+        setLoading(true);
+        setStatus("loading", "Generez sesiunea WalletConnect...");
+
+        try {
+          const client = await getSignClient();
+          const { uri, approval } = await client.connect({
+            optionalNamespaces: {
+              mvx: {
+                chains: [CONFIG.chainId],
+                methods: CONFIG.walletConnectMethods,
+                events: []
+              }
+            }
+          });
+
+          if (!uri) {
+            throw new Error("WalletConnect nu a returnat URI pentru QR.");
+          }
+
+          renderWalletConnectUri(uri);
+          setStatus("loading", "Scaneaza QR-ul cu xPortal si aproba conexiunea.");
+
+          const session = await approval();
+          if (runId !== state.connectionRunId) return;
+
+          const address = extractAddressFromSession(session);
+          if (!address) {
+            throw new Error("Nu am primit o adresa MultiversX valida din xPortal.");
+          }
+
+          state.address = address;
+          state.sessionTopic = session.topic || "";
+          window.localStorage.setItem(CONFIG.storageKey, address);
+          if (state.sessionTopic) {
+            window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
+          }
+
+          hideQrPanel();
+          renderAddress();
+          setStatus("connected", `Conectat prin xPortal: ${truncateAddress(address)}`);
+          await loadBalances();
+        } catch (error) {
+          console.error(error);
+          if (runId === state.connectionRunId) {
+            setStatus("error", error?.message || "Conectarea xPortal a esuat.");
+          }
+        } finally {
+          if (runId === state.connectionRunId) {
+            setLoading(false);
+            renderAddress();
+          }
+        }
+      }
+
+      function disconnectWallet() {
+        const topic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey);
+        const client = state.signClient;
+        if (client && topic) {
+          client.disconnect({
+            topic,
+            reason: {
+              code: 6000,
+              message: "User disconnected"
+            }
+          }).catch(() => {});
+        }
+        state.connectionRunId++;
+        state.address = "";
+        state.sessionTopic = "";
+        window.localStorage.removeItem(CONFIG.storageKey);
+        window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        dom.addressInput.value = "";
+        hideQrPanel();
+        renderAddress();
+        renderEmptyBalances();
+        setStatus("idle", "Neconectat");
+      }
+
+      function getInitialAddress() {
+        const saved = window.localStorage.getItem(CONFIG.storageKey);
+        state.sessionTopic = window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
+        return isAddress(saved) ? saved : "";
+      }
+
+      function truncateAddress(address) {
+        if (!address) return "Neconectat";
+        return `${address.slice(0, 12)}...${address.slice(-10)}`;
+      }
+
+      function renderAddress() {
+        const address = state.address;
+        dom.addressText.textContent = address || "Neconectat";
+        dom.addressInput.value = address || "";
+        dom.copyBtn.disabled = !address;
+        dom.disconnectBtn.disabled = !address;
+        dom.refreshBtn.disabled = !address || state.loading;
+        dom.explorerLink.href = address
+          ? `https://explorer.multiversx.com/accounts/${address}`
+          : "https://explorer.multiversx.com/";
+      }
+
+      async function copyAddress() {
+        if (!state.address) return;
+        try {
+          await navigator.clipboard.writeText(state.address);
+          setStatus("ready", `Copiat: ${truncateAddress(state.address)}`);
+        } catch (_) {
+          setStatus("error", "Nu am putut copia adresa in clipboard.");
+        }
+      }
+
+      function buildApiUrl(path, params = {}) {
+        const url = new URL(path, CONFIG.apiBase);
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            url.searchParams.set(key, String(value));
+          }
+        });
+        return url.toString();
+      }
+
+      async function fetchJson(url) {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+        try {
+          const response = await fetch(url, {
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+            signal: controller.signal
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        } finally {
+          window.clearTimeout(timer);
+        }
+      }
+
+      function readNumber(value, fallback = 0) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : fallback;
+      }
+
+      async function fetchPrices() {
+        const economicsUrl = buildApiUrl("/economics");
+        const tokenUrl = buildApiUrl(`/tokens/${CONFIG.tokens.usdc.identifier}`);
+        const tclTokenUrl = buildApiUrl(`/tokens/${CONFIG.tokens.tcl.identifier}`);
+
+        const [economics, dexPair, usdcToken, tclToken] = await Promise.allSettled([
+          fetchJson(economicsUrl),
+          fetchJson(CONFIG.dexPairUrl),
+          fetchJson(tokenUrl),
+          fetchJson(tclTokenUrl)
+        ]);
+
+        const egldPrice = economics.status === "fulfilled" ? readNumber(economics.value.price, 0) : 0;
+        const usdcPrice = usdcToken.status === "fulfilled" ? readNumber(usdcToken.value.price, 1) : 1;
+        const tclDexPrice = dexPair.status === "fulfilled" ? readNumber(dexPair.value?.pair?.priceUsd, 0) : 0;
+        const tclApiPrice = tclToken.status === "fulfilled" ? readNumber(tclToken.value.price, 0) : 0;
+
+        state.prices = {
+          egld: egldPrice,
+          usdc: usdcPrice || 1,
+          tcl: tclDexPrice || tclApiPrice
+        };
+
+        if (usdcToken.status === "fulfilled" && usdcToken.value?.assets?.pngUrl) {
+          dom.usdcIcon.innerHTML = `<img src="${usdcToken.value.assets.pngUrl}" alt="">`;
+        }
+      }
+
+      function rawToNumber(raw, decimals) {
+        const clean = String(raw || "0").replace(/[^\d]/g, "");
+        if (!clean) return 0;
+        if (!decimals) return Number(clean);
+        const padded = clean.padStart(decimals + 1, "0");
+        const whole = padded.slice(0, -decimals);
+        const fraction = padded.slice(-decimals);
+        return Number(`${whole}.${fraction}`);
+      }
+
+      function rawToDisplay(raw, decimals, maxFractionDigits) {
+        const clean = String(raw || "0").replace(/[^\d]/g, "") || "0";
+        const precision = Math.max(0, Number(maxFractionDigits) || 0);
+
+        if (!decimals) {
+          return addCommas(clean);
+        }
+
+        const base = 10n ** BigInt(decimals);
+        const value = BigInt(clean);
+        const whole = value / base;
+        const fraction = value % base;
+        const wholeText = addCommas(whole.toString());
+        let fractionText = fraction.toString().padStart(decimals, "0").slice(0, precision);
+        fractionText = fractionText.replace(/0+$/, "");
+
+        return fractionText ? `${wholeText}.${fractionText}` : wholeText;
+      }
+
+      function addCommas(value) {
+        return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
+      function formatUsd(value) {
+        const amount = readNumber(value, 0);
+        const decimals = Math.abs(amount) < 1 && amount !== 0 ? 4 : 2;
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(amount);
+      }
+
+      function formatPrice(value) {
+        const amount = readNumber(value, 0);
+        const decimals = amount > 0 && amount < 0.01 ? 8 : 4;
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(amount);
+      }
+
+      function setTokenRender(key, amount, usdValue, price) {
+        const amountEl = document.querySelector(`[data-token-amount="${key}"]`);
+        const usdEl = document.querySelector(`[data-token-usd="${key}"]`);
+        const priceEl = document.querySelector(`[data-token-price="${key}"]`);
+
+        if (amountEl) amountEl.textContent = amount;
+        if (usdEl) usdEl.textContent = formatUsd(usdValue);
+        if (priceEl) priceEl.textContent = formatPrice(price);
+      }
+
+      function renderEmptyBalances() {
+        ["egld", "usdc", "tcl"].forEach((key) => {
+          const amountEl = document.querySelector(`[data-token-amount="${key}"]`);
+          const usdEl = document.querySelector(`[data-token-usd="${key}"]`);
+          const priceEl = document.querySelector(`[data-token-price="${key}"]`);
+          if (amountEl) amountEl.textContent = "--";
+          if (usdEl) usdEl.textContent = "--";
+          if (priceEl) priceEl.textContent = "--";
+        });
+        dom.totalUsd.textContent = "--";
+        dom.tclPrice.textContent = "--";
+        dom.updatedAt.textContent = "--";
+      }
+
+      function getTokenByIdentifier(tokens, identifier) {
+        return tokens.find((token) => token.identifier === identifier) || null;
+      }
+
+      async function loadBalances() {
+        if (!state.address || state.loading) return;
+
+        setLoading(true);
+        setStatus("loading", "Se citesc balantele...");
+
+        try {
+          await fetchPrices();
+
+          const accountUrl = buildApiUrl(`/accounts/${state.address}`);
+          const tokensUrl = buildApiUrl(`/accounts/${state.address}/tokens`, {
+            identifiers: `${CONFIG.tokens.usdc.identifier},${CONFIG.tokens.tcl.identifier}`
+          });
+
+          const [account, walletTokens] = await Promise.all([
+            fetchJson(accountUrl),
+            fetchJson(tokensUrl)
+          ]);
+
+          const tokens = Array.isArray(walletTokens) ? walletTokens : [];
+          const egldRaw = account?.balance || "0";
+          const usdcToken = getTokenByIdentifier(tokens, CONFIG.tokens.usdc.identifier);
+          const tclToken = getTokenByIdentifier(tokens, CONFIG.tokens.tcl.identifier);
+          const usdcRaw = usdcToken?.balance || "0";
+          const tclRaw = tclToken?.balance || "0";
+
+          const egldAmount = rawToNumber(egldRaw, CONFIG.tokens.egld.decimals);
+          const usdcAmount = rawToNumber(usdcRaw, CONFIG.tokens.usdc.decimals);
+          const tclAmount = rawToNumber(tclRaw, CONFIG.tokens.tcl.decimals);
+
+          const egldUsd = egldAmount * state.prices.egld;
+          const usdcUsd = usdcAmount * state.prices.usdc;
+          const tclUsd = tclAmount * state.prices.tcl;
+          const total = egldUsd + usdcUsd + tclUsd;
+
+          setTokenRender("egld", rawToDisplay(egldRaw, CONFIG.tokens.egld.decimals, 5), egldUsd, state.prices.egld);
+          setTokenRender("usdc", rawToDisplay(usdcRaw, CONFIG.tokens.usdc.decimals, 4), usdcUsd, state.prices.usdc);
+          setTokenRender("tcl", rawToDisplay(tclRaw, CONFIG.tokens.tcl.decimals, 2), tclUsd, state.prices.tcl);
+
+          dom.totalUsd.textContent = formatUsd(total);
+          dom.tclPrice.textContent = formatPrice(state.prices.tcl);
+          dom.updatedAt.textContent = new Intl.DateTimeFormat("ro-RO", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          }).format(new Date());
+
+          setStatus("ready", `Balante actualizate pentru ${truncateAddress(state.address)}`);
+        } catch (error) {
+          console.error(error);
+          setStatus("error", "Nu am putut citi balantele. Incearca refresh.");
+        } finally {
+          setLoading(false);
+          renderAddress();
+        }
+      }
+
+      async function copyWalletConnectUri() {
+        if (!state.pendingUri) return;
+        try {
+          await navigator.clipboard.writeText(state.pendingUri);
+          setStatus("loading", "WalletConnect URI copiat. Lipeste-l in xPortal daca ai nevoie.");
+        } catch (_) {
+          setStatus("error", "Nu am putut copia WalletConnect URI.");
+        }
+      }
+
+      function cancelPairing() {
+        state.connectionRunId++;
+        hideQrPanel();
+        setLoading(false);
+        setStatus(state.address ? "connected" : "idle", state.address ? `Conectat: ${truncateAddress(state.address)}` : "Conectarea xPortal a fost anulata.");
+      }
+
+      function handleLookup(event) {
+        event.preventDefault();
+        const address = dom.addressInput.value.trim();
+        if (!isAddress(address)) {
+          setStatus("error", "Adresa MultiversX nu este valida.");
+          return;
+        }
+        state.address = address;
+        window.localStorage.setItem(CONFIG.storageKey, address);
+        renderAddress();
+        loadBalances();
+      }
+
+      function boot() {
+        state.address = getInitialAddress();
+        renderAddress();
+        renderEmptyBalances();
+
+        if (state.address) {
+          setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
+          loadBalances();
+        }
+
+        dom.connectBtn.addEventListener("click", connectWallet);
+        dom.refreshBtn.addEventListener("click", loadBalances);
+        dom.disconnectBtn.addEventListener("click", disconnectWallet);
+        dom.copyBtn.addEventListener("click", copyAddress);
+        dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
+        dom.cancelPairingBtn.addEventListener("click", cancelPairing);
+        dom.lookupForm.addEventListener("submit", handleLookup);
+      }
+
+      boot();
+    })();
+  </script>
+</body>
+</html>
