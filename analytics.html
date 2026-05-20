@@ -913,7 +913,6 @@
   </div>
 
   <script>
-    const SNAPSHOT_SCRIPT_PATH = "data/tcl-analytics.js";
     const ANALYTICS_API_URL = resolveAnalyticsApiUrl();
     const DEX_MARKET_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
     const MULTIVERSX_TOKEN_URL = "https://api.multiversx.com/tokens/TCL-fe459d";
@@ -1163,13 +1162,13 @@
     function updateSnapshotFreshness(snapshot) {
       const updatedAt = snapshot?.meta?.updatedAt;
       if (!updatedAt) {
-        setStatus("Mirror loaded, but no update timestamp was included in the snapshot.", "warning");
+        setStatus("Analytics cache loaded, but no update timestamp was included in the snapshot.", "warning");
         return;
       }
 
       const updatedDate = new Date(updatedAt);
       if (Number.isNaN(updatedDate.getTime())) {
-        setStatus("Mirror loaded, but the update timestamp could not be parsed.", "warning");
+        setStatus("Analytics cache loaded, but the update timestamp could not be parsed.", "warning");
         return;
       }
 
@@ -1261,23 +1260,6 @@
       window.location.href = "index.html#token";
     }
 
-    function loadSnapshotScript() {
-      return new Promise((resolve, reject) => {
-        delete window.TCL_ANALYTICS_SNAPSHOT;
-
-        const previousScript = document.getElementById("snapshotDataScript");
-        if (previousScript) previousScript.remove();
-
-        const script = document.createElement("script");
-        script.id = "snapshotDataScript";
-        script.async = true;
-        script.src = `${SNAPSHOT_SCRIPT_PATH}?v=${Date.now()}`;
-        script.onload = () => resolve(window.TCL_ANALYTICS_SNAPSHOT || null);
-        script.onerror = () => reject(new Error("Snapshot script could not be loaded."));
-        document.head.appendChild(script);
-      });
-    }
-
     async function loadSnapshotFromCloudflare() {
       const separator = ANALYTICS_API_URL.includes("?") ? "&" : "?";
       const response = await fetch(`${ANALYTICS_API_URL}${separator}v=${Date.now()}`, {
@@ -1305,36 +1287,23 @@
       setStatus("", "loading");
 
       try {
-        let snapshot = null;
-        let source = "cloudflare";
-
-        try {
-          snapshot = await loadSnapshotFromCloudflare();
-        } catch (cloudflareError) {
-          console.warn("Cloudflare analytics cache unavailable; using local fallback", cloudflareError);
-          snapshot = await loadSnapshotScript();
-          source = "local";
-        }
-
+        const snapshot = await loadSnapshotFromCloudflare();
         if (!snapshot) {
-          throw new Error("No analytics snapshot payload was loaded.");
+          throw new Error("No Cloudflare analytics snapshot payload was loaded.");
         }
 
         renderHeader(snapshot);
         updateSnapshotFreshness(snapshot);
-        if (source === "local" && snapshotStatusRowEl.hidden) {
-          setStatus("Cloudflare analytics cache is unavailable; using the local fallback snapshot.", "warning");
-        }
         renderPerformance(snapshot.performance);
         renderMatrixTable(quarterlyReturnsMountEl, snapshot.quarterlyReturns, { type: "percent" });
         renderMatrixTable(quarterlyClosingMountEl, snapshot.quarterlyClosing, { type: "usd", decimals: 6 });
         renderMatrixTable(monthlyReturnsMountEl, snapshot.monthlyReturns, { type: "percent" });
       } catch (error) {
         console.error("Failed to load analytics snapshot", error);
-        setStatus("Could not load analytics from Cloudflare or the local fallback", "error");
+        setStatus("Could not load analytics from Cloudflare", "error");
         const errorMarkup = `
           <div class="empty-state">
-            The analytics cache is unavailable and the local fallback snapshot could not be loaded.
+            The Cloudflare analytics cache is unavailable.
             Check the Cloudflare Worker <code>/api/analytics</code> endpoint,
             then reload this page after the cache refreshes.
           </div>

@@ -35,7 +35,7 @@ npx wrangler deploy
 
 The analytics endpoint refreshes CryptoRank data into Workers KV on the existing cron schedule.
 `ANALYTICS_REFRESH_INTERVAL_MINUTES` controls how often the cache is refreshed; the site reads
-`/api/analytics` first and only falls back to `data/tcl-analytics.js` if Cloudflare is unavailable.
+`/api/analytics` directly from Cloudflare.
 
 After deploy, update `../js/event-push-config.js` with the Worker URL.
 
