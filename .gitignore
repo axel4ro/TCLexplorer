@@ -1,1 +1,8 @@
 cloudflare-worker/.dev.vars
+cloudflare-worker/.wrangler/
+.env
+.env.*
+*.log
+__pycache__/
+discord_bot/config.py
+discord_bot/config/
