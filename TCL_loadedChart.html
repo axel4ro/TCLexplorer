@@ -301,19 +301,33 @@
       overflow: hidden;
     }
 
+    body.tv-mode .chart-panel {
+      overflow: visible;
+    }
+
     .tv-commandbar {
       display: none;
-      align-items: center;
-      gap: 8px;
+      position: relative;
+      z-index: 50;
       min-height: 44px;
       padding: 7px 10px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(5, 7, 12, 0.78);
-      overflow-x: auto;
+      overflow: visible;
     }
 
     body.tv-mode .tv-commandbar {
+      display: block;
+    }
+
+    .tv-commandbar-scroll {
       display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
     }
 
     .tv-symbol {
@@ -388,17 +402,25 @@
       z-index: 30;
       display: none;
       min-width: 236px;
-      max-height: 520px;
+      max-height: min(520px, calc(100vh - 120px));
       overflow-y: auto;
       padding: 8px;
       border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 12px;
       background: rgba(21, 24, 32, 0.98);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+      pointer-events: auto;
     }
 
-    .tv-dropdown.is-open .tv-menu {
+    .tv-dropdown.is-open .tv-menu,
+    .tv-dropdown.is-open .tv-settings-panel {
       display: block;
+    }
+
+    .tv-dropdown.is-floating .tv-menu,
+    .tv-dropdown.is-floating .tv-settings-panel {
+      position: fixed;
+      z-index: 1200;
     }
 
     .tv-menu-section {
@@ -439,20 +461,19 @@
 
     .tv-settings-panel {
       position: absolute;
-      right: 8px;
+      right: 0;
       top: calc(100% + 8px);
       z-index: 35;
       display: none;
       width: min(360px, calc(100vw - 32px));
+      max-height: min(520px, calc(100vh - 120px));
+      overflow-y: auto;
       padding: 12px;
       border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 14px;
       background: rgba(21, 24, 32, 0.98);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.44);
-    }
-
-    .tv-dropdown.is-open .tv-settings-panel {
-      display: block;
+      pointer-events: auto;
     }
 
     .settings-row {
@@ -481,6 +502,8 @@
     body.tv-mode .tv-workspace {
       grid-template-columns: 48px minmax(0, 1fr) 40px;
       min-height: 620px;
+      overflow: hidden;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     }
 
     body.tv-mode .chart-toolbar {
@@ -1007,6 +1030,7 @@
 
     <section class="chart-panel">
       <div class="tv-commandbar" aria-label="TradingView style chart controls">
+        <div class="tv-commandbar-scroll">
         <div class="tv-symbol">TCLUSDC <span style="color:var(--soft);font-weight:700;">MultiversX</span></div>
         <div class="tv-divider" aria-hidden="true"></div>
         <button class="tv-command-btn" type="button" data-timeframe="1m">1m</button>
@@ -1076,6 +1100,7 @@
             <label class="settings-row"><span>Right price labels</span><input type="checkbox" data-setting="priceLabels" checked></label>
             <label class="settings-row"><span>Log scale</span><input type="checkbox" data-setting="logScale"></label>
           </div>
+        </div>
         </div>
       </div>
       <div class="chart-toolbar">
@@ -3272,26 +3297,95 @@
       });
     }
 
+    function getDropdownPanel(dropdown) {
+      return dropdown?.querySelector(".tv-menu, .tv-settings-panel") || null;
+    }
+
+    function resetFloatingDropdown(dropdown) {
+      const panel = getDropdownPanel(dropdown);
+      if (!panel) return;
+      panel.style.top = "";
+      panel.style.left = "";
+      panel.style.right = "";
+      panel.style.maxHeight = "";
+      dropdown.classList.remove("is-floating");
+    }
+
+    function positionFloatingDropdown(dropdown) {
+      const button = dropdown.querySelector("[data-dropdown]");
+      const panel = getDropdownPanel(dropdown);
+      if (!button || !panel) return;
+
+      dropdown.classList.add("is-floating");
+      const gap = 8;
+      const buttonRect = button.getBoundingClientRect();
+      const viewportPadding = 10;
+      const maxHeight = Math.max(180, window.innerHeight - viewportPadding * 2);
+
+      panel.style.maxHeight = `${maxHeight}px`;
+
+      if (panel.classList.contains("tv-settings-panel")) {
+        panel.style.top = `${buttonRect.bottom + gap}px`;
+        panel.style.left = "auto";
+        panel.style.right = `${Math.max(viewportPadding, window.innerWidth - buttonRect.right)}px`;
+      } else {
+        let left = buttonRect.left;
+        panel.style.top = `${buttonRect.bottom + gap}px`;
+        panel.style.left = `${left}px`;
+        panel.style.right = "auto";
+
+        requestAnimationFrame(() => {
+          const panelRect = panel.getBoundingClientRect();
+          if (panelRect.right > window.innerWidth - viewportPadding) {
+            left = Math.max(viewportPadding, window.innerWidth - panelRect.width - viewportPadding);
+            panel.style.left = `${left}px`;
+          }
+          if (panelRect.bottom > window.innerHeight - viewportPadding) {
+            panel.style.top = `${Math.max(viewportPadding, buttonRect.top - panelRect.height - gap)}px`;
+          }
+        });
+      }
+    }
+
+    function syncOpenDropdownPositions() {
+      document.querySelectorAll(".tv-dropdown.is-open").forEach((dropdown) => {
+        positionFloatingDropdown(dropdown);
+      });
+    }
+
     function closeDropdowns(exceptDropdown = null) {
       document.querySelectorAll(".tv-dropdown.is-open").forEach((dropdown) => {
-        if (dropdown !== exceptDropdown) dropdown.classList.remove("is-open");
+        if (dropdown !== exceptDropdown) {
+          dropdown.classList.remove("is-open");
+          resetFloatingDropdown(dropdown);
+        }
       });
+    }
+
+    function setDropdownOpen(dropdown, isOpen) {
+      if (!dropdown) return;
+      if (isOpen) {
+        closeDropdowns(dropdown);
+        dropdown.classList.add("is-open");
+        positionFloatingDropdown(dropdown);
+      } else {
+        dropdown.classList.remove("is-open");
+        resetFloatingDropdown(dropdown);
+      }
     }
 
     function toggleDropdown(button) {
       const dropdown = button.closest(".tv-dropdown");
       if (!dropdown) return;
       const isOpen = dropdown.classList.contains("is-open");
-      closeDropdowns(dropdown);
-      dropdown.classList.toggle("is-open", !isOpen);
+      setDropdownOpen(dropdown, !isOpen);
     }
 
     function openDropdownById(id) {
       const button = document.querySelector(`[data-dropdown="${id}"]`);
       const dropdown = button?.closest(".tv-dropdown");
       if (!dropdown) return;
-      closeDropdowns(dropdown);
-      dropdown.classList.add("is-open");
+      setDropdownOpen(dropdown, true);
     }
 
     function getPointerChartPoint(event) {
@@ -3370,8 +3464,11 @@
       if (state.chartMode === "tv") {
         resizeTvChart();
       }
+      syncOpenDropdownPositions();
       renderChart();
     });
+    document.querySelector(".tv-commandbar-scroll")?.addEventListener("scroll", syncOpenDropdownPositions);
+    window.addEventListener("scroll", syncOpenDropdownPositions, true);
     document.addEventListener("click", (event) => {
       if (!event.target.closest(".tv-dropdown")) closeDropdowns();
     });
