@@ -3077,7 +3077,6 @@ const STAKING_SCALE_WIDTH = 980;
 let topbarCtaRotationTimer = null;
 let topbarCtaMode = "earn";
 let topbarInstallActionType = null;
-const WINDOWS_INSTALLER_URL = "https://axel4ro.github.io/TCLexplorer/TCLexplorerSetup.exe";
 const PUBLIC_SHARE_BASE_URL = "https://axel4ro.github.io/TCLexplorer/";
 let topbarUtilityRotationTimer = null;
 let topbarUtilityMode = "lang";
@@ -3089,7 +3088,7 @@ function stopTopbarCtaRotation() {
 }
 
 function getTopbarCtaModes() {
-  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows") {
+  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop") {
     return ["install"];
   }
   return topbarInstallActionType ? ["earn", "install"] : ["earn"];
@@ -3098,7 +3097,7 @@ function getTopbarCtaModes() {
 function getTopbarInstallLabel() {
   if (topbarInstallActionType === "android") return "📲 Install";
   if (topbarInstallActionType === "ios") return "📲 Add";
-  if (topbarInstallActionType === "windows") return "💻 Download";
+  if (topbarInstallActionType === "desktop") return "💻 Install PWA";
   return "";
 }
 
@@ -3162,8 +3161,8 @@ function handleTopbarCtaClick() {
     installPWA();
   } else if (topbarInstallActionType === "ios") {
     showGuide("ios");
-  } else if (topbarInstallActionType === "windows") {
-    window.open(WINDOWS_INSTALLER_URL, "_blank", "noopener");
+  } else if (topbarInstallActionType === "desktop") {
+    installPWA();
   }
 }
 
@@ -3174,7 +3173,7 @@ function syncTopbarEarnButton() {
   const shouldHide = document.body.classList.contains("sidebar-open")
     || (
       document.body.classList.contains("sidebar-desktop")
-      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "windows")
+      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop")
     );
 
   topbarEarnBtn.hidden = shouldHide;
@@ -4640,22 +4639,24 @@ window.addEventListener("beforeinstallprompt", (e) => {
 
   if (/android/i.test(navigator.userAgent)) {
     showInstallButton("android");
+  } else {
+    showInstallButton("desktop");
   }
 });
 
-// 🖥️ iOS & Windows fallback
+// 🖥️ iOS & desktop fallback
 window.addEventListener("DOMContentLoaded", () => {
   const ua = navigator.userAgent.toLowerCase();
 
   if (/iphone|ipad|ipod/.test(ua)) {
     showInstallButton("ios");
-  } else if (/win/.test(ua)) {
-    showInstallButton("windows");
+  } else if (!/android/i.test(navigator.userAgent)) {
+    showInstallButton("desktop");
   }
 });
 
 function showInstallButton(type) {
-  topbarInstallActionType = ["android", "ios", "windows"].includes(type) ? type : null;
+  topbarInstallActionType = ["android", "ios", "desktop"].includes(type) ? type : null;
   syncTopbarEarnButton();
 }
 
@@ -4666,7 +4667,7 @@ async function installPWA() {
     console.log("User choice:", choice.outcome);
     deferredPrompt = null;
   } else {
-    alert("👉 Open the browser menu and select 'Add to Home Screen'.");
+    alert("👉 Open the browser menu and select 'Install TCL Explorer' or 'Install app'.");
   }
 }
 
