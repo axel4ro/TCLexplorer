@@ -514,12 +514,28 @@
     }
 
     body.tv-mode #tclChartCanvas {
+      display: none;
+    }
+
+    #tvChartContainer {
+      display: none;
+      width: 100%;
       height: 620px;
       border-radius: 0;
-      cursor: crosshair;
       background:
         linear-gradient(180deg, rgba(8, 13, 23, 0.88), rgba(9, 14, 23, 0.96)),
         #101722;
+    }
+
+    body.tv-mode #tvChartContainer {
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
+    body.tv-mode .chart-empty {
+      inset: 0;
+      z-index: 3;
     }
 
     .tv-tool-btn,
@@ -560,7 +576,7 @@
     }
 
     body.tv-mode .tv-price-badge {
-      display: block;
+      display: none;
     }
 
     .chart-toolbar {
@@ -1106,6 +1122,7 @@
         </aside>
         <div class="chart-stage">
           <canvas id="tclChartCanvas"></canvas>
+          <div id="tvChartContainer" aria-label="TradingView lightweight chart"></div>
           <div class="chart-empty" id="chartEmpty">No swap data loaded yet.</div>
           <div class="tv-price-badge" id="lastPriceBadge">--</div>
         </div>
@@ -1150,6 +1167,7 @@
 
   <div class="tooltip" id="chartTooltip"></div>
 
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
   <script src="js/event-push-config.js?v=20260519-1"></script>
   <script>
     const CONFIG = {
@@ -1187,6 +1205,7 @@
       latestUpdateValue: document.getElementById("latestUpdateValue"),
       latestTradesBody: document.getElementById("latestTradesBody"),
       canvas: document.getElementById("tclChartCanvas"),
+      tvContainer: document.getElementById("tvChartContainer"),
       tooltip: document.getElementById("chartTooltip"),
       legendRow: document.getElementById("legendRow"),
       modeButtons: document.querySelectorAll("[data-chart-mode]"),
@@ -1209,7 +1228,7 @@
       chartStyle: "candles",
       activeRange: "all",
       activeTimeframe: "1d",
-      zoomLevel: 0,
+      tvNeedsFit: true,
       activeTool: "crosshair",
       indicators: {
         ema20: true,
@@ -1781,12 +1800,6 @@
         visibleTrades = state.trades.filter((trade) => trade.timestamp >= minTimestamp);
       }
 
-      if (state.zoomLevel > 0 && visibleTrades.length > 40) {
-        const factor = Math.pow(1.42, state.zoomLevel);
-        const visibleCount = Math.max(40, Math.floor(visibleTrades.length / factor));
-        visibleTrades = visibleTrades.slice(-visibleCount);
-      }
-
       return visibleTrades;
     }
 
@@ -2311,366 +2324,498 @@
       ctx.restore();
     }
 
+    const tvChart = {
+      chart: null,
+      mainSeries: null,
+      volumeSeries: null,
+      emaSeries: null,
+      smaSeries: null,
+      bbUpperSeries: null,
+      bbMiddleSeries: null,
+      bbLowerSeries: null,
+      vwapSeries: null,
+      activeStyle: null,
+      resizeObserver: null,
+      rangeHandler: null
+    };
+
+    const TV_BULL = "#35df91";
+    const TV_BEAR = "#ff6672";
+
+    function getLightweightCharts() {
+      return window.LightweightCharts || null;
+    }
+
+    function destroyTvChart() {
+      if (tvChart.resizeObserver) {
+        tvChart.resizeObserver.disconnect();
+        tvChart.resizeObserver = null;
+      }
+      if (tvChart.rangeHandler && tvChart.chart) {
+        tvChart.chart.timeScale().unsubscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
+        tvChart.rangeHandler = null;
+      }
+      if (tvChart.chart) {
+        tvChart.chart.remove();
+        tvChart.chart = null;
+      }
+      tvChart.mainSeries = null;
+      tvChart.volumeSeries = null;
+      tvChart.emaSeries = null;
+      tvChart.smaSeries = null;
+      tvChart.bbUpperSeries = null;
+      tvChart.bbMiddleSeries = null;
+      tvChart.bbLowerSeries = null;
+      tvChart.vwapSeries = null;
+      tvChart.activeStyle = null;
+    }
+
+    function resizeTvChart() {
+      if (!tvChart.chart || !ui.tvContainer) return;
+      const rect = ui.tvContainer.getBoundingClientRect();
+      tvChart.chart.applyOptions({
+        width: Math.max(1, Math.floor(rect.width)),
+        height: Math.max(1, Math.floor(rect.height))
+      });
+    }
+
+    function getTvChartOptions() {
+      const LWC = getLightweightCharts();
+      const shortTf = ["1m", "5m", "15m", "30m"].includes(state.activeTimeframe);
+      return {
+        layout: {
+          background: { type: "solid", color: "#101722" },
+          textColor: "rgba(237, 244, 255, 0.72)",
+          fontFamily: "Inter, sans-serif",
+          fontSize: 12
+        },
+        grid: {
+          vertLines: { visible: state.settings.grid, color: "rgba(135, 160, 196, 0.12)" },
+          horzLines: { visible: state.settings.grid, color: "rgba(135, 160, 196, 0.12)" }
+        },
+        crosshair: {
+          mode: LWC?.CrosshairMode?.Normal ?? 0,
+          vertLine: {
+            color: "rgba(237, 244, 255, 0.42)",
+            labelBackgroundColor: "#151d2b"
+          },
+          horzLine: {
+            color: "rgba(237, 244, 255, 0.42)",
+            labelBackgroundColor: "#151d2b"
+          }
+        },
+        rightPriceScale: {
+          visible: state.settings.priceLabels,
+          borderColor: "rgba(135, 160, 196, 0.16)",
+          scaleMargins: {
+            top: 0.08,
+            bottom: state.settings.volume ? 0.28 : 0.06
+          },
+          mode: state.settings.logScale && LWC?.PriceScaleMode?.Logarithmic != null
+            ? LWC.PriceScaleMode.Logarithmic
+            : 0
+        },
+        timeScale: {
+          borderColor: "rgba(135, 160, 196, 0.16)",
+          timeVisible: true,
+          secondsVisible: shortTf,
+          rightOffset: 8,
+          barSpacing: 8,
+          minBarSpacing: 0.5,
+          fixLeftEdge: true,
+          fixRightEdge: true
+        },
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: false
+        },
+        handleScale: {
+          axisPressedMouseMove: true,
+          mouseWheel: true,
+          pinch: true
+        }
+      };
+    }
+
+    function removeTvSeries(series) {
+      if (series && tvChart.chart) {
+        tvChart.chart.removeSeries(series);
+      }
+    }
+
+    function createTvMainSeries(style) {
+      const LWC = getLightweightCharts();
+      if (!tvChart.chart || !LWC) return null;
+
+      if (["line", "line-markers"].includes(style)) {
+        return tvChart.chart.addLineSeries({
+          color: "#42d7ff",
+          lineWidth: 2,
+          crosshairMarkerVisible: true,
+          lastValueVisible: state.settings.lastPriceLine,
+          priceLineVisible: state.settings.lastPriceLine
+        });
+      }
+
+      if (["area", "hlc-area"].includes(style)) {
+        return tvChart.chart.addAreaSeries({
+          lineColor: "#42d7ff",
+          topColor: "rgba(66, 215, 255, 0.26)",
+          bottomColor: "rgba(66, 215, 255, 0)",
+          lineWidth: 2,
+          lastValueVisible: state.settings.lastPriceLine,
+          priceLineVisible: state.settings.lastPriceLine
+        });
+      }
+
+      if (style === "bars") {
+        return tvChart.chart.addBarSeries({
+          upColor: TV_BULL,
+          downColor: TV_BEAR,
+          thinBars: false,
+          lastValueVisible: state.settings.lastPriceLine,
+          priceLineVisible: state.settings.lastPriceLine
+        });
+      }
+
+      if (style === "columns") {
+        return tvChart.chart.addHistogramSeries({
+          priceFormat: { type: "price", precision: 8, minMove: 0.00000001 },
+          lastValueVisible: state.settings.lastPriceLine,
+          priceLineVisible: state.settings.lastPriceLine
+        });
+      }
+
+      const hollow = style === "hollow";
+      const volumeStyle = style === "volume";
+      return tvChart.chart.addCandlestickSeries({
+        upColor: hollow ? "rgba(5, 9, 16, 0.62)" : (volumeStyle ? "rgba(53, 223, 145, 0.55)" : TV_BULL),
+        downColor: volumeStyle ? "rgba(255, 102, 114, 0.55)" : TV_BEAR,
+        borderUpColor: TV_BULL,
+        borderDownColor: TV_BEAR,
+        wickUpColor: TV_BULL,
+        wickDownColor: TV_BEAR,
+        borderVisible: true,
+        lastValueVisible: state.settings.lastPriceLine,
+        priceLineVisible: state.settings.lastPriceLine
+      });
+    }
+
+    function ensureTvVolumeSeries() {
+      if (!tvChart.chart) return null;
+      if (!state.settings.volume) {
+        removeTvSeries(tvChart.volumeSeries);
+        tvChart.volumeSeries = null;
+        return null;
+      }
+      if (!tvChart.volumeSeries) {
+        tvChart.volumeSeries = tvChart.chart.addHistogramSeries({
+          priceFormat: { type: "volume" },
+          priceScaleId: "",
+          lastValueVisible: false,
+          priceLineVisible: false
+        });
+        tvChart.volumeSeries.priceScale().applyOptions({
+          scaleMargins: { top: 0.78, bottom: 0 }
+        });
+      }
+      return tvChart.volumeSeries;
+    }
+
+    function ensureTvIndicatorSeries() {
+      if (!tvChart.chart) return;
+
+      if (state.indicators.ema20 && !tvChart.emaSeries) {
+        tvChart.emaSeries = tvChart.chart.addLineSeries({
+          color: "#f5c663",
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        });
+      } else if (!state.indicators.ema20) {
+        removeTvSeries(tvChart.emaSeries);
+        tvChart.emaSeries = null;
+      }
+
+      if (state.indicators.sma50 && !tvChart.smaSeries) {
+        tvChart.smaSeries = tvChart.chart.addLineSeries({
+          color: "#42d7ff",
+          lineWidth: 1.5,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        });
+      } else if (!state.indicators.sma50) {
+        removeTvSeries(tvChart.smaSeries);
+        tvChart.smaSeries = null;
+      }
+
+      if (state.indicators.vwap && !tvChart.vwapSeries) {
+        tvChart.vwapSeries = tvChart.chart.addLineSeries({
+          color: "#e879f9",
+          lineWidth: 1.5,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        });
+      } else if (!state.indicators.vwap) {
+        removeTvSeries(tvChart.vwapSeries);
+        tvChart.vwapSeries = null;
+      }
+
+      if (state.indicators.bb20) {
+        if (!tvChart.bbUpperSeries) {
+          tvChart.bbUpperSeries = tvChart.chart.addLineSeries({
+            color: "rgba(168, 85, 247, 0.88)",
+            lineWidth: 1,
+            lineStyle: 2,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false
+          });
+          tvChart.bbMiddleSeries = tvChart.chart.addLineSeries({
+            color: "rgba(168, 85, 247, 0.55)",
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false
+          });
+          tvChart.bbLowerSeries = tvChart.chart.addLineSeries({
+            color: "rgba(168, 85, 247, 0.88)",
+            lineWidth: 1,
+            lineStyle: 2,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false
+          });
+        }
+      } else {
+        removeTvSeries(tvChart.bbUpperSeries);
+        removeTvSeries(tvChart.bbMiddleSeries);
+        removeTvSeries(tvChart.bbLowerSeries);
+        tvChart.bbUpperSeries = null;
+        tvChart.bbMiddleSeries = null;
+        tvChart.bbLowerSeries = null;
+      }
+    }
+
+    function ensureTvChart() {
+      const LWC = getLightweightCharts();
+      if (!LWC || !ui.tvContainer) return false;
+
+      if (!tvChart.chart) {
+        const rect = ui.tvContainer.getBoundingClientRect();
+        tvChart.chart = LWC.createChart(ui.tvContainer, {
+          ...getTvChartOptions(),
+          width: Math.max(1, Math.floor(rect.width)),
+          height: Math.max(1, Math.floor(rect.height))
+        });
+
+        tvChart.rangeHandler = () => {
+          state.tvNeedsFit = false;
+        };
+        tvChart.chart.timeScale().subscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
+
+        if (!tvChart.resizeObserver) {
+          tvChart.resizeObserver = new ResizeObserver(() => resizeTvChart());
+          tvChart.resizeObserver.observe(ui.tvContainer);
+        }
+
+        ui.tvContainer.addEventListener("dblclick", () => {
+          if (state.chartMode === "tv" && tvChart.chart) {
+            fitTvChartContent();
+          }
+        });
+      } else {
+        tvChart.chart.applyOptions(getTvChartOptions());
+      }
+
+      if (tvChart.activeStyle !== state.chartStyle) {
+        removeTvSeries(tvChart.mainSeries);
+        tvChart.mainSeries = createTvMainSeries(state.chartStyle);
+        tvChart.activeStyle = state.chartStyle;
+      }
+
+      ensureTvVolumeSeries();
+      ensureTvIndicatorSeries();
+      return Boolean(tvChart.mainSeries);
+    }
+
+    function candlesToTvBars(candles) {
+      return candles.map((candle) => ({
+        time: candle.timestamp,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close
+      }));
+    }
+
+    function candlesToTvLine(candles, useHlc = false) {
+      return candles.map((candle) => ({
+        time: candle.timestamp,
+        value: useHlc ? (candle.high + candle.low + candle.close) / 3 : candle.close
+      }));
+    }
+
+    function indicatorToTvLine(candles, values) {
+      const points = [];
+      candles.forEach((candle, index) => {
+        const value = values[index];
+        if (!Number.isFinite(value)) return;
+        points.push({ time: candle.timestamp, value });
+      });
+      return points;
+    }
+
+    function buildTvVolumeData(candles) {
+      return candles.map((candle) => {
+        const isUp = candle.close >= candle.open;
+        return {
+          time: candle.timestamp,
+          value: candle.buyVolume + candle.sellVolume,
+          color: isUp ? "rgba(53, 223, 145, 0.48)" : "rgba(255, 102, 114, 0.48)"
+        };
+      });
+    }
+
+    function buildTvPatternMarkers(candles, patterns) {
+      const LWC = getLightweightCharts();
+      if (!LWC || !patterns.length) return [];
+      return patterns.map((marker) => {
+        const candle = candles[marker.index];
+        if (!candle) return null;
+        return {
+          time: candle.timestamp,
+          position: marker.position === "below" ? "belowBar" : "aboveBar",
+          color: marker.color,
+          shape: marker.position === "below" ? "arrowUp" : "arrowDown",
+          text: marker.label
+        };
+      }).filter(Boolean);
+    }
+
+    function applyTvMainSeriesData(candles) {
+      if (!tvChart.mainSeries) return;
+      const style = state.chartStyle;
+
+      if (["line", "line-markers"].includes(style)) {
+        tvChart.mainSeries.setData(candlesToTvLine(candles));
+        return;
+      }
+
+      if (["area", "hlc-area"].includes(style)) {
+        tvChart.mainSeries.setData(candlesToTvLine(candles, style === "hlc-area"));
+        return;
+      }
+
+      if (style === "columns") {
+        tvChart.mainSeries.setData(candles.map((candle) => ({
+          time: candle.timestamp,
+          value: candle.close,
+          color: candle.close >= candle.open ? TV_BULL : TV_BEAR
+        })));
+        return;
+      }
+
+      tvChart.mainSeries.setData(candlesToTvBars(candles));
+    }
+
+    function updateTvChartData(candles, indicators) {
+      if (!ensureTvChart()) return;
+
+      applyTvMainSeriesData(candles);
+
+      if (tvChart.volumeSeries) {
+        tvChart.volumeSeries.setData(state.settings.volume ? buildTvVolumeData(candles) : []);
+      }
+
+      if (tvChart.emaSeries) {
+        tvChart.emaSeries.setData(indicatorToTvLine(candles, indicators.ema20));
+      }
+      if (tvChart.smaSeries) {
+        tvChart.smaSeries.setData(indicatorToTvLine(candles, indicators.sma50));
+      }
+      if (tvChart.vwapSeries) {
+        tvChart.vwapSeries.setData(indicatorToTvLine(candles, indicators.vwap));
+      }
+      if (tvChart.bbUpperSeries && tvChart.bbMiddleSeries && tvChart.bbLowerSeries) {
+        tvChart.bbUpperSeries.setData(indicatorToTvLine(candles, indicators.bollinger.upper));
+        tvChart.bbMiddleSeries.setData(indicatorToTvLine(candles, indicators.bollinger.middle));
+        tvChart.bbLowerSeries.setData(indicatorToTvLine(candles, indicators.bollinger.lower));
+      }
+
+      if (state.indicators.patterns && typeof tvChart.mainSeries.setMarkers === "function") {
+        tvChart.mainSeries.setMarkers(buildTvPatternMarkers(candles, indicators.patterns));
+      } else if (typeof tvChart.mainSeries.setMarkers === "function") {
+        tvChart.mainSeries.setMarkers([]);
+      }
+    }
+
+    function fitTvChartContent() {
+      if (!tvChart.chart) return;
+      state.tvNeedsFit = false;
+      tvChart.chart.timeScale().fitContent();
+    }
+
+    function zoomTvChart(direction) {
+      if (!tvChart.chart) return;
+      const timeScale = tvChart.chart.timeScale();
+      const logicalRange = timeScale.getVisibleLogicalRange();
+      if (!logicalRange) {
+        fitTvChartContent();
+        return;
+      }
+
+      const span = logicalRange.to - logicalRange.from;
+      const minBars = 25;
+      const maxBars = Math.max(minBars, state.buckets.length || minBars);
+      const zoomFactor = direction === "in" ? 0.82 : 1.22;
+      const nextSpan = Math.max(minBars, Math.min(maxBars, span * zoomFactor));
+      const center = (logicalRange.from + logicalRange.to) / 2;
+
+      timeScale.setVisibleLogicalRange({
+        from: center - nextSpan / 2,
+        to: center + nextSpan / 2
+      });
+      state.tvNeedsFit = false;
+    }
+
     function renderTradingViewChart() {
+      const LWC = getLightweightCharts();
       const visibleTrades = getVisibleTrades();
       let candles = buildTimeframeCandles(visibleTrades, state.activeTimeframe);
       if (state.chartStyle === "heikin") {
         candles = buildHeikinAshiCandles(candles);
       }
+
       const ema20 = calculateEma(candles, 20);
       const sma50 = calculateSma(candles, 50);
       const bollinger = calculateBollinger(candles, 20, 2);
       const vwap = calculateVwap(candles);
       const patterns = state.indicators.patterns ? detectCandlePatterns(candles) : [];
+
       state.buckets = candles;
       state.patternMarkers = patterns;
+      state.plot = null;
       ui.chartEmpty.classList.toggle("is-visible", !candles.length);
 
-      const { ctx, width, height } = setupCanvas();
-      ctx.clearRect(0, 0, width, height);
-      if (!candles.length) {
+      if (!candles.length || !LWC) {
+        destroyTvChart();
         ui.lastPriceBadge.textContent = "--";
         return;
       }
 
-      const padding = {
-        left: width < 640 ? 58 : 76,
-        right: width < 640 ? 16 : 24,
-        top: 24,
-        bottom: width < 640 ? 54 : 64
-      };
-      const volumeHeight = state.settings.volume ? Math.max(88, Math.min(150, height * 0.24)) : 0;
-      const chartLeft = padding.left;
-      const chartRight = width - padding.right;
-      const chartTop = padding.top;
-      const chartBottom = height - padding.bottom;
-      const priceBottom = state.settings.volume ? chartBottom - volumeHeight - 24 : chartBottom;
-      const volumeTop = priceBottom + 28;
-      const volumeBottom = chartBottom;
-      const plotWidth = chartRight - chartLeft;
-      const priceHeight = priceBottom - chartTop;
-      const volumePlotHeight = volumeBottom - volumeTop;
+      if (!ensureTvChart()) return;
 
-      const indicatorValues = [];
-      if (state.indicators.ema20) indicatorValues.push(...ema20);
-      if (state.indicators.sma50) indicatorValues.push(...sma50);
-      if (state.indicators.bb20) indicatorValues.push(...bollinger.upper, ...bollinger.lower);
-      if (state.indicators.vwap) indicatorValues.push(...vwap);
+      updateTvChartData(candles, { ema20, sma50, vwap, bollinger, patterns });
+      resizeTvChart();
 
-      const finiteIndicatorValues = indicatorValues.filter(Number.isFinite);
-      const priceMinRaw = Math.min(...candles.map((candle) => candle.low), ...finiteIndicatorValues);
-      const priceMaxRaw = Math.max(...candles.map((candle) => candle.high), ...finiteIndicatorValues);
-      const pricePad = Math.max((priceMaxRaw - priceMinRaw) * 0.10, priceMaxRaw * 0.04, 0.0000001);
-      const priceMin = Math.max(0, priceMinRaw - pricePad);
-      const priceMax = priceMaxRaw + pricePad;
-      const maxVolume = Math.max(1, ...candles.map((candle) => candle.buyVolume + candle.sellVolume));
-
-      const xForIndex = (index) => {
-        if (candles.length <= 1) return chartLeft + plotWidth / 2;
-        return chartLeft + (index / (candles.length - 1)) * plotWidth;
-      };
-      const toScaleValue = (price) => state.settings.logScale ? Math.log(Math.max(price, 0.000000001)) : price;
-      const scaledMin = toScaleValue(priceMin);
-      const scaledMax = toScaleValue(priceMax);
-      const yForPrice = (price) => priceBottom - ((toScaleValue(price) - scaledMin) / (scaledMax - scaledMin || 1)) * priceHeight;
-
-      state.plot = {
-        chartLeft,
-        chartRight,
-        chartTop,
-        chartBottom,
-        priceBottom,
-        volumeTop,
-        volumeBottom,
-        xForIndex,
-        yForPrice,
-        priceFromY: (y) => {
-          const ratio = Math.max(0, Math.min(1, (priceBottom - y) / Math.max(1, priceHeight)));
-          const scaled = scaledMin + ratio * (scaledMax - scaledMin);
-          return state.settings.logScale ? Math.exp(scaled) : scaled;
-        }
-      };
-
-      ctx.save();
-      ctx.strokeStyle = state.settings.grid ? "rgba(135, 160, 196, 0.12)" : "rgba(135, 160, 196, 0)";
-      ctx.lineWidth = 1;
-      ctx.font = "12px Inter, sans-serif";
-      ctx.fillStyle = "rgba(237, 244, 255, 0.56)";
-      ctx.textBaseline = "middle";
-
-      for (const tick of getNiceTicks(priceMin, priceMax, 5)) {
-        const y = yForPrice(tick);
-        ctx.beginPath();
-        ctx.moveTo(chartLeft, y);
-        ctx.lineTo(chartRight, y);
-        ctx.stroke();
-        if (state.settings.priceLabels) ctx.fillText(formatPrice(tick), 8, y);
-      }
-
-      if (state.settings.volume) {
-        ctx.strokeStyle = "rgba(135, 160, 196, 0.16)";
-        ctx.beginPath();
-        ctx.moveTo(chartLeft, volumeTop);
-        ctx.lineTo(chartRight, volumeTop);
-        ctx.moveTo(chartLeft, volumeBottom);
-        ctx.lineTo(chartRight, volumeBottom);
-        ctx.stroke();
-      }
-
-      const dateTickCount = width < 640 ? 3 : 6;
-      ctx.textBaseline = "top";
-      for (let i = 0; i < dateTickCount; i += 1) {
-        const index = Math.round((i / Math.max(1, dateTickCount - 1)) * (candles.length - 1));
-        const candle = candles[index];
-        const x = xForIndex(index);
-        ctx.textAlign = i === 0 ? "left" : (i === dateTickCount - 1 ? "right" : "center");
-        ctx.fillText(formatDate(candle.timestamp * 1000), x, chartBottom + 12);
-        ctx.strokeStyle = state.settings.grid ? "rgba(135, 160, 196, 0.08)" : "rgba(135, 160, 196, 0)";
-        ctx.beginPath();
-        ctx.moveTo(x, chartTop);
-        ctx.lineTo(x, volumeBottom);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      if (state.indicators.bb20) {
-        ctx.save();
-        ctx.beginPath();
-        let startedUpper = false;
-        bollinger.upper.forEach((value, index) => {
-          if (!Number.isFinite(value)) return;
-          const x = xForIndex(index);
-          const y = yForPrice(value);
-          if (!startedUpper) {
-            ctx.moveTo(x, y);
-            startedUpper = true;
-          } else {
-            ctx.lineTo(x, y);
-          }
-        });
-        for (let index = bollinger.lower.length - 1; index >= 0; index -= 1) {
-          const value = bollinger.lower[index];
-          if (!Number.isFinite(value)) continue;
-          ctx.lineTo(xForIndex(index), yForPrice(value));
-        }
-        ctx.closePath();
-        ctx.fillStyle = "rgba(168, 85, 247, 0.08)";
-        ctx.fill();
-        ctx.restore();
-        drawIndicatorLine(ctx, bollinger.upper, { xForIndex, yForPrice, color: "rgba(168, 85, 247, 0.88)", width: 1.2, dash: [4, 5] });
-        drawIndicatorLine(ctx, bollinger.lower, { xForIndex, yForPrice, color: "rgba(168, 85, 247, 0.88)", width: 1.2, dash: [4, 5] });
-      }
-
-      if (state.indicators.ema20) {
-        drawIndicatorLine(ctx, ema20, { xForIndex, yForPrice, color: "#f5c663", width: 1.8 });
-      }
-      if (state.indicators.sma50) {
-        drawIndicatorLine(ctx, sma50, { xForIndex, yForPrice, color: "#42d7ff", width: 1.5 });
-      }
-      if (state.indicators.vwap) {
-        drawIndicatorLine(ctx, vwap, { xForIndex, yForPrice, color: "#e879f9", width: 1.5 });
-      }
-
-      const candleWidth = Math.max(2, Math.min(14, plotWidth / Math.max(1, candles.length) * 0.72));
-      const wickWidth = candles.length > 320 ? 1 : 1.3;
-
-      const drawVolumeBars = () => {
-        if (!state.settings.volume) return;
-        candles.forEach((candle, index) => {
-          const x = xForIndex(index);
-          const isUp = candle.close >= candle.open;
-          const volume = candle.buyVolume + candle.sellVolume;
-          const volumeHeightPx = (volume / maxVolume) * volumePlotHeight;
-          ctx.fillStyle = isUp ? "rgba(53, 223, 145, 0.48)" : "rgba(255, 102, 114, 0.48)";
-          ctx.fillRect(x - candleWidth / 2, volumeBottom - volumeHeightPx, candleWidth, volumeHeightPx);
-        });
-      };
-
-      const drawCloseLine = (mode) => {
-        const useHlc = mode === "hlc-area";
-        const values = candles.map((candle) => useHlc ? (candle.high + candle.low + candle.close) / 3 : candle.close);
-        if (mode === "area" || mode === "hlc-area") {
-          const gradient = ctx.createLinearGradient(0, chartTop, 0, priceBottom);
-          gradient.addColorStop(0, "rgba(66, 215, 255, 0.26)");
-          gradient.addColorStop(1, "rgba(66, 215, 255, 0)");
-          ctx.beginPath();
-          values.forEach((value, index) => {
-            const x = xForIndex(index);
-            const y = yForPrice(value);
-            if (index === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.lineTo(xForIndex(values.length - 1), priceBottom);
-          ctx.lineTo(xForIndex(0), priceBottom);
-          ctx.closePath();
-          ctx.fillStyle = gradient;
-          ctx.fill();
-        }
-
-        drawIndicatorLine(ctx, values, { xForIndex, yForPrice, color: "#42d7ff", width: 2 });
-        if (mode === "line-markers") {
-          ctx.fillStyle = "#42d7ff";
-          values.forEach((value, index) => {
-            if (index % Math.max(1, Math.ceil(values.length / 90)) !== 0) return;
-            ctx.beginPath();
-            ctx.arc(xForIndex(index), yForPrice(value), 2.2, 0, Math.PI * 2);
-            ctx.fill();
-          });
-        }
-      };
-
-      if (["line", "line-markers", "area", "hlc-area"].includes(state.chartStyle)) {
-        drawCloseLine(state.chartStyle);
-        drawVolumeBars();
-      } else if (state.chartStyle === "columns") {
-        candles.forEach((candle, index) => {
-          const x = xForIndex(index);
-          const y = yForPrice(candle.close);
-          const baseY = yForPrice(priceMin);
-          const isUp = candle.close >= candle.open;
-          ctx.fillStyle = isUp ? "rgba(53, 223, 145, 0.72)" : "rgba(255, 102, 114, 0.72)";
-          ctx.fillRect(x - candleWidth / 2, Math.min(y, baseY), candleWidth, Math.max(1, Math.abs(baseY - y)));
-        });
-        drawVolumeBars();
-      } else {
-        candles.forEach((candle, index) => {
-        const x = xForIndex(index);
-        const openY = yForPrice(candle.open);
-        const closeY = yForPrice(candle.close);
-        const highY = yForPrice(candle.high);
-        const lowY = yForPrice(candle.low);
-        const isUp = candle.close >= candle.open;
-        const color = isUp ? "#35df91" : "#ff6672";
-        const bodyTop = Math.min(openY, closeY);
-        const bodyHeight = Math.max(1.2, Math.abs(closeY - openY));
-        const volume = candle.buyVolume + candle.sellVolume;
-        const volumeIntensity = Math.min(1, volume / Math.max(1, maxVolume) + 0.28);
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = wickWidth;
-        ctx.beginPath();
-        ctx.moveTo(x, highY);
-        ctx.lineTo(x, lowY);
-        ctx.stroke();
-
-        if (state.chartStyle === "bars") {
-          ctx.beginPath();
-          ctx.moveTo(x - candleWidth / 2, openY);
-          ctx.lineTo(x, openY);
-          ctx.moveTo(x, closeY);
-          ctx.lineTo(x + candleWidth / 2, closeY);
-          ctx.stroke();
-        } else {
-          const fillAlpha = state.chartStyle === "volume" ? Math.max(0.28, volumeIntensity) : 0.78;
-          ctx.fillStyle = state.chartStyle === "hollow" && isUp
-            ? "rgba(5, 9, 16, 0.62)"
-            : (isUp ? `rgba(53, 223, 145, ${fillAlpha})` : `rgba(255, 102, 114, ${fillAlpha})`);
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1;
-          ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
-          if (candleWidth >= 5 || state.chartStyle === "hollow") {
-            ctx.strokeRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
-          }
-        }
-      });
-        drawVolumeBars();
-      }
-
-      if (state.indicators.patterns) {
-        ctx.save();
-        ctx.font = "10px Inter, sans-serif";
-        ctx.textAlign = "center";
-        patterns.forEach((marker) => {
-          const candle = candles[marker.index];
-          if (!candle) return;
-          const x = xForIndex(marker.index);
-          const y = marker.position === "below"
-            ? Math.min(volumeTop - 8, yForPrice(candle.low) + 18)
-            : Math.max(chartTop + 10, yForPrice(candle.high) - 18);
-          ctx.fillStyle = marker.color;
-          ctx.beginPath();
-          if (marker.position === "below") {
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - 5, y + 8);
-            ctx.lineTo(x + 5, y + 8);
-          } else {
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - 5, y - 8);
-            ctx.lineTo(x + 5, y - 8);
-          }
-          ctx.closePath();
-          ctx.fill();
-        });
-        ctx.restore();
-      }
-
-      const latestCandle = candles[candles.length - 1];
-      const latestY = yForPrice(latestCandle.close);
-      const latestIsUp = latestCandle.close >= latestCandle.open;
-
-      if (state.settings.lastPriceLine) {
-        ctx.save();
-        ctx.strokeStyle = latestIsUp ? "rgba(53, 223, 145, 0.64)" : "rgba(255, 102, 114, 0.64)";
-        ctx.setLineDash([3, 5]);
-        ctx.beginPath();
-        ctx.moveTo(chartLeft, latestY);
-        ctx.lineTo(chartRight, latestY);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      if (ui.lastPriceBadge) {
-        ui.lastPriceBadge.textContent = formatPrice(latestCandle.close);
-        ui.lastPriceBadge.style.top = Math.max(8, Math.min(height - 34, ui.canvas.offsetTop + latestY - 14)) + "px";
-        ui.lastPriceBadge.style.background = latestIsUp ? "var(--buy)" : "var(--sell)";
-      }
-
-      if (state.settings.highLowLabels) {
-        let highIndex = 0;
-        let lowIndex = 0;
-        candles.forEach((candle, index) => {
-          if (candle.high > candles[highIndex].high) highIndex = index;
-          if (candle.low < candles[lowIndex].low) lowIndex = index;
-        });
-        ctx.save();
-        ctx.setLineDash([2, 4]);
-        [
-          { index: highIndex, label: "High", price: candles[highIndex].high, color: "#9bbcff" },
-          { index: lowIndex, label: "Low", price: candles[lowIndex].low, color: "#9bbcff" }
-        ].forEach((item) => {
-          const y = yForPrice(item.price);
-          ctx.strokeStyle = "rgba(155, 188, 255, 0.26)";
-          ctx.beginPath();
-          ctx.moveTo(chartLeft, y);
-          ctx.lineTo(chartRight, y);
-          ctx.stroke();
-          drawAnnotationLabel(ctx, `${item.label} ${formatPrice(item.price)}`, xForIndex(item.index) + 8, y - 12, {
-            color: item.color,
-            border: "rgba(155, 188, 255, 0.24)"
-          });
-        });
-        ctx.restore();
-      }
-
-      drawAnnotations(ctx, candles);
-
-      const hoverIndex = state.hoverIndex;
-      if (Number.isInteger(hoverIndex) && candles[hoverIndex]) {
-        const candle = candles[hoverIndex];
-        const x = xForIndex(hoverIndex);
-        ctx.save();
-        ctx.strokeStyle = "rgba(237, 244, 255, 0.42)";
-        ctx.setLineDash([4, 5]);
-        ctx.beginPath();
-        ctx.moveTo(x, chartTop);
-        ctx.lineTo(x, volumeBottom);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = "#edf4ff";
-        ctx.beginPath();
-        ctx.arc(x, yForPrice(candle.close), 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+      if (state.tvNeedsFit) {
+        fitTvChartContent();
       }
 
       const visibleStats = visibleTrades.reduce((acc, trade) => {
@@ -2693,7 +2838,7 @@
         ${state.indicators.bb20 ? '<span class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>Bollinger 20</span>' : ''}
         ${state.indicators.vwap ? '<span class="legend-item"><span class="legend-dot" style="background:#e879f9"></span>VWAP</span>' : ''}
         ${state.indicators.patterns ? '<span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>Candle patterns</span>' : ''}
-        <span>${formatCount(candles.length)} candles visible</span>
+        <span>${formatCount(candles.length)} candles loaded</span>
       `;
     }
 
@@ -2703,6 +2848,7 @@
         return;
       }
 
+      destroyTvChart();
       const visibleTrades = getVisibleTrades();
       const buckets = buildDailyBuckets(visibleTrades);
       state.buckets = buckets;
@@ -2890,7 +3036,7 @@
     }
 
     function showTooltip(event) {
-      if (!state.plot || !state.buckets.length) return;
+      if (state.chartMode === "tv" || !state.plot || !state.buckets.length) return;
       const rect = ui.canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const { chartLeft, chartRight } = state.plot;
@@ -2937,6 +3083,10 @@
     }
 
     function hideTooltip() {
+      if (state.chartMode === "tv") {
+        ui.tooltip.classList.remove("is-visible");
+        return;
+      }
       state.hoverIndex = null;
       ui.tooltip.classList.remove("is-visible");
       renderChart();
@@ -3066,6 +3216,9 @@
       syncChartStyleChrome();
       syncSettingsChrome();
       syncToolChrome();
+      if (state.chartMode === "tv") {
+        requestAnimationFrame(() => resizeTvChart());
+      }
     }
 
     function ensureTradingViewMode() {
@@ -3106,7 +3259,7 @@
         const action = button.dataset.scaleAction;
         button.classList.toggle(
           "is-active",
-          (action === "auto" && state.zoomLevel === 0) || (action === "log" && state.settings.logScale)
+          (action === "auto" && state.tvNeedsFit) || (action === "log" && state.settings.logScale)
         );
       });
     }
@@ -3193,6 +3346,7 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get("mode") === "tv") {
         state.chartMode = "tv";
+        state.tvNeedsFit = true;
       }
 
       const requestedTimeframe = params.get("tf");
@@ -3212,15 +3366,27 @@
     ui.canvas.addEventListener("mousemove", showTooltip);
     ui.canvas.addEventListener("mouseleave", hideTooltip);
     ui.canvas.addEventListener("click", handleCanvasClick);
-    window.addEventListener("resize", () => renderChart());
+    window.addEventListener("resize", () => {
+      if (state.chartMode === "tv") {
+        resizeTvChart();
+      }
+      renderChart();
+    });
     document.addEventListener("click", (event) => {
       if (!event.target.closest(".tv-dropdown")) closeDropdowns();
     });
 
     ui.modeButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        state.chartMode = button.dataset.chartMode === "tv" ? "tv" : "flow";
+        const nextMode = button.dataset.chartMode === "tv" ? "tv" : "flow";
+        if (nextMode === "tv") {
+          state.tvNeedsFit = true;
+        } else {
+          destroyTvChart();
+        }
+        state.chartMode = nextMode;
         state.hoverIndex = null;
+        hideTooltip();
         syncChartModeChrome();
         renderAll();
       });
@@ -3230,6 +3396,7 @@
       button.addEventListener("click", () => {
         state.activeTimeframe = button.dataset.timeframe || "1d";
         state.hoverIndex = null;
+        state.tvNeedsFit = true;
         ensureTradingViewMode();
         syncTimeframeChrome();
         closeDropdowns();
@@ -3260,6 +3427,7 @@
     ui.chartStyleButtons.forEach((button) => {
       button.addEventListener("click", () => {
         state.chartStyle = button.dataset.chartStyle || "candles";
+        tvChart.activeStyle = null;
         state.hoverIndex = null;
         ensureTradingViewMode();
         syncChartStyleChrome();
@@ -3271,11 +3439,14 @@
     ui.zoomButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const action = button.dataset.zoom;
-        if (action === "in") state.zoomLevel = Math.min(10, state.zoomLevel + 1);
-        if (action === "out") state.zoomLevel = Math.max(0, state.zoomLevel - 1);
-        if (action === "fit") state.zoomLevel = 0;
-        state.hoverIndex = null;
         ensureTradingViewMode();
+        if (action === "in") zoomTvChart("in");
+        else if (action === "out") zoomTvChart("out");
+        else if (action === "fit") {
+          state.tvNeedsFit = true;
+          fitTvChartContent();
+        }
+        state.hoverIndex = null;
         syncSettingsChrome();
         renderAll();
       });
@@ -3321,7 +3492,8 @@
         const action = button.dataset.scaleAction;
         ensureTradingViewMode();
         if (action === "auto") {
-          state.zoomLevel = 0;
+          state.tvNeedsFit = true;
+          fitTvChartContent();
         } else if (action === "log") {
           state.settings.logScale = !state.settings.logScale;
         } else if (action === "settings") {
@@ -3336,6 +3508,7 @@
       button.addEventListener("click", () => {
         state.activeRange = button.dataset.range || "all";
         state.hoverIndex = null;
+        if (state.chartMode === "tv") state.tvNeedsFit = true;
         document.querySelectorAll("[data-range]").forEach((item) => item.classList.toggle("is-active", item === button));
         renderAll();
       });
