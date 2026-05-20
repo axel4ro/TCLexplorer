@@ -270,10 +270,10 @@
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Live Chart</button>
+	  <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
       <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide" data-i18n="sidebar_web3_guides">ℹ️ Web3 Guides</button>
-      <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
       <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck" data-i18n="sidebar_wallet_check">🔎 Wallet Check</button>
       <button type="button" class="nav-item" onclick="showPage('explorerIframe')" id="btn-explorerIframe">
         <img src="https://axel4ro.github.io/TCLexplorer/images/EGLD.png" alt=""> MvX Explorer
@@ -3087,20 +3087,8 @@ function stopTopbarCtaRotation() {
   topbarCtaRotationTimer = null;
 }
 
-function isDesktopInstallViewport() {
-  return window.matchMedia("(min-width: 1024px)").matches
-    && !/android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
-}
-
-function ensureDesktopInstallAction() {
-  if (isDesktopInstallViewport() && !topbarInstallActionType) {
-    topbarInstallActionType = "desktop";
-  }
-}
-
 function getTopbarCtaModes() {
-  ensureDesktopInstallAction();
-  if (isDesktopInstallViewport() && topbarInstallActionType === "desktop") {
+  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop") {
     return ["install"];
   }
   return topbarInstallActionType ? ["earn", "install"] : ["earn"];
@@ -3109,14 +3097,7 @@ function getTopbarCtaModes() {
 function getTopbarInstallLabel() {
   if (topbarInstallActionType === "android") return "📲 Install";
   if (topbarInstallActionType === "ios") return "📲 Add";
-  if (topbarInstallActionType === "desktop") return "💻Install";
-  return "";
-}
-
-function getTopbarInstallAriaLabel() {
-  if (topbarInstallActionType === "android") return "Install PWA";
-  if (topbarInstallActionType === "ios") return "Add to Home Screen";
-  if (topbarInstallActionType === "desktop") return "Install PWA";
+  if (topbarInstallActionType === "desktop") return "💻 Install";
   return "";
 }
 
@@ -3136,7 +3117,7 @@ function renderTopbarCtaButton() {
     ? getTopbarInstallLabel()
     : t("nav_play_and_earn", {}, "🎮Play and Earn💰");
   topbarEarnBtn.dataset.ctaMode = isInstallMode ? topbarInstallActionType : "earn";
-  topbarEarnBtn.setAttribute("aria-label", isInstallMode ? getTopbarInstallAriaLabel() : topbarEarnBtn.textContent.trim());
+  topbarEarnBtn.setAttribute("aria-label", topbarEarnBtn.textContent.trim());
 }
 
 function syncTopbarCtaRail() {
@@ -3188,12 +3169,11 @@ function handleTopbarCtaClick() {
 function syncTopbarEarnButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
-  ensureDesktopInstallAction();
 
   const shouldHide = document.body.classList.contains("sidebar-open")
     || (
       document.body.classList.contains("sidebar-desktop")
-      && !(isDesktopInstallViewport() && topbarInstallActionType === "desktop")
+      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop")
     );
 
   topbarEarnBtn.hidden = shouldHide;
