@@ -807,6 +807,7 @@
 <body class="tcl-premium-page tcl-analytics-page">
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
   <script src="lang/analytics.bundle.js?v=20260515-3"></script>
+  <script src="js/event-push-config.js?v=20260519-1"></script>
   <script src="js/page-i18n.js?v=20260515-3"></script>
   <script src="js/tcl-realtime.js?v=20260518-1"></script>
   <div class="page-shell">
@@ -913,10 +914,11 @@
 
   <script>
     const SNAPSHOT_SCRIPT_PATH = "data/tcl-analytics.js";
+    const ANALYTICS_API_URL = resolveAnalyticsApiUrl();
     const DEX_MARKET_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
     const MULTIVERSX_TOKEN_URL = "https://api.multiversx.com/tokens/TCL-fe459d";
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-    const SNAPSHOT_STALE_AFTER_MS = 20 * 60 * 1000;
+    const SNAPSHOT_STALE_AFTER_MS = 40 * 60 * 1000;
     const TCL_LISTING_DATE = "2024-06-13";
 
     const snapshotStatusRowEl = document.getElementById("snapshotStatusRow");
@@ -930,6 +932,18 @@
     const quarterlyReturnsMountEl = document.getElementById("quarterlyReturnsMount");
     const quarterlyClosingMountEl = document.getElementById("quarterlyClosingMount");
     const monthlyReturnsMountEl = document.getElementById("monthlyReturnsMount");
+
+    function resolveAnalyticsApiUrl() {
+      const configured = String(window.TCL_EVENT_PUSH_CONFIG?.apiBaseUrl || "").trim();
+      if (configured) {
+        const normalized = configured.replace(/\/+$/, "");
+        if (normalized.endsWith("/api/push")) {
+          return normalized.replace(/\/api\/push$/, "/api/analytics");
+        }
+      }
+
+      return "https://tcl-event-push.axel4ro.workers.dev/api/analytics";
+    }
 
     function setStatus(message, mode) {
       if (!message) {
@@ -1162,7 +1176,7 @@
       const ageMs = Date.now() - updatedDate.getTime();
       if (ageMs > SNAPSHOT_STALE_AFTER_MS) {
         setStatus(
-          `Mirror looks stale: last refresh was ${formatRelativeAge(ageMs)} ago. GitHub Actions or the upstream API may have missed recent updates.`,
+          `Analytics cache looks stale: last refresh was ${formatRelativeAge(ageMs)} ago. Cloudflare or the upstream API may have missed recent updates.`,
           "warning"
         );
         return;
@@ -1264,29 +1278,65 @@
       });
     }
 
+    async function loadSnapshotFromCloudflare() {
+      const separator = ANALYTICS_API_URL.includes("?") ? "&" : "?";
+      const response = await fetch(`${ANALYTICS_API_URL}${separator}v=${Date.now()}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cloudflare analytics request failed with ${response.status}`);
+      }
+
+      const snapshot = await response.json();
+      if (snapshot?.ok === false) {
+        throw new Error(snapshot.error || "Cloudflare analytics returned an error.");
+      }
+
+      if (!snapshot?.meta) {
+        throw new Error("Cloudflare analytics did not return a snapshot payload.");
+      }
+
+      return snapshot;
+    }
+
     async function loadSnapshot() {
       setStatus("", "loading");
 
       try {
-        const snapshot = await loadSnapshotScript();
+        let snapshot = null;
+        let source = "cloudflare";
+
+        try {
+          snapshot = await loadSnapshotFromCloudflare();
+        } catch (cloudflareError) {
+          console.warn("Cloudflare analytics cache unavailable; using local fallback", cloudflareError);
+          snapshot = await loadSnapshotScript();
+          source = "local";
+        }
+
         if (!snapshot) {
-          throw new Error("Snapshot script did not expose a payload.");
+          throw new Error("No analytics snapshot payload was loaded.");
         }
 
         renderHeader(snapshot);
         updateSnapshotFreshness(snapshot);
+        if (source === "local" && snapshotStatusRowEl.hidden) {
+          setStatus("Cloudflare analytics cache is unavailable; using the local fallback snapshot.", "warning");
+        }
         renderPerformance(snapshot.performance);
         renderMatrixTable(quarterlyReturnsMountEl, snapshot.quarterlyReturns, { type: "percent" });
         renderMatrixTable(quarterlyClosingMountEl, snapshot.quarterlyClosing, { type: "usd", decimals: 6 });
         renderMatrixTable(monthlyReturnsMountEl, snapshot.monthlyReturns, { type: "percent" });
       } catch (error) {
         console.error("Failed to load analytics snapshot", error);
-        setStatus("Could not load data/tcl-analytics.js", "error");
+        setStatus("Could not load analytics from Cloudflare or the local fallback", "error");
         const errorMarkup = `
           <div class="empty-state">
-            The local analytics mirror is missing or stale.
-            Check the <code>Refresh TCL Analytics Mirror</code> GitHub Actions workflow,
-            then reload this page after <code>data/tcl-analytics.js</code> updates.
+            The analytics cache is unavailable and the local fallback snapshot could not be loaded.
+            Check the Cloudflare Worker <code>/api/analytics</code> endpoint,
+            then reload this page after the cache refreshes.
           </div>
         `;
         performanceGridEl.innerHTML = errorMarkup;

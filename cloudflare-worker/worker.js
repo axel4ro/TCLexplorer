@@ -8,6 +8,15 @@ const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SENT_TTL_SECONDS = 14 * 24 * 60 * 60;
 const DEFAULT_EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json";
+const ANALYTICS_SNAPSHOT_KEY = "analytics:snapshot";
+const ANALYTICS_REFRESH_LOCK_KEY = "analytics:refresh-lock";
+const ANALYTICS_REFRESH_LOCK_TTL_SECONDS = 4 * 60;
+const DEFAULT_ANALYTICS_REFRESH_INTERVAL_MINUTES = 15;
+const ANALYTICS_ENDPOINTS = {
+  coin: "https://api.cryptorank.io/v0/coins/the-cursed-land",
+  quarterly: "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history",
+  monthly: "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history"
+};
 
 const EVENT_COPY = {
   en: {
@@ -23,9 +32,9 @@ const EVENT_COPY = {
 };
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await handleRequest(request, env || {});
+      return await handleRequest(request, env || {}, ctx);
     } catch (error) {
       return emergencyJsonResponse(request, 500, {
         ok: false,
@@ -39,16 +48,41 @@ export default {
       ok: false,
       error: error?.message || "Scheduled dispatch failed"
     })));
+
+    ctx.waitUntil(refreshAnalyticsIfDue(env).catch((error) => {
+      console.warn("Analytics refresh failed", error?.message || error);
+    }));
+
+    const kv = env.TCL_EVENT_PUSH_KV;
+    if (!kv) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    ctx.waitUntil((async () => {
+      const lastReconcile = await kv.get("stats:last-reconcile");
+      if (lastReconcile === today) return;
+      await reconcileSubscriberCount(kv);
+      await kv.put("stats:last-reconcile", today);
+    })().catch((error) => {
+      console.warn("Subscriber reconcile failed", error?.message || error);
+    }));
   }
 };
 
-async function handleRequest(request, env) {
+async function handleRequest(request, env, ctx) {
   if (request.method === "OPTIONS") return emptyResponse(request, env);
 
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "");
 
   try {
+    if (path.endsWith("/api/analytics/refresh")) {
+      return handleAnalyticsRefresh(request, env);
+    }
+
+    if (path.endsWith("/api/analytics")) {
+      return handleAnalytics(request, env, ctx);
+    }
+
     if (path.endsWith("/api/push/config")) {
       return handleConfig(request, env);
     }
@@ -67,6 +101,10 @@ async function handleRequest(request, env) {
 
     if (path.endsWith("/api/push/stats/history")) {
       return handleStatsHistory(request, env);
+    }
+
+    if (path.endsWith("/api/push/stats/reconcile")) {
+      return handleStatsReconcile(request, env);
     }
 
     if (path.endsWith("/api/push/stats")) {
@@ -135,11 +173,12 @@ function emptyResponse(request, env) {
   });
 }
 
-function jsonResponse(request, env, status, payload) {
+function jsonResponse(request, env, status, payload, extraHeaders = {}) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       ...corsHeaders(request, env),
+      ...extraHeaders,
       "Content-Type": "application/json; charset=utf-8"
     }
   });
@@ -271,6 +310,36 @@ async function handleStats(request, env) {
   });
 }
 
+async function handleStatsReconcile(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const auth = authorizeDispatch(request, env);
+  if (!auth.ok) {
+    return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 503, {
+      ok: false,
+      error: "TCL_EVENT_PUSH_KV binding is not configured"
+    });
+  }
+
+  const previous = await readSubscriberStats(kv);
+  const subscribers = await reconcileSubscriberCount(kv);
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    subscribers,
+    previous: previous.subscribers,
+    configured: true,
+    source: "kv-list",
+    updatedAt: new Date().toISOString()
+  });
+}
+
 async function handleStatsHistory(request, env) {
   if (request.method !== "GET") {
     return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
@@ -320,6 +389,58 @@ async function handleDispatch(request, env) {
   return jsonResponse(request, env, 200, report);
 }
 
+async function handleAnalytics(request, env, ctx) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 503, {
+      ok: false,
+      error: "TCL_EVENT_PUSH_KV binding is not configured"
+    });
+  }
+
+  let snapshot = await readAnalyticsSnapshot(kv);
+  if (!snapshot) {
+    try {
+      snapshot = await refreshAnalyticsSnapshot(env, { force: true });
+    } catch (error) {
+      return jsonResponse(request, env, 502, {
+        ok: false,
+        error: error?.message || "Analytics refresh failed"
+      });
+    }
+  } else if (isAnalyticsSnapshotDue(snapshot, env)) {
+    const refreshPromise = refreshAnalyticsIfDue(env).catch((error) => {
+      console.warn("Background analytics refresh failed", error?.message || error);
+    });
+    if (ctx?.waitUntil) ctx.waitUntil(refreshPromise);
+  }
+
+  return jsonResponse(request, env, 200, snapshot, {
+    "Cache-Control": "public, max-age=60, stale-while-revalidate=600"
+  });
+}
+
+async function handleAnalyticsRefresh(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const auth = authorizeDispatch(request, env);
+  if (!auth.ok) {
+    return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
+  }
+
+  const snapshot = await refreshAnalyticsSnapshot(env, { force: true });
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    updatedAt: snapshot?.meta?.updatedAt || null
+  });
+}
+
 function authorizeDispatch(request, env) {
   const secret = env.EVENT_PUSH_CRON_SECRET || env.CRON_SECRET || "";
   if (!secret) {
@@ -330,6 +451,256 @@ function authorizeDispatch(request, env) {
   return header === `Bearer ${secret}`
     ? { ok: true }
     : { ok: false, status: 401, error: "Unauthorized" };
+}
+
+async function refreshAnalyticsIfDue(env) {
+  const kv = requireKv(env);
+  const current = await readAnalyticsSnapshot(kv);
+  if (current && !isAnalyticsSnapshotDue(current, env)) return current;
+  return refreshAnalyticsSnapshot(env, { current });
+}
+
+async function refreshAnalyticsSnapshot(env, options = {}) {
+  const kv = requireKv(env);
+  const current = options.current || await readAnalyticsSnapshot(kv);
+  if (!options.force && current && !isAnalyticsSnapshotDue(current, env)) return current;
+
+  let locked = true;
+  if (!options.force) {
+    locked = await reserveAnalyticsRefreshLock(kv);
+    if (!locked) return current;
+  }
+
+  try {
+    const snapshot = await buildAnalyticsSnapshot();
+    await kv.put(ANALYTICS_SNAPSHOT_KEY, JSON.stringify(snapshot));
+    return snapshot;
+  } finally {
+    if (!options.force && locked) {
+      await kv.delete(ANALYTICS_REFRESH_LOCK_KEY).catch(() => {});
+    }
+  }
+}
+
+async function readAnalyticsSnapshot(kv) {
+  const snapshot = await kv.get(ANALYTICS_SNAPSHOT_KEY, "json").catch(() => null);
+  return snapshot && snapshot.meta ? snapshot : null;
+}
+
+async function reserveAnalyticsRefreshLock(kv) {
+  const existing = await kv.get(ANALYTICS_REFRESH_LOCK_KEY);
+  if (existing) return false;
+  await kv.put(ANALYTICS_REFRESH_LOCK_KEY, String(Date.now()), {
+    expirationTtl: ANALYTICS_REFRESH_LOCK_TTL_SECONDS
+  });
+  return true;
+}
+
+function isAnalyticsSnapshotDue(snapshot, env) {
+  const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) return true;
+  return Date.now() - updatedAt >= analyticsRefreshIntervalMs(env);
+}
+
+function analyticsRefreshIntervalMs(env) {
+  const minutes = Number(env.ANALYTICS_REFRESH_INTERVAL_MINUTES || DEFAULT_ANALYTICS_REFRESH_INTERVAL_MINUTES);
+  const safeMinutes = Number.isFinite(minutes) ? Math.min(24 * 60, Math.max(5, minutes)) : DEFAULT_ANALYTICS_REFRESH_INTERVAL_MINUTES;
+  return safeMinutes * 60 * 1000;
+}
+
+async function buildAnalyticsSnapshot() {
+  const [coinPayload, quarterlyPayload, monthlyPayload] = await Promise.all([
+    fetchAnalyticsJson(ANALYTICS_ENDPOINTS.coin),
+    fetchAnalyticsJson(ANALYTICS_ENDPOINTS.quarterly),
+    fetchAnalyticsJson(ANALYTICS_ENDPOINTS.monthly)
+  ]);
+
+  const coin = coinPayload?.data || {};
+  const quarterlyData = Array.isArray(quarterlyPayload?.data) ? quarterlyPayload.data : [];
+  const monthlyData = monthlyPayload?.data || {};
+  const currentPrice = numberOrNull(coin?.price?.USD);
+
+  const performance = [
+    { label: "1W", key: "7D" },
+    { label: "1M", key: "30D" },
+    { label: "3M", key: "3M" },
+    { label: "6M", key: "6M" },
+    { label: "YTD", key: "YTD" },
+    { label: "1Y", key: "1Y" }
+  ].map((metric) => {
+    const startPrice = numberOrNull(coin?.histPrices?.[metric.key]?.USD);
+    const high = numberOrNull(coin?.histData?.high?.[metric.key]?.USD);
+    const low = numberOrNull(coin?.histData?.low?.[metric.key]?.USD);
+    const change = currentPrice !== null && startPrice !== null && startPrice !== 0
+      ? roundNumber(currentPrice - startPrice, 12)
+      : null;
+
+    return {
+      label: metric.label,
+      key: metric.key,
+      startPrice,
+      currentPrice,
+      change,
+      changePct: getPercentChange(startPrice, currentPrice),
+      high,
+      low
+    };
+  });
+
+  const quarterColumns = ["Q1", "Q2", "Q3", "Q4"];
+  const sortedQuarterlyData = [...quarterlyData].sort((left, right) => Number(right?.year) - Number(left?.year));
+
+  const quarterlyReturnsRows = sortedQuarterlyData.map((entry) => newMatrixRow(
+    String(entry?.year || ""),
+    [1, 2, 3, 4].map((quarterIndex) => {
+      const quarter = entry?.[`q${quarterIndex}`];
+      if (!quarter) return null;
+      return getPercentChange(numberOrNull(quarter.openUSD), numberOrNull(quarter.closeUSD));
+    })
+  ));
+
+  const quarterlyClosingRows = sortedQuarterlyData.map((entry) => newMatrixRow(
+    String(entry?.year || ""),
+    [1, 2, 3, 4].map((quarterIndex) => {
+      const quarter = entry?.[`q${quarterIndex}`];
+      if (!quarter || !quarter.isFull) return null;
+      return numberOrNull(quarter.closeUSD);
+    })
+  ));
+
+  const monthColumns = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthValuesByIndex = Array.from({ length: 13 }, () => []);
+  const monthlyRows = Object.keys(monthlyData)
+    .sort((left, right) => Number(right) - Number(left))
+    .map((year) => {
+      const yearMonths = monthlyData?.[year]?.months || {};
+      const cells = monthColumns.map((_month, index) => {
+        const monthIndex = index + 1;
+        const monthEntry = yearMonths?.[monthIndex] || yearMonths?.[String(monthIndex)];
+        if (!monthEntry) return null;
+
+        const changePct = getPercentChange(numberOrNull(monthEntry.openUSD), numberOrNull(monthEntry.closeUSD));
+        if (changePct !== null) monthValuesByIndex[monthIndex].push(changePct);
+        return changePct;
+      });
+
+      return newMatrixRow(String(year), cells);
+    });
+
+  const averageCells = monthColumns.map((_month, index) => getAverage(monthValuesByIndex[index + 1]));
+  const medianCells = monthColumns.map((_month, index) => getMedian(monthValuesByIndex[index + 1]));
+
+  return {
+    meta: {
+      updatedAt: new Date().toISOString(),
+      source: "CryptoRank",
+      endpoints: ANALYTICS_ENDPOINTS
+    },
+    coin: {
+      name: String(coin?.name || ""),
+      symbol: String(coin?.symbol || ""),
+      key: String(coin?.key || ""),
+      image: {
+        x60: String(coin?.image?.x60 || ""),
+        x150: String(coin?.image?.x150 || "")
+      }
+    },
+    market: {
+      currentPriceUsd: currentPrice,
+      marketCapUsd: numberOrNull(coin?.marketCap),
+      volume24hUsd: numberOrNull(coin?.volume24h),
+      athPriceUsd: numberOrNull(coin?.athPrice?.USD),
+      atlPriceUsd: numberOrNull(coin?.atlPrice?.USD),
+      listingDate: String(coin?.listingDate || ""),
+      historyStartDay: String(coin?.historyStartDay || ""),
+      historyEndDay: String(coin?.historyEndDay || "")
+    },
+    performance,
+    quarterlyReturns: {
+      columns: quarterColumns,
+      rows: quarterlyReturnsRows
+    },
+    quarterlyClosing: {
+      columns: quarterColumns,
+      rows: quarterlyClosingRows
+    },
+    monthlyReturns: {
+      columns: monthColumns,
+      rows: monthlyRows,
+      summary: [
+        newMatrixRow("Average", averageCells),
+        newMatrixRow("Median", medianCells)
+      ]
+    }
+  };
+}
+
+async function fetchAnalyticsJson(url, maxAttempts = 4) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "TCLExplorerAnalyticsSync/1.0"
+        },
+        cache: "no-store"
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (!payload) throw new Error("Empty analytics response");
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= maxAttempts) break;
+      await sleep(1500 * attempt);
+    }
+  }
+
+  throw new Error(`Failed to fetch ${url}: ${lastError?.message || "unknown error"}`);
+}
+
+function newMatrixRow(label, cells) {
+  return { label, cells };
+}
+
+function getPercentChange(open, close) {
+  const openValue = numberOrNull(open);
+  const closeValue = numberOrNull(close);
+  if (openValue === null || closeValue === null || openValue === 0) return null;
+  return roundNumber(((closeValue / openValue) - 1) * 100, 8);
+}
+
+function getAverage(values) {
+  const safeValues = values.filter(Number.isFinite);
+  if (!safeValues.length) return null;
+  const total = safeValues.reduce((sum, value) => sum + value, 0);
+  return roundNumber(total / safeValues.length, 2);
+}
+
+function getMedian(values) {
+  const safeValues = values.filter(Number.isFinite).sort((left, right) => left - right);
+  if (!safeValues.length) return null;
+  const middle = Math.floor(safeValues.length / 2);
+  if (safeValues.length % 2 === 1) return roundNumber(safeValues[middle], 2);
+  return roundNumber((safeValues[middle - 1] + safeValues[middle]) / 2, 2);
+}
+
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function roundNumber(value, decimals) {
+  if (!Number.isFinite(value)) return null;
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+function sleep(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function dispatchDueNotifications(env) {
@@ -364,7 +735,12 @@ async function dispatchDueNotifications(env) {
         report.sent += 1;
       } catch (error) {
         if (error.status === 404 || error.status === 410) {
-          await kv.delete(`${SUBSCRIPTION_PREFIX}${record.id}`);
+          const subscriptionKey = `${SUBSCRIPTION_PREFIX}${record.id}`;
+          const existed = await kv.get(subscriptionKey);
+          await kv.delete(subscriptionKey);
+          if (existed) {
+            await adjustSubscriberCount(kv, -1);
+          }
           report.invalid += 1;
         } else {
           await kv.delete(sentKey);
@@ -427,6 +803,13 @@ async function readSubscriberStats(kv) {
     subscribers: Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0,
     source: raw ? "counter" : "default"
   };
+}
+
+/** Count real subscription keys in KV and sync the cached counter. */
+async function reconcileSubscriberCount(kv) {
+  const actual = await countSubscriptions(kv);
+  await writeSubscriberStats(kv, actual);
+  return actual;
 }
 
 async function writeSubscriberStats(kv, subscribers) {

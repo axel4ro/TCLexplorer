@@ -80,7 +80,7 @@ https://tcl-event-push.YOUR_ACCOUNT.workers.dev
 Current deployment:
 
 ```text
-https://tcl-event-push.alexaxel9719.workers.dev
+https://tcl-event-push.axel4ro.workers.dev
 ```
 
 ## 5. Point The Static Site To The Worker
@@ -95,7 +95,7 @@ Set:
 
 ```js
 window.TCL_EVENT_PUSH_CONFIG = {
-  apiBaseUrl: "https://tcl-event-push.alexaxel9719.workers.dev/api/push",
+  apiBaseUrl: "https://tcl-event-push.axel4ro.workers.dev/api/push",
   publicVapidKey: ""
 };
 ```
