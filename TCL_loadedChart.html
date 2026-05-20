@@ -555,6 +555,35 @@
       z-index: 1;
     }
 
+    #tvDrawingCanvas {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      width: 100%;
+      height: 680px;
+      pointer-events: none;
+    }
+
+    body.tv-mode #tvDrawingCanvas {
+      display: block;
+    }
+
+    body.tv-mode .chart-stage.is-drawing-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+
+    body.tv-mode .chart-stage.is-text-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: text;
+    }
+
+    body.tv-mode .chart-stage.is-eraser-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: not-allowed;
+    }
+
     .tv-chart-legend {
       display: none;
       position: absolute;
@@ -1332,6 +1361,7 @@
         <div class="chart-stage">
           <canvas id="tclChartCanvas"></canvas>
           <div id="tvChartContainer" aria-label="TradingView lightweight chart"></div>
+          <canvas id="tvDrawingCanvas" aria-label="TradingView drawing layer"></canvas>
           <div class="tv-chart-legend" id="tvChartLegend" aria-live="polite">
             <div class="tv-legend-head">
               <span id="tvLegendSymbol">TCL/USDC</span>
@@ -1439,6 +1469,7 @@
       latestTradesBody: document.getElementById("latestTradesBody"),
       canvas: document.getElementById("tclChartCanvas"),
       tvContainer: document.getElementById("tvChartContainer"),
+      tvDrawingCanvas: document.getElementById("tvDrawingCanvas"),
       tvChartLegend: document.getElementById("tvChartLegend"),
       tvLegendSymbol: document.getElementById("tvLegendSymbol"),
       tvLegendMeta: document.getElementById("tvLegendMeta"),
@@ -2813,25 +2844,220 @@
       tvChart.chart.subscribeCrosshairMove(tvChart.crosshairHandler);
 
       tvChart.clickHandler = (param) => {
-        if (state.activeTool !== "hline" || !param?.point || !tvChart.mainSeries) return;
-        const price = tvChart.mainSeries.coordinateToPrice(param.point.y);
-        if (!Number.isFinite(price)) return;
-        const LWC = getLightweightCharts();
-        const line = tvChart.mainSeries.createPriceLine({
-          price,
-          color: TV_THEME.ema,
-          lineWidth: 1,
-          lineStyle: LWC?.LineStyle?.Dashed ?? 2,
-          axisLabelVisible: true,
-          title: formatTvScalePrice(price)
-        });
-        tvChart.userPriceLines.push(line);
-        if (tvChart.userPriceLines.length > 24) {
-          const oldest = tvChart.userPriceLines.shift();
-          tvChart.mainSeries.removePriceLine(oldest);
-        }
+        handleTvDrawingClick(param);
       };
       tvChart.chart.subscribeClick(tvChart.clickHandler);
+    }
+
+
+
+    function refreshTvUserPriceLines() {
+      if (!tvChart.mainSeries) return;
+      removeTvUserPriceLines();
+      state.annotations
+        .filter((annotation) => annotation.type === "hline" && Number.isFinite(annotation.price))
+        .slice(-24)
+        .forEach((annotation) => addTvPriceLine(annotation.price));
+    }
+
+    function resizeTvDrawingCanvas() {
+      if (!ui.tvDrawingCanvas || !ui.tvContainer) return;
+      const rect = ui.tvContainer.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      ui.tvDrawingCanvas.style.width = `${Math.max(1, rect.width)}px`;
+      ui.tvDrawingCanvas.style.height = `${Math.max(1, rect.height)}px`;
+      ui.tvDrawingCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      ui.tvDrawingCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      const ctx = ui.tvDrawingCanvas.getContext("2d");
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawTvAnnotations();
+    }
+
+    function syncTvDrawingCursor() {
+      const stage = ui.tvContainer?.closest(".chart-stage");
+      if (!stage) return;
+      const drawingTools = ["trend", "ray", "hline", "brush", "text", "measure"];
+      stage.classList.toggle("is-drawing-tool", state.chartMode === "tv" && drawingTools.includes(state.activeTool));
+      stage.classList.toggle("is-text-tool", state.chartMode === "tv" && state.activeTool === "text");
+      stage.classList.toggle("is-eraser-tool", state.chartMode === "tv" && state.activeTool === "eraser");
+    }
+
+    function getTvPointFromParam(param) {
+      if (!param?.point || !tvChart.mainSeries || !state.buckets.length) return null;
+      let price = tvChart.mainSeries.coordinateToPrice(param.point.y);
+      if (!Number.isFinite(price)) return null;
+
+      let candle = null;
+      if (param.time != null) {
+        candle = getCandleByTvTime(param.time);
+      }
+      if (!candle) {
+        const logical = tvChart.chart?.timeScale?.().coordinateToLogical?.(param.point.x);
+        if (Number.isFinite(logical)) {
+          const index = Math.max(0, Math.min(state.buckets.length - 1, Math.round(logical)));
+          candle = state.buckets[index];
+        }
+      }
+      if (!candle) return null;
+
+      if (state.snapToCandle) {
+        price = candle.close;
+      }
+
+      return {
+        timestamp: candle.timestamp,
+        price,
+        label: formatTvScalePrice(price)
+      };
+    }
+
+    function getTvPointPosition(point) {
+      if (!point || !tvChart.chart || !tvChart.mainSeries) return null;
+      const x = tvChart.chart.timeScale().timeToCoordinate(point.timestamp);
+      const y = tvChart.mainSeries.priceToCoordinate(point.price);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      return { x, y };
+    }
+
+    function addTvPriceLine(price) {
+      if (!tvChart.mainSeries || !Number.isFinite(price)) return;
+      const LWC = getLightweightCharts();
+      const line = tvChart.mainSeries.createPriceLine({
+        price,
+        color: TV_THEME.ema,
+        lineWidth: 1,
+        lineStyle: LWC?.LineStyle?.Dashed ?? 2,
+        axisLabelVisible: true,
+        title: formatTvScalePrice(price)
+      });
+      tvChart.userPriceLines.push(line);
+      if (tvChart.userPriceLines.length > 24) {
+        const oldest = tvChart.userPriceLines.shift();
+        tvChart.mainSeries.removePriceLine(oldest);
+      }
+    }
+
+    function drawTvLabel(ctx, text, x, y, options = {}) {
+      const value = String(text || "");
+      const paddingX = 8;
+      const height = 24;
+      ctx.save();
+      ctx.font = "12px Inter, sans-serif";
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const width = ctx.measureText(value).width + paddingX * 2;
+      const left = Math.max(6, Math.min(rect.width - width - 6, x));
+      const top = Math.max(6, Math.min(rect.height - height - 6, y - height / 2));
+      ctx.fillStyle = options.background || "rgba(19, 23, 34, 0.94)";
+      ctx.strokeStyle = options.border || "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(left, top, width, height, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = options.color || "#d1d4dc";
+      ctx.textBaseline = "middle";
+      ctx.fillText(value, left + paddingX, top + height / 2);
+      ctx.restore();
+    }
+
+    function drawTvAnnotations() {
+      if (!ui.tvDrawingCanvas) return;
+      const ctx = ui.tvDrawingCanvas.getContext("2d");
+      if (!ctx) return;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      if (state.chartMode !== "tv" || !tvChart.chart || !tvChart.mainSeries) return;
+
+      const annotations = [...state.annotations];
+      if (state.pendingAnnotation) {
+        annotations.push({
+          type: state.pendingAnnotation.type,
+          points: [state.pendingAnnotation.point],
+          isPending: true
+        });
+      }
+
+      ctx.save();
+      annotations.forEach((annotation) => {
+        if (annotation.type === "hline") return;
+
+        if (annotation.type === "text") {
+          const point = getTvPointPosition(annotation.point);
+          if (!point) return;
+          drawTvLabel(ctx, annotation.label || "Text", point.x + 8, point.y - 12, {
+            color: "#42d7ff",
+            border: "rgba(66, 215, 255, 0.35)"
+          });
+          return;
+        }
+
+        const firstPoint = annotation.points?.[0] || annotation.point;
+        const secondPoint = annotation.points?.[1] || annotation.points?.[0] || annotation.point;
+        const first = getTvPointPosition(firstPoint);
+        const second = getTvPointPosition(secondPoint);
+        if (!first || !second) return;
+
+        const isMeasure = annotation.type === "measure";
+        const isBrush = annotation.type === "brush";
+        ctx.strokeStyle = isMeasure ? "#f5c663" : (isBrush ? "rgba(66, 215, 255, 0.78)" : "rgba(237,244,255,0.78)");
+        ctx.lineWidth = isBrush ? 3 : 1.7;
+        ctx.setLineDash(annotation.isPending ? [4, 5] : []);
+
+        ctx.beginPath();
+        ctx.moveTo(first.x, first.y);
+        if (annotation.type === "ray" && first.x !== second.x) {
+          const slope = (second.y - first.y) / (second.x - first.x);
+          const targetX = rect.width - 8;
+          ctx.lineTo(targetX, first.y + slope * (targetX - first.x));
+        } else if (annotation.type === "brush") {
+          const midX = (first.x + second.x) / 2;
+          const midY = (first.y + second.y) / 2 - 18;
+          ctx.quadraticCurveTo(midX, midY, second.x, second.y);
+        } else {
+          ctx.lineTo(second.x, second.y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (isMeasure && !annotation.isPending && annotation.points?.length >= 2) {
+          const startPrice = annotation.points[0].price;
+          const endPrice = annotation.points[1].price;
+          const pct = startPrice ? ((endPrice - startPrice) / startPrice) * 100 : 0;
+          const label = `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`;
+          drawTvLabel(ctx, label, (first.x + second.x) / 2 + 8, (first.y + second.y) / 2 - 12, {
+            color: pct >= 0 ? "#35df91" : "#ff6672"
+          });
+        }
+      });
+      ctx.restore();
+    }
+
+    function handleTvDrawingClick(param) {
+      if (state.chartMode !== "tv" || ["crosshair", "magnet"].includes(state.activeTool)) return;
+      const point = getTvPointFromParam(param);
+      if (!point) return;
+
+      if (state.activeTool === "hline") {
+        state.annotations.push({ type: "hline", price: point.price, label: formatTvScalePrice(point.price) });
+        addTvPriceLine(point.price);
+        state.pendingAnnotation = null;
+      } else if (state.activeTool === "text") {
+        const label = window.prompt("Text label:", "TCL note");
+        state.annotations.push({ type: "text", point, label: label && label.trim() ? label.trim() : "TCL note" });
+        state.pendingAnnotation = null;
+      } else if (["trend", "ray", "measure", "brush"].includes(state.activeTool)) {
+        if (state.pendingAnnotation?.type === state.activeTool) {
+          state.annotations.push({ type: state.activeTool, points: [state.pendingAnnotation.point, point] });
+          state.pendingAnnotation = null;
+        } else {
+          state.pendingAnnotation = { type: state.activeTool, point };
+        }
+      }
+
+      if (state.annotations.length > 40) {
+        state.annotations = state.annotations.slice(-40);
+      }
+      drawTvAnnotations();
     }
 
     function scrollTvToRealtime() {
@@ -2970,6 +3196,7 @@
         width: Math.max(1, Math.floor(rect.width)),
         height: Math.max(1, Math.floor(rect.height))
       });
+      resizeTvDrawingCanvas();
     }
 
     function applyTvPriceScale() {
@@ -3036,6 +3263,7 @@
       }
       applyTvHighLowLines(candles);
       applyTvLivePriceLine(candles);
+      refreshTvUserPriceLines();
     }
 
     function getTvChartOptions() {
@@ -3325,6 +3553,7 @@
             applyTvHighLowLines(state.buckets);
           }
           applyTvLivePriceLine(state.buckets);
+          drawTvAnnotations();
         };
         tvChart.chart.timeScale().subscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
 
@@ -3533,6 +3762,9 @@
       }
 
       applyTvLivePriceLine(state.buckets);
+      resizeTvDrawingCanvas();
+      syncTvDrawingCursor();
+      drawTvAnnotations();
 
       updateTvLegend(state.buckets[state.buckets.length - 1] || null);
 
@@ -4003,6 +4235,8 @@
         const isActive = tool === "magnet" ? state.snapToCandle : tool === state.activeTool;
         button.classList.toggle("is-active", isActive);
       });
+      syncTvDrawingCursor();
+      drawTvAnnotations();
     }
 
     function getDropdownPanel(dropdown) {
@@ -4169,6 +4403,16 @@
     ui.canvas.addEventListener("mousemove", showTooltip);
     ui.canvas.addEventListener("mouseleave", hideTooltip);
     ui.canvas.addEventListener("click", handleCanvasClick);
+    if (ui.tvDrawingCanvas) {
+      ui.tvDrawingCanvas.addEventListener("click", (event) => {
+        if (state.chartMode !== "tv") return;
+        const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const time = tvChart.chart?.timeScale?.().coordinateToTime?.(x);
+        handleTvDrawingClick({ point: { x, y }, time });
+      });
+    }
     window.addEventListener("resize", () => {
       if (state.chartMode === "tv") {
         resizeTvChart();
