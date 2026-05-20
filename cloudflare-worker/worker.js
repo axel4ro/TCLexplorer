@@ -28,6 +28,8 @@ const VOLUME_CONFIG = {
   quoteTokenAddress: "USDC-c76f1f",
   dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
   transferUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
+  transferPageSize: 2000,
+  transferMaxPages: 24,
   recentTransferPageSize: 500,
   recentTransferMaxPages: 4
 };
@@ -497,13 +499,16 @@ async function handleVolume(request, env, ctx) {
 
   const url = new URL(request.url);
   const shouldRefresh = url.searchParams.get("refresh") === "1";
+  const shouldBuildFull = shouldRefresh && url.searchParams.get("full") === "1";
   let snapshot = await readVolumeSnapshot(kv);
 
   if (!snapshot) {
-    snapshot = await refreshVolumeSnapshot(env, { force: true }).catch((error) => {
+    snapshot = await refreshVolumeSnapshot(env, { force: true, full: shouldBuildFull }).catch((error) => {
       console.warn("Initial volume refresh failed", error?.message || error);
       return createVolumeFallbackSnapshot(["Initial Cloudflare refresh failed; serving seed snapshot."]);
     });
+  } else if (shouldBuildFull) {
+    snapshot = await refreshVolumeSnapshot(env, { requested: true, full: true });
   } else if (shouldRefresh || isVolumeSnapshotDue(snapshot, env)) {
     const refreshPromise = refreshVolumeIfDue(env, { requested: shouldRefresh }).catch((error) => {
       console.warn("Background volume refresh failed", error?.message || error);
@@ -528,7 +533,7 @@ async function handleVolumeRefresh(request, env) {
     return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
   }
 
-  const snapshot = await refreshVolumeSnapshot(env, { force: true });
+  const snapshot = await refreshVolumeSnapshot(env, { force: true, full: true });
   return jsonResponse(request, env, 200, {
     ok: true,
     updatedAt: snapshot?.meta?.updatedAt || null,
@@ -619,7 +624,7 @@ async function refreshVolumeSnapshot(env, options = {}) {
   }
 
   try {
-    const snapshot = await buildVolumeSnapshot(current);
+    const snapshot = await buildVolumeSnapshot(current, { full: options.full === true });
     await kv.put(VOLUME_SNAPSHOT_KEY, JSON.stringify(snapshot));
     return snapshot;
   } finally {
@@ -655,7 +660,7 @@ function volumeRefreshIntervalMs(env) {
   return safeMinutes * 60 * 1000;
 }
 
-async function buildVolumeSnapshot(currentSnapshot = null) {
+async function buildVolumeSnapshot(currentSnapshot = null, options = {}) {
   const nowSec = Math.floor(Date.now() / 1000);
   const warnings = [];
   let pair = currentSnapshot?.pair || null;
@@ -689,6 +694,44 @@ async function buildVolumeSnapshot(currentSnapshot = null) {
     baseToken: { address: pair?.baseToken?.address || VOLUME_CONFIG.baseTokenAddress },
     quoteToken: { address: pair?.quoteToken?.address || VOLUME_CONFIG.quoteTokenAddress }
   };
+
+  if (options.full) {
+    try {
+      const fullHistory = await fetchVolumeTransferHistory();
+      const fullTrades = parseVolumeTrades(fullHistory.transfers, pairReference);
+      if (!fullTrades.length) {
+        throw new Error("No swap trades were parsed from the full MultiversX transfers feed.");
+      }
+
+      const aggregated = aggregateVolumeTrades(fullTrades, {
+        reachedListingStart: fullHistory.reachedListingStart === true,
+        hitPageLimit: fullHistory.hitPageLimit === true,
+        oldestTimestamp: fullHistory.oldestTimestamp ?? null,
+        exhaustedHistory: fullHistory.exhaustedHistory !== false,
+        recentTransfers: fullHistory.transfers.length,
+        parsedTrades: fullTrades.length,
+        snapshotAt: nowSec,
+        sourceLabel: "cloudflare full"
+      });
+
+      return {
+        ok: true,
+        meta: {
+          updatedAt: new Date().toISOString(),
+          source: "Cloudflare Worker",
+          endpoints: {
+            dex: VOLUME_CONFIG.dexUrl,
+            transfers: VOLUME_CONFIG.transferUrlBase
+          },
+          warnings
+        },
+        pair,
+        aggregated
+      };
+    } catch (error) {
+      warnings.push(`Full MultiversX refresh unavailable: ${error?.message || "unknown error"}`);
+    }
+  }
 
   const trades = parseVolumeTrades(recentHistory.transfers, pairReference);
   const sourceLabel = trades.length ? "cloudflare cache + live" : "cloudflare cache";
@@ -758,6 +801,73 @@ function createVolumeFallbackSnapshot(warnings = []) {
 async function fetchVolumeDexPair() {
   const payload = await fetchAnalyticsJson(VOLUME_CONFIG.dexUrl, 3);
   return payload?.pair || (Array.isArray(payload?.pairs) ? payload.pairs[0] : null);
+}
+
+async function fetchVolumeTransferHistory() {
+  const transfers = [];
+  const listingTimestamp = Math.floor(new Date(VOLUME_CONFIG.listingDate).getTime() / 1000);
+  let oldestTimestamp = null;
+  let reachedListingStart = false;
+  let hitPageLimit = false;
+  let exhaustedHistory = false;
+  let beforeCursor = null;
+
+  for (let pageIndex = 0; pageIndex < VOLUME_CONFIG.transferMaxPages; pageIndex += 1) {
+    const params = new URLSearchParams({
+      size: String(VOLUME_CONFIG.transferPageSize),
+      status: "success",
+      order: "desc"
+    });
+    if (beforeCursor != null) {
+      params.set("before", String(beforeCursor));
+    }
+
+    const page = await fetchAnalyticsJson(`${VOLUME_CONFIG.transferUrlBase}?${params.toString()}`, 3);
+    if (!Array.isArray(page) || !page.length) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    transfers.push(...page);
+
+    const pageTimestamps = page
+      .map((item) => Number(item?.timestamp))
+      .filter((timestamp) => Number.isFinite(timestamp));
+
+    if (pageTimestamps.length) {
+      oldestTimestamp = oldestTimestamp == null
+        ? Math.min(...pageTimestamps)
+        : Math.min(oldestTimestamp, ...pageTimestamps);
+    }
+
+    if (oldestTimestamp != null && oldestTimestamp <= listingTimestamp) {
+      reachedListingStart = true;
+      break;
+    }
+
+    if (page.length < VOLUME_CONFIG.transferPageSize) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    beforeCursor = oldestTimestamp != null ? oldestTimestamp - 1 : null;
+    if (beforeCursor == null || beforeCursor <= 0) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    if (pageIndex === VOLUME_CONFIG.transferMaxPages - 1) {
+      hitPageLimit = true;
+    }
+  }
+
+  return {
+    transfers,
+    reachedListingStart,
+    hitPageLimit,
+    oldestTimestamp,
+    exhaustedHistory
+  };
 }
 
 async function fetchVolumeRecentTransferHistory(afterTimestamp) {
@@ -1059,6 +1169,80 @@ function sumVolumeMatrixValues(rows) {
     }
   }
   return total;
+}
+
+function aggregateVolumeTrades(trades, fetchMeta) {
+  const startDate = new Date(VOLUME_CONFIG.listingDate);
+  const endDate = new Date();
+  const buyRows = createVolumeCoverageRows(startDate, endDate);
+  const sellRows = createVolumeCoverageRows(startDate, endDate);
+  const totalRows = createVolumeCoverageRows(startDate, endDate);
+  const buyMap = new Map(buyRows.map((row) => [row.label, row]));
+  const sellMap = new Map(sellRows.map((row) => [row.label, row]));
+  const totalMap = new Map(totalRows.map((row) => [row.label, row]));
+
+  let buyTrades = 0;
+  let sellTrades = 0;
+  let totalTclAmount = 0;
+  let oldestTrade = null;
+  let latestTrade = null;
+  let largestTclTrade = null;
+
+  for (const trade of Array.isArray(trades) ? trades : []) {
+    if (!Number.isFinite(trade.timestamp) || !Number.isFinite(trade.volumeUsd) || trade.volumeUsd < 0) continue;
+
+    const tradeDate = new Date(trade.timestamp * 1000);
+    const yearKey = String(tradeDate.getUTCFullYear());
+    const monthIndex = tradeDate.getUTCMonth();
+    const totalRow = totalMap.get(yearKey);
+    const buyRow = buyMap.get(yearKey);
+    const sellRow = sellMap.get(yearKey);
+
+    if (totalRow && totalRow.cells[monthIndex] != null) {
+      totalRow.cells[monthIndex] += trade.volumeUsd;
+    }
+
+    if (trade.side === "buy") {
+      buyTrades += 1;
+      if (buyRow && buyRow.cells[monthIndex] != null) {
+        buyRow.cells[monthIndex] += trade.volumeUsd;
+      }
+    } else if (trade.side === "sell") {
+      sellTrades += 1;
+      if (sellRow && sellRow.cells[monthIndex] != null) {
+        sellRow.cells[monthIndex] += trade.volumeUsd;
+      }
+    }
+
+    if (Number.isFinite(trade.tclAmount) && trade.tclAmount > 0) {
+      totalTclAmount += trade.tclAmount;
+      if (!largestTclTrade || trade.tclAmount > largestTclTrade.tclAmount) {
+        largestTclTrade = trade;
+      }
+    }
+
+    if (!oldestTrade || trade.timestamp < oldestTrade.timestamp) {
+      oldestTrade = trade;
+    }
+
+    if (!latestTrade || trade.timestamp > latestTrade.timestamp) {
+      latestTrade = trade;
+    }
+  }
+
+  return rebuildVolumeAggregatedDerivedState({
+    version: 2,
+    buyRows,
+    sellRows,
+    totalRows,
+    buyTrades,
+    sellTrades,
+    totalTclAmount,
+    largestTclTrade,
+    oldestTrade,
+    latestTrade,
+    fetchMeta
+  });
 }
 
 function expandVolumeRowsToEndDate(rows, endDate) {
