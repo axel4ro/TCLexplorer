@@ -111,6 +111,15 @@
     return settings;
   }
 
+  function hasPushClaimReminder() {
+    try {
+      const settings = JSON.parse(localStorage.getItem("tclClaimReminderSettings") || "{}") || {};
+      return Boolean(settings.enabled && settings.mode === "push");
+    } catch (_) {
+      return false;
+    }
+  }
+
   function normalizeApiBase(value) {
     return String(value || "").trim().replace(/\/+$/, "");
   }
@@ -310,7 +319,9 @@
       console.warn("Push unsubscribe API failed", error);
     }
 
-    await subscription.unsubscribe();
+    if (!hasPushClaimReminder()) {
+      await subscription.unsubscribe();
+    }
   }
 
   function getTranslatedEvent(event) {

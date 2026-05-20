@@ -10,8 +10,8 @@ browser permission rule, not an app setting we can bypass.
 
 - GitHub Pages: `index.html`, `sw.js`, `js/event-notifications.js`
 - Cloudflare Worker: `cloudflare-worker/worker.js`
-- Cloudflare KV: stores browser push subscriptions and sent-notification locks
-- Cloudflare Cron Trigger: runs every 5 minutes and sends due event reminders
+- Cloudflare KV: stores browser push subscriptions, claim reminders, and sent-notification locks
+- Cloudflare Cron Trigger: runs every 5 minutes and sends due event and claim reminders
 
 ## 1. Generate VAPID Keys
 
@@ -106,6 +106,10 @@ Deploy the static site to GitHub Pages as usual.
 
 Open the Events page on HTTPS, press `Enable`, then press `Test`.
 
+Open the Claim Reminder page on HTTPS, enter the remaining automatic-claim days,
+then press `Save / Update`. Press `Add Days` when the player extends the in-game
+automatic claim period.
+
 Useful endpoints:
 
 ```text
@@ -115,6 +119,12 @@ POST /api/push/subscribe
 POST /api/push/unsubscribe
 POST /api/push/test
 POST /api/push/dispatch-events
+POST /api/push/claim/upsert
+POST /api/push/claim/delete
+POST /api/push/claim/status
+POST /api/push/claim/test
+GET  /api/push/claim/stats
+POST /api/push/dispatch-claims
 ```
 
 Manual dispatch needs:

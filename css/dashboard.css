@@ -35,6 +35,7 @@
 :where(body.app-body) :where(
   .app-boot-splash__panel,
   .event-card,
+  .claim-reminder-summary-card,
   .stat,
   .token-accordion-card,
   .token-overview-panel,
@@ -914,6 +915,114 @@ body.sidebar-desktop .section-page.fullpage {
 
   .event-notification-btn {
     flex: 1 1 0;
+  }
+}
+
+.claim-reminder-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.claim-reminder-form,
+.claim-reminder-summary-card {
+  border: 1px solid rgba(0, 232, 204, 0.16);
+  border-radius: var(--radius);
+  background: linear-gradient(145deg, rgba(20, 24, 36, 0.96), rgba(12, 17, 27, 0.98));
+  box-shadow: var(--shadow-panel);
+}
+
+.claim-reminder-card {
+  padding: 0;
+}
+
+.claim-reminder-panel {
+  margin-bottom: 16px;
+}
+
+.claim-reminder-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.55fr) minmax(170px, 0.65fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.claim-reminder-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.claim-reminder-field input {
+  width: 100%;
+}
+
+.claim-reminder-field--inline {
+  align-content: end;
+}
+
+.claim-reminder-inline-input {
+  display: grid;
+  grid-template-columns: minmax(64px, 88px) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.claim-reminder-inline-input small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.claim-reminder-summary-card {
+  display: grid;
+  gap: 8px;
+  min-height: 202px;
+  align-content: center;
+  border-color: rgba(251, 191, 36, 0.22);
+  background:
+    linear-gradient(145deg, rgba(28, 25, 18, 0.9), rgba(13, 18, 28, 0.98)),
+    linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(0, 232, 204, 0.08));
+}
+
+.claim-reminder-summary-card__label {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.claim-reminder-summary-card__days {
+  color: #fbbf24;
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.claim-reminder-summary-card__text {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.claim-reminder-summary-card__meta {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .claim-reminder-layout,
+  .claim-reminder-form {
+    grid-template-columns: 1fr;
+  }
+
+  .claim-reminder-summary-card {
+    min-height: 160px;
   }
 }
 

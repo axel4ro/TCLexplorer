@@ -266,6 +266,7 @@
       <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
       <button type="button" class="nav-item" onclick="showPage('wiki')" id="btn-wiki">📖 Wiki</button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
+      <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
       <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide" data-i18n="sidebar_web3_guides">ℹ️ Web3 Guides</button>
       <button type="button" class="nav-item active" onclick="showPage('token')" id="btn-token">
@@ -810,6 +811,57 @@
   </div>
 </div>
 
+<!-- Claim Reminder -->
+<div id="claimReminder" class="section-page">
+  <div class="page-hero claim-reminder-hero">
+    <h2 id="claimReminderPageTitle">Claim Reminder</h2>
+    <p class="muted" id="claimReminderPageIntro">Keep automatic claim days on a separate notification track from weekly events.</p>
+  </div>
+
+  <div class="claim-reminder-layout">
+    <section class="claim-reminder-card" aria-labelledby="claimReminderPanelTitle">
+      <div class="event-notification-panel claim-reminder-panel" id="claimReminderPanel" data-state="checking">
+        <div class="event-notification-panel__copy">
+          <div class="event-notification-panel__title" id="claimReminderPanelTitle">Staking claim notifications</div>
+          <div class="event-notification-panel__status" id="claimReminderStatus">Checking notification support...</div>
+        </div>
+        <div class="event-notification-panel__actions">
+          <button type="button" class="event-notification-btn event-notification-btn--primary" id="saveClaimReminderBtn">Save / Update</button>
+          <button type="button" class="event-notification-btn" id="addClaimReminderDaysBtn">Add Days</button>
+          <button type="button" class="event-notification-btn" id="testClaimReminderBtn" hidden>Test</button>
+          <button type="button" class="event-notification-btn event-notification-btn--ghost" id="disableClaimReminderBtn" hidden>Disable</button>
+        </div>
+      </div>
+
+      <div class="claim-reminder-form">
+        <label class="claim-reminder-field">
+          <span id="claimReminderLabelText">Reminder name</span>
+          <input type="text" id="claimReminderLabel" placeholder="Automatic claim" autocomplete="off" />
+        </label>
+        <label class="claim-reminder-field">
+          <span id="claimRemainingDaysText">Days remaining</span>
+          <input type="text" id="claimRemainingDays" inputmode="numeric" placeholder="18" autocomplete="off" />
+        </label>
+        <label class="claim-reminder-field claim-reminder-field--inline">
+          <span id="claimEarlyDaysText">Early alert</span>
+          <span class="claim-reminder-inline-input">
+            <input type="text" id="claimEarlyDays" inputmode="numeric" value="7" autocomplete="off" />
+            <small id="claimEarlyDaysSuffix">days before</small>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <aside class="claim-reminder-summary-card" aria-live="polite">
+      <div class="claim-reminder-summary-card__label" id="claimReminderSummaryLabel">Status</div>
+      <div class="claim-reminder-summary-card__days" id="claimReminderDaysLeft">--</div>
+      <div class="claim-reminder-summary-card__text" id="claimReminderSummary">No claim reminder is active.</div>
+      <div class="claim-reminder-summary-card__meta" id="claimReminderExpiresAt"></div>
+      <div class="claim-reminder-summary-card__meta" id="claimReminderNextAlert"></div>
+    </aside>
+  </div>
+</div>
+
 <!-- Events -->
 <div id="events" class="section-page">
   <div class="events-heading-row">
@@ -1006,6 +1058,7 @@
 <script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script src="js/event-push-config.js?v=20260519-1"></script>
 <script src="js/event-notifications.js?v=20260520-1"></script>
+<script src="js/claim-reminder.js?v=20260520-1"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;
@@ -2520,6 +2573,7 @@ const PAGE_TITLES = {
   expTable: "EXP Table",
   chart: "TCL Chart",
   events: "Weekly Events",
+  claimReminder: "Claim Reminder",
   staking: "Top Staking",
   walletCheck: "Wallet Check",
   web3Guide: "Web3 Guides",
@@ -4306,6 +4360,7 @@ function applyTranslations() {
   syncTopbarCtaRail();
   syncInternalPageChrome();
   window.TCLEventNotifications?.setLanguage?.(currentLang);
+  window.TCLClaimReminder?.setLanguage?.(currentLang);
   if (Object.keys(eventsData || {}).length > 0) {
     window.TCLEventNotifications?.syncEvents(eventsData, { lang: currentLang });
   }

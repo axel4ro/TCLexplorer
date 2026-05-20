@@ -1,6 +1,6 @@
 # TCL Cloudflare Worker
 
-Cloudflare Worker backend for TCL Explorer event notifications and analytics caching.
+Cloudflare Worker backend for TCL Explorer event notifications, claim reminders, and analytics caching.
 
 Public endpoints:
 
@@ -12,6 +12,11 @@ Public endpoints:
 - `POST /api/push/subscribe`
 - `POST /api/push/unsubscribe`
 - `POST /api/push/test`
+- `POST /api/push/claim/upsert`
+- `POST /api/push/claim/delete`
+- `POST /api/push/claim/status`
+- `POST /api/push/claim/test`
+- `GET /api/push/claim/stats`
 
 Protected endpoints:
 
@@ -19,10 +24,11 @@ Protected endpoints:
 - `POST /api/volume/refresh`
 - `POST /api/technicals/refresh`
 - `POST /api/push/dispatch-events`
+- `POST /api/push/dispatch-claims`
 
 Files:
 
-- `worker.js`: API, scheduled push dispatcher, scheduled analytics, volume, and technicals cache refresh
+- `worker.js`: API, scheduled push dispatcher, claim reminder dispatcher, scheduled analytics, volume, and technicals cache refresh
 - `wrangler.toml`: Worker, KV binding and cron config
 - `generate-vapid-keys.mjs`: dependency-free VAPID key generator
 - `.dev.vars.example`: local secret template
@@ -49,6 +55,11 @@ The technicals endpoint stores the parsed TCL / USDC swap history in Workers KV,
 Technicals page can build indicators from Cloudflare data instead of scanning MultiversX
 from the browser. `TECHNICALS_REFRESH_INTERVAL_MINUTES` controls how often the cache is
 refreshed.
+
+Claim reminders are stored separately from weekly event subscriptions in the same KV
+namespace. A user can enable Events, Claim Reminder, or both. The browser permission is
+shared, but the Worker records are separate.
+`CLAIM_REMINDER_LOOKBACK_MINUTES` controls the cron catch-up window for claim reminders.
 
 After deploy, update `../js/event-push-config.js` with the Worker URL.
 

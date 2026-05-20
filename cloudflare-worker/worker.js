@@ -3,6 +3,12 @@ const SENT_PREFIX = "sent:";
 const STATS_KEY = "stats:subscriptions";
 const STATS_HISTORY_PREFIX = "stats:history:";
 const LAST_DISPATCH_KEY = "push:last-dispatch";
+const CLAIM_REMINDER_PREFIX = "claim-reminder:";
+const CLAIM_SENT_PREFIX = "claim-sent:";
+const CLAIM_STATS_KEY = "claim:stats";
+const CLAIM_LAST_DISPATCH_KEY = "claim:last-dispatch";
+const CLAIM_DEFAULT_EARLY_DAYS = 7;
+const CLAIM_SENT_TTL_SECONDS = 60 * 24 * 60 * 60;
 const DEFAULT_REMINDER_MINUTES = 15;
 const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -123,6 +129,23 @@ const EVENT_COPY = {
   }
 };
 
+const CLAIM_COPY = {
+  en: {
+    defaultLabel: "Automatic claim",
+    earlyTitle: "Claim reminder: {days} days left",
+    earlyBody: "{label} expires soon. Add days or prepare your automatic claim.",
+    finalTitle: "Claim reminder: last day",
+    finalBody: "{label} is on its final day. Add more days if you want it to continue."
+  },
+  ro: {
+    defaultLabel: "Revendicare automata",
+    earlyTitle: "Reminder claim: mai ai {days} zile",
+    earlyBody: "{label} expira in curand. Adauga zile sau pregateste revendicarea automata.",
+    finalTitle: "Reminder claim: ultima zi",
+    finalBody: "{label} este in ultima zi. Adauga zile daca vrei sa continue."
+  }
+};
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -144,6 +167,14 @@ export default {
       };
     }));
 
+    ctx.waitUntil(dispatchDueClaimReminders(env, { source: "scheduled" }).catch((error) => {
+      console.warn("Scheduled claim reminder dispatch failed", error?.message || error);
+      return {
+        ok: false,
+        error: error?.message || "Scheduled claim reminder dispatch failed"
+      };
+    }));
+
     ctx.waitUntil(refreshAnalyticsIfDue(env).catch((error) => {
       console.warn("Analytics refresh failed", error?.message || error);
     }));
@@ -162,9 +193,15 @@ export default {
     const today = new Date().toISOString().slice(0, 10);
     ctx.waitUntil((async () => {
       const lastReconcile = await kv.get("stats:last-reconcile");
-      if (lastReconcile === today) return;
-      await reconcileSubscriberCount(kv);
-      await kv.put("stats:last-reconcile", today);
+      const lastClaimReconcile = await kv.get("claim:stats:last-reconcile");
+      if (lastReconcile !== today) {
+        await reconcileSubscriberCount(kv);
+        await kv.put("stats:last-reconcile", today);
+      }
+      if (lastClaimReconcile !== today) {
+        await reconcileClaimReminderCount(kv);
+        await kv.put("claim:stats:last-reconcile", today);
+      }
     })().catch((error) => {
       console.warn("Subscriber reconcile failed", error?.message || error);
     }));
@@ -216,6 +253,30 @@ async function handleRequest(request, env, ctx) {
 
     if (path.endsWith("/api/push/test")) {
       return handleTest(request, env);
+    }
+
+    if (path.endsWith("/api/push/claim/upsert")) {
+      return handleClaimReminderUpsert(request, env);
+    }
+
+    if (path.endsWith("/api/push/claim/delete")) {
+      return handleClaimReminderDelete(request, env);
+    }
+
+    if (path.endsWith("/api/push/claim/status")) {
+      return handleClaimReminderStatus(request, env);
+    }
+
+    if (path.endsWith("/api/push/claim/test")) {
+      return handleClaimReminderTest(request, env);
+    }
+
+    if (path.endsWith("/api/push/claim/stats")) {
+      return handleClaimReminderStats(request, env);
+    }
+
+    if (path.endsWith("/api/push/dispatch-claims")) {
+      return handleClaimReminderDispatch(request, env);
     }
 
     if (path.endsWith("/api/push/stats/history")) {
@@ -507,6 +568,177 @@ async function handleDispatch(request, env) {
   }
 
   const report = await dispatchDueNotifications(env, { source: "manual" });
+  return jsonResponse(request, env, 200, report);
+}
+
+async function handleClaimReminderUpsert(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = requireKv(env);
+  const body = await readJson(request);
+  const subscription = body.subscription || body;
+
+  if (!isValidSubscription(subscription)) {
+    return jsonResponse(request, env, 400, { ok: false, error: "Invalid push subscription" });
+  }
+
+  const days = normalizeClaimDays(body.days ?? body.remainingDays ?? body.addDays);
+  if (!Number.isFinite(days) || days <= 0) {
+    return jsonResponse(request, env, 400, { ok: false, error: "Days must be at least 1" });
+  }
+
+  const id = await subscriptionId(subscription.endpoint);
+  const key = `${CLAIM_REMINDER_PREFIX}${id}`;
+  const existing = await kv.get(key, "json").catch(() => null);
+  const nowMs = Date.now();
+  const now = new Date(nowMs).toISOString();
+  const action = String(body.action || "set").toLowerCase() === "add" ? "add" : "set";
+  const existingExpiresAt = Number(existing?.expiresAt);
+  const baseMs = action === "add" && Number.isFinite(existingExpiresAt) && existingExpiresAt > nowMs
+    ? existingExpiresAt
+    : nowMs;
+  const expiresAt = baseMs + days * DAY_MS;
+  const lang = normalizeLang(body.lang);
+  const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
+
+  const record = {
+    ...(existing || {}),
+    id,
+    subscription,
+    enabled: true,
+    label: normalizeClaimLabel(body.label, templates.defaultLabel),
+    timezone: String(body.timezone || existing?.timezone || ""),
+    lang,
+    earlyDays: normalizeClaimEarlyDays(body.earlyDays ?? existing?.earlyDays),
+    expiresAt,
+    userAgent: String(body.userAgent || existing?.userAgent || "").slice(0, 500),
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+    lastAction: action,
+    lastInputDays: days
+  };
+
+  await kv.put(key, JSON.stringify(record));
+  if (!existing) {
+    await adjustClaimReminderCount(kv, 1);
+  }
+
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    reminder: publicClaimReminderRecord(record)
+  });
+}
+
+async function handleClaimReminderDelete(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = requireKv(env);
+  const body = await readJson(request);
+  const subscription = body.subscription || null;
+  const id = body.id || (isValidSubscription(subscription) ? await subscriptionId(subscription.endpoint) : "");
+
+  if (!id) {
+    return jsonResponse(request, env, 400, { ok: false, error: "Missing reminder id" });
+  }
+
+  const key = `${CLAIM_REMINDER_PREFIX}${id}`;
+  const existing = await kv.get(key);
+  await kv.delete(key);
+  if (existing) {
+    await adjustClaimReminderCount(kv, -1);
+  }
+
+  return jsonResponse(request, env, 200, { ok: true });
+}
+
+async function handleClaimReminderStatus(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = requireKv(env);
+  const body = await readJson(request);
+  const subscription = body.subscription || null;
+  const id = body.id || (isValidSubscription(subscription) ? await subscriptionId(subscription.endpoint) : "");
+
+  if (!id) {
+    return jsonResponse(request, env, 400, { ok: false, error: "Missing reminder id" });
+  }
+
+  const record = await kv.get(`${CLAIM_REMINDER_PREFIX}${id}`, "json").catch(() => null);
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    reminder: record ? publicClaimReminderRecord(record) : null
+  });
+}
+
+async function handleClaimReminderTest(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const body = await readJson(request);
+  const subscription = body.subscription || body;
+  if (!isValidSubscription(subscription)) {
+    return jsonResponse(request, env, 400, { ok: false, error: "Invalid push subscription" });
+  }
+
+  const lang = normalizeLang(body.lang);
+  const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
+  const payload = body.payload || {
+    title: "TCL claim reminder test",
+    body: templates.finalBody.replace("{label}", templates.defaultLabel),
+    url: "index.html#claimReminder",
+    tag: "tcl-claim-reminder-test"
+  };
+
+  await sendWebPush(subscription, payload, env);
+  return jsonResponse(request, env, 200, { ok: true });
+}
+
+async function handleClaimReminderStats(request, env) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 200, {
+      ok: true,
+      reminders: 0,
+      configured: false,
+      warning: "TCL_EVENT_PUSH_KV binding is not configured",
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  const stats = await readClaimReminderStats(kv);
+  const lastDispatch = await readClaimReminderLastDispatch(kv).catch(() => null);
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    reminders: stats.reminders,
+    configured: true,
+    source: stats.source,
+    lastDispatch,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+async function handleClaimReminderDispatch(request, env) {
+  if (request.method !== "GET" && request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const auth = authorizeDispatch(request, env);
+  if (!auth.ok) {
+    return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
+  }
+
+  const report = await dispatchDueClaimReminders(env, { source: "manual" });
   return jsonResponse(request, env, 200, report);
 }
 
@@ -2003,6 +2235,111 @@ async function dispatchDueNotifications(env, options = {}) {
   }
 }
 
+async function dispatchDueClaimReminders(env, options = {}) {
+  const startedAt = new Date();
+  let kv;
+  let report;
+
+  try {
+    kv = requireKv(env);
+    const reminders = await listClaimReminderRecords(kv);
+    const now = new Date();
+    report = {
+      ok: true,
+      source: options.source || "unknown",
+      checked: reminders.length,
+      due: 0,
+      sent: 0,
+      skipped: 0,
+      invalid: 0,
+      errors: 0,
+      startedAt: startedAt.toISOString()
+    };
+
+    for (const record of reminders) {
+      const dueItems = dueClaimRemindersForRecord(record, now, env);
+      report.due += dueItems.length;
+
+      for (const item of dueItems) {
+        const sentKey = `${CLAIM_SENT_PREFIX}${item.sentKey}`;
+        const reserved = await reserveSentKey(kv, sentKey, CLAIM_SENT_TTL_SECONDS);
+        if (!reserved) {
+          report.skipped += 1;
+          continue;
+        }
+
+        try {
+          await sendWebPush(record.subscription, item.payload, env);
+          report.sent += 1;
+        } catch (error) {
+          if (error.status === 404 || error.status === 410) {
+            const reminderKey = `${CLAIM_REMINDER_PREFIX}${record.id}`;
+            const existed = await kv.get(reminderKey);
+            await kv.delete(reminderKey);
+            if (existed) {
+              await adjustClaimReminderCount(kv, -1);
+            }
+            report.invalid += 1;
+          } else {
+            await kv.delete(sentKey);
+            report.errors += 1;
+          }
+        }
+      }
+    }
+
+    report.finishedAt = new Date().toISOString();
+    await writeClaimReminderLastDispatch(kv, report).catch(() => {});
+    return report;
+  } catch (error) {
+    if (kv) {
+      await writeClaimReminderLastDispatch(kv, {
+        ok: false,
+        source: options.source || "unknown",
+        checked: report?.checked || 0,
+        due: report?.due || 0,
+        sent: report?.sent || 0,
+        skipped: report?.skipped || 0,
+        invalid: report?.invalid || 0,
+        errors: (report?.errors || 0) + 1,
+        error: error?.message || "Claim reminder dispatch failed",
+        startedAt: startedAt.toISOString(),
+        finishedAt: new Date().toISOString()
+      }).catch(() => {});
+    }
+    throw error;
+  }
+}
+
+async function listClaimReminderRecords(kv) {
+  const records = [];
+  let cursor;
+
+  do {
+    const page = await kv.list({
+      prefix: CLAIM_REMINDER_PREFIX,
+      cursor
+    });
+
+    for (const key of page.keys) {
+      const raw = await kv.get(key.name);
+      if (!raw) continue;
+      try {
+        const record = JSON.parse(raw);
+        if (record && record.enabled !== false && isValidSubscription(record.subscription)) {
+          records.push(record);
+        }
+      } catch (_) {
+        await kv.delete(key.name);
+      }
+    }
+
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  return records;
+}
+
 async function listSubscriptions(kv) {
   const records = [];
   let cursor;
@@ -2095,12 +2432,70 @@ async function recordSubscriberStatsHistory(kv, subscribers) {
   });
 }
 
+async function countClaimReminderRecords(kv) {
+  let count = 0;
+  let cursor;
+
+  do {
+    const page = await kv.list({
+      prefix: CLAIM_REMINDER_PREFIX,
+      cursor
+    });
+    count += page.keys.length;
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  return count;
+}
+
+async function readClaimReminderStats(kv) {
+  const raw = await kv.get(CLAIM_STATS_KEY, "json").catch(() => null);
+  const count = Number(raw?.reminders);
+  return {
+    reminders: Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0,
+    source: raw ? "counter" : "default"
+  };
+}
+
+async function writeClaimReminderStats(kv, reminders) {
+  const safeCount = Math.max(0, Math.floor(Number(reminders) || 0));
+  await kv.put(CLAIM_STATS_KEY, JSON.stringify({
+    reminders: safeCount,
+    updatedAt: new Date().toISOString()
+  }));
+  return safeCount;
+}
+
+async function adjustClaimReminderCount(kv, delta) {
+  const current = await readClaimReminderStats(kv);
+  return writeClaimReminderStats(kv, current.reminders + Number(delta || 0));
+}
+
+async function reconcileClaimReminderCount(kv) {
+  const actual = await countClaimReminderRecords(kv);
+  await writeClaimReminderStats(kv, actual);
+  return actual;
+}
+
 async function readLastDispatch(kv) {
   return kv.get(LAST_DISPATCH_KEY, "json");
 }
 
 async function writeLastDispatch(kv, payload) {
   await kv.put(LAST_DISPATCH_KEY, JSON.stringify({
+    ...payload,
+    updatedAt: new Date().toISOString()
+  }), {
+    expirationTtl: 14 * 24 * 60 * 60
+  });
+}
+
+async function readClaimReminderLastDispatch(kv) {
+  return kv.get(CLAIM_LAST_DISPATCH_KEY, "json");
+}
+
+async function writeClaimReminderLastDispatch(kv, payload) {
+  await kv.put(CLAIM_LAST_DISPATCH_KEY, JSON.stringify({
     ...payload,
     updatedAt: new Date().toISOString()
   }), {
@@ -2195,10 +2590,76 @@ function dueNotificationsForRecord(record, eventsData, now, env) {
   return due;
 }
 
-async function reserveSentKey(kv, key) {
+function dueClaimRemindersForRecord(record, now, env) {
+  if (!record || record.enabled === false || !isValidSubscription(record.subscription)) return [];
+
+  const expiresAt = Number(record.expiresAt);
+  if (!Number.isFinite(expiresAt)) return [];
+
+  const earlyDays = normalizeClaimEarlyDays(record.earlyDays);
+  const lang = normalizeLang(record.lang);
+  const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
+  const lookbackMs = Number(env.CLAIM_REMINDER_LOOKBACK_MINUTES || env.EVENT_PUSH_LOOKBACK_MINUTES || 6) * 60 * 1000;
+  const nowMs = now.getTime();
+  const label = normalizeClaimLabel(record.label, templates.defaultLabel);
+  const daysLeft = Math.max(0, Math.ceil((expiresAt - nowMs) / DAY_MS));
+  const base = {
+    body: templates.earlyBody.replace("{label}", label),
+    url: "index.html#claimReminder",
+    timestamp: expiresAt
+  };
+  const due = [];
+  const triggers = [];
+  const earlyAt = expiresAt - earlyDays * DAY_MS;
+  const finalAt = expiresAt - DAY_MS;
+
+  if (earlyDays > 1 && earlyAt < finalAt) {
+    triggers.push({
+      type: "early",
+      triggerAt: earlyAt,
+      title: formatTemplate(templates.earlyTitle, { days: daysLeft, label }),
+      body: templates.earlyBody.replace("{label}", label)
+    });
+  }
+
+  triggers.push({
+    type: "final",
+    triggerAt: finalAt,
+    title: formatTemplate(templates.finalTitle, { days: daysLeft, label }),
+    body: templates.finalBody.replace("{label}", label)
+  });
+
+  triggers.forEach((notification) => {
+    if (notification.triggerAt > nowMs) return;
+    if (notification.triggerAt < nowMs - lookbackMs) return;
+
+    const sentKeySource = [
+      record.id,
+      expiresAt,
+      notification.type,
+      earlyDays
+    ].join("|");
+    const sentKey = stableHash(sentKeySource);
+
+    due.push({
+      sentKey,
+      payload: {
+        ...base,
+        title: notification.title,
+        body: notification.body,
+        tag: `tcl-claim-${sentKey}`,
+        renotify: true
+      }
+    });
+  });
+
+  return due;
+}
+
+async function reserveSentKey(kv, key, ttlSeconds = SENT_TTL_SECONDS) {
   const existing = await kv.get(key);
   if (existing) return false;
-  await kv.put(key, "1", { expirationTtl: SENT_TTL_SECONDS });
+  await kv.put(key, "1", { expirationTtl: ttlSeconds });
   return true;
 }
 
@@ -2265,6 +2726,46 @@ function normalizeReminderMinutes(value) {
 function resolveReminderMinutes(value) {
   const normalized = normalizeReminderMinutes(value);
   return normalized === LEGACY_DEFAULT_REMINDER_MINUTES ? DEFAULT_REMINDER_MINUTES : normalized;
+}
+
+function normalizeClaimDays(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return NaN;
+  return Math.min(3650, Math.max(1, Math.round(parsed)));
+}
+
+function normalizeClaimEarlyDays(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return CLAIM_DEFAULT_EARLY_DAYS;
+  return Math.min(365, Math.max(1, Math.round(parsed)));
+}
+
+function normalizeClaimLabel(value, fallback = "Automatic claim") {
+  const label = String(value || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  return label || fallback;
+}
+
+function publicClaimReminderRecord(record) {
+  const expiresAt = Number(record?.expiresAt);
+  const earlyDays = normalizeClaimEarlyDays(record?.earlyDays);
+  const nowMs = Date.now();
+  return {
+    id: record?.id || "",
+    enabled: record?.enabled !== false,
+    label: record?.label || "Automatic claim",
+    lang: normalizeLang(record?.lang),
+    timezone: String(record?.timezone || ""),
+    earlyDays,
+    expiresAt: Number.isFinite(expiresAt) ? expiresAt : null,
+    expiresAtIso: Number.isFinite(expiresAt) ? new Date(expiresAt).toISOString() : "",
+    daysLeft: Number.isFinite(expiresAt) ? Math.max(0, Math.ceil((expiresAt - nowMs) / DAY_MS)) : null,
+    nextEarlyAtIso: Number.isFinite(expiresAt) ? new Date(expiresAt - earlyDays * DAY_MS).toISOString() : "",
+    finalReminderAtIso: Number.isFinite(expiresAt) ? new Date(expiresAt - DAY_MS).toISOString() : "",
+    createdAt: record?.createdAt || "",
+    updatedAt: record?.updatedAt || "",
+    lastAction: record?.lastAction || "",
+    lastInputDays: Number.isFinite(Number(record?.lastInputDays)) ? Number(record.lastInputDays) : null
+  };
 }
 
 function isValidSubscription(subscription) {

@@ -2,6 +2,8 @@ const ICON_URL = new URL("images/tcl_icon.png", self.registration.scope).href;
 const DB_NAME = "tcl-event-notifications";
 const DB_VERSION = 1;
 const SCHEDULE_STORE = "schedule";
+const EVENT_SOURCE = "events";
+const CLAIM_SOURCE = "claim";
 const MAX_TIMEOUT_MS = 2147483647;
 const localTimers = new Map();
 
@@ -19,13 +21,51 @@ function openDb() {
   });
 }
 
-async function saveSchedule(notifications) {
+function getNotificationSource(notification) {
+  if (notification?.source) return notification.source;
+  return String(notification?.id || "").startsWith("claim:") ? CLAIM_SOURCE : EVENT_SOURCE;
+}
+
+function belongsToSource(notification, source) {
+  return getNotificationSource(notification) === source;
+}
+
+async function replaceSchedule(notifications, source) {
   const db = await openDb();
   await new Promise((resolve, reject) => {
     const tx = db.transaction(SCHEDULE_STORE, "readwrite");
     const store = tx.objectStore(SCHEDULE_STORE);
-    store.clear();
-    (notifications || []).forEach((notification) => store.put(notification));
+    const request = store.getAll();
+    request.onsuccess = () => {
+      (request.result || []).forEach((notification) => {
+        if (belongsToSource(notification, source)) store.delete(notification.id);
+      });
+      (notifications || []).forEach((notification) => {
+        store.put({
+          ...notification,
+          source
+        });
+      });
+    };
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+async function clearSchedule(source) {
+  const db = await openDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(SCHEDULE_STORE, "readwrite");
+    const store = tx.objectStore(SCHEDULE_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      (request.result || []).forEach((notification) => {
+        if (belongsToSource(notification, source)) store.delete(notification.id);
+      });
+    };
+    request.onerror = () => reject(request.error);
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
@@ -50,6 +90,11 @@ function clearLocalTimers() {
 }
 
 function getDisplayTitle(payload) {
+  if (payload.type === "claim-reminder" && payload.titleTemplate && payload.expiresAt) {
+    const days = Math.max(0, Math.ceil((Number(payload.expiresAt) - Date.now()) / (24 * 60 * 60 * 1000)));
+    return String(payload.titleTemplate).split("{days}").join(String(days));
+  }
+
   if (payload.type !== "reminder" || !payload.titleTemplate || !payload.startAt) {
     return payload.title || "TCL Event";
   }
@@ -123,15 +168,30 @@ self.addEventListener("message", (event) => {
   if (data.type === "tcl-events:schedule") {
     const notifications = Array.isArray(data.notifications) ? data.notifications : [];
     event.waitUntil((async () => {
-      await saveSchedule(notifications);
-      scheduleLocalNotifications(notifications);
+      await replaceSchedule(notifications, EVENT_SOURCE);
+      scheduleLocalNotifications(await readSchedule());
     })());
   }
 
   if (data.type === "tcl-events:clear-schedule") {
     event.waitUntil((async () => {
-      await saveSchedule([]);
-      clearLocalTimers();
+      await clearSchedule(EVENT_SOURCE);
+      scheduleLocalNotifications(await readSchedule());
+    })());
+  }
+
+  if (data.type === "tcl-claim:schedule") {
+    const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+    event.waitUntil((async () => {
+      await replaceSchedule(notifications, CLAIM_SOURCE);
+      scheduleLocalNotifications(await readSchedule());
+    })());
+  }
+
+  if (data.type === "tcl-claim:clear-schedule") {
+    event.waitUntil((async () => {
+      await clearSchedule(CLAIM_SOURCE);
+      scheduleLocalNotifications(await readSchedule());
     })());
   }
 });
