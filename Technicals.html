@@ -638,6 +638,7 @@ td.action-cell {
 <body class="tcl-premium-page tcl-technicals-page">
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
   <script src="lang/technicals.bundle.js?v=20260515-3"></script>
+  <script src="js/event-push-config.js?v=20260519-1"></script>
   <script src="js/page-i18n.js?v=20260515-3"></script>
   <script src="js/tcl-realtime.js?v=20260518-1"></script>
 <div class="page">
@@ -913,7 +914,7 @@ td.action-cell {
             </table>
         </div>
         <div class="footer-note">
-            This page uses public pair data from DEX Screener and public pair transaction history from MultiversX.
+            This page uses a Cloudflare-cached TCL / USDC swap history snapshot built from public DEX Screener and MultiversX data.
             For low-liquidity pairs like TCL, the <strong>1D</strong> and <strong>1W</strong> views are the most reliable because they are less distorted by long no-trade gaps.
             In the pivot table, <strong>S1</strong> and <strong>S2</strong> are support areas below price, while <strong>R1</strong> and <strong>R2</strong> are resistance areas above price.
         </div>
@@ -940,6 +941,7 @@ const CONFIG = {
 };
 const TRADE_CACHE_KEY = "tcl-technical-trades-v1";
 const TRADE_CACHE_VERSION = 1;
+const TECHNICALS_API_URL = resolveTechnicalsApiUrl();
 
 const TIMEFRAMES = {
     "1H": { label: "1H", seconds: 60 * 60 },
@@ -1012,46 +1014,30 @@ async function loadData(isManual = false) {
         return;
     }
 
-    const bootstrapSnapshot = loadCachedTradeSnapshot();
-    const bootstrapTrades = Array.isArray(bootstrapSnapshot?.trades) ? bootstrapSnapshot.trades : [];
-    const bootstrapLatestTimestamp = Number(
-        bootstrapSnapshot?.latestTradeTimestamp ??
-        bootstrapTrades[bootstrapTrades.length - 1]?.timestamp
-    );
-
     state.isLoading = true;
     ui.refreshButton.disabled = true;
     setStatus(
-        bootstrapTrades.length
-            ? (isManual ? "Refreshing TCL technicals from cached history..." : "Loading cached swap history. Syncing live trades...")
-            : (isManual ? "Refreshing TCL technicals from full on-chain history..." : "Loading full on-chain swap history...")
+        isManual
+            ? "Refreshing TCL technicals from Cloudflare cache..."
+            : "Loading TCL technicals from Cloudflare cache..."
     );
 
     try {
-        const historyPromise = bootstrapTrades.length
-            ? fetchRecentTransactionHistory(bootstrapLatestTimestamp)
-            : fetchTransactionHistory();
-
-        const [pairResponse, txResponse] = await Promise.all([
-            fetchJson(CONFIG.dexUrl),
-            historyPromise
-        ]);
-
-        const pair = pairResponse.pair || pairResponse.pairs?.[0];
-        if (!pair) {
-            throw new Error("The pair metadata request succeeded, but no pair was returned.");
-        }
+        const snapshot = await fetchTechnicalsSnapshotFromCloudflare(isManual);
+        const pair = snapshot.pair || {};
 
         const pairReference = {
             pairAddress: pair.pairAddress || CONFIG.pairAddress,
-            baseToken: { address: pair?.baseToken?.address || CONFIG.baseTokenAddress },
-            quoteToken: { address: pair?.quoteToken?.address || CONFIG.quoteTokenAddress }
+            baseToken: { address: pair.baseToken?.address || CONFIG.baseTokenAddress },
+            quoteToken: { address: pair.quoteToken?.address || CONFIG.quoteTokenAddress }
         };
 
-        const liveTrades = parseTrades(txResponse.transfers, pairReference);
-        const trades = bootstrapTrades.length ? mergeTradeLists(bootstrapTrades, liveTrades) : liveTrades;
+        const trades = (Array.isArray(snapshot.trades) ? snapshot.trades : [])
+            .filter((trade) => isValidTrade(trade))
+            .map((trade) => normalizeTradeSnapshotEntry(trade))
+            .sort((left, right) => left.timestamp - right.timestamp);
         if (!trades.length) {
-            throw new Error("No swap trades were parsed from the public MultiversX transfer feed.");
+            throw new Error("No swap trades were returned by the Cloudflare technicals cache.");
         }
 
         state.pair = {
@@ -1059,21 +1045,22 @@ async function loadData(isManual = false) {
             pairAddress: pairReference.pairAddress,
             baseToken: {
                 ...(pair.baseToken || {}),
-                address: pairReference.baseToken.address
+                address: pairReference.baseToken.address,
+                symbol: pair.baseToken?.symbol || "TCL"
             },
             quoteToken: {
                 ...(pair.quoteToken || {}),
-                address: pairReference.quoteToken.address
+                address: pairReference.quoteToken.address,
+                symbol: pair.quoteToken?.symbol || "USDC"
             }
         };
         state.trades = trades;
-        state.lastLoadedAt = Date.now();
+        state.lastLoadedAt = Date.parse(snapshot.meta?.updatedAt || "") || Date.now();
+        const fetchMeta = snapshot.meta?.fetchMeta || {};
         state.tradeFetchMeta = {
-            ...(txResponse || {}),
-            latestTradeTimestamp: Number(trades[trades.length - 1]?.timestamp) || 0,
-            sourceLabel: bootstrapTrades.length
-                ? (liveTrades.length ? "cache + live sync" : "cache")
-                : "live"
+            ...fetchMeta,
+            latestTradeTimestamp: Number(snapshot.latestTradeTimestamp ?? trades[trades.length - 1]?.timestamp) || 0,
+            sourceLabel: fetchMeta.sourceLabel || "cloudflare cache"
         };
 
         saveCachedTradeSnapshot({
@@ -1084,16 +1071,13 @@ async function loadData(isManual = false) {
 
         await recomputeAndRender();
 
-        const sourceText = state.tradeFetchMeta.sourceLabel === "cache"
-            ? "cached history"
-            : state.tradeFetchMeta.sourceLabel === "cache + live sync"
-                ? "cached history + live sync"
-                : "public APIs";
+        const sourceText = state.tradeFetchMeta.sourceLabel
+            .replace("cloudflare", "Cloudflare")
+            .replace("cache + live", "cache + live sync");
         const fullHistoryWasTruncated =
-            !bootstrapTrades.length &&
-            txResponse.hitPageLimit &&
-            !txResponse.reachedListingStart &&
-            !txResponse.exhaustedHistory;
+            state.tradeFetchMeta.hitPageLimit &&
+            !state.tradeFetchMeta.reachedListingStart &&
+            !state.tradeFetchMeta.exhaustedHistory;
 
         setStatus(
             fullHistoryWasTruncated
@@ -1144,6 +1128,46 @@ async function recomputeAndRender() {
     renderWarning(candles, timeframe);
     await Promise.allSettled(gaugeReady);
     return true;
+}
+
+function resolveTechnicalsApiUrl() {
+    const fallback = "https://tcl-event-push.axel4ro.workers.dev/api/technicals";
+    const configured = window.TCL_EVENT_PUSH_CONFIG?.apiBaseUrl;
+    if (typeof configured !== "string" || !configured.trim()) {
+        return fallback;
+    }
+
+    const cleaned = configured.trim().replace(/\/+$/, "");
+    if (cleaned.endsWith("/api/push")) {
+        return `${cleaned.slice(0, -"/api/push".length)}/api/technicals`;
+    }
+    if (cleaned.endsWith("/api")) {
+        return `${cleaned}/technicals`;
+    }
+    return `${cleaned}/api/technicals`;
+}
+
+async function fetchTechnicalsSnapshotFromCloudflare(isManual = false) {
+    const url = new URL(TECHNICALS_API_URL, window.location.href);
+    url.searchParams.set("v", String(Date.now()));
+    if (isManual) {
+        url.searchParams.set("refresh", "1");
+    }
+
+    const response = await fetch(url.toString(), { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(`Cloudflare technicals request failed with status ${response.status}.`);
+    }
+
+    const snapshot = await response.json();
+    if (snapshot?.ok === false) {
+        throw new Error(snapshot.error || "Cloudflare technicals cache returned an error.");
+    }
+    if (!Array.isArray(snapshot?.trades) || !snapshot.trades.some((trade) => isValidTrade(trade))) {
+        throw new Error("Cloudflare technicals cache did not return valid swap trades.");
+    }
+
+    return snapshot;
 }
 
 async function fetchJson(url) {

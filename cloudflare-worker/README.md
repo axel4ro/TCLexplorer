@@ -6,6 +6,7 @@ Public endpoints:
 
 - `GET /api/analytics`
 - `GET /api/volume`
+- `GET /api/technicals`
 - `GET /api/push/config`
 - `GET /api/push/stats`
 - `POST /api/push/subscribe`
@@ -16,11 +17,12 @@ Protected endpoints:
 
 - `POST /api/analytics/refresh`
 - `POST /api/volume/refresh`
+- `POST /api/technicals/refresh`
 - `POST /api/push/dispatch-events`
 
 Files:
 
-- `worker.js`: API, scheduled push dispatcher, scheduled analytics cache refresh and scheduled volume cache refresh
+- `worker.js`: API, scheduled push dispatcher, scheduled analytics, volume, and technicals cache refresh
 - `wrangler.toml`: Worker, KV binding and cron config
 - `generate-vapid-keys.mjs`: dependency-free VAPID key generator
 - `.dev.vars.example`: local secret template
@@ -42,6 +44,11 @@ The analytics endpoint refreshes CryptoRank data into Workers KV on the existing
 The volume endpoint refreshes TCL / USDC flow data into Workers KV and merges recent
 MultiversX transfers into a cached monthly snapshot. `VOLUME_REFRESH_INTERVAL_MINUTES`
 controls how often the cache is refreshed.
+
+The technicals endpoint stores the parsed TCL / USDC swap history in Workers KV, so the
+Technicals page can build indicators from Cloudflare data instead of scanning MultiversX
+from the browser. `TECHNICALS_REFRESH_INTERVAL_MINUTES` controls how often the cache is
+refreshed.
 
 After deploy, update `../js/event-push-config.js` with the Worker URL.
 

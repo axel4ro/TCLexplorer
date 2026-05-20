@@ -21,6 +21,10 @@ const VOLUME_SNAPSHOT_KEY = "volume:snapshot";
 const VOLUME_REFRESH_LOCK_KEY = "volume:refresh-lock";
 const VOLUME_REFRESH_LOCK_TTL_SECONDS = 4 * 60;
 const DEFAULT_VOLUME_REFRESH_INTERVAL_MINUTES = 5;
+const TECHNICALS_SNAPSHOT_KEY = "technicals:snapshot";
+const TECHNICALS_REFRESH_LOCK_KEY = "technicals:refresh-lock";
+const TECHNICALS_REFRESH_LOCK_TTL_SECONDS = 4 * 60;
+const DEFAULT_TECHNICALS_REFRESH_INTERVAL_MINUTES = 5;
 const VOLUME_CONFIG = {
   listingDate: "2024-06-13T00:00:00Z",
   pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
@@ -140,6 +144,10 @@ export default {
       console.warn("Volume refresh failed", error?.message || error);
     }));
 
+    ctx.waitUntil(refreshTechnicalsIfDue(env).catch((error) => {
+      console.warn("Technicals refresh failed", error?.message || error);
+    }));
+
     const kv = env.TCL_EVENT_PUSH_KV;
     if (!kv) return;
 
@@ -162,6 +170,14 @@ async function handleRequest(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
   try {
+    if (path.endsWith("/api/technicals/refresh")) {
+      return handleTechnicalsRefresh(request, env);
+    }
+
+    if (path.endsWith("/api/technicals")) {
+      return handleTechnicals(request, env, ctx);
+    }
+
     if (path.endsWith("/api/volume/refresh")) {
       return handleVolumeRefresh(request, env);
     }
@@ -484,6 +500,73 @@ async function handleDispatch(request, env) {
   return jsonResponse(request, env, 200, report);
 }
 
+async function handleTechnicals(request, env, ctx) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 503, {
+      ok: false,
+      error: "TCL_EVENT_PUSH_KV binding is not configured"
+    });
+  }
+
+  const url = new URL(request.url);
+  const shouldRefresh = url.searchParams.get("refresh") === "1";
+  const shouldBuildFull = shouldRefresh && url.searchParams.get("full") === "1";
+  let snapshot = await readTechnicalsSnapshot(kv);
+
+  if (!snapshot) {
+    try {
+      snapshot = await refreshTechnicalsSnapshot(env, { force: true, full: true });
+    } catch (error) {
+      return jsonResponse(request, env, 502, {
+        ok: false,
+        error: error?.message || "Technicals refresh failed"
+      });
+    }
+  } else if (shouldBuildFull) {
+    snapshot = await refreshTechnicalsSnapshot(env, { requested: true, full: true });
+  } else if (shouldRefresh) {
+    snapshot = await refreshTechnicalsSnapshot(env, { current: snapshot, requested: true }).catch((error) => {
+      console.warn("Requested technicals refresh failed", error?.message || error);
+      return snapshot;
+    });
+  } else if (isTechnicalsSnapshotDue(snapshot, env)) {
+    const refreshPromise = refreshTechnicalsIfDue(env).catch((error) => {
+      console.warn("Background technicals refresh failed", error?.message || error);
+    });
+    if (ctx?.waitUntil) ctx.waitUntil(refreshPromise);
+  }
+
+  return jsonResponse(request, env, 200, snapshot, {
+    "Cache-Control": shouldRefresh
+      ? "public, max-age=15, stale-while-revalidate=120"
+      : "public, max-age=60, stale-while-revalidate=300"
+  });
+}
+
+async function handleTechnicalsRefresh(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const auth = authorizeDispatch(request, env);
+  if (!auth.ok) {
+    return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
+  }
+
+  const snapshot = await refreshTechnicalsSnapshot(env, { force: true, full: true });
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    updatedAt: snapshot?.meta?.updatedAt || null,
+    latestTradeAt: snapshot?.latestTradeTimestamp || null,
+    trades: Array.isArray(snapshot?.trades) ? snapshot.trades.length : 0
+  });
+}
+
 async function handleVolume(request, env, ctx) {
   if (request.method !== "GET") {
     return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
@@ -603,6 +686,238 @@ function authorizeDispatch(request, env) {
   return header === `Bearer ${secret}`
     ? { ok: true }
     : { ok: false, status: 401, error: "Unauthorized" };
+}
+
+async function refreshTechnicalsIfDue(env, options = {}) {
+  const kv = requireKv(env);
+  const current = await readTechnicalsSnapshot(kv);
+  if (current && !options.requested && !isTechnicalsSnapshotDue(current, env)) return current;
+  return refreshTechnicalsSnapshot(env, {
+    current,
+    requested: options.requested === true
+  });
+}
+
+async function refreshTechnicalsSnapshot(env, options = {}) {
+  const kv = requireKv(env);
+  const current = options.current || await readTechnicalsSnapshot(kv);
+  if (!options.force && !options.requested && current && !isTechnicalsSnapshotDue(current, env)) return current;
+
+  let locked = true;
+  if (!options.force) {
+    locked = await reserveTechnicalsRefreshLock(kv);
+    if (!locked) return current;
+  }
+
+  try {
+    const snapshot = await buildTechnicalsSnapshot(current, {
+      full: options.full === true || !current
+    });
+    await kv.put(TECHNICALS_SNAPSHOT_KEY, JSON.stringify(snapshot));
+    return snapshot;
+  } finally {
+    if (!options.force && locked) {
+      await kv.delete(TECHNICALS_REFRESH_LOCK_KEY).catch(() => {});
+    }
+  }
+}
+
+async function readTechnicalsSnapshot(kv) {
+  const snapshot = await kv.get(TECHNICALS_SNAPSHOT_KEY, "json").catch(() => null);
+  return hasValidTechnicalsSnapshot(snapshot) ? snapshot : null;
+}
+
+async function reserveTechnicalsRefreshLock(kv) {
+  const existing = await kv.get(TECHNICALS_REFRESH_LOCK_KEY);
+  if (existing) return false;
+  await kv.put(TECHNICALS_REFRESH_LOCK_KEY, String(Date.now()), {
+    expirationTtl: TECHNICALS_REFRESH_LOCK_TTL_SECONDS
+  });
+  return true;
+}
+
+function isTechnicalsSnapshotDue(snapshot, env) {
+  const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) return true;
+  return Date.now() - updatedAt >= technicalsRefreshIntervalMs(env);
+}
+
+function technicalsRefreshIntervalMs(env) {
+  const minutes = Number(env.TECHNICALS_REFRESH_INTERVAL_MINUTES || DEFAULT_TECHNICALS_REFRESH_INTERVAL_MINUTES);
+  const safeMinutes = Number.isFinite(minutes) ? Math.min(60, Math.max(2, minutes)) : DEFAULT_TECHNICALS_REFRESH_INTERVAL_MINUTES;
+  return safeMinutes * 60 * 1000;
+}
+
+async function buildTechnicalsSnapshot(currentSnapshot = null, options = {}) {
+  const warnings = [];
+  const nowSec = Math.floor(Date.now() / 1000);
+  let pair = currentSnapshot?.pair || null;
+
+  try {
+    pair = await fetchVolumeDexPair();
+  } catch (error) {
+    warnings.push(`DexScreener unavailable: ${error?.message || "unknown error"}`);
+  }
+
+  const pairReference = {
+    pairAddress: pair?.pairAddress || currentSnapshot?.pair?.pairAddress || VOLUME_CONFIG.pairAddress,
+    baseToken: {
+      address: pair?.baseToken?.address || currentSnapshot?.pair?.baseToken?.address || VOLUME_CONFIG.baseTokenAddress
+    },
+    quoteToken: {
+      address: pair?.quoteToken?.address || currentSnapshot?.pair?.quoteToken?.address || VOLUME_CONFIG.quoteTokenAddress
+    }
+  };
+  const baseTrades = normalizeTechnicalsTrades(currentSnapshot?.trades);
+  const latestTimestamp = Number(currentSnapshot?.latestTradeTimestamp ?? baseTrades[baseTrades.length - 1]?.timestamp);
+
+  if (options.full || !baseTrades.length) {
+    try {
+      const fullHistory = await fetchVolumeTransferHistory();
+      const fullTrades = normalizeTechnicalsTrades(parseVolumeTrades(fullHistory.transfers, pairReference));
+      if (!fullTrades.length) {
+        throw new Error("No swap trades were parsed from the full MultiversX transfers feed.");
+      }
+
+      return createTechnicalsSnapshot({
+        pair,
+        trades: fullTrades,
+        warnings,
+        fetchMeta: {
+          reachedListingStart: fullHistory.reachedListingStart === true,
+          hitPageLimit: fullHistory.hitPageLimit === true,
+          oldestTimestamp: fullHistory.oldestTimestamp ?? null,
+          exhaustedHistory: fullHistory.exhaustedHistory !== false,
+          recentTransfers: fullHistory.transfers.length,
+          parsedTrades: fullTrades.length,
+          snapshotAt: nowSec,
+          sourceLabel: "cloudflare full"
+        }
+      });
+    } catch (error) {
+      warnings.push(`Full MultiversX refresh unavailable: ${error?.message || "unknown error"}`);
+      if (!baseTrades.length) throw error;
+    }
+  }
+
+  let recentHistory = {
+    transfers: [],
+    hitPageLimit: false,
+    oldestTimestamp: null,
+    exhaustedHistory: true
+  };
+  try {
+    recentHistory = await fetchVolumeRecentTransferHistory(latestTimestamp);
+  } catch (error) {
+    warnings.push(`MultiversX transfers unavailable: ${error?.message || "unknown error"}`);
+  }
+
+  const liveTrades = normalizeTechnicalsTrades(parseVolumeTrades(recentHistory.transfers, pairReference));
+  const trades = mergeTechnicalTradeLists(baseTrades, liveTrades);
+  if (!trades.length) {
+    throw new Error("No cached swap trades are available for TCL technicals.");
+  }
+
+  return createTechnicalsSnapshot({
+    pair,
+    trades,
+    warnings,
+    fetchMeta: {
+      hitPageLimit: recentHistory.hitPageLimit === true,
+      oldestTimestamp: recentHistory.oldestTimestamp ?? null,
+      exhaustedHistory: recentHistory.exhaustedHistory !== false,
+      recentTransfers: Array.isArray(recentHistory.transfers) ? recentHistory.transfers.length : 0,
+      parsedTrades: liveTrades.length,
+      snapshotAt: nowSec,
+      sourceLabel: liveTrades.length ? "cloudflare cache + live" : "cloudflare cache"
+    }
+  });
+}
+
+function createTechnicalsSnapshot({ pair, trades, warnings, fetchMeta }) {
+  const normalizedTrades = normalizeTechnicalsTrades(trades);
+  const latestTradeTimestamp = Number(normalizedTrades[normalizedTrades.length - 1]?.timestamp) || 0;
+
+  return {
+    ok: true,
+    version: 1,
+    meta: {
+      updatedAt: new Date().toISOString(),
+      source: "Cloudflare Worker",
+      endpoints: {
+        dex: VOLUME_CONFIG.dexUrl,
+        transfers: VOLUME_CONFIG.transferUrlBase
+      },
+      warnings: Array.isArray(warnings) ? warnings : [],
+      fetchMeta
+    },
+    pair,
+    trades: normalizedTrades,
+    latestTradeTimestamp
+  };
+}
+
+function hasValidTechnicalsSnapshot(snapshot) {
+  return Boolean(
+    snapshot &&
+    snapshot.meta &&
+    Array.isArray(snapshot.trades) &&
+    snapshot.trades.length &&
+    snapshot.trades.every(isValidTechnicalTrade)
+  );
+}
+
+function isValidTechnicalTrade(trade) {
+  return Boolean(
+    trade &&
+    typeof trade.hash === "string" &&
+    trade.hash.length &&
+    Number.isFinite(Number(trade.timestamp)) &&
+    Number.isFinite(Number(trade.price)) &&
+    Number(trade.price) > 0 &&
+    Number.isFinite(Number(trade.volumeUsd)) &&
+    Number(trade.volumeUsd) > 0 &&
+    Number.isFinite(Number(trade.tclAmount)) &&
+    Number(trade.tclAmount) > 0 &&
+    (trade.side === "buy" || trade.side === "sell")
+  );
+}
+
+function normalizeTechnicalTrade(trade) {
+  return {
+    hash: String(trade.hash),
+    timestamp: Number(trade.timestamp),
+    price: Number(trade.price),
+    volumeUsd: Number(trade.volumeUsd),
+    tclAmount: Number(trade.tclAmount),
+    side: trade.side,
+    description: typeof trade.description === "string" ? trade.description : ""
+  };
+}
+
+function normalizeTechnicalsTrades(trades) {
+  return (Array.isArray(trades) ? trades : [])
+    .filter(isValidTechnicalTrade)
+    .map(normalizeTechnicalTrade)
+    .sort((left, right) => left.timestamp - right.timestamp);
+}
+
+function mergeTechnicalTradeLists(existingTrades, incomingTrades) {
+  const merged = new Map();
+
+  for (const trade of existingTrades || []) {
+    if (isValidTechnicalTrade(trade)) {
+      merged.set(trade.hash, normalizeTechnicalTrade(trade));
+    }
+  }
+
+  for (const trade of incomingTrades || []) {
+    if (isValidTechnicalTrade(trade)) {
+      merged.set(trade.hash, normalizeTechnicalTrade(trade));
+    }
+  }
+
+  return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
 }
 
 async function refreshVolumeIfDue(env, options = {}) {
