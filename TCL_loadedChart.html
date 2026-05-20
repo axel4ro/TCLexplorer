@@ -555,6 +555,36 @@
       z-index: 1;
     }
 
+    #tvDrawingCanvas {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      width: 100%;
+      height: 680px;
+      pointer-events: none;
+    }
+
+    body.tv-mode #tvDrawingCanvas {
+      display: block;
+      touch-action: none;
+    }
+
+    body.tv-mode .chart-stage.is-drawing-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+
+    body.tv-mode .chart-stage.is-text-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: text;
+    }
+
+    body.tv-mode .chart-stage.is-eraser-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: not-allowed;
+    }
+
     .tv-chart-legend {
       display: none;
       position: absolute;
@@ -1128,54 +1158,6 @@
         padding: 10px 12px;
       }
     }
-
-
-    /* Official TradingView Advanced Charts mode */
-    body.tv-advanced .tv-commandbar,
-    body.tv-advanced .tv-left-tools,
-    body.tv-advanced .tv-scale-tools,
-    body.tv-advanced .tv-chart-legend,
-    body.tv-advanced .tv-realtime-btn,
-    body.tv-advanced .tv-price-badge {
-      display: none !important;
-    }
-
-    body.tv-mode.tv-advanced .tv-workspace {
-      grid-template-columns: minmax(0, 1fr);
-      min-height: 720px;
-    }
-
-    body.tv-mode.tv-advanced .chart-stage {
-      min-height: 720px;
-      padding: 0;
-    }
-
-    body.tv-mode.tv-advanced #tvChartContainer {
-      display: block;
-      height: 720px;
-      min-height: 720px;
-      background: #131722;
-    }
-
-    .tv-library-notice {
-      position: absolute;
-      left: 50%;
-      top: 18px;
-      transform: translateX(-50%);
-      z-index: 15;
-      max-width: min(720px, calc(100% - 32px));
-      padding: 10px 12px;
-      border: 1px solid rgba(245, 198, 99, 0.34);
-      border-radius: 10px;
-      background: rgba(21, 24, 32, 0.96);
-      color: #f0f3fa;
-      font-size: 0.82rem;
-      line-height: 1.45;
-      box-shadow: 0 12px 34px rgba(0,0,0,0.35);
-    }
-
-    .tv-library-notice strong { color: #f5c663; }
-
   </style>
 </head>
 <body>
@@ -1351,6 +1333,18 @@
           <button class="tv-tool-btn" type="button" data-tool="ray" title="Ray">
             <svg viewBox="0 0 16 16"><line x1="2" y1="12" x2="15" y2="4"/><circle cx="2" cy="12" r="1.5" fill="currentColor" stroke="none"/><polyline points="12,3 15,4 13,7" fill="none"/></svg>
           </button>
+          <!-- Extended line -->
+          <button class="tv-tool-btn" type="button" data-tool="extended" title="Extended line">
+            <svg viewBox="0 0 16 16"><line x1="1" y1="13" x2="15" y2="3"/><polyline points="3,13 1,13 2,11"/><polyline points="13,3 15,3 14,5"/></svg>
+          </button>
+          <!-- Arrow line -->
+          <button class="tv-tool-btn" type="button" data-tool="arrow" title="Arrow">
+            <svg viewBox="0 0 16 16"><line x1="2" y1="13" x2="13" y2="4"/><polyline points="9,3 13,4 12,8"/></svg>
+          </button>
+          <!-- Vertical line -->
+          <button class="tv-tool-btn" type="button" data-tool="vline" title="Vertical line">
+            <svg viewBox="0 0 16 16"><line x1="8" y1="1" x2="8" y2="15" stroke-dasharray="2 2"/><circle cx="8" cy="1.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="14.5" r="1.4" fill="currentColor" stroke="none"/></svg>
+          </button>
           <!-- Brush -->
           <button class="tv-tool-btn" type="button" data-tool="brush" title="Brush">
             <svg viewBox="0 0 16 16"><path d="M2 13 Q5 9 8 7 Q11 5 13 3" stroke-width="2"/><path d="M2 13 Q2.5 14.5 4 14 Q4 12 2 13Z" fill="currentColor" stroke="none"/></svg>
@@ -1364,10 +1358,24 @@
             </svg>
           </button>
           <div class="tv-tool-separator"></div>
+          <!-- Rectangle -->
+          <button class="tv-tool-btn" type="button" data-tool="rect" title="Rectangle">
+            <svg viewBox="0 0 16 16"><rect x="3" y="4" width="10" height="8" rx="1.2"/></svg>
+          </button>
+          <!-- Ellipse -->
+          <button class="tv-tool-btn" type="button" data-tool="ellipse" title="Ellipse">
+            <svg viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="5" ry="3.6"/></svg>
+          </button>
           <!-- Measure -->
           <button class="tv-tool-btn" type="button" data-tool="measure" title="Measure">
             <svg viewBox="0 0 16 16"><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="5" x2="2" y2="11"/><line x1="14" y1="5" x2="14" y2="11"/><line x1="6" y1="6.5" x2="6" y2="9.5"/><line x1="10" y1="6.5" x2="10" y2="9.5"/></svg>
           </button>
+          <div class="tv-tool-separator"></div>
+          <button class="tv-tool-btn" type="button" data-tool="undo" title="Undo drawing">↶</button>
+          <button class="tv-tool-btn" type="button" data-tool="redo" title="Redo drawing">↷</button>
+          <button class="tv-tool-btn" type="button" data-tool="hide" title="Hide / show drawings">◉</button>
+          <button class="tv-tool-btn" type="button" data-tool="keep" title="Keep drawing mode">∞</button>
+          <button class="tv-tool-btn" type="button" data-tool="lock" title="Lock drawings">🔒</button>
           <!-- Magnet -->
           <button class="tv-tool-btn" type="button" data-tool="magnet" title="Magnet">
             <svg viewBox="0 0 16 16"><path d="M4 3 L4 9 Q4 13 8 13 Q12 13 12 9 L12 3"/><line x1="2" y1="3" x2="6" y2="3" stroke-width="2.2"/><line x1="10" y1="3" x2="14" y2="3" stroke-width="2.2"/></svg>
@@ -1380,6 +1388,7 @@
         <div class="chart-stage">
           <canvas id="tclChartCanvas"></canvas>
           <div id="tvChartContainer" aria-label="TradingView lightweight chart"></div>
+          <canvas id="tvDrawingCanvas" aria-label="TradingView drawing layer"></canvas>
           <div class="tv-chart-legend" id="tvChartLegend" aria-live="polite">
             <div class="tv-legend-head">
               <span id="tvLegendSymbol">TCL/USDC</span>
@@ -1448,7 +1457,6 @@
 
   <div class="tooltip" id="chartTooltip"></div>
 
-  <script src="charting_library/charting_library.standalone.js" onerror="window.TCL_TV_LIBRARY_MISSING=true"></script>
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
   <script src="js/event-push-config.js?v=20260519-1"></script>
   <script>
@@ -1488,6 +1496,7 @@
       latestTradesBody: document.getElementById("latestTradesBody"),
       canvas: document.getElementById("tclChartCanvas"),
       tvContainer: document.getElementById("tvChartContainer"),
+      tvDrawingCanvas: document.getElementById("tvDrawingCanvas"),
       tvChartLegend: document.getElementById("tvChartLegend"),
       tvLegendSymbol: document.getElementById("tvLegendSymbol"),
       tvLegendMeta: document.getElementById("tvLegendMeta"),
@@ -1540,6 +1549,9 @@
       },
       annotations: [],
       pendingAnnotation: null,
+      selectedAnnotationIndex: -1,
+      drawingDrag: null,
+      isPointerDrawing: false,
       snapToCandle: false,
       hoverIndex: null,
       buckets: [],
@@ -2602,6 +2614,16 @@
           ctx.lineTo(second.x, second.y);
         }
         ctx.stroke();
+        if (annotation.type === "arrow") {
+          const angle = Math.atan2(second.y - first.y, second.x - first.x);
+          const size = 9;
+          ctx.beginPath();
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - size * Math.cos(angle - Math.PI / 6), second.y - size * Math.sin(angle - Math.PI / 6));
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - size * Math.cos(angle + Math.PI / 6), second.y - size * Math.sin(angle + Math.PI / 6));
+          ctx.stroke();
+        }
         ctx.setLineDash([]);
 
         if (isMeasure && !annotation.isPending) {
@@ -2862,25 +2884,768 @@
       tvChart.chart.subscribeCrosshairMove(tvChart.crosshairHandler);
 
       tvChart.clickHandler = (param) => {
-        if (state.activeTool !== "hline" || !param?.point || !tvChart.mainSeries) return;
-        const price = tvChart.mainSeries.coordinateToPrice(param.point.y);
-        if (!Number.isFinite(price)) return;
-        const LWC = getLightweightCharts();
-        const line = tvChart.mainSeries.createPriceLine({
-          price,
-          color: TV_THEME.ema,
-          lineWidth: 1,
-          lineStyle: LWC?.LineStyle?.Dashed ?? 2,
-          axisLabelVisible: true,
-          title: formatTvScalePrice(price)
-        });
-        tvChart.userPriceLines.push(line);
-        if (tvChart.userPriceLines.length > 24) {
-          const oldest = tvChart.userPriceLines.shift();
-          tvChart.mainSeries.removePriceLine(oldest);
-        }
+        handleTvDrawingClick(param);
       };
       tvChart.chart.subscribeClick(tvChart.clickHandler);
+    }
+
+
+
+    function refreshTvUserPriceLines() {
+      if (!tvChart.mainSeries) return;
+      removeTvUserPriceLines();
+      state.annotations
+        .filter((annotation) => annotation.type === "hline" && Number.isFinite(annotation.price))
+        .slice(-24)
+        .forEach((annotation) => addTvPriceLine(annotation.price));
+    }
+
+    function resizeTvDrawingCanvas() {
+      if (!ui.tvDrawingCanvas || !ui.tvContainer) return;
+      const rect = ui.tvContainer.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      ui.tvDrawingCanvas.style.width = `${Math.max(1, rect.width)}px`;
+      ui.tvDrawingCanvas.style.height = `${Math.max(1, rect.height)}px`;
+      ui.tvDrawingCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      ui.tvDrawingCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      const ctx = ui.tvDrawingCanvas.getContext("2d");
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawTvAnnotations();
+    }
+
+    function syncTvDrawingCursor() {
+      const stage = ui.tvContainer?.closest(".chart-stage");
+      if (!stage) return;
+      const drawingTools = ["crosshair", "trend", "ray", "extended", "arrow", "hline", "vline", "brush", "text", "rect", "ellipse", "measure"];
+      stage.classList.toggle("is-drawing-tool", state.chartMode === "tv" && drawingTools.includes(state.activeTool));
+      stage.classList.toggle("is-text-tool", state.chartMode === "tv" && state.activeTool === "text");
+      stage.classList.toggle("is-eraser-tool", state.chartMode === "tv" && state.activeTool === "eraser");
+    }
+
+    function getTvPointFromParam(param) {
+      if (!param?.point || !tvChart.mainSeries || !state.buckets.length) return null;
+      let price = tvChart.mainSeries.coordinateToPrice(param.point.y);
+      if (!Number.isFinite(price)) return null;
+
+      let candle = null;
+      if (param.time != null) {
+        candle = getCandleByTvTime(param.time);
+      }
+      if (!candle) {
+        const logical = tvChart.chart?.timeScale?.().coordinateToLogical?.(param.point.x);
+        if (Number.isFinite(logical)) {
+          const index = Math.max(0, Math.min(state.buckets.length - 1, Math.round(logical)));
+          candle = state.buckets[index];
+        }
+      }
+      if (!candle) return null;
+
+      if (state.snapToCandle) {
+        price = candle.close;
+      }
+
+      return {
+        timestamp: candle.timestamp,
+        price,
+        label: formatTvScalePrice(price)
+      };
+    }
+
+    function getTvPointPosition(point) {
+      if (!point || !tvChart.chart || !tvChart.mainSeries) return null;
+      const x = tvChart.chart.timeScale().timeToCoordinate(point.timestamp);
+      const y = tvChart.mainSeries.priceToCoordinate(point.price);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      return { x, y };
+    }
+
+
+    function cloneTvPoint(point) {
+      return point ? { timestamp: point.timestamp, price: point.price, label: point.label } : point;
+    }
+
+    function cloneTvAnnotation(annotation) {
+      const copy = { ...annotation };
+      if (annotation.point) copy.point = cloneTvPoint(annotation.point);
+      if (Array.isArray(annotation.points)) copy.points = annotation.points.map(cloneTvPoint);
+      return copy;
+    }
+
+    function getTvCandleIndexByTimestamp(timestamp) {
+      if (!state.buckets.length) return -1;
+      let nearestIndex = 0;
+      let nearestDistance = Math.abs(Number(state.buckets[0].timestamp) - Number(timestamp));
+      for (let index = 1; index < state.buckets.length; index += 1) {
+        const distance = Math.abs(Number(state.buckets[index].timestamp) - Number(timestamp));
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      }
+      return nearestIndex;
+    }
+
+    function getTvPointFromIndexAndPrice(index, price) {
+      if (!state.buckets.length) return null;
+      const safeIndex = Math.max(0, Math.min(state.buckets.length - 1, Math.round(index)));
+      const candle = state.buckets[safeIndex];
+      const safePrice = Math.max(0.000000001, Number(price));
+      return {
+        timestamp: candle.timestamp,
+        price: safePrice,
+        label: formatTvScalePrice(safePrice)
+      };
+    }
+
+    function moveTvPointByDelta(point, candleDelta, priceDelta) {
+      const index = getTvCandleIndexByTimestamp(point.timestamp);
+      if (index < 0) return cloneTvPoint(point);
+      return getTvPointFromIndexAndPrice(index + candleDelta, Number(point.price) + priceDelta);
+    }
+
+    function moveTvAnnotationByDelta(annotation, candleDelta, priceDelta) {
+      if (!annotation) return annotation;
+      if (annotation.type === "hline") {
+        const price = Math.max(0.000000001, Number(annotation.price) + priceDelta);
+        return { ...annotation, price, label: formatTvScalePrice(price) };
+      }
+      const moved = cloneTvAnnotation(annotation);
+      if (moved.point) moved.point = moveTvPointByDelta(moved.point, candleDelta, priceDelta);
+      if (Array.isArray(moved.points)) moved.points = moved.points.map((point) => moveTvPointByDelta(point, candleDelta, priceDelta));
+      return moved;
+    }
+
+    function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+      const dx = bx - ax;
+      const dy = by - ay;
+      if (!dx && !dy) return Math.hypot(px - ax, py - ay);
+      const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+      return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    }
+
+    function getTvAnnotationHitDistance(annotation, x, y) {
+      if (!annotation) return Infinity;
+      if (annotation.type === "hline") {
+        if (!tvChart.mainSeries || !Number.isFinite(annotation.price)) return Infinity;
+        const lineY = tvChart.mainSeries.priceToCoordinate(annotation.price);
+        return Number.isFinite(lineY) ? Math.abs(y - lineY) : Infinity;
+      }
+      if (annotation.type === "text") {
+        const p = getTvPointPosition(annotation.point);
+        if (!p) return Infinity;
+        return (x >= p.x && x <= p.x + 150 && y >= p.y - 34 && y <= p.y + 12) ? 0 : Math.hypot(x - p.x, y - p.y);
+      }
+      const points = annotation.points || (annotation.point ? [annotation.point] : []);
+      const screenPoints = points.map(getTvPointPosition).filter(Boolean);
+      if (!screenPoints.length) return Infinity;
+      if (annotation.type === "vline") return Math.abs(x - screenPoints[0].x);
+      if (["rect", "ellipse", "measure"].includes(annotation.type) && screenPoints.length >= 2) {
+        const a = screenPoints[0];
+        const b = screenPoints[1];
+        const left = Math.min(a.x, b.x);
+        const right = Math.max(a.x, b.x);
+        const top = Math.min(a.y, b.y);
+        const bottom = Math.max(a.y, b.y);
+        if (x >= left && x <= right && y >= top && y <= bottom) {
+          const edgeDistance = Math.min(Math.abs(x - left), Math.abs(x - right), Math.abs(y - top), Math.abs(y - bottom));
+          return Math.min(edgeDistance, 5);
+        }
+        return Math.min(
+          pointToSegmentDistance(x, y, left, top, right, top),
+          pointToSegmentDistance(x, y, right, top, right, bottom),
+          pointToSegmentDistance(x, y, right, bottom, left, bottom),
+          pointToSegmentDistance(x, y, left, bottom, left, top)
+        );
+      }
+      let best = Infinity;
+      for (let i = 1; i < screenPoints.length; i += 1) {
+        best = Math.min(best, pointToSegmentDistance(x, y, screenPoints[i - 1].x, screenPoints[i - 1].y, screenPoints[i].x, screenPoints[i].y));
+      }
+      if (screenPoints.length === 1) best = Math.hypot(x - screenPoints[0].x, y - screenPoints[0].y);
+      return best;
+    }
+
+    function findTvAnnotationAtPointer(event) {
+      if (!ui.tvDrawingCanvas || state.drawingsHidden) return -1;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const tolerance = 10;
+      let bestIndex = -1;
+      let bestDistance = tolerance;
+      for (let index = state.annotations.length - 1; index >= 0; index -= 1) {
+        const distance = getTvAnnotationHitDistance(state.annotations[index], x, y);
+        if (distance <= bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      }
+      return bestIndex;
+    }
+
+    function deleteTvAnnotationAtIndex(index) {
+      if (index < 0 || index >= state.annotations.length || state.drawingsLocked) return false;
+      state.undoStack.push(cloneTvAnnotation(state.annotations[index]));
+      state.annotations.splice(index, 1);
+      state.selectedAnnotationIndex = -1;
+      refreshTvUserPriceLines();
+      drawTvAnnotations();
+      return true;
+    }
+
+    function addTvPriceLine(price) {
+      if (!tvChart.mainSeries || !Number.isFinite(price)) return;
+      const LWC = getLightweightCharts();
+      const line = tvChart.mainSeries.createPriceLine({
+        price,
+        color: TV_THEME.ema,
+        lineWidth: 1,
+        lineStyle: LWC?.LineStyle?.Dashed ?? 2,
+        axisLabelVisible: true,
+        title: formatTvScalePrice(price)
+      });
+      tvChart.userPriceLines.push(line);
+      if (tvChart.userPriceLines.length > 24) {
+        const oldest = tvChart.userPriceLines.shift();
+        tvChart.mainSeries.removePriceLine(oldest);
+      }
+    }
+
+    function drawTvLabel(ctx, text, x, y, options = {}) {
+      const lines = String(text || "").split("\n");
+      const paddingX = 8;
+      const paddingY = options.multiline ? 7 : 0;
+      const lineHeight = options.multiline ? 18 : 24;
+      const height = options.multiline ? (lines.length * lineHeight + paddingY * 2) : 24;
+      ctx.save();
+      ctx.font = options.multiline ? "700 12px Inter, sans-serif" : "12px Inter, sans-serif";
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const width = Math.max(...lines.map((line) => ctx.measureText(line).width)) + paddingX * 2;
+      const left = Math.max(6, Math.min(rect.width - width - 6, x));
+      const top = Math.max(6, Math.min(rect.height - height - 6, y - height / 2));
+      ctx.fillStyle = options.background || "rgba(19, 23, 34, 0.94)";
+      ctx.strokeStyle = options.border || "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(left, top, width, height, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = options.color || "#d1d4dc";
+      ctx.textBaseline = options.multiline ? "top" : "middle";
+      lines.forEach((line, index) => {
+        ctx.fillText(line, left + paddingX, options.multiline ? top + paddingY + index * lineHeight : top + height / 2);
+      });
+      ctx.restore();
+    }
+
+    function drawTvAnnotations() {
+      if (!ui.tvDrawingCanvas) return;
+      const ctx = ui.tvDrawingCanvas.getContext("2d");
+      if (!ctx) return;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      if (state.chartMode !== "tv" || !tvChart.chart || !tvChart.mainSeries || state.drawingsHidden) return;
+
+      const annotations = state.annotations.map((annotation, index) => ({ ...annotation, __index: index }));
+      if (state.pendingAnnotation) {
+        annotations.push({
+          type: state.pendingAnnotation.type,
+          points: state.pendingAnnotation.points || [
+            state.pendingAnnotation.point,
+            state.pendingAnnotation.previewPoint || state.pendingAnnotation.point
+          ],
+          isPending: true,
+          __index: -1
+        });
+      }
+
+      ctx.save();
+      annotations.forEach((annotation) => {
+        const isSelected = annotation.__index === state.selectedAnnotationIndex;
+        if (annotation.type === "hline") {
+          if (isSelected && tvChart.mainSeries && Number.isFinite(annotation.price)) {
+            const y = tvChart.mainSeries.priceToCoordinate(annotation.price);
+            if (Number.isFinite(y)) {
+              ctx.save();
+              ctx.strokeStyle = "#2962ff";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([6, 4]);
+              ctx.beginPath();
+              ctx.moveTo(8, y);
+              ctx.lineTo(rect.width - 8, y);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+          return;
+        }
+
+        if (annotation.type === "text") {
+          const point = getTvPointPosition(annotation.point);
+          if (!point) return;
+          drawTvLabel(ctx, annotation.label || "Text", point.x + 8, point.y - 12, {
+            color: "#42d7ff",
+            border: isSelected ? "#2962ff" : "rgba(66, 215, 255, 0.35)"
+          });
+          if (isSelected) {
+            ctx.save();
+            ctx.strokeStyle = "#2962ff";
+            ctx.lineWidth = 1.4;
+            ctx.setLineDash([4, 3]);
+            ctx.strokeRect(point.x - 4, point.y - 24, 162, 34);
+            ctx.restore();
+          }
+          return;
+        }
+
+        const points = annotation.points || (annotation.point ? [annotation.point] : []);
+        const firstPoint = points[0];
+        const secondPoint = points[1] || points[0];
+        const first = getTvPointPosition(firstPoint);
+        const second = getTvPointPosition(secondPoint);
+        if (!first || !second) return;
+
+        const isMeasure = annotation.type === "measure";
+        const isBrush = annotation.type === "brush";
+        ctx.strokeStyle = isSelected ? "#2962ff" : (isMeasure ? "#f5c663" : (isBrush ? "rgba(66, 215, 255, 0.82)" : "rgba(237,244,255,0.82)"));
+        ctx.lineWidth = isSelected ? 2.4 : (isBrush ? 3.2 : 1.7);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.setLineDash(annotation.isPending && !isBrush ? [4, 5] : []);
+
+        if (annotation.type === "rect") {
+          const left = Math.min(first.x, second.x);
+          const top = Math.min(first.y, second.y);
+          const width = Math.abs(second.x - first.x);
+          const height = Math.abs(second.y - first.y);
+          ctx.fillStyle = "rgba(66, 215, 255, 0.08)";
+          ctx.strokeRect(left, top, width, height);
+          ctx.fillRect(left, top, width, height);
+          ctx.setLineDash([]);
+          return;
+        }
+
+        if (annotation.type === "ellipse") {
+          ctx.beginPath();
+          ctx.ellipse((first.x + second.x) / 2, (first.y + second.y) / 2, Math.abs(second.x - first.x) / 2, Math.abs(second.y - first.y) / 2, 0, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(66, 215, 255, 0.08)";
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+          return;
+        }
+
+        if (annotation.type === "vline") {
+          ctx.beginPath();
+          ctx.moveTo(first.x, 8);
+          ctx.lineTo(first.x, rect.height - 8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          return;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(first.x, first.y);
+        if (["ray", "extended"].includes(annotation.type) && first.x !== second.x) {
+          const slope = (second.y - first.y) / (second.x - first.x);
+          if (annotation.type === "extended") {
+            const leftX = 8;
+            const rightX = rect.width - 8;
+            ctx.moveTo(leftX, first.y + slope * (leftX - first.x));
+            ctx.lineTo(rightX, first.y + slope * (rightX - first.x));
+          } else {
+            const targetX = second.x >= first.x ? rect.width - 8 : 8;
+            ctx.lineTo(targetX, first.y + slope * (targetX - first.x));
+          }
+        } else if (isBrush) {
+          const drawablePoints = points.map(getTvPointPosition).filter(Boolean);
+          if (drawablePoints.length === 1) {
+            ctx.arc(drawablePoints[0].x, drawablePoints[0].y, 1.8, 0, Math.PI * 2);
+          } else {
+            ctx.moveTo(drawablePoints[0].x, drawablePoints[0].y);
+            for (let i = 1; i < drawablePoints.length - 1; i += 1) {
+              const midX = (drawablePoints[i].x + drawablePoints[i + 1].x) / 2;
+              const midY = (drawablePoints[i].y + drawablePoints[i + 1].y) / 2;
+              ctx.quadraticCurveTo(drawablePoints[i].x, drawablePoints[i].y, midX, midY);
+            }
+            const last = drawablePoints[drawablePoints.length - 1];
+            ctx.lineTo(last.x, last.y);
+          }
+        } else {
+          ctx.lineTo(second.x, second.y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (isSelected) {
+          ctx.save();
+          ctx.fillStyle = "#2962ff";
+          [first, second].forEach((handle) => {
+            ctx.beginPath();
+            ctx.arc(handle.x, handle.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.restore();
+        }
+
+        if (isMeasure && annotation.points?.length >= 2) {
+          const startData = annotation.points[0];
+          const endData = annotation.points[1];
+          const startPrice = Number(startData.price);
+          const endPrice = Number(endData.price);
+          const diff = endPrice - startPrice;
+          const pct = startPrice ? (diff / startPrice) * 100 : 0;
+          const isUp = diff >= 0;
+          const boxColor = isUp ? "#2962ff" : "#f23645";
+          const fillColor = isUp ? "rgba(41, 98, 255, 0.22)" : "rgba(242, 54, 69, 0.22)";
+          const lineColor = isUp ? "#2962ff" : "#f23645";
+          const left = Math.min(first.x, second.x);
+          const top = Math.min(first.y, second.y);
+          const width = Math.abs(second.x - first.x);
+          const height = Math.abs(second.y - first.y);
+
+          ctx.save();
+          ctx.fillStyle = fillColor;
+          ctx.strokeStyle = lineColor;
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([]);
+          ctx.fillRect(left, top, width, height);
+          ctx.strokeRect(left, top, width, height);
+
+          ctx.beginPath();
+          ctx.moveTo(first.x, first.y);
+          ctx.lineTo(first.x, second.y);
+          ctx.lineTo(second.x, second.y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          const arrow = 5;
+          ctx.moveTo(first.x, second.y);
+          ctx.lineTo(first.x - arrow, second.y + (isUp ? arrow : -arrow));
+          ctx.moveTo(first.x, second.y);
+          ctx.lineTo(first.x + arrow, second.y + (isUp ? arrow : -arrow));
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - (second.x >= first.x ? arrow : -arrow), second.y - arrow);
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - (second.x >= first.x ? arrow : -arrow), second.y + arrow);
+          ctx.stroke();
+          ctx.restore();
+
+          const timeframeSeconds = {
+            "1m": 60,
+            "5m": 5 * 60,
+            "15m": 15 * 60,
+            "30m": 30 * 60,
+            "1h": 60 * 60,
+            "4h": 4 * 60 * 60,
+            "1d": DAY_SECONDS,
+            "1w": 7 * DAY_SECONDS,
+            "1mo": 30 * DAY_SECONDS
+          }[state.activeTimeframe] || DAY_SECONDS;
+          const bars = Math.max(1, Math.round(Math.abs(Number(endData.timestamp) - Number(startData.timestamp)) / timeframeSeconds));
+          const volume = state.buckets
+            .filter((candle) => candle.timestamp >= Math.min(startData.timestamp, endData.timestamp) && candle.timestamp <= Math.max(startData.timestamp, endData.timestamp))
+            .reduce((sum, candle) => sum + toNumber(candle.volumeUsd ?? candle.volume, 0), 0);
+          const header = `${diff >= 0 ? "+" : ""}${formatTvScalePrice(diff)} (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)`;
+          const labelX = left + Math.min(Math.max(width / 2 - 58, 0), Math.max(width - 116, 0));
+          const labelY = isUp ? top - 10 : top + height + 38;
+          drawTvLabel(ctx, `${header} , ${bars}
+${bars} bars, ${formatTimeframeLabel(state.activeTimeframe)}
+Vol ${formatCompactToken(volume)}`, labelX, labelY, {
+            color: "#ffffff",
+            background: boxColor,
+            border: boxColor,
+            multiline: true
+          });
+        }
+      });
+      ctx.restore();
+    }
+
+    function shouldUseTvDragTool() {
+      return state.chartMode === "tv" && ["trend", "ray", "measure", "brush"].includes(state.activeTool);
+    }
+
+    function setTvNativeDragEnabled(enabled) {
+      if (!tvChart.chart) return;
+      if (enabled) {
+        tvChart.chart.applyOptions(getTvChartOptions());
+        return;
+      }
+      tvChart.chart.applyOptions({
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: false,
+          horzTouchDrag: false,
+          vertTouchDrag: false
+        },
+        handleScale: {
+          axisPressedMouseMove: false,
+          mouseWheel: true,
+          pinch: false
+        },
+        kineticScroll: {
+          touch: false,
+          mouse: false
+        }
+      });
+    }
+
+    function getTvPointFromPointerEvent(event) {
+      if (!ui.tvDrawingCanvas || !tvChart.chart) return null;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+      const time = tvChart.chart.timeScale().coordinateToTime(x);
+      return getTvPointFromParam({ point: { x, y }, time });
+    }
+
+    function distanceBetweenTvPoints(a, b) {
+      const pa = getTvPointPosition(a);
+      const pb = getTvPointPosition(b);
+      if (!pa || !pb) return Infinity;
+      return Math.hypot(pa.x - pb.x, pa.y - pb.y);
+    }
+
+    function pushTvAnnotation(annotation) {
+      if (state.drawingsLocked) return;
+      state.annotations.push(annotation);
+      state.undoStack = [];
+      if (state.annotations.length > 160) {
+        state.annotations = state.annotations.slice(-160);
+      }
+    }
+
+    function undoTvAnnotation() {
+      if (!state.annotations.length || state.drawingsLocked) return;
+      state.undoStack.push(state.annotations.pop());
+      state.pendingAnnotation = null;
+      refreshTvUserPriceLines();
+      drawTvAnnotations();
+    }
+
+    function redoTvAnnotation() {
+      if (!state.undoStack.length || state.drawingsLocked) return;
+      state.annotations.push(state.undoStack.pop());
+      refreshTvUserPriceLines();
+      drawTvAnnotations();
+    }
+
+    function resetTvActiveToolAfterDrawing() {
+      if (!state.keepDrawing) {
+        state.activeTool = "crosshair";
+        syncToolChrome();
+      }
+    }
+
+    function handleTvDrawingClick(param) {
+      if (state.chartMode !== "tv" || ["crosshair", "magnet", "undo", "redo", "hide", "keep", "lock"].includes(state.activeTool) || state.isPointerDrawing) return;
+      const point = getTvPointFromParam(param);
+      if (!point) return;
+
+      if (state.activeTool === "hline") {
+        pushTvAnnotation({ type: "hline", price: point.price, label: formatTvScalePrice(point.price) });
+        addTvPriceLine(point.price);
+        state.pendingAnnotation = null;
+        resetTvActiveToolAfterDrawing();
+      } else if (state.activeTool === "vline") {
+        pushTvAnnotation({ type: "vline", points: [point] });
+        state.pendingAnnotation = null;
+        resetTvActiveToolAfterDrawing();
+      } else if (state.activeTool === "text") {
+        const label = window.prompt("Text label:", "TCL note");
+        pushTvAnnotation({ type: "text", point, label: label && label.trim() ? label.trim() : "TCL note" });
+        state.pendingAnnotation = null;
+        resetTvActiveToolAfterDrawing();
+      } else if (["trend", "ray", "extended", "arrow", "rect", "ellipse", "measure"].includes(state.activeTool)) {
+        if (state.pendingAnnotation?.type === state.activeTool) {
+          pushTvAnnotation({ type: state.activeTool, points: [state.pendingAnnotation.point, point] });
+          state.pendingAnnotation = null;
+          resetTvActiveToolAfterDrawing();
+        } else {
+          state.pendingAnnotation = { type: state.activeTool, point, previewPoint: point };
+        }
+      }
+
+      drawTvAnnotations();
+    }
+
+    function handleTvDrawingPointerDown(event) {
+      if (state.chartMode !== "tv") return;
+      if (state.drawingsLocked && !["lock", "hide", "undo", "redo"].includes(state.activeTool)) return;
+
+      const hitIndex = findTvAnnotationAtPointer(event);
+
+      if (state.activeTool === "eraser") {
+        event.preventDefault();
+        if (hitIndex >= 0) {
+          deleteTvAnnotationAtIndex(hitIndex);
+        } else {
+          state.selectedAnnotationIndex = -1;
+          drawTvAnnotations();
+        }
+        return;
+      }
+
+      const selectableTools = ["crosshair", "magnet", "undo", "redo", "hide", "keep", "lock"];
+      if (hitIndex >= 0 && !["undo", "redo", "hide", "keep", "lock"].includes(state.activeTool)) {
+        const point = getTvPointFromPointerEvent(event);
+        if (!point) return;
+        event.preventDefault();
+        ui.tvDrawingCanvas.setPointerCapture?.(event.pointerId);
+        state.selectedAnnotationIndex = hitIndex;
+        state.pendingAnnotation = null;
+        state.isPointerDrawing = true;
+        state.drawingDrag = {
+          pointerId: event.pointerId,
+          tool: "move",
+          startPoint: point,
+          lastPoint: point,
+          moved: false,
+          annotationIndex: hitIndex,
+          originalAnnotation: cloneTvAnnotation(state.annotations[hitIndex]),
+          startCandleIndex: getTvCandleIndexByTimestamp(point.timestamp),
+          startPrice: point.price
+        };
+        setTvNativeDragEnabled(false);
+        drawTvAnnotations();
+        return;
+      }
+
+      if (selectableTools.includes(state.activeTool)) {
+        state.selectedAnnotationIndex = -1;
+        drawTvAnnotations();
+        return;
+      }
+
+      const point = getTvPointFromPointerEvent(event);
+      if (!point) return;
+
+      event.preventDefault();
+      ui.tvDrawingCanvas.setPointerCapture?.(event.pointerId);
+      state.selectedAnnotationIndex = -1;
+      state.isPointerDrawing = true;
+      state.drawingDrag = {
+        pointerId: event.pointerId,
+        tool: state.activeTool,
+        startPoint: point,
+        lastPoint: point,
+        moved: false
+      };
+      setTvNativeDragEnabled(false);
+
+      if (state.activeTool === "hline") {
+        pushTvAnnotation({ type: "hline", price: point.price, label: formatTvScalePrice(point.price) });
+        addTvPriceLine(point.price);
+        state.drawingDrag = null;
+        state.isPointerDrawing = false;
+        setTvNativeDragEnabled(true);
+        drawTvAnnotations();
+        resetTvActiveToolAfterDrawing();
+        return;
+      }
+
+      if (state.activeTool === "vline") {
+        pushTvAnnotation({ type: "vline", points: [point] });
+        state.drawingDrag = null;
+        state.isPointerDrawing = false;
+        setTvNativeDragEnabled(true);
+        drawTvAnnotations();
+        resetTvActiveToolAfterDrawing();
+        return;
+      }
+
+      if (state.activeTool === "text") {
+        const label = window.prompt("Text label:", "TCL note");
+        pushTvAnnotation({ type: "text", point, label: label && label.trim() ? label.trim() : "TCL note" });
+        resetTvActiveToolAfterDrawing();
+        state.drawingDrag = null;
+        state.isPointerDrawing = false;
+        setTvNativeDragEnabled(true);
+        drawTvAnnotations();
+        return;
+      }
+
+      if (state.activeTool === "brush") {
+        state.pendingAnnotation = { type: "brush", points: [point] };
+      } else {
+        state.pendingAnnotation = { type: state.activeTool, point, previewPoint: point };
+      }
+      drawTvAnnotations();
+    }
+
+    function handleTvDrawingPointerMove(event) {
+      const drag = state.drawingDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const point = getTvPointFromPointerEvent(event);
+      if (!point) return;
+
+      event.preventDefault();
+      drag.moved = true;
+      drag.lastPoint = point;
+
+      if (drag.tool === "move") {
+        const currentIndex = getTvCandleIndexByTimestamp(point.timestamp);
+        const candleDelta = Number.isFinite(currentIndex) && Number.isFinite(drag.startCandleIndex) ? currentIndex - drag.startCandleIndex : 0;
+        const priceDelta = Number(point.price) - Number(drag.startPrice);
+        if (drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
+          state.annotations[drag.annotationIndex] = moveTvAnnotationByDelta(drag.originalAnnotation, candleDelta, priceDelta);
+          refreshTvUserPriceLines();
+        }
+        drawTvAnnotations();
+        return;
+      }
+
+      if (drag.tool === "brush") {
+        const points = state.pendingAnnotation?.points || [];
+        const last = points[points.length - 1];
+        if (!last || distanceBetweenTvPoints(last, point) >= 2) {
+          points.push(point);
+          state.pendingAnnotation = { type: "brush", points };
+        }
+      } else {
+        state.pendingAnnotation = { type: drag.tool, point: drag.startPoint, previewPoint: point };
+      }
+      drawTvAnnotations();
+    }
+
+    function handleTvDrawingPointerUp(event) {
+      const drag = state.drawingDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+
+      const endPoint = getTvPointFromPointerEvent(event) || drag.lastPoint || drag.startPoint;
+      if (drag.tool === "move") {
+        if (drag.moved && drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
+          state.undoStack.push(cloneTvAnnotation(drag.originalAnnotation));
+          refreshTvUserPriceLines();
+        }
+      } else if (drag.tool === "brush") {
+        const points = (state.pendingAnnotation?.points || [drag.startPoint]).slice();
+        if (points.length < 2) points.push(endPoint);
+        pushTvAnnotation({ type: "brush", points });
+      } else if (["trend", "ray", "extended", "arrow", "rect", "ellipse", "measure"].includes(drag.tool)) {
+        pushTvAnnotation({ type: drag.tool, points: [drag.startPoint, endPoint] });
+      }
+
+      state.pendingAnnotation = null;
+      state.drawingDrag = null;
+      state.isPointerDrawing = false;
+      ui.tvDrawingCanvas.releasePointerCapture?.(event.pointerId);
+      setTvNativeDragEnabled(true);
+      drawTvAnnotations();
+      if (drag.tool !== "move") resetTvActiveToolAfterDrawing();
+    }
+
+    function handleTvDrawingPointerCancel(event) {
+      const drag = state.drawingDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      state.pendingAnnotation = null;
+      state.drawingDrag = null;
+      state.isPointerDrawing = false;
+      setTvNativeDragEnabled(true);
+      drawTvAnnotations();
     }
 
     function scrollTvToRealtime() {
@@ -3019,6 +3784,7 @@
         width: Math.max(1, Math.floor(rect.width)),
         height: Math.max(1, Math.floor(rect.height))
       });
+      resizeTvDrawingCanvas();
     }
 
     function applyTvPriceScale() {
@@ -3085,6 +3851,7 @@
       }
       applyTvHighLowLines(candles);
       applyTvLivePriceLine(candles);
+      refreshTvUserPriceLines();
     }
 
     function getTvChartOptions() {
@@ -3374,6 +4141,7 @@
             applyTvHighLowLines(state.buckets);
           }
           applyTvLivePriceLine(state.buckets);
+          drawTvAnnotations();
         };
         tvChart.chart.timeScale().subscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
 
@@ -3582,6 +4350,9 @@
       }
 
       applyTvLivePriceLine(state.buckets);
+      resizeTvDrawingCanvas();
+      syncTvDrawingCursor();
+      drawTvAnnotations();
 
       updateTvLegend(state.buckets[state.buckets.length - 1] || null);
 
@@ -4052,6 +4823,8 @@
         const isActive = tool === "magnet" ? state.snapToCandle : tool === state.activeTool;
         button.classList.toggle("is-active", isActive);
       });
+      syncTvDrawingCursor();
+      drawTvAnnotations();
     }
 
     function getDropdownPanel(dropdown) {
@@ -4218,6 +4991,13 @@
     ui.canvas.addEventListener("mousemove", showTooltip);
     ui.canvas.addEventListener("mouseleave", hideTooltip);
     ui.canvas.addEventListener("click", handleCanvasClick);
+    if (ui.tvDrawingCanvas) {
+      ui.tvDrawingCanvas.addEventListener("pointerdown", handleTvDrawingPointerDown);
+      ui.tvDrawingCanvas.addEventListener("pointermove", handleTvDrawingPointerMove);
+      ui.tvDrawingCanvas.addEventListener("pointerup", handleTvDrawingPointerUp);
+      ui.tvDrawingCanvas.addEventListener("pointercancel", handleTvDrawingPointerCancel);
+      ui.tvDrawingCanvas.addEventListener("lostpointercapture", handleTvDrawingPointerCancel);
+    }
     window.addEventListener("resize", () => {
       if (state.chartMode === "tv") {
         resizeTvChart();
@@ -4316,6 +5096,11 @@
           syncToolChrome();
           return;
         }
+        if (tool === "undo") { undoTvAnnotation(); syncToolChrome(); return; }
+        if (tool === "redo") { redoTvAnnotation(); syncToolChrome(); return; }
+        if (tool === "hide") { state.drawingsHidden = !state.drawingsHidden; drawTvAnnotations(); syncToolChrome(); return; }
+        if (tool === "keep") { state.keepDrawing = !state.keepDrawing; syncToolChrome(); return; }
+        if (tool === "lock") { state.drawingsLocked = !state.drawingsLocked; syncToolChrome(); return; }
         if (tool === "eraser") {
           state.annotations = [];
           state.pendingAnnotation = null;
