@@ -3087,8 +3087,20 @@ function stopTopbarCtaRotation() {
   topbarCtaRotationTimer = null;
 }
 
+function isDesktopInstallViewport() {
+  return window.matchMedia("(min-width: 1024px)").matches
+    && !/android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
+}
+
+function ensureDesktopInstallAction() {
+  if (isDesktopInstallViewport() && !topbarInstallActionType) {
+    topbarInstallActionType = "desktop";
+  }
+}
+
 function getTopbarCtaModes() {
-  if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop") {
+  ensureDesktopInstallAction();
+  if (isDesktopInstallViewport() && topbarInstallActionType === "desktop") {
     return ["install"];
   }
   return topbarInstallActionType ? ["earn", "install"] : ["earn"];
@@ -3097,7 +3109,14 @@ function getTopbarCtaModes() {
 function getTopbarInstallLabel() {
   if (topbarInstallActionType === "android") return "📲 Install";
   if (topbarInstallActionType === "ios") return "📲 Add";
-  if (topbarInstallActionType === "desktop") return "💻 Install PWA";
+  if (topbarInstallActionType === "desktop") return "💻Install";
+  return "";
+}
+
+function getTopbarInstallAriaLabel() {
+  if (topbarInstallActionType === "android") return "Install PWA";
+  if (topbarInstallActionType === "ios") return "Add to Home Screen";
+  if (topbarInstallActionType === "desktop") return "Install PWA";
   return "";
 }
 
@@ -3117,7 +3136,7 @@ function renderTopbarCtaButton() {
     ? getTopbarInstallLabel()
     : t("nav_play_and_earn", {}, "🎮Play and Earn💰");
   topbarEarnBtn.dataset.ctaMode = isInstallMode ? topbarInstallActionType : "earn";
-  topbarEarnBtn.setAttribute("aria-label", topbarEarnBtn.textContent.trim());
+  topbarEarnBtn.setAttribute("aria-label", isInstallMode ? getTopbarInstallAriaLabel() : topbarEarnBtn.textContent.trim());
 }
 
 function syncTopbarCtaRail() {
@@ -3169,11 +3188,12 @@ function handleTopbarCtaClick() {
 function syncTopbarEarnButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
+  ensureDesktopInstallAction();
 
   const shouldHide = document.body.classList.contains("sidebar-open")
     || (
       document.body.classList.contains("sidebar-desktop")
-      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop")
+      && !(isDesktopInstallViewport() && topbarInstallActionType === "desktop")
     );
 
   topbarEarnBtn.hidden = shouldHide;
