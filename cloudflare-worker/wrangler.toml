@@ -10,7 +10,7 @@ id = "56ded90a3d244f159c05636b6465c781"
 
 [vars]
 EVENTS_URL = "https://axel4ro.github.io/TCLexplorer/weekly_events.json"
-EVENT_PUSH_ALLOWED_ORIGIN = "https://axel4ro.github.io"
+EVENT_PUSH_ALLOWED_ORIGIN = "https://axel4ro.github.io,https://thecursedland.com,https://www.thecursedland.com"
 EVENT_PUSH_LOOKBACK_MINUTES = "6"
 EVENT_PUSH_LOOKAHEAD_MINUTES = "0"
 EVENT_PUSH_TTL_SECONDS = "3600"

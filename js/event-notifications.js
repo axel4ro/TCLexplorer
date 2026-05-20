@@ -28,7 +28,9 @@
       testTitle: "TCL event notification test",
       testBody: "Notifications are working on this device.",
       reminderTitle: "{name} starts in {minutes} min",
-      liveTitle: "{name} is live now"
+      liveTitle: "{name} is live now",
+      midpointTitle: "{name} is halfway through",
+      endTitle: "{name} has ended"
     },
     ro: {
       title: "Notificari events",
@@ -51,7 +53,9 @@
       testTitle: "Test notificare TCL event",
       testBody: "Notificarile functioneaza pe acest device.",
       reminderTitle: "{name} incepe in {minutes} min",
-      liveTitle: "{name} este activ acum"
+      liveTitle: "{name} este activ acum",
+      midpointTitle: "{name} este la jumatate",
+      endTitle: "{name} s-a incheiat"
     }
   };
 
@@ -369,6 +373,8 @@
 
         const translated = getTranslatedEvent(event);
         const startAt = occurrence.start.getTime();
+        const endAt = occurrence.end.getTime();
+        const midpointAt = startAt + Math.round((endAt - startAt) / 2);
         const reminderAt = startAt - reminderMinutes * 60 * 1000;
         const baseId = `${day}:${event.name}:${event.start}:${startAt}`;
         const body = translated.description;
@@ -388,6 +394,18 @@
             id: `${baseId}:live`,
             triggerAt: startAt,
             title: tr("liveTitle", { name: translated.name }),
+            body
+          },
+          {
+            id: `${baseId}:midpoint`,
+            triggerAt: midpointAt,
+            title: tr("midpointTitle", { name: translated.name }),
+            body
+          },
+          {
+            id: `${baseId}:end`,
+            triggerAt: endAt,
+            title: tr("endTitle", { name: translated.name }),
             body
           }
         ].forEach((item) => {

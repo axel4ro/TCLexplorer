@@ -2,6 +2,7 @@ const SUBSCRIPTION_PREFIX = "subscription:";
 const SENT_PREFIX = "sent:";
 const STATS_KEY = "stats:subscriptions";
 const STATS_HISTORY_PREFIX = "stats:history:";
+const LAST_DISPATCH_KEY = "push:last-dispatch";
 const DEFAULT_REMINDER_MINUTES = 15;
 const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -109,11 +110,15 @@ const EVENT_COPY = {
   en: {
     reminderTitle: "{name} starts in {minutes} min",
     liveTitle: "{name} is live now",
+    midpointTitle: "{name} is halfway through",
+    endTitle: "{name} has ended",
     defaultBody: "The Cursed Land weekly event"
   },
   ro: {
     reminderTitle: "{name} incepe in {minutes} min",
     liveTitle: "{name} este activ acum",
+    midpointTitle: "{name} este la jumatate",
+    endTitle: "{name} s-a incheiat",
     defaultBody: "Eveniment saptamanal The Cursed Land"
   }
 };
@@ -131,10 +136,13 @@ export default {
   },
 
   async scheduled(_event, env, ctx) {
-    ctx.waitUntil(dispatchDueNotifications(env).catch((error) => ({
-      ok: false,
-      error: error?.message || "Scheduled dispatch failed"
-    })));
+    ctx.waitUntil(dispatchDueNotifications(env, { source: "scheduled" }).catch((error) => {
+      console.warn("Scheduled event notification dispatch failed", error?.message || error);
+      return {
+        ok: false,
+        error: error?.message || "Scheduled dispatch failed"
+      };
+    }));
 
     ctx.waitUntil(refreshAnalyticsIfDue(env).catch((error) => {
       console.warn("Analytics refresh failed", error?.message || error);
@@ -411,12 +419,14 @@ async function handleStats(request, env) {
   }
 
   const stats = await readSubscriberStats(kv);
+  const lastDispatch = await readLastDispatch(kv).catch(() => null);
   await recordSubscriberStatsHistory(kv, stats.subscribers).catch(() => {});
   return jsonResponse(request, env, 200, {
     ok: true,
     subscribers: stats.subscribers,
     configured: true,
     source: stats.source,
+    lastDispatch,
     updatedAt: new Date().toISOString()
   });
 }
@@ -496,7 +506,7 @@ async function handleDispatch(request, env) {
     return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
   }
 
-  const report = await dispatchDueNotifications(env);
+  const report = await dispatchDueNotifications(env, { source: "manual" });
   return jsonResponse(request, env, 200, report);
 }
 
@@ -1916,54 +1926,81 @@ function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function dispatchDueNotifications(env) {
-  const kv = requireKv(env);
-  const subscriptions = await listSubscriptions(kv);
-  const events = await loadEvents(env);
-  const now = new Date();
-  const report = {
-    ok: true,
-    checked: subscriptions.length,
-    due: 0,
-    sent: 0,
-    skipped: 0,
-    invalid: 0,
-    errors: 0
-  };
+async function dispatchDueNotifications(env, options = {}) {
+  const startedAt = new Date();
+  let kv;
+  let report;
 
-  for (const record of subscriptions) {
-    const dueItems = dueNotificationsForRecord(record, events, now, env);
-    report.due += dueItems.length;
+  try {
+    kv = requireKv(env);
+    const subscriptions = await listSubscriptions(kv);
+    const events = await loadEvents(env);
+    const now = new Date();
+    report = {
+      ok: true,
+      source: options.source || "unknown",
+      checked: subscriptions.length,
+      due: 0,
+      sent: 0,
+      skipped: 0,
+      invalid: 0,
+      errors: 0,
+      startedAt: startedAt.toISOString()
+    };
 
-    for (const item of dueItems) {
-      const sentKey = `${SENT_PREFIX}${item.sentKey}`;
-      const reserved = await reserveSentKey(kv, sentKey);
-      if (!reserved) {
-        report.skipped += 1;
-        continue;
-      }
+    for (const record of subscriptions) {
+      const dueItems = dueNotificationsForRecord(record, events, now, env);
+      report.due += dueItems.length;
 
-      try {
-        await sendWebPush(record.subscription, item.payload, env);
-        report.sent += 1;
-      } catch (error) {
-        if (error.status === 404 || error.status === 410) {
-          const subscriptionKey = `${SUBSCRIPTION_PREFIX}${record.id}`;
-          const existed = await kv.get(subscriptionKey);
-          await kv.delete(subscriptionKey);
-          if (existed) {
-            await adjustSubscriberCount(kv, -1);
+      for (const item of dueItems) {
+        const sentKey = `${SENT_PREFIX}${item.sentKey}`;
+        const reserved = await reserveSentKey(kv, sentKey);
+        if (!reserved) {
+          report.skipped += 1;
+          continue;
+        }
+
+        try {
+          await sendWebPush(record.subscription, item.payload, env);
+          report.sent += 1;
+        } catch (error) {
+          if (error.status === 404 || error.status === 410) {
+            const subscriptionKey = `${SUBSCRIPTION_PREFIX}${record.id}`;
+            const existed = await kv.get(subscriptionKey);
+            await kv.delete(subscriptionKey);
+            if (existed) {
+              await adjustSubscriberCount(kv, -1);
+            }
+            report.invalid += 1;
+          } else {
+            await kv.delete(sentKey);
+            report.errors += 1;
           }
-          report.invalid += 1;
-        } else {
-          await kv.delete(sentKey);
-          report.errors += 1;
         }
       }
     }
-  }
 
-  return report;
+    report.finishedAt = new Date().toISOString();
+    await writeLastDispatch(kv, report).catch(() => {});
+    return report;
+  } catch (error) {
+    if (kv) {
+      await writeLastDispatch(kv, {
+        ok: false,
+        source: options.source || "unknown",
+        checked: report?.checked || 0,
+        due: report?.due || 0,
+        sent: report?.sent || 0,
+        skipped: report?.skipped || 0,
+        invalid: report?.invalid || 0,
+        errors: (report?.errors || 0) + 1,
+        error: error?.message || "Dispatch failed",
+        startedAt: startedAt.toISOString(),
+        finishedAt: new Date().toISOString()
+      }).catch(() => {});
+    }
+    throw error;
+  }
 }
 
 async function listSubscriptions(kv) {
@@ -2058,6 +2095,19 @@ async function recordSubscriberStatsHistory(kv, subscribers) {
   });
 }
 
+async function readLastDispatch(kv) {
+  return kv.get(LAST_DISPATCH_KEY, "json");
+}
+
+async function writeLastDispatch(kv, payload) {
+  await kv.put(LAST_DISPATCH_KEY, JSON.stringify({
+    ...payload,
+    updatedAt: new Date().toISOString()
+  }), {
+    expirationTtl: 14 * 24 * 60 * 60
+  });
+}
+
 async function loadEvents(env) {
   const url = env.EVENTS_URL || DEFAULT_EVENTS_URL;
   const response = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, {
@@ -2077,10 +2127,12 @@ function dueNotificationsForRecord(record, eventsData, now, env) {
 
   Object.entries(eventsData || {}).forEach(([day, events]) => {
     (events || []).forEach((event) => {
-      const occurrence = getEventOccurrence(day, event, now);
+      const occurrence = getEventOccurrence(day, event, now, lookbackMs);
       if (!occurrence) return;
 
       const startAt = occurrence.start.getTime();
+      const endAt = occurrence.end.getTime();
+      const midpointAt = startAt + Math.round((endAt - startAt) / 2);
       const reminderAt = startAt - reminderMinutes * 60 * 1000;
       const actualReminderMinutes = minutesUntil(startAt, nowMs);
       const eventName = event.name || "TCL Event";
@@ -2100,6 +2152,16 @@ function dueNotificationsForRecord(record, eventsData, now, env) {
           type: "live",
           triggerAt: startAt,
           title: formatTemplate(templates.liveTitle, { name: eventName })
+        },
+        {
+          type: "midpoint",
+          triggerAt: midpointAt,
+          title: formatTemplate(templates.midpointTitle, { name: eventName })
+        },
+        {
+          type: "end",
+          triggerAt: endAt,
+          title: formatTemplate(templates.endTitle, { name: eventName })
         }
       ].forEach((notification) => {
         if (notification.triggerAt > nowMs) return;
@@ -2140,7 +2202,7 @@ async function reserveSentKey(kv, key) {
   return true;
 }
 
-function getEventOccurrence(day, event, now) {
+function getEventOccurrence(day, event, now, lookbackMs = 0) {
   const targetIndex = WEEKDAYS.indexOf(day);
   if (targetIndex < 0 || !event.start || !event.end) return null;
 
@@ -2165,7 +2227,7 @@ function getEventOccurrence(day, event, now) {
   ));
 
   if (end <= start) end = new Date(end.getTime() + DAY_MS);
-  if (end < now) {
+  if (end.getTime() < now.getTime() - Math.max(0, Number(lookbackMs) || 0)) {
     start = new Date(start.getTime() + 7 * DAY_MS);
     end = new Date(end.getTime() + 7 * DAY_MS);
   }
