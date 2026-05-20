@@ -2359,6 +2359,8 @@
       bbMiddleSeries: null,
       bbLowerSeries: null,
       vwapSeries: null,
+      highPriceLine: null,
+      lowPriceLine: null,
       activeStyle: null,
       resizeObserver: null,
       rangeHandler: null
@@ -2407,7 +2409,78 @@
       tvChart.bbMiddleSeries = null;
       tvChart.bbLowerSeries = null;
       tvChart.vwapSeries = null;
+      tvChart.highPriceLine = null;
+      tvChart.lowPriceLine = null;
       tvChart.activeStyle = null;
+    }
+
+    function findHighLowInCandles(candles) {
+      if (!candles.length) return null;
+      let high = candles[0].high;
+      let low = candles[0].low;
+      for (let index = 1; index < candles.length; index += 1) {
+        const candle = candles[index];
+        if (candle.high > high) high = candle.high;
+        if (candle.low < low) low = candle.low;
+      }
+      return { high, low };
+    }
+
+    function getVisibleCandlesForTv(candles) {
+      if (!tvChart.chart || candles.length <= 1) return candles;
+      const logicalRange = tvChart.chart.timeScale().getVisibleLogicalRange();
+      if (!logicalRange) return candles;
+
+      const from = Math.max(0, Math.floor(logicalRange.from));
+      const to = Math.min(candles.length - 1, Math.ceil(logicalRange.to));
+      if (from >= to) return candles;
+      return candles.slice(from, to + 1);
+    }
+
+    function removeTvHighLowLines() {
+      if (!tvChart.mainSeries) {
+        tvChart.highPriceLine = null;
+        tvChart.lowPriceLine = null;
+        return;
+      }
+      if (tvChart.highPriceLine) {
+        tvChart.mainSeries.removePriceLine(tvChart.highPriceLine);
+        tvChart.highPriceLine = null;
+      }
+      if (tvChart.lowPriceLine) {
+        tvChart.mainSeries.removePriceLine(tvChart.lowPriceLine);
+        tvChart.lowPriceLine = null;
+      }
+    }
+
+    function applyTvHighLowLines(candles) {
+      removeTvHighLowLines();
+      if (!state.settings.highLowLabels || !tvChart.mainSeries || !candles?.length) return;
+
+      const bounds = findHighLowInCandles(getVisibleCandlesForTv(candles));
+      if (!bounds) return;
+
+      const LWC = getLightweightCharts();
+      const lineStyle = LWC?.LineStyle?.Dashed ?? 2;
+      const lineColor = "rgba(155, 188, 255, 0.72)";
+
+      tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
+        price: bounds.high,
+        color: lineColor,
+        lineWidth: 1,
+        lineStyle,
+        axisLabelVisible: true,
+        title: `High ${formatTvScalePrice(bounds.high)}`
+      });
+
+      tvChart.lowPriceLine = tvChart.mainSeries.createPriceLine({
+        price: bounds.low,
+        color: lineColor,
+        lineWidth: 1,
+        lineStyle,
+        axisLabelVisible: true,
+        title: `Low ${formatTvScalePrice(bounds.low)}`
+      });
     }
 
     function resizeTvChart() {
@@ -2459,6 +2532,29 @@
         if (!series || typeof series.applyOptions !== "function") return;
         series.applyOptions({ priceFormat });
       });
+    }
+
+    function applyTvMainSeriesOptions() {
+      if (!tvChart.mainSeries) return;
+      tvChart.mainSeries.applyOptions({
+        lastValueVisible: state.settings.lastPriceLine,
+        priceLineVisible: state.settings.lastPriceLine
+      });
+    }
+
+    function applyTvChartSettings(candles = state.buckets) {
+      if (!tvChart.chart) return;
+      tvChart.chart.applyOptions(getTvChartOptions());
+      applyTvPriceScale();
+      applyTvMainSeriesOptions();
+      ensureTvVolumeSeries();
+      if (tvChart.volumeSeries) {
+        tvChart.volumeSeries.applyOptions({ visible: state.settings.volume });
+        if (candles.length) {
+          tvChart.volumeSeries.setData(state.settings.volume ? buildTvVolumeData(candles) : []);
+        }
+      }
+      applyTvHighLowLines(candles);
     }
 
     function getTvChartOptions() {
@@ -2712,6 +2808,9 @@
 
         tvChart.rangeHandler = () => {
           state.tvNeedsFit = false;
+          if (state.settings.highLowLabels && state.buckets.length) {
+            applyTvHighLowLines(state.buckets);
+          }
         };
         tvChart.chart.timeScale().subscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
 
@@ -2725,11 +2824,10 @@
             fitTvChartContent();
           }
         });
-      } else {
-        tvChart.chart.applyOptions(getTvChartOptions());
       }
 
       if (tvChart.activeStyle !== state.chartStyle) {
+        removeTvHighLowLines();
         removeTvSeries(tvChart.mainSeries);
         tvChart.mainSeries = createTvMainSeries(state.chartStyle);
         tvChart.activeStyle = state.chartStyle;
@@ -2737,7 +2835,7 @@
 
       ensureTvVolumeSeries();
       ensureTvIndicatorSeries();
-      applyTvPriceScale();
+      applyTvChartSettings();
       return Boolean(tvChart.mainSeries);
     }
 
@@ -2850,6 +2948,8 @@
       } else if (typeof tvChart.mainSeries.setMarkers === "function") {
         tvChart.mainSeries.setMarkers([]);
       }
+
+      applyTvChartSettings(candles);
     }
 
     function fitTvChartContent() {
@@ -2909,7 +3009,6 @@
       if (!ensureTvChart()) return;
 
       updateTvChartData(candles, { ema20, sma50, vwap, bollinger, patterns });
-      applyTvPriceScale();
       resizeTvChart();
 
       if (state.tvNeedsFit) {
