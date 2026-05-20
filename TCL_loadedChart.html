@@ -2366,6 +2366,21 @@
 
     const TV_BULL = "#35df91";
     const TV_BEAR = "#ff6672";
+    const TV_PRICE_DECIMALS = 7;
+    const TV_PRICE_MIN_MOVE = 0.0000001;
+
+    function getTvPriceFormat() {
+      return {
+        type: "price",
+        precision: TV_PRICE_DECIMALS,
+        minMove: TV_PRICE_MIN_MOVE
+      };
+    }
+
+    function formatTvScalePrice(price) {
+      if (!Number.isFinite(price)) return "";
+      return Number(price).toFixed(TV_PRICE_DECIMALS);
+    }
 
     function getLightweightCharts() {
       return window.LightweightCharts || null;
@@ -2404,6 +2419,48 @@
       });
     }
 
+    function applyTvPriceScale() {
+      if (!tvChart.chart) return;
+      const LWC = getLightweightCharts();
+      const priceFormat = getTvPriceFormat();
+
+      tvChart.chart.applyOptions({
+        localization: {
+          priceFormatter: formatTvScalePrice
+        }
+      });
+
+      tvChart.chart.priceScale("right").applyOptions({
+        visible: state.settings.priceLabels,
+        borderColor: "rgba(135, 160, 196, 0.16)",
+        minimumWidth: 118,
+        ticksVisible: true,
+        alignLabels: true,
+        entireTextOnly: false,
+        scaleMargins: {
+          top: 0.05,
+          bottom: state.settings.volume ? 0.28 : 0.05
+        },
+        mode: state.settings.logScale && LWC?.PriceScaleMode?.Logarithmic != null
+          ? LWC.PriceScaleMode.Logarithmic
+          : 0
+      });
+
+      const seriesList = [
+        tvChart.mainSeries,
+        tvChart.emaSeries,
+        tvChart.smaSeries,
+        tvChart.vwapSeries,
+        tvChart.bbUpperSeries,
+        tvChart.bbMiddleSeries,
+        tvChart.bbLowerSeries
+      ];
+      seriesList.forEach((series) => {
+        if (!series || typeof series.applyOptions !== "function") return;
+        series.applyOptions({ priceFormat });
+      });
+    }
+
     function getTvChartOptions() {
       const LWC = getLightweightCharts();
       const shortTf = ["1m", "5m", "15m", "30m"].includes(state.activeTimeframe);
@@ -2412,7 +2469,10 @@
           background: { type: "solid", color: "#101722" },
           textColor: "rgba(237, 244, 255, 0.72)",
           fontFamily: "Inter, sans-serif",
-          fontSize: 12
+          fontSize: 11
+        },
+        localization: {
+          priceFormatter: formatTvScalePrice
         },
         grid: {
           vertLines: { visible: state.settings.grid, color: "rgba(135, 160, 196, 0.12)" },
@@ -2432,9 +2492,13 @@
         rightPriceScale: {
           visible: state.settings.priceLabels,
           borderColor: "rgba(135, 160, 196, 0.16)",
+          minimumWidth: 118,
+          ticksVisible: true,
+          alignLabels: true,
+          entireTextOnly: false,
           scaleMargins: {
-            top: 0.08,
-            bottom: state.settings.volume ? 0.28 : 0.06
+            top: 0.05,
+            bottom: state.settings.volume ? 0.28 : 0.05
           },
           mode: state.settings.logScale && LWC?.PriceScaleMode?.Logarithmic != null
             ? LWC.PriceScaleMode.Logarithmic
@@ -2474,13 +2538,19 @@
       const LWC = getLightweightCharts();
       if (!tvChart.chart || !LWC) return null;
 
+      const priceFormat = getTvPriceFormat();
+      const priceSeriesOptions = {
+        priceFormat,
+        lastValueVisible: state.settings.lastPriceLine,
+        priceLineVisible: state.settings.lastPriceLine
+      };
+
       if (["line", "line-markers"].includes(style)) {
         return tvChart.chart.addLineSeries({
           color: "#42d7ff",
           lineWidth: 2,
           crosshairMarkerVisible: true,
-          lastValueVisible: state.settings.lastPriceLine,
-          priceLineVisible: state.settings.lastPriceLine
+          ...priceSeriesOptions
         });
       }
 
@@ -2490,8 +2560,7 @@
           topColor: "rgba(66, 215, 255, 0.26)",
           bottomColor: "rgba(66, 215, 255, 0)",
           lineWidth: 2,
-          lastValueVisible: state.settings.lastPriceLine,
-          priceLineVisible: state.settings.lastPriceLine
+          ...priceSeriesOptions
         });
       }
 
@@ -2500,16 +2569,13 @@
           upColor: TV_BULL,
           downColor: TV_BEAR,
           thinBars: false,
-          lastValueVisible: state.settings.lastPriceLine,
-          priceLineVisible: state.settings.lastPriceLine
+          ...priceSeriesOptions
         });
       }
 
       if (style === "columns") {
         return tvChart.chart.addHistogramSeries({
-          priceFormat: { type: "price", precision: 8, minMove: 0.00000001 },
-          lastValueVisible: state.settings.lastPriceLine,
-          priceLineVisible: state.settings.lastPriceLine
+          ...priceSeriesOptions
         });
       }
 
@@ -2523,8 +2589,7 @@
         wickUpColor: TV_BULL,
         wickDownColor: TV_BEAR,
         borderVisible: true,
-        lastValueVisible: state.settings.lastPriceLine,
-        priceLineVisible: state.settings.lastPriceLine
+        ...priceSeriesOptions
       });
     }
 
@@ -2556,6 +2621,7 @@
         tvChart.emaSeries = tvChart.chart.addLineSeries({
           color: "#f5c663",
           lineWidth: 2,
+          priceFormat: getTvPriceFormat(),
           priceLineVisible: false,
           lastValueVisible: false,
           crosshairMarkerVisible: false
@@ -2569,6 +2635,7 @@
         tvChart.smaSeries = tvChart.chart.addLineSeries({
           color: "#42d7ff",
           lineWidth: 1.5,
+          priceFormat: getTvPriceFormat(),
           priceLineVisible: false,
           lastValueVisible: false,
           crosshairMarkerVisible: false
@@ -2582,6 +2649,7 @@
         tvChart.vwapSeries = tvChart.chart.addLineSeries({
           color: "#e879f9",
           lineWidth: 1.5,
+          priceFormat: getTvPriceFormat(),
           priceLineVisible: false,
           lastValueVisible: false,
           crosshairMarkerVisible: false
@@ -2597,6 +2665,7 @@
             color: "rgba(168, 85, 247, 0.88)",
             lineWidth: 1,
             lineStyle: 2,
+            priceFormat: getTvPriceFormat(),
             priceLineVisible: false,
             lastValueVisible: false,
             crosshairMarkerVisible: false
@@ -2604,6 +2673,7 @@
           tvChart.bbMiddleSeries = tvChart.chart.addLineSeries({
             color: "rgba(168, 85, 247, 0.55)",
             lineWidth: 1,
+            priceFormat: getTvPriceFormat(),
             priceLineVisible: false,
             lastValueVisible: false,
             crosshairMarkerVisible: false
@@ -2612,6 +2682,7 @@
             color: "rgba(168, 85, 247, 0.88)",
             lineWidth: 1,
             lineStyle: 2,
+            priceFormat: getTvPriceFormat(),
             priceLineVisible: false,
             lastValueVisible: false,
             crosshairMarkerVisible: false
@@ -2666,6 +2737,7 @@
 
       ensureTvVolumeSeries();
       ensureTvIndicatorSeries();
+      applyTvPriceScale();
       return Boolean(tvChart.mainSeries);
     }
 
@@ -2837,6 +2909,7 @@
       if (!ensureTvChart()) return;
 
       updateTvChartData(candles, { ema20, sma50, vwap, bollinger, patterns });
+      applyTvPriceScale();
       resizeTvChart();
 
       if (state.tvNeedsFit) {
@@ -3082,10 +3155,10 @@
       ui.tooltip.innerHTML = state.chartMode === "tv"
         ? `
           <div class="tooltip-title">${formatDate(bucket.timestamp * 1000)} · ${formatTimeframeLabel(state.activeTimeframe)}</div>
-          <div class="tooltip-row"><span>Open</span><strong>${formatPrice(bucket.open)}</strong></div>
-          <div class="tooltip-row"><span>High</span><strong>${formatPrice(bucket.high)}</strong></div>
-          <div class="tooltip-row"><span>Low</span><strong>${formatPrice(bucket.low)}</strong></div>
-          <div class="tooltip-row"><span>Close</span><strong>${formatPrice(bucket.close)}</strong></div>
+          <div class="tooltip-row"><span>Open</span><strong>${formatTvScalePrice(bucket.open)}</strong></div>
+          <div class="tooltip-row"><span>High</span><strong>${formatTvScalePrice(bucket.high)}</strong></div>
+          <div class="tooltip-row"><span>Low</span><strong>${formatTvScalePrice(bucket.low)}</strong></div>
+          <div class="tooltip-row"><span>Close</span><strong>${formatTvScalePrice(bucket.close)}</strong></div>
           <div class="tooltip-row"><span>Buy volume</span><strong class="tone-buy">${formatCurrency(bucket.buyVolume, bucket.buyVolume < 1 ? 4 : 2)}</strong></div>
           <div class="tooltip-row"><span>Sell volume</span><strong class="tone-sell">${formatCurrency(bucket.sellVolume, bucket.sellVolume < 1 ? 4 : 2)}</strong></div>
           <div class="tooltip-row"><span>Patterns</span><strong>${patternLabels.length ? patternLabels.join(", ") : "--"}</strong></div>
