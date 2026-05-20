@@ -1370,5 +1370,12 @@
     "loan": 0,
     "infinity": 1066417419186711635,
     "total": 1066417419186711635
+  },
+  "erd1lfz8rxjn8mn6j8a49h0nxkcwnkg0ze52mm8grp79lrh0c5ut3p3s8k0nxa": {
+    "rank": 197,
+    "nft": 1000000000000000000,
+    "loan": 0,
+    "infinity": 0,
+    "total": 1000000000000000000
   }
 }
