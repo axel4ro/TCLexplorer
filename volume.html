@@ -787,6 +787,7 @@
 <body class="tcl-premium-page tcl-volume-page">
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
   <script src="lang/volume.bundle.js?v=20260515-3"></script>
+  <script src="js/event-push-config.js?v=20260519-1"></script>
   <script src="js/page-i18n.js?v=20260515-3"></script>
   <script src="js/tcl-realtime.js?v=20260518-1"></script>
   <div class="page-shell">
@@ -981,6 +982,7 @@
     };
 
     const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const VOLUME_API_URL = resolveVolumeApiUrl();
     const VOLUME_CACHE_KEY = "tcl-volume-snapshot-v2";
     const CHART_TRADE_CACHE_KEY = "tcl-chart-trades-v1";
     const VOLUME_SNAPSHOT_VERSION = 2;
@@ -1174,6 +1176,18 @@
       return `${url}${separator}v=${Date.now()}`;
     }
 
+    function resolveVolumeApiUrl() {
+      const configured = String(window.TCL_EVENT_PUSH_CONFIG?.apiBaseUrl || "").trim();
+      if (configured) {
+        const normalized = configured.replace(/\/+$/, "");
+        if (normalized.endsWith("/api/push")) {
+          return normalized.replace(/\/api\/push$/, "/api/volume");
+        }
+      }
+
+      return "https://tcl-event-push.axel4ro.workers.dev/api/volume";
+    }
+
     function getStaticPairReference() {
       return {
         pairAddress: CONFIG.pairAddress,
@@ -1236,7 +1250,7 @@
       }
 
       const cachedSnapshot = loadCachedAggregatedSnapshot();
-      return cachedSnapshot ? cloneJson(cachedSnapshot) : null;
+      return cachedSnapshot ? cloneJson(cachedSnapshot) : cloneJson(PRELOADED_VOLUME_SNAPSHOT);
     }
 
     function sanitizeTradeForSharedCache(trade) {
@@ -1315,6 +1329,32 @@
       }
 
       return response.json();
+    }
+
+    async function fetchVolumeSnapshotFromCloudflare(isManual = false) {
+      const separator = VOLUME_API_URL.includes("?") ? "&" : "?";
+      const refreshParam = isManual ? "&refresh=1" : "";
+      const response = await fetch(`${VOLUME_API_URL}${separator}v=${Date.now()}${refreshParam}`, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cloudflare volume request failed with ${response.status}`);
+      }
+
+      const snapshot = await response.json();
+      if (snapshot?.ok === false) {
+        throw new Error(snapshot.error || "Cloudflare volume returned an error.");
+      }
+
+      if (!snapshot?.aggregated || !hasValidAggregatedShape(snapshot.aggregated)) {
+        throw new Error("Cloudflare volume did not return a valid snapshot.");
+      }
+
+      return snapshot;
     }
 
     async function fetchTransferHistory() {
@@ -2222,84 +2262,37 @@
       ui.refreshButton.disabled = true;
 
       try {
-        const historyPromise = bootstrapAggregated
-          ? fetchRecentTransferHistory(Number(bootstrapAggregated?.latestTrade?.timestamp))
-          : fetchTransferHistory();
-
-        const [dexPayload, transferHistory] = await Promise.all([
-          fetchJson(CONFIG.dexUrl),
-          historyPromise
-        ]);
-
-        const pair = dexPayload?.pair || dexPayload?.pairs?.[0];
-        if (!pair) {
-          throw new Error("DexScreener did not return a TCL / USDC pair payload.");
-        }
-
-        const pairReference = {
-          pairAddress: pair.pairAddress || CONFIG.pairAddress,
-          baseToken: { address: pair?.baseToken?.address || CONFIG.baseTokenAddress },
-          quoteToken: { address: pair?.quoteToken?.address || CONFIG.quoteTokenAddress }
-        };
-
-        const trades = parseTrades(transferHistory.transfers, pairReference);
-        let aggregated;
-
-        if (bootstrapAggregated) {
-          const bootstrapSource = bootstrapAggregated?.fetchMeta?.sourceLabel === "snapshot"
-            ? "snapshot"
-            : "cache";
-          aggregated = mergeTradesIntoAggregated(
-            bootstrapAggregated,
-            trades,
-            {
-              ...(transferHistory || {}),
-              snapshotAt: Math.floor(Date.now() / 1000),
-              sourceLabel: trades.length ? `${bootstrapSource} + live` : bootstrapSource
-            }
-          );
-        } else {
-          if (!trades.length) {
-            throw new Error("No swap trades were parsed from the public MultiversX transfers feed.");
-          }
-
-          aggregated = aggregateMonthlyVolumes(
-            trades,
-            {
-              ...(transferHistory || {}),
-              snapshotAt: Math.floor(Date.now() / 1000),
-              sourceLabel: "live"
-            }
-          );
-          saveSharedChartTradeCache(trades, {
-            fullHistory: transferHistory.reachedListingStart || transferHistory.exhaustedHistory
-          });
-        }
+        const snapshot = await fetchVolumeSnapshotFromCloudflare(isManual);
+        const pair = snapshot.pair || null;
+        const snapshotUpdatedAt = snapshot?.meta?.updatedAt
+          ? Math.floor(new Date(snapshot.meta.updatedAt).getTime() / 1000)
+          : Math.floor(Date.now() / 1000);
+        const aggregated = normalizeAggregatedSnapshot(snapshot.aggregated, new Date());
 
         renderHeroStats(aggregated);
         renderSnapshotCards(pair, aggregated);
         renderTables(aggregated);
-        renderFooterState(aggregated, Math.floor(Date.now() / 1000));
+        renderFooterState(aggregated, snapshotUpdatedAt);
         saveCachedAggregatedSnapshot(aggregated);
 
-        if (!bootstrapAggregated && transferHistory.hitPageLimit && !transferHistory.reachedListingStart && !transferHistory.exhaustedHistory) {
+        if (Array.isArray(snapshot?.meta?.warnings) && snapshot.meta.warnings.length) {
           setStatus(
-            `${formatCount(aggregated.totalTrades)} swaps loaded. Older history is truncated.`,
+            `${formatCount(aggregated.totalTrades)} swaps loaded from Cloudflare cache. Some live sources were unavailable.`,
             "warning"
           );
         } else {
           setStatus(
-            `${formatCount(aggregated.totalTrades)} swaps across ${formatCount(aggregated.coveredMonths)} months.`,
+            `${formatCount(aggregated.totalTrades)} swaps across ${formatCount(aggregated.coveredMonths)} months from Cloudflare.`,
             "ready"
           );
         }
       } catch (error) {
         console.error("Failed to load TCL volume flow", error);
         if (!bootstrapAggregated) {
-          renderLoadError(`Volume data unavailable. ${error.message}`);
+          renderLoadError(`Cloudflare volume data unavailable. ${error.message}`);
           ui.snapshotTimestamp.textContent = "Last Update: --";
         }
-        setStatus(`Volume load failed. ${error.message}`, "error");
+        setStatus(`Cloudflare volume load failed. ${error.message}`, "error");
       } finally {
         ui.refreshButton.disabled = false;
         volumeLoadInFlight = false;

@@ -5,6 +5,7 @@ Cloudflare Worker backend for TCL Explorer event notifications and analytics cac
 Public endpoints:
 
 - `GET /api/analytics`
+- `GET /api/volume`
 - `GET /api/push/config`
 - `GET /api/push/stats`
 - `POST /api/push/subscribe`
@@ -14,11 +15,12 @@ Public endpoints:
 Protected endpoints:
 
 - `POST /api/analytics/refresh`
+- `POST /api/volume/refresh`
 - `POST /api/push/dispatch-events`
 
 Files:
 
-- `worker.js`: API, scheduled push dispatcher and scheduled analytics cache refresh
+- `worker.js`: API, scheduled push dispatcher, scheduled analytics cache refresh and scheduled volume cache refresh
 - `wrangler.toml`: Worker, KV binding and cron config
 - `generate-vapid-keys.mjs`: dependency-free VAPID key generator
 - `.dev.vars.example`: local secret template
@@ -36,6 +38,10 @@ npx wrangler deploy
 The analytics endpoint refreshes CryptoRank data into Workers KV on the existing cron schedule.
 `ANALYTICS_REFRESH_INTERVAL_MINUTES` controls how often the cache is refreshed; the site reads
 `/api/analytics` directly from Cloudflare.
+
+The volume endpoint refreshes TCL / USDC flow data into Workers KV and merges recent
+MultiversX transfers into a cached monthly snapshot. `VOLUME_REFRESH_INTERVAL_MINUTES`
+controls how often the cache is refreshed.
 
 After deploy, update `../js/event-push-config.js` with the Worker URL.
 

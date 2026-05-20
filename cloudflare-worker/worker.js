@@ -17,6 +17,87 @@ const ANALYTICS_ENDPOINTS = {
   quarterly: "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history",
   monthly: "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history"
 };
+const VOLUME_SNAPSHOT_KEY = "volume:snapshot";
+const VOLUME_REFRESH_LOCK_KEY = "volume:refresh-lock";
+const VOLUME_REFRESH_LOCK_TTL_SECONDS = 4 * 60;
+const DEFAULT_VOLUME_REFRESH_INTERVAL_MINUTES = 5;
+const VOLUME_CONFIG = {
+  listingDate: "2024-06-13T00:00:00Z",
+  pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+  baseTokenAddress: "TCL-fe459d",
+  quoteTokenAddress: "USDC-c76f1f",
+  dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+  transferUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
+  recentTransferPageSize: 500,
+  recentTransferMaxPages: 4
+};
+const VOLUME_SEED_SNAPSHOT = {
+  version: 2,
+  buyRows: [
+    { label: "2026", cells: [3130.35, 4472.27, 2581.7, 3564.33, 289.41, null, null, null, null, null, null, null] },
+    { label: "2025", cells: [9639.22, 9259.28, 14356.93, 11767.26, 14097.41, 9850.55, 8767.28, 4201.1, 5041.02, 13676.96, 4353.24, 3406.88] },
+    { label: "2024", cells: [null, null, null, null, null, 12517.95, 6727.19, 5089.2, 13782.33, 9369.75, 7482.87, 8583.4] }
+  ],
+  sellRows: [
+    { label: "2026", cells: [3842.48, 4246.31, 3197.59, 3330.34, 196.13, null, null, null, null, null, null, null] },
+    { label: "2025", cells: [11915.78, 7678.72, 14757.07, 10914.74, 15569.59, 13637.45, 9524.72, 8269.9, 5858.98, 11303.04, 3484.76, 3921.12] },
+    { label: "2024", cells: [null, null, null, null, null, 11666.05, 9108.81, 2603.8, 9735.67, 14465.25, 7936.13, 7929.6] }
+  ],
+  totalRows: [
+    { label: "2026", cells: [6972.84, 8718.58, 5779.29, 6894.67, 485.53, null, null, null, null, null, null, null] },
+    { label: "2025", cells: [21555, 16938, 29114, 22682, 29667, 23488, 18292, 12471, 10900, 24980, 7838, 7328] },
+    { label: "2024", cells: [null, null, null, null, null, 24184, 15836, 7693, 23518, 23835, 15419, 16513] }
+  ],
+  buySummary: { label: "Total", cells: [12769.57, 13731.55, 16938.63, 15331.59, 14386.82, 22368.5, 15494.47, 9290.3, 18823.35, 23046.71, 11836.11, 11990.28] },
+  sellSummary: { label: "Total", cells: [15758.26, 11925.03, 17954.66, 14245.08, 15765.72, 25303.5, 18633.53, 10873.7, 15594.65, 25768.29, 11420.89, 11850.72] },
+  totalSummary: { label: "Total", cells: [28527.84, 25656.58, 34893.29, 29576.67, 30152.53, 47672, 34128, 20164, 34418, 48815, 23257, 23841] },
+  totalVolume: 381101.91,
+  buyVolume: 186007.88,
+  sellVolume: 195094.03,
+  buyTrades: 4479,
+  sellTrades: 6264,
+  totalTrades: 10743,
+  buyDominancePct: 48.81,
+  sellDominancePct: 51.19,
+  coveredMonths: 24,
+  averageMonthlyVolume: 15879.25,
+  peakBuyMonth: { year: 2025, monthIndex: 2, value: 14356.93 },
+  peakSellMonth: { year: 2025, monthIndex: 4, value: 15569.59 },
+  peakTotalMonth: { year: 2025, monthIndex: 4, value: 29667 },
+  totalTclAmount: 171635556.0465,
+  largestTclTrade: {
+    hash: "3de764609b2a217a5a95f49067c3a368cea18377c438c824051a63d6f4abb80c",
+    timestamp: 1760886732,
+    side: "buy",
+    volumeUsd: 6660,
+    tclAmount: 5642936.6426,
+    description: "Transfer"
+  },
+  oldestTrade: {
+    hash: "6d96b9a735ea91749f56673dc408f0874a9a477d5e5db63e1a9c0f429415d4a1",
+    timestamp: 1718301642,
+    side: "buy",
+    volumeUsd: 165,
+    tclAmount: 27049.6602,
+    description: "Transfer"
+  },
+  latestTrade: {
+    hash: "9c2067bfcd23208d68c412985f1078fa71b17b029ec94c1177f8addb2ebf0df6",
+    timestamp: 1778140890,
+    side: "sell",
+    volumeUsd: 0.13,
+    tclAmount: 157.5,
+    description: "Swap 106.5645 TCL for a minimum of 0.000001 USDC"
+  },
+  fetchMeta: {
+    reachedListingStart: false,
+    hitPageLimit: false,
+    oldestTimestamp: 1718299206,
+    exhaustedHistory: true,
+    snapshotAt: 1778143726,
+    sourceLabel: "cloudflare seed"
+  }
+};
 
 const EVENT_COPY = {
   en: {
@@ -53,6 +134,10 @@ export default {
       console.warn("Analytics refresh failed", error?.message || error);
     }));
 
+    ctx.waitUntil(refreshVolumeIfDue(env).catch((error) => {
+      console.warn("Volume refresh failed", error?.message || error);
+    }));
+
     const kv = env.TCL_EVENT_PUSH_KV;
     if (!kv) return;
 
@@ -75,6 +160,14 @@ async function handleRequest(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
   try {
+    if (path.endsWith("/api/volume/refresh")) {
+      return handleVolumeRefresh(request, env);
+    }
+
+    if (path.endsWith("/api/volume")) {
+      return handleVolume(request, env, ctx);
+    }
+
     if (path.endsWith("/api/analytics/refresh")) {
       return handleAnalyticsRefresh(request, env);
     }
@@ -389,6 +482,60 @@ async function handleDispatch(request, env) {
   return jsonResponse(request, env, 200, report);
 }
 
+async function handleVolume(request, env, ctx) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  if (!kv) {
+    return jsonResponse(request, env, 503, {
+      ok: false,
+      error: "TCL_EVENT_PUSH_KV binding is not configured"
+    });
+  }
+
+  const url = new URL(request.url);
+  const shouldRefresh = url.searchParams.get("refresh") === "1";
+  let snapshot = await readVolumeSnapshot(kv);
+
+  if (!snapshot) {
+    snapshot = await refreshVolumeSnapshot(env, { force: true }).catch((error) => {
+      console.warn("Initial volume refresh failed", error?.message || error);
+      return createVolumeFallbackSnapshot(["Initial Cloudflare refresh failed; serving seed snapshot."]);
+    });
+  } else if (shouldRefresh || isVolumeSnapshotDue(snapshot, env)) {
+    const refreshPromise = refreshVolumeIfDue(env, { requested: shouldRefresh }).catch((error) => {
+      console.warn("Background volume refresh failed", error?.message || error);
+    });
+    if (ctx?.waitUntil) ctx.waitUntil(refreshPromise);
+  }
+
+  return jsonResponse(request, env, 200, snapshot, {
+    "Cache-Control": shouldRefresh
+      ? "public, max-age=15, stale-while-revalidate=120"
+      : "public, max-age=60, stale-while-revalidate=300"
+  });
+}
+
+async function handleVolumeRefresh(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const auth = authorizeDispatch(request, env);
+  if (!auth.ok) {
+    return jsonResponse(request, env, auth.status, { ok: false, error: auth.error });
+  }
+
+  const snapshot = await refreshVolumeSnapshot(env, { force: true });
+  return jsonResponse(request, env, 200, {
+    ok: true,
+    updatedAt: snapshot?.meta?.updatedAt || null,
+    latestTradeAt: snapshot?.aggregated?.latestTrade?.timestamp || null
+  });
+}
+
 async function handleAnalytics(request, env, ctx) {
   if (request.method !== "GET") {
     return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
@@ -451,6 +598,573 @@ function authorizeDispatch(request, env) {
   return header === `Bearer ${secret}`
     ? { ok: true }
     : { ok: false, status: 401, error: "Unauthorized" };
+}
+
+async function refreshVolumeIfDue(env, options = {}) {
+  const kv = requireKv(env);
+  const current = await readVolumeSnapshot(kv);
+  if (current && !options.requested && !isVolumeSnapshotDue(current, env)) return current;
+  return refreshVolumeSnapshot(env, { current, requested: options.requested === true });
+}
+
+async function refreshVolumeSnapshot(env, options = {}) {
+  const kv = requireKv(env);
+  const current = options.current || await readVolumeSnapshot(kv);
+  if (!options.force && !options.requested && current && !isVolumeSnapshotDue(current, env)) return current;
+
+  let locked = true;
+  if (!options.force) {
+    locked = await reserveVolumeRefreshLock(kv);
+    if (!locked) return current || createVolumeFallbackSnapshot(["Volume refresh already in progress."]);
+  }
+
+  try {
+    const snapshot = await buildVolumeSnapshot(current);
+    await kv.put(VOLUME_SNAPSHOT_KEY, JSON.stringify(snapshot));
+    return snapshot;
+  } finally {
+    if (!options.force && locked) {
+      await kv.delete(VOLUME_REFRESH_LOCK_KEY).catch(() => {});
+    }
+  }
+}
+
+async function readVolumeSnapshot(kv) {
+  const snapshot = await kv.get(VOLUME_SNAPSHOT_KEY, "json").catch(() => null);
+  return snapshot?.meta && hasValidVolumeAggregatedShape(snapshot.aggregated) ? snapshot : null;
+}
+
+async function reserveVolumeRefreshLock(kv) {
+  const existing = await kv.get(VOLUME_REFRESH_LOCK_KEY);
+  if (existing) return false;
+  await kv.put(VOLUME_REFRESH_LOCK_KEY, String(Date.now()), {
+    expirationTtl: VOLUME_REFRESH_LOCK_TTL_SECONDS
+  });
+  return true;
+}
+
+function isVolumeSnapshotDue(snapshot, env) {
+  const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) return true;
+  return Date.now() - updatedAt >= volumeRefreshIntervalMs(env);
+}
+
+function volumeRefreshIntervalMs(env) {
+  const minutes = Number(env.VOLUME_REFRESH_INTERVAL_MINUTES || DEFAULT_VOLUME_REFRESH_INTERVAL_MINUTES);
+  const safeMinutes = Number.isFinite(minutes) ? Math.min(60, Math.max(2, minutes)) : DEFAULT_VOLUME_REFRESH_INTERVAL_MINUTES;
+  return safeMinutes * 60 * 1000;
+}
+
+async function buildVolumeSnapshot(currentSnapshot = null) {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const warnings = [];
+  let pair = currentSnapshot?.pair || null;
+  let recentHistory = {
+    transfers: [],
+    hitPageLimit: false,
+    oldestTimestamp: null,
+    exhaustedHistory: true
+  };
+
+  try {
+    pair = await fetchVolumeDexPair();
+  } catch (error) {
+    warnings.push(`DexScreener unavailable: ${error?.message || "unknown error"}`);
+  }
+
+  const baseAggregated = hasValidVolumeAggregatedShape(currentSnapshot?.aggregated)
+    ? currentSnapshot.aggregated
+    : VOLUME_SEED_SNAPSHOT;
+  const normalizedBase = normalizeVolumeAggregatedSnapshot(baseAggregated, new Date());
+  const latestTimestamp = Number(normalizedBase?.latestTrade?.timestamp);
+
+  try {
+    recentHistory = await fetchVolumeRecentTransferHistory(latestTimestamp);
+  } catch (error) {
+    warnings.push(`MultiversX transfers unavailable: ${error?.message || "unknown error"}`);
+  }
+
+  const pairReference = {
+    pairAddress: pair?.pairAddress || VOLUME_CONFIG.pairAddress,
+    baseToken: { address: pair?.baseToken?.address || VOLUME_CONFIG.baseTokenAddress },
+    quoteToken: { address: pair?.quoteToken?.address || VOLUME_CONFIG.quoteTokenAddress }
+  };
+
+  const trades = parseVolumeTrades(recentHistory.transfers, pairReference);
+  const sourceLabel = trades.length ? "cloudflare cache + live" : "cloudflare cache";
+  const fetchMeta = {
+    hitPageLimit: recentHistory.hitPageLimit === true,
+    oldestTimestamp: recentHistory.oldestTimestamp ?? null,
+    exhaustedHistory: recentHistory.exhaustedHistory !== false,
+    recentTransfers: Array.isArray(recentHistory.transfers) ? recentHistory.transfers.length : 0,
+    parsedTrades: trades.length,
+    snapshotAt: nowSec,
+    sourceLabel
+  };
+
+  const aggregated = trades.length
+    ? mergeVolumeTradesIntoAggregated(normalizedBase, trades, fetchMeta)
+    : rebuildVolumeAggregatedDerivedState({
+      ...normalizedBase,
+      fetchMeta: {
+        ...(normalizedBase.fetchMeta || {}),
+        ...fetchMeta
+      }
+    });
+
+  return {
+    ok: true,
+    meta: {
+      updatedAt: new Date().toISOString(),
+      source: "Cloudflare Worker",
+      endpoints: {
+        dex: VOLUME_CONFIG.dexUrl,
+        transfers: VOLUME_CONFIG.transferUrlBase
+      },
+      warnings
+    },
+    pair,
+    aggregated
+  };
+}
+
+function createVolumeFallbackSnapshot(warnings = []) {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const aggregated = rebuildVolumeAggregatedDerivedState({
+    ...normalizeVolumeAggregatedSnapshot(VOLUME_SEED_SNAPSHOT, new Date()),
+    fetchMeta: {
+      ...(VOLUME_SEED_SNAPSHOT.fetchMeta || {}),
+      snapshotAt: nowSec,
+      sourceLabel: "cloudflare seed"
+    }
+  });
+
+  return {
+    ok: true,
+    meta: {
+      updatedAt: new Date().toISOString(),
+      source: "Cloudflare Worker",
+      endpoints: {
+        dex: VOLUME_CONFIG.dexUrl,
+        transfers: VOLUME_CONFIG.transferUrlBase
+      },
+      warnings
+    },
+    pair: null,
+    aggregated
+  };
+}
+
+async function fetchVolumeDexPair() {
+  const payload = await fetchAnalyticsJson(VOLUME_CONFIG.dexUrl, 3);
+  return payload?.pair || (Array.isArray(payload?.pairs) ? payload.pairs[0] : null);
+}
+
+async function fetchVolumeRecentTransferHistory(afterTimestamp) {
+  if (!Number.isFinite(afterTimestamp)) {
+    return {
+      transfers: [],
+      hitPageLimit: false,
+      oldestTimestamp: null,
+      exhaustedHistory: true
+    };
+  }
+
+  const transfers = [];
+  let newestTimestamp = null;
+  let hitPageLimit = false;
+  let exhaustedHistory = false;
+  let afterCursor = Math.floor(afterTimestamp) + 1;
+
+  for (let pageIndex = 0; pageIndex < VOLUME_CONFIG.recentTransferMaxPages; pageIndex += 1) {
+    const params = new URLSearchParams({
+      size: String(VOLUME_CONFIG.recentTransferPageSize),
+      status: "success",
+      order: "asc",
+      after: String(afterCursor)
+    });
+    const page = await fetchAnalyticsJson(`${VOLUME_CONFIG.transferUrlBase}?${params.toString()}`, 3);
+
+    if (!Array.isArray(page) || !page.length) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    transfers.push(...page);
+
+    const pageTimestamps = page
+      .map((item) => Number(item?.timestamp))
+      .filter((timestamp) => Number.isFinite(timestamp));
+
+    if (pageTimestamps.length) {
+      newestTimestamp = newestTimestamp == null
+        ? Math.max(...pageTimestamps)
+        : Math.max(newestTimestamp, ...pageTimestamps);
+    }
+
+    if (page.length < VOLUME_CONFIG.recentTransferPageSize) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    afterCursor = newestTimestamp != null ? newestTimestamp + 1 : afterCursor + 1;
+    if (!Number.isFinite(afterCursor) || afterCursor <= 0) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    if (pageIndex === VOLUME_CONFIG.recentTransferMaxPages - 1) {
+      hitPageLimit = true;
+    }
+  }
+
+  return {
+    transfers,
+    hitPageLimit,
+    oldestTimestamp: transfers.length ? Number(transfers[0]?.timestamp) || null : null,
+    exhaustedHistory
+  };
+}
+
+function hasValidVolumeAggregatedShape(value) {
+  return Boolean(
+    value &&
+    Array.isArray(value.buyRows) &&
+    Array.isArray(value.sellRows) &&
+    Array.isArray(value.totalRows) &&
+    value.latestTrade &&
+    Number.isFinite(Number(value.latestTrade.timestamp))
+  );
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function decimalStringToNumber(value, decimals) {
+  if (typeof value !== "string" || !value.length) return Number.NaN;
+  const negative = value.startsWith("-");
+  const digits = negative ? value.slice(1) : value;
+  if (!/^\d+$/.test(digits)) return Number.NaN;
+  const padded = digits.padStart(decimals + 1, "0");
+  const whole = padded.slice(0, padded.length - decimals);
+  const fraction = padded.slice(padded.length - decimals);
+  const formatted = decimals > 0 ? `${whole}.${fraction}` : whole;
+  const numeric = Number(negative ? `-${formatted}` : formatted);
+  return Number.isFinite(numeric) ? numeric : Number.NaN;
+}
+
+function resolveVolumeTokenDecimals(token, pair) {
+  if (token === pair?.quoteToken?.address || token === VOLUME_CONFIG.quoteTokenAddress) return 6;
+  return 18;
+}
+
+function normalizeVolumeTradeTransfer(transfer, pair) {
+  if (!transfer?.token || !transfer?.value) return null;
+  const decimals = Number(transfer.decimals ?? resolveVolumeTokenDecimals(transfer.token, pair));
+  const amount = decimalStringToNumber(transfer.value, decimals);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return {
+    token: transfer.token,
+    amount
+  };
+}
+
+function parseVolumeTrades(transfers, pair) {
+  const tradeList = [];
+  const groupedSwaps = new Map();
+
+  for (const entry of Array.isArray(transfers) ? transfers : []) {
+    if (entry?.status !== "success") continue;
+
+    const transferList = entry?.action?.arguments?.transfers;
+    if (!Array.isArray(transferList) || !transferList.length) continue;
+
+    const primaryTransfer = normalizeVolumeTradeTransfer(transferList[0], pair);
+    if (!primaryTransfer) continue;
+
+    const timestamp = Number(entry.timestamp);
+    if (!Number.isFinite(timestamp)) continue;
+
+    const groupHash = String(entry.originalTxHash || entry.txHash || "");
+    if (!groupHash) continue;
+
+    let groupedSwap = groupedSwaps.get(groupHash);
+    if (!groupedSwap) {
+      groupedSwap = {
+        hash: groupHash,
+        timestamp,
+        inputToken: null,
+        inputAmount: 0,
+        outputToken: null,
+        outputAmount: 0,
+        description: "",
+        invalid: false
+      };
+      groupedSwaps.set(groupHash, groupedSwap);
+    } else if (timestamp < groupedSwap.timestamp) {
+      groupedSwap.timestamp = timestamp;
+    }
+
+    if (!groupedSwap.description && entry?.action?.description) {
+      groupedSwap.description = entry.action.description;
+    }
+
+    if (entry.receiver === pair?.pairAddress && entry.function === "swapTokensFixedInput") {
+      if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+        groupedSwap.invalid = true;
+        continue;
+      }
+      groupedSwap.inputToken = primaryTransfer.token;
+      groupedSwap.inputAmount += primaryTransfer.amount;
+      continue;
+    }
+
+    const isPairOutput =
+      entry.sender === pair?.pairAddress &&
+      entry.function !== "depositSwapFees" &&
+      (primaryTransfer.token === pair?.baseToken?.address || primaryTransfer.token === pair?.quoteToken?.address);
+
+    if (!isPairOutput) continue;
+
+    if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+      groupedSwap.invalid = true;
+      continue;
+    }
+
+    groupedSwap.outputToken = primaryTransfer.token;
+    groupedSwap.outputAmount += primaryTransfer.amount;
+  }
+
+  for (const groupedSwap of groupedSwaps.values()) {
+    if (groupedSwap.invalid) continue;
+
+    const hasValidInput = groupedSwap.inputAmount > 0 && typeof groupedSwap.inputToken === "string";
+    const hasValidOutput = groupedSwap.outputAmount > 0 && typeof groupedSwap.outputToken === "string";
+    if (!hasValidInput || !hasValidOutput) continue;
+
+    let tclAmount = 0;
+    let usdcAmount = 0;
+    let side = null;
+
+    if (
+      groupedSwap.inputToken === pair.quoteToken.address &&
+      groupedSwap.outputToken === pair.baseToken.address
+    ) {
+      usdcAmount = groupedSwap.inputAmount;
+      tclAmount = groupedSwap.outputAmount;
+      side = "buy";
+    } else if (
+      groupedSwap.inputToken === pair.baseToken.address &&
+      groupedSwap.outputToken === pair.quoteToken.address
+    ) {
+      tclAmount = groupedSwap.inputAmount;
+      usdcAmount = groupedSwap.outputAmount;
+      side = "sell";
+    } else {
+      continue;
+    }
+
+    const price = usdcAmount / tclAmount;
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(usdcAmount) || usdcAmount <= 0) continue;
+
+    tradeList.push({
+      hash: groupedSwap.hash,
+      timestamp: groupedSwap.timestamp,
+      side,
+      price,
+      volumeUsd: usdcAmount,
+      tclAmount,
+      description: groupedSwap.description
+    });
+  }
+
+  return tradeList.sort((left, right) => left.timestamp - right.timestamp);
+}
+
+function isVolumeCoveredMonth(year, monthIndex, startDate, endDate) {
+  const startYear = startDate.getUTCFullYear();
+  const startMonth = startDate.getUTCMonth();
+  const endYear = endDate.getUTCFullYear();
+  const endMonth = endDate.getUTCMonth();
+
+  if (year < startYear || year > endYear) return false;
+  if (year === startYear && monthIndex < startMonth) return false;
+  if (year === endYear && monthIndex > endMonth) return false;
+  return true;
+}
+
+function createVolumeCoverageRows(startDate, endDate) {
+  const rows = [];
+  for (let year = endDate.getUTCFullYear(); year >= startDate.getUTCFullYear(); year -= 1) {
+    rows.push({
+      label: String(year),
+      cells: Array.from({ length: 12 }, (_item, monthIndex) => (
+        isVolumeCoveredMonth(year, monthIndex, startDate, endDate) ? 0 : null
+      ))
+    });
+  }
+  return rows;
+}
+
+function buildVolumeSummaryRow(rows, label = "Total") {
+  const cells = Array.from({ length: 12 }, (_item, monthIndex) => {
+    let hasCoverage = false;
+    let sum = 0;
+
+    for (const row of rows) {
+      const cell = row.cells[monthIndex];
+      if (cell != null) {
+        hasCoverage = true;
+        sum += cell;
+      }
+    }
+
+    return hasCoverage ? sum : null;
+  });
+
+  return { label, cells };
+}
+
+function countVolumeCoveredMonths(rows) {
+  let count = 0;
+  for (const row of rows) {
+    for (const cell of row.cells) {
+      if (cell != null) count += 1;
+    }
+  }
+  return count;
+}
+
+function findVolumePeakMonth(rows) {
+  let peak = null;
+  for (const row of rows) {
+    const year = Number(row.label);
+    for (let monthIndex = 0; monthIndex < row.cells.length; monthIndex += 1) {
+      const value = row.cells[monthIndex];
+      if (value == null) continue;
+      if (peak == null || value > peak.value) {
+        peak = { year, monthIndex, value };
+      }
+    }
+  }
+  return peak;
+}
+
+function sumVolumeMatrixValues(rows) {
+  let total = 0;
+  for (const row of rows) {
+    for (const cell of row.cells) {
+      if (typeof cell === "number" && !Number.isNaN(cell)) total += cell;
+    }
+  }
+  return total;
+}
+
+function expandVolumeRowsToEndDate(rows, endDate) {
+  const normalizedEndDate = endDate instanceof Date ? endDate : new Date();
+  const freshRows = createVolumeCoverageRows(new Date(VOLUME_CONFIG.listingDate), normalizedEndDate);
+  const existingMap = new Map(
+    (Array.isArray(rows) ? rows : []).map((row) => [String(row.label), Array.isArray(row.cells) ? row.cells : []])
+  );
+
+  for (const freshRow of freshRows) {
+    const existingCells = existingMap.get(String(freshRow.label));
+    if (!existingCells) continue;
+    for (let monthIndex = 0; monthIndex < freshRow.cells.length; monthIndex += 1) {
+      if (existingCells[monthIndex] !== undefined) {
+        freshRow.cells[monthIndex] = existingCells[monthIndex];
+      }
+    }
+  }
+
+  return freshRows;
+}
+
+function rebuildVolumeAggregatedDerivedState(aggregated) {
+  aggregated.totalVolume = sumVolumeMatrixValues(aggregated.totalRows);
+  aggregated.buyVolume = sumVolumeMatrixValues(aggregated.buyRows);
+  aggregated.sellVolume = sumVolumeMatrixValues(aggregated.sellRows);
+  aggregated.coveredMonths = countVolumeCoveredMonths(aggregated.totalRows);
+  aggregated.averageMonthlyVolume = aggregated.coveredMonths > 0 ? aggregated.totalVolume / aggregated.coveredMonths : 0;
+  aggregated.buySummary = buildVolumeSummaryRow(aggregated.buyRows, "Total");
+  aggregated.sellSummary = buildVolumeSummaryRow(aggregated.sellRows, "Total");
+  aggregated.totalSummary = buildVolumeSummaryRow(aggregated.totalRows, "Total");
+  aggregated.peakBuyMonth = findVolumePeakMonth(aggregated.buyRows);
+  aggregated.peakSellMonth = findVolumePeakMonth(aggregated.sellRows);
+  aggregated.peakTotalMonth = findVolumePeakMonth(aggregated.totalRows);
+  aggregated.buyDominancePct = aggregated.totalVolume > 0 ? (aggregated.buyVolume / aggregated.totalVolume) * 100 : 0;
+  aggregated.sellDominancePct = aggregated.totalVolume > 0 ? (aggregated.sellVolume / aggregated.totalVolume) * 100 : 0;
+  aggregated.totalTrades = (Number(aggregated.buyTrades) || 0) + (Number(aggregated.sellTrades) || 0);
+  return aggregated;
+}
+
+function normalizeVolumeAggregatedSnapshot(aggregated, endDate = new Date()) {
+  const cloned = cloneJson(aggregated);
+  cloned.buyRows = expandVolumeRowsToEndDate(cloned.buyRows, endDate);
+  cloned.sellRows = expandVolumeRowsToEndDate(cloned.sellRows, endDate);
+  cloned.totalRows = expandVolumeRowsToEndDate(cloned.totalRows, endDate);
+  return rebuildVolumeAggregatedDerivedState(cloned);
+}
+
+function mergeVolumeTradesIntoAggregated(baseAggregated, trades, fetchMeta) {
+  const aggregated = normalizeVolumeAggregatedSnapshot(baseAggregated, new Date());
+  const buyMap = new Map(aggregated.buyRows.map((row) => [row.label, row]));
+  const sellMap = new Map(aggregated.sellRows.map((row) => [row.label, row]));
+  const totalMap = new Map(aggregated.totalRows.map((row) => [row.label, row]));
+
+  aggregated.buyTrades = Number(aggregated.buyTrades) || 0;
+  aggregated.sellTrades = Number(aggregated.sellTrades) || 0;
+  aggregated.totalTclAmount = Number(aggregated.totalTclAmount) || 0;
+
+  for (const trade of Array.isArray(trades) ? trades : []) {
+    if (!Number.isFinite(trade.timestamp) || !Number.isFinite(trade.volumeUsd) || trade.volumeUsd < 0) continue;
+
+    const tradeDate = new Date(trade.timestamp * 1000);
+    const yearKey = String(tradeDate.getUTCFullYear());
+    const monthIndex = tradeDate.getUTCMonth();
+    const totalRow = totalMap.get(yearKey);
+    const buyRow = buyMap.get(yearKey);
+    const sellRow = sellMap.get(yearKey);
+
+    if (totalRow) {
+      totalRow.cells[monthIndex] = (Number(totalRow.cells[monthIndex]) || 0) + trade.volumeUsd;
+    }
+
+    if (trade.side === "buy") {
+      aggregated.buyTrades += 1;
+      if (buyRow) {
+        buyRow.cells[monthIndex] = (Number(buyRow.cells[monthIndex]) || 0) + trade.volumeUsd;
+      }
+    } else if (trade.side === "sell") {
+      aggregated.sellTrades += 1;
+      if (sellRow) {
+        sellRow.cells[monthIndex] = (Number(sellRow.cells[monthIndex]) || 0) + trade.volumeUsd;
+      }
+    }
+
+    if (Number.isFinite(trade.tclAmount) && trade.tclAmount > 0) {
+      aggregated.totalTclAmount += trade.tclAmount;
+      if (!aggregated.largestTclTrade || trade.tclAmount > aggregated.largestTclTrade.tclAmount) {
+        aggregated.largestTclTrade = cloneJson(trade);
+      }
+    }
+
+    if (!aggregated.oldestTrade || trade.timestamp < aggregated.oldestTrade.timestamp) {
+      aggregated.oldestTrade = cloneJson(trade);
+    }
+
+    if (!aggregated.latestTrade || trade.timestamp > aggregated.latestTrade.timestamp) {
+      aggregated.latestTrade = cloneJson(trade);
+    }
+  }
+
+  aggregated.fetchMeta = {
+    ...(aggregated.fetchMeta || {}),
+    ...(fetchMeta || {})
+  };
+
+  return rebuildVolumeAggregatedDerivedState(aggregated);
 }
 
 async function refreshAnalyticsIfDue(env) {
