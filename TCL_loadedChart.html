@@ -501,7 +501,7 @@
 
     body.tv-mode .tv-workspace {
       grid-template-columns: 48px minmax(0, 1fr) 40px;
-      min-height: 620px;
+      min-height: 680px;
       overflow: hidden;
       border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     }
@@ -532,7 +532,8 @@
     }
 
     body.tv-mode .chart-stage {
-      min-height: 620px;
+      position: relative;
+      min-height: 680px;
       padding: 0;
     }
 
@@ -543,17 +544,111 @@
     #tvChartContainer {
       display: none;
       width: 100%;
-      height: 620px;
+      height: 680px;
       border-radius: 0;
-      background:
-        linear-gradient(180deg, rgba(8, 13, 23, 0.88), rgba(9, 14, 23, 0.96)),
-        #101722;
+      background: #131722;
     }
 
     body.tv-mode #tvChartContainer {
       display: block;
       position: relative;
       z-index: 1;
+    }
+
+    .tv-chart-legend {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 58px;
+      z-index: 8;
+      max-width: calc(100% - 120px);
+      padding: 8px 10px;
+      border: 1px solid #2a2e39;
+      border-radius: 4px;
+      background: rgba(19, 23, 34, 0.92);
+      pointer-events: none;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #d1d4dc;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+    }
+
+    body.tv-mode .tv-chart-legend {
+      display: block;
+    }
+
+    .tv-chart-legend .tv-legend-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-weight: 700;
+      color: #f0f3fa;
+    }
+
+    .tv-chart-legend .tv-legend-meta {
+      color: #787b86;
+      font-weight: 600;
+      font-size: 0.72rem;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc span {
+      color: #787b86;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc strong {
+      color: #d1d4dc;
+      font-weight: 700;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc .is-up {
+      color: #26a69a;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc .is-down {
+      color: #ef5350;
+    }
+
+    .tv-realtime-btn {
+      display: none;
+      position: absolute;
+      right: 52px;
+      bottom: 88px;
+      z-index: 8;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid #2a2e39;
+      border-radius: 4px;
+      background: rgba(19, 23, 34, 0.94);
+      color: #d1d4dc;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .tv-realtime-btn:hover {
+      background: #2a2e39;
+      color: #fff;
+    }
+
+    body.tv-mode .tv-realtime-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body.tv-mode .legend-row {
+      display: none;
     }
 
     body.tv-mode .chart-empty {
@@ -1089,6 +1184,7 @@
         <button class="tv-command-btn" type="button" data-zoom="in">Zoom +</button>
         <button class="tv-command-btn" type="button" data-zoom="out">Zoom -</button>
         <button class="tv-command-btn" type="button" data-zoom="fit">Fit</button>
+        <button class="tv-command-btn" type="button" data-chart-action="realtime" title="Scroll to latest bar">Realtime</button>
         <div class="tv-dropdown" style="margin-left:auto;">
           <button class="tv-menu-btn" type="button" data-dropdown="settingsPanel">Settings</button>
           <div class="tv-settings-panel" id="settingsPanel">
@@ -1148,6 +1244,21 @@
         <div class="chart-stage">
           <canvas id="tclChartCanvas"></canvas>
           <div id="tvChartContainer" aria-label="TradingView lightweight chart"></div>
+          <div class="tv-chart-legend" id="tvChartLegend" aria-live="polite">
+            <div class="tv-legend-head">
+              <span id="tvLegendSymbol">TCLUSDC</span>
+              <span class="tv-legend-meta" id="tvLegendMeta">15m · Heikin Ashi</span>
+            </div>
+            <div class="tv-legend-ohlc" id="tvLegendOhlc">
+              <span>O <strong id="tvLegO">—</strong></span>
+              <span>H <strong id="tvLegH">—</strong></span>
+              <span>L <strong id="tvLegL">—</strong></span>
+              <span>C <strong id="tvLegC">—</strong></span>
+              <span>Vol <strong id="tvLegV">—</strong></span>
+              <span>Chg <strong id="tvLegChg">—</strong></span>
+            </div>
+          </div>
+          <button class="tv-realtime-btn" id="tvRealtimeBtn" type="button" title="Go to realtime (Alt+R)">▶</button>
           <div class="chart-empty" id="chartEmpty">No swap data loaded yet.</div>
           <div class="tv-price-badge" id="lastPriceBadge">--</div>
         </div>
@@ -1231,6 +1342,17 @@
       latestTradesBody: document.getElementById("latestTradesBody"),
       canvas: document.getElementById("tclChartCanvas"),
       tvContainer: document.getElementById("tvChartContainer"),
+      tvChartLegend: document.getElementById("tvChartLegend"),
+      tvLegendSymbol: document.getElementById("tvLegendSymbol"),
+      tvLegendMeta: document.getElementById("tvLegendMeta"),
+      tvLegO: document.getElementById("tvLegO"),
+      tvLegH: document.getElementById("tvLegH"),
+      tvLegL: document.getElementById("tvLegL"),
+      tvLegC: document.getElementById("tvLegC"),
+      tvLegV: document.getElementById("tvLegV"),
+      tvLegChg: document.getElementById("tvLegChg"),
+      tvRealtimeBtn: document.getElementById("tvRealtimeBtn"),
+      chartActionButtons: document.querySelectorAll("[data-chart-action]"),
       tooltip: document.getElementById("chartTooltip"),
       legendRow: document.getElementById("legendRow"),
       modeButtons: document.querySelectorAll("[data-chart-mode]"),
@@ -2361,13 +2483,29 @@
       vwapSeries: null,
       highPriceLine: null,
       lowPriceLine: null,
+      userPriceLines: [],
       activeStyle: null,
       resizeObserver: null,
-      rangeHandler: null
+      rangeHandler: null,
+      crosshairHandler: null,
+      clickHandler: null
     };
 
-    const TV_BULL = "#35df91";
-    const TV_BEAR = "#ff6672";
+    const TV_THEME = {
+      bg: "#131722",
+      grid: "#363c4e",
+      border: "#2a2e39",
+      text: "#d1d4dc",
+      muted: "#787b86",
+      bull: "#26a69a",
+      bear: "#ef5350",
+      crosshair: "#758696",
+      labelBg: "#2962ff",
+      ema: "#f5c663",
+      sma: "#2196f3"
+    };
+    const TV_BULL = TV_THEME.bull;
+    const TV_BEAR = TV_THEME.bear;
     const TV_PRICE_DECIMALS = 7;
     const TV_PRICE_MIN_MOVE = 0.0000001;
 
@@ -2397,6 +2535,15 @@
         tvChart.chart.timeScale().unsubscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
         tvChart.rangeHandler = null;
       }
+      if (tvChart.crosshairHandler && tvChart.chart) {
+        tvChart.chart.unsubscribeCrosshairMove(tvChart.crosshairHandler);
+        tvChart.crosshairHandler = null;
+      }
+      if (tvChart.clickHandler && tvChart.chart) {
+        tvChart.chart.unsubscribeClick(tvChart.clickHandler);
+        tvChart.clickHandler = null;
+      }
+      removeTvUserPriceLines();
       if (tvChart.chart) {
         tvChart.chart.remove();
         tvChart.chart = null;
@@ -2411,7 +2558,177 @@
       tvChart.vwapSeries = null;
       tvChart.highPriceLine = null;
       tvChart.lowPriceLine = null;
+      tvChart.userPriceLines = [];
       tvChart.activeStyle = null;
+    }
+
+    function removeTvUserPriceLines() {
+      if (!tvChart.mainSeries) {
+        tvChart.userPriceLines = [];
+        return;
+      }
+      tvChart.userPriceLines.forEach((line) => {
+        try {
+          tvChart.mainSeries.removePriceLine(line);
+        } catch (error) {
+          /* ignore stale refs */
+        }
+      });
+      tvChart.userPriceLines = [];
+    }
+
+    function getCandleByTvTime(time) {
+      if (!Number.isFinite(time) || !state.buckets.length) return null;
+      const target = Math.floor(time);
+      let match = state.buckets.find((candle) => candle.timestamp === target);
+      if (match) return match;
+      let nearest = state.buckets[0];
+      let nearestDistance = Math.abs(nearest.timestamp - target);
+      for (let index = 1; index < state.buckets.length; index += 1) {
+        const candle = state.buckets[index];
+        const distance = Math.abs(candle.timestamp - target);
+        if (distance < nearestDistance) {
+          nearest = candle;
+          nearestDistance = distance;
+        }
+      }
+      return nearest;
+    }
+
+    function updateTvLegendHead() {
+      if (!ui.tvLegendSymbol || !ui.tvLegendMeta) return;
+      ui.tvLegendSymbol.textContent = "TCLUSDC";
+      ui.tvLegendMeta.textContent = `${formatTimeframeLabel(state.activeTimeframe)} · ${CHART_STYLE_LABELS[state.chartStyle] || "Candles"}`;
+    }
+
+    function updateTvLegend(candle) {
+      updateTvLegendHead();
+      if (!candle) {
+        const latest = state.buckets[state.buckets.length - 1];
+        if (!latest) return;
+        candle = latest;
+      }
+
+      const isUp = candle.close >= candle.open;
+      const toneClass = isUp ? "is-up" : "is-down";
+      const volume = candle.buyVolume + candle.sellVolume;
+      const changePct = candle.open ? ((candle.close - candle.open) / candle.open) * 100 : 0;
+
+      const setLeg = (node, value) => {
+        if (!node) return;
+        node.textContent = formatTvScalePrice(value);
+        node.classList.remove("is-up", "is-down");
+        node.classList.add(toneClass);
+      };
+
+      setLeg(ui.tvLegO, candle.open);
+      setLeg(ui.tvLegH, candle.high);
+      setLeg(ui.tvLegL, candle.low);
+      setLeg(ui.tvLegC, candle.close);
+      if (ui.tvLegV) {
+        ui.tvLegV.textContent = formatCompactCurrency(volume);
+        ui.tvLegV.classList.remove("is-up", "is-down");
+        ui.tvLegV.classList.add(toneClass);
+      }
+      if (ui.tvLegChg) {
+        ui.tvLegChg.textContent = `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`;
+        ui.tvLegChg.classList.remove("is-up", "is-down");
+        ui.tvLegChg.classList.add(toneClass);
+      }
+    }
+
+    function bindTvChartInteractions() {
+      if (!tvChart.chart || tvChart.crosshairHandler) return;
+
+      tvChart.crosshairHandler = (param) => {
+        if (!param?.point || param.point.x < 0 || param.point.y < 0 || param.time == null) {
+          updateTvLegend(state.buckets[state.buckets.length - 1] || null);
+          return;
+        }
+        updateTvLegend(getCandleByTvTime(param.time));
+      };
+      tvChart.chart.subscribeCrosshairMove(tvChart.crosshairHandler);
+
+      tvChart.clickHandler = (param) => {
+        if (state.activeTool !== "hline" || !param?.point || !tvChart.mainSeries) return;
+        const price = tvChart.mainSeries.coordinateToPrice(param.point.y);
+        if (!Number.isFinite(price)) return;
+        const LWC = getLightweightCharts();
+        const line = tvChart.mainSeries.createPriceLine({
+          price,
+          color: TV_THEME.ema,
+          lineWidth: 1,
+          lineStyle: LWC?.LineStyle?.Dashed ?? 2,
+          axisLabelVisible: true,
+          title: formatTvScalePrice(price)
+        });
+        tvChart.userPriceLines.push(line);
+        if (tvChart.userPriceLines.length > 24) {
+          const oldest = tvChart.userPriceLines.shift();
+          tvChart.mainSeries.removePriceLine(oldest);
+        }
+      };
+      tvChart.chart.subscribeClick(tvChart.clickHandler);
+    }
+
+    function scrollTvToRealtime() {
+      if (!tvChart.chart) return;
+      const timeScale = tvChart.chart.timeScale();
+      if (typeof timeScale.scrollToRealTime === "function") {
+        timeScale.scrollToRealTime();
+      } else {
+        timeScale.scrollToPosition(0, false);
+      }
+      state.tvNeedsFit = false;
+    }
+
+    function panTvChart(direction) {
+      if (!tvChart.chart) return;
+      const timeScale = tvChart.chart.timeScale();
+      const logicalRange = timeScale.getVisibleLogicalRange();
+      if (!logicalRange) return;
+      const shift = Math.max(3, (logicalRange.to - logicalRange.from) * 0.12) * (direction === "left" ? 1 : -1);
+      timeScale.setVisibleLogicalRange({
+        from: logicalRange.from + shift,
+        to: logicalRange.to + shift
+      });
+    }
+
+    function handleTvKeydown(event) {
+      if (state.chartMode !== "tv" || !tvChart.chart) return;
+      const target = event.target;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+
+      if (event.altKey && (event.key === "r" || event.key === "R")) {
+        event.preventDefault();
+        scrollTvToRealtime();
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        panTvChart("left");
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        panTvChart("right");
+        return;
+      }
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        zoomTvChart("in");
+        return;
+      }
+      if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        zoomTvChart("out");
+        return;
+      }
+      if (event.key === "0" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        state.tvNeedsFit = true;
+        fitTvChartContent();
+      }
     }
 
     function findHighLowInCandles(candles) {
@@ -2462,7 +2779,7 @@
 
       const LWC = getLightweightCharts();
       const lineStyle = LWC?.LineStyle?.Dashed ?? 2;
-      const lineColor = "rgba(155, 188, 255, 0.72)";
+      const lineColor = "rgba(120, 123, 134, 0.85)";
 
       tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
         price: bounds.high,
@@ -2505,7 +2822,7 @@
 
       tvChart.chart.priceScale("right").applyOptions({
         visible: state.settings.priceLabels,
-        borderColor: "rgba(135, 160, 196, 0.16)",
+        borderColor: TV_THEME.border,
         minimumWidth: 118,
         ticksVisible: true,
         alignLabels: true,
@@ -2560,55 +2877,82 @@
     function getTvChartOptions() {
       const LWC = getLightweightCharts();
       const shortTf = ["1m", "5m", "15m", "30m"].includes(state.activeTimeframe);
+      const axisScale = { time: true, price: true };
       return {
         layout: {
-          background: { type: "solid", color: "#101722" },
-          textColor: "rgba(237, 244, 255, 0.72)",
-          fontFamily: "Inter, sans-serif",
-          fontSize: 11
+          background: { type: "solid", color: TV_THEME.bg },
+          textColor: TV_THEME.text,
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Inter, sans-serif",
+          fontSize: 12
         },
         localization: {
-          priceFormatter: formatTvScalePrice
+          locale: "en-US",
+          priceFormatter: formatTvScalePrice,
+          timeFormatter: (timestamp) => {
+            const date = new Date(timestamp * 1000);
+            if (shortTf) {
+              return date.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+                timeZone: "UTC"
+              });
+            }
+            return date.toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "2-digit",
+              timeZone: "UTC"
+            });
+          }
         },
         grid: {
-          vertLines: { visible: state.settings.grid, color: "rgba(135, 160, 196, 0.12)" },
-          horzLines: { visible: state.settings.grid, color: "rgba(135, 160, 196, 0.12)" }
+          vertLines: { visible: state.settings.grid, color: TV_THEME.grid },
+          horzLines: { visible: state.settings.grid, color: TV_THEME.grid }
         },
         crosshair: {
           mode: LWC?.CrosshairMode?.Normal ?? 0,
           vertLine: {
-            color: "rgba(237, 244, 255, 0.42)",
-            labelBackgroundColor: "#151d2b"
+            width: 1,
+            color: TV_THEME.crosshair,
+            style: LWC?.LineStyle?.Dashed ?? 2,
+            labelBackgroundColor: TV_THEME.labelBg
           },
           horzLine: {
-            color: "rgba(237, 244, 255, 0.42)",
-            labelBackgroundColor: "#151d2b"
+            width: 1,
+            color: TV_THEME.crosshair,
+            style: LWC?.LineStyle?.Dashed ?? 2,
+            labelBackgroundColor: TV_THEME.labelBg
           }
         },
         rightPriceScale: {
           visible: state.settings.priceLabels,
-          borderColor: "rgba(135, 160, 196, 0.16)",
+          borderColor: TV_THEME.border,
           minimumWidth: 118,
           ticksVisible: true,
           alignLabels: true,
           entireTextOnly: false,
           scaleMargins: {
-            top: 0.05,
-            bottom: state.settings.volume ? 0.28 : 0.05
+            top: 0.08,
+            bottom: state.settings.volume ? 0.26 : 0.08
           },
           mode: state.settings.logScale && LWC?.PriceScaleMode?.Logarithmic != null
             ? LWC.PriceScaleMode.Logarithmic
             : 0
         },
         timeScale: {
-          borderColor: "rgba(135, 160, 196, 0.16)",
+          borderColor: TV_THEME.border,
           timeVisible: true,
           secondsVisible: shortTf,
-          rightOffset: 8,
-          barSpacing: 8,
+          rightOffset: 12,
+          barSpacing: 6,
           minBarSpacing: 0.5,
-          fixLeftEdge: true,
-          fixRightEdge: true
+          fixLeftEdge: false,
+          fixRightEdge: false,
+          rightBarStaysOnScroll: true,
+          lockVisibleTimeRangeOnResize: true
         },
         handleScroll: {
           mouseWheel: true,
@@ -2617,9 +2961,13 @@
           vertTouchDrag: false
         },
         handleScale: {
-          axisPressedMouseMove: true,
+          axisPressedMouseMove: axisScale,
           mouseWheel: true,
           pinch: true
+        },
+        kineticScroll: {
+          touch: true,
+          mouse: true
         }
       };
     }
@@ -2643,7 +2991,7 @@
 
       if (["line", "line-markers"].includes(style)) {
         return tvChart.chart.addLineSeries({
-          color: "#42d7ff",
+          color: TV_THEME.sma,
           lineWidth: 2,
           crosshairMarkerVisible: true,
           ...priceSeriesOptions
@@ -2652,9 +3000,9 @@
 
       if (["area", "hlc-area"].includes(style)) {
         return tvChart.chart.addAreaSeries({
-          lineColor: "#42d7ff",
-          topColor: "rgba(66, 215, 255, 0.26)",
-          bottomColor: "rgba(66, 215, 255, 0)",
+          lineColor: TV_THEME.sma,
+          topColor: "rgba(33, 150, 243, 0.28)",
+          bottomColor: "rgba(33, 150, 243, 0)",
           lineWidth: 2,
           ...priceSeriesOptions
         });
@@ -2704,7 +3052,8 @@
           priceLineVisible: false
         });
         tvChart.volumeSeries.priceScale().applyOptions({
-          scaleMargins: { top: 0.78, bottom: 0 }
+          scaleMargins: { top: 0.82, bottom: 0 },
+          borderColor: TV_THEME.border
         });
       }
       return tvChart.volumeSeries;
@@ -2715,7 +3064,7 @@
 
       if (state.indicators.ema20 && !tvChart.emaSeries) {
         tvChart.emaSeries = tvChart.chart.addLineSeries({
-          color: "#f5c663",
+          color: TV_THEME.ema,
           lineWidth: 2,
           priceFormat: getTvPriceFormat(),
           priceLineVisible: false,
@@ -2729,7 +3078,7 @@
 
       if (state.indicators.sma50 && !tvChart.smaSeries) {
         tvChart.smaSeries = tvChart.chart.addLineSeries({
-          color: "#42d7ff",
+          color: TV_THEME.sma,
           lineWidth: 1.5,
           priceFormat: getTvPriceFormat(),
           priceLineVisible: false,
@@ -2824,9 +3173,11 @@
             fitTvChartContent();
           }
         });
+        bindTvChartInteractions();
       }
 
       if (tvChart.activeStyle !== state.chartStyle) {
+        removeTvUserPriceLines();
         removeTvHighLowLines();
         removeTvSeries(tvChart.mainSeries);
         tvChart.mainSeries = createTvMainSeries(state.chartStyle);
@@ -2872,7 +3223,7 @@
         return {
           time: candle.timestamp,
           value: candle.buyVolume + candle.sellVolume,
-          color: isUp ? "rgba(53, 223, 145, 0.48)" : "rgba(255, 102, 114, 0.48)"
+          color: isUp ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)"
         };
       });
     }
@@ -3014,6 +3365,8 @@
       if (state.tvNeedsFit) {
         fitTvChartContent();
       }
+
+      updateTvLegend(state.buckets[state.buckets.length - 1] || null);
 
       const visibleStats = visibleTrades.reduce((acc, trade) => {
         acc.volume += trade.volumeUsd;
@@ -3414,6 +3767,7 @@
       syncSettingsChrome();
       syncToolChrome();
       if (state.chartMode === "tv") {
+        updateTvLegendHead();
         requestAnimationFrame(() => resizeTvChart());
       }
     }
@@ -3748,6 +4102,7 @@
         if (tool === "eraser") {
           state.annotations = [];
           state.pendingAnnotation = null;
+          removeTvUserPriceLines();
           state.activeTool = "crosshair";
           syncToolChrome();
           renderAll();
@@ -3787,6 +4142,24 @@
         renderAll();
       });
     });
+
+    ui.chartActionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.chartAction === "realtime") {
+          ensureTradingViewMode();
+          scrollTvToRealtime();
+        }
+      });
+    });
+
+    if (ui.tvRealtimeBtn) {
+      ui.tvRealtimeBtn.addEventListener("click", () => {
+        ensureTradingViewMode();
+        scrollTvToRealtime();
+      });
+    }
+
+    document.addEventListener("keydown", handleTvKeydown);
 
     document.querySelectorAll("[data-range]").forEach((button) => {
       button.addEventListener("click", () => {
