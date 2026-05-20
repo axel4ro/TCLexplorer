@@ -2193,7 +2193,7 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 }
 
 @media (min-width: 1024px) {
-  body.sidebar-desktop .topbar-earn-btn[data-cta-mode="windows"] {
+  body.sidebar-desktop .topbar-earn-btn[data-cta-mode="desktop"] {
     display: inline-flex !important;
   }
 }
