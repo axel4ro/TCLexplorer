@@ -1035,38 +1035,38 @@
         <div class="tv-divider" aria-hidden="true"></div>
         <button class="tv-command-btn" type="button" data-timeframe="1m">1m</button>
         <button class="tv-command-btn" type="button" data-timeframe="5m">5m</button>
-        <button class="tv-command-btn" type="button" data-timeframe="15m">15m</button>
+        <button class="tv-command-btn is-active" type="button" data-timeframe="15m">15m</button>
         <button class="tv-command-btn" type="button" data-timeframe="30m">30m</button>
         <button class="tv-command-btn" type="button" data-timeframe="1h">1h</button>
         <button class="tv-command-btn" type="button" data-timeframe="4h">4h</button>
-        <button class="tv-command-btn is-active" type="button" data-timeframe="1d">D</button>
+        <button class="tv-command-btn" type="button" data-timeframe="1d">D</button>
         <div class="tv-dropdown">
           <button class="tv-menu-btn" type="button" data-dropdown="timeframeMenu">More</button>
           <div class="tv-menu" id="timeframeMenu">
             <div class="tv-menu-section">Minutes</div>
             <button class="tv-menu-item" type="button" data-timeframe="1m">1 minute</button>
             <button class="tv-menu-item" type="button" data-timeframe="5m">5 minutes</button>
-            <button class="tv-menu-item" type="button" data-timeframe="15m">15 minutes</button>
+            <button class="tv-menu-item is-active" type="button" data-timeframe="15m">15 minutes</button>
             <button class="tv-menu-item" type="button" data-timeframe="30m">30 minutes</button>
             <div class="tv-menu-section">Hours</div>
             <button class="tv-menu-item" type="button" data-timeframe="1h">1 hour</button>
             <button class="tv-menu-item" type="button" data-timeframe="4h">4 hours</button>
             <div class="tv-menu-section">Days</div>
-            <button class="tv-menu-item is-active" type="button" data-timeframe="1d">1 day</button>
+            <button class="tv-menu-item" type="button" data-timeframe="1d">1 day</button>
             <button class="tv-menu-item" type="button" data-timeframe="1w">1 week</button>
             <button class="tv-menu-item" type="button" data-timeframe="1mo">1 month</button>
           </div>
         </div>
         <div class="tv-divider" aria-hidden="true"></div>
         <div class="tv-dropdown">
-          <button class="tv-menu-btn" id="chartTypeButton" type="button" data-dropdown="chartTypeMenu">Candles</button>
+          <button class="tv-menu-btn" id="chartTypeButton" type="button" data-dropdown="chartTypeMenu">Heikin Ashi</button>
           <div class="tv-menu" id="chartTypeMenu">
             <div class="tv-menu-section">Chart type</div>
-            <button class="tv-menu-item is-active" type="button" data-chart-style="candles">Candles</button>
+            <button class="tv-menu-item" type="button" data-chart-style="candles">Candles</button>
             <button class="tv-menu-item" type="button" data-chart-style="hollow">Hollow candles</button>
             <button class="tv-menu-item" type="button" data-chart-style="volume">Volume candles</button>
             <button class="tv-menu-item" type="button" data-chart-style="bars">Bars</button>
-            <button class="tv-menu-item" type="button" data-chart-style="heikin">Heikin Ashi</button>
+            <button class="tv-menu-item is-active" type="button" data-chart-style="heikin">Heikin Ashi</button>
             <button class="tv-menu-item" type="button" data-chart-style="line">Line</button>
             <button class="tv-menu-item" type="button" data-chart-style="line-markers">Line with markers</button>
             <button class="tv-menu-item" type="button" data-chart-style="area">Area</button>
@@ -1078,11 +1078,11 @@
           <button class="tv-menu-btn" type="button" data-dropdown="indicatorMenu">Indicators</button>
           <div class="tv-menu" id="indicatorMenu">
             <div class="tv-menu-section">Favorite indicators</div>
-            <button class="tv-menu-item is-active" type="button" data-indicator="ema20">EMA 20</button>
-            <button class="tv-menu-item is-active" type="button" data-indicator="sma50">SMA 50</button>
+            <button class="tv-menu-item" type="button" data-indicator="ema20">EMA 20</button>
+            <button class="tv-menu-item" type="button" data-indicator="sma50">SMA 50</button>
             <button class="tv-menu-item" type="button" data-indicator="bb20">Bollinger Bands</button>
             <button class="tv-menu-item" type="button" data-indicator="vwap">VWAP</button>
-            <button class="tv-menu-item is-active" type="button" data-indicator="patterns">Candle Patterns</button>
+            <button class="tv-menu-item" type="button" data-indicator="patterns">Candle Patterns</button>
           </div>
         </div>
         <div class="tv-divider" aria-hidden="true"></div>
@@ -1110,10 +1110,10 @@
         </div>
         <div class="chart-controls">
           <div class="timeframe-group tv-only" aria-label="TradingView timeframe">
-            <button class="range-btn" type="button" data-timeframe="15m">15m</button>
+            <button class="range-btn is-active" type="button" data-timeframe="15m">15m</button>
             <button class="range-btn" type="button" data-timeframe="1h">1H</button>
             <button class="range-btn" type="button" data-timeframe="4h">4H</button>
-            <button class="range-btn is-active" type="button" data-timeframe="1d">1D</button>
+            <button class="range-btn" type="button" data-timeframe="1d">1D</button>
             <button class="range-btn" type="button" data-timeframe="1w">1W</button>
             <button class="range-btn" type="button" data-timeframe="1mo">1M</button>
           </div>
@@ -1124,11 +1124,11 @@
             <button class="range-btn" type="button" data-range="30">30D</button>
           </div>
           <div class="indicator-group tv-only" aria-label="TradingView indicators">
-            <button class="indicator-btn is-active" type="button" data-indicator="ema20">EMA 20</button>
-            <button class="indicator-btn is-active" type="button" data-indicator="sma50">SMA 50</button>
+            <button class="indicator-btn" type="button" data-indicator="ema20">EMA 20</button>
+            <button class="indicator-btn" type="button" data-indicator="sma50">SMA 50</button>
             <button class="indicator-btn" type="button" data-indicator="bb20">Bollinger</button>
             <button class="indicator-btn" type="button" data-indicator="vwap">VWAP</button>
-            <button class="indicator-btn is-active" type="button" data-indicator="patterns">Patterns</button>
+            <button class="indicator-btn" type="button" data-indicator="patterns">Patterns</button>
           </div>
         </div>
       </div>
@@ -3246,8 +3246,22 @@
       }
     }
 
+    function applyTradingViewEntryDefaults() {
+      state.activeTimeframe = "15m";
+      state.chartStyle = "heikin";
+      state.indicators.ema20 = false;
+      state.indicators.sma50 = false;
+      state.indicators.bb20 = false;
+      state.indicators.vwap = false;
+      state.indicators.patterns = false;
+      state.tvNeedsFit = true;
+      tvChart.activeStyle = null;
+      destroyTvChart();
+    }
+
     function ensureTradingViewMode() {
       if (state.chartMode === "tv") return;
+      applyTradingViewEntryDefaults();
       state.chartMode = "tv";
       syncChartModeChrome();
     }
@@ -3440,7 +3454,7 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get("mode") === "tv") {
         state.chartMode = "tv";
-        state.tvNeedsFit = true;
+        applyTradingViewEntryDefaults();
       }
 
       const requestedTimeframe = params.get("tf");
@@ -3451,6 +3465,7 @@
       const requestedStyle = params.get("style");
       if (requestedStyle && CHART_STYLE_LABELS[requestedStyle]) {
         state.chartStyle = requestedStyle;
+        tvChart.activeStyle = null;
       }
 
       syncChartModeChrome();
@@ -3476,9 +3491,9 @@
     ui.modeButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const nextMode = button.dataset.chartMode === "tv" ? "tv" : "flow";
-        if (nextMode === "tv") {
-          state.tvNeedsFit = true;
-        } else {
+        if (nextMode === "tv" && state.chartMode !== "tv") {
+          applyTradingViewEntryDefaults();
+        } else if (nextMode === "flow") {
           destroyTvChart();
         }
         state.chartMode = nextMode;
