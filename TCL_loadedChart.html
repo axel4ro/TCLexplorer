@@ -1189,7 +1189,7 @@
           <button class="tv-menu-btn" type="button" data-dropdown="settingsPanel">Settings</button>
           <div class="tv-settings-panel" id="settingsPanel">
             <div class="tv-menu-section">Chart settings</div>
-            <label class="settings-row"><span>Grid lines</span><input type="checkbox" data-setting="grid" checked></label>
+            <label class="settings-row"><span>Grid lines</span><input type="checkbox" data-setting="grid"></label>
             <label class="settings-row"><span>Volume pane</span><input type="checkbox" data-setting="volume" checked></label>
             <label class="settings-row"><span>Last price line</span><input type="checkbox" data-setting="lastPriceLine" checked></label>
             <label class="settings-row"><span>High and low labels</span><input type="checkbox" data-setting="highLowLabels" checked></label>
@@ -1385,7 +1385,7 @@
         patterns: true
       },
       settings: {
-        grid: true,
+        grid: false,
         volume: true,
         lastPriceLine: true,
         highLowLabels: true,
@@ -2488,7 +2488,8 @@
       resizeObserver: null,
       rangeHandler: null,
       crosshairHandler: null,
-      clickHandler: null
+      clickHandler: null,
+      livePriceLine: null
     };
 
     const TV_THEME = {
@@ -2544,6 +2545,7 @@
         tvChart.clickHandler = null;
       }
       removeTvUserPriceLines();
+      removeTvLivePriceLine();
       if (tvChart.chart) {
         tvChart.chart.remove();
         tvChart.chart = null;
@@ -2559,7 +2561,71 @@
       tvChart.highPriceLine = null;
       tvChart.lowPriceLine = null;
       tvChart.userPriceLines = [];
+      tvChart.livePriceLine = null;
       tvChart.activeStyle = null;
+    }
+
+    function getTclSpotPriceUsd() {
+      const pair = state.currentPair;
+      const fromPair = Number.parseFloat(pair?.priceUsd);
+      if (Number.isFinite(fromPair) && fromPair > 0) return fromPair;
+      const latest = state.trades[state.trades.length - 1];
+      if (latest && Number.isFinite(latest.price) && latest.price > 0) return latest.price;
+      return Number.NaN;
+    }
+
+    function removeTvLivePriceLine() {
+      if (tvChart.livePriceLine && tvChart.mainSeries) {
+        try {
+          tvChart.mainSeries.removePriceLine(tvChart.livePriceLine);
+        } catch (error) {
+          /* ignore */
+        }
+      }
+      tvChart.livePriceLine = null;
+    }
+
+    function applyTvLivePriceLine(candles = state.buckets) {
+      if (!tvChart.mainSeries) return;
+      if (!state.settings.lastPriceLine) {
+        removeTvLivePriceLine();
+        return;
+      }
+
+      const spot = getTclSpotPriceUsd();
+      if (!Number.isFinite(spot) || spot <= 0) {
+        removeTvLivePriceLine();
+        return;
+      }
+
+      const lastClose = candles?.length ? candles[candles.length - 1].close : spot;
+      const isUp = spot >= lastClose;
+      const color = isUp ? TV_THEME.bull : TV_THEME.bear;
+      const LWC = getLightweightCharts();
+      const lineStyle = LWC?.LineStyle?.Dashed ?? 2;
+      const label = formatTvScalePrice(spot);
+
+      if (tvChart.livePriceLine && typeof tvChart.livePriceLine.applyOptions === "function") {
+        tvChart.livePriceLine.applyOptions({
+          price: spot,
+          color,
+          lineStyle,
+          lineWidth: 1,
+          axisLabelVisible: true,
+          title: label
+        });
+        return;
+      }
+
+      removeTvLivePriceLine();
+      tvChart.livePriceLine = tvChart.mainSeries.createPriceLine({
+        price: spot,
+        color,
+        lineStyle,
+        lineWidth: 1,
+        axisLabelVisible: true,
+        title: label
+      });
     }
 
     function removeTvUserPriceLines() {
@@ -2854,8 +2920,8 @@
     function applyTvMainSeriesOptions() {
       if (!tvChart.mainSeries) return;
       tvChart.mainSeries.applyOptions({
-        lastValueVisible: state.settings.lastPriceLine,
-        priceLineVisible: state.settings.lastPriceLine
+        lastValueVisible: false,
+        priceLineVisible: false
       });
     }
 
@@ -2872,6 +2938,7 @@
         }
       }
       applyTvHighLowLines(candles);
+      applyTvLivePriceLine(candles);
     }
 
     function getTvChartOptions() {
@@ -2985,8 +3052,8 @@
       const priceFormat = getTvPriceFormat();
       const priceSeriesOptions = {
         priceFormat,
-        lastValueVisible: state.settings.lastPriceLine,
-        priceLineVisible: state.settings.lastPriceLine
+        lastValueVisible: false,
+        priceLineVisible: false
       };
 
       if (["line", "line-markers"].includes(style)) {
@@ -3160,6 +3227,7 @@
           if (state.settings.highLowLabels && state.buckets.length) {
             applyTvHighLowLines(state.buckets);
           }
+          applyTvLivePriceLine(state.buckets);
         };
         tvChart.chart.timeScale().subscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
 
@@ -3178,6 +3246,7 @@
 
       if (tvChart.activeStyle !== state.chartStyle) {
         removeTvUserPriceLines();
+        removeTvLivePriceLine();
         removeTvHighLowLines();
         removeTvSeries(tvChart.mainSeries);
         tvChart.mainSeries = createTvMainSeries(state.chartStyle);
@@ -3365,6 +3434,8 @@
       if (state.tvNeedsFit) {
         fitTvChartContent();
       }
+
+      applyTvLivePriceLine(state.buckets);
 
       updateTvLegend(state.buckets[state.buckets.length - 1] || null);
 
