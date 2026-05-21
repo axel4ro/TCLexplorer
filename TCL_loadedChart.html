@@ -1180,7 +1180,6 @@
         <div class="hero-actions">
           <button class="tool-btn primary" id="refreshButton" type="button">Refresh</button>
           <button class="tool-btn mode-toggle is-active" type="button" data-chart-mode="flow">Flow</button>
-          <button class="tool-btn mode-toggle" type="button" data-chart-mode="tv">TradingView Candles</button>
           <a class="tool-btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">DexScreener</a>
           <a class="tool-btn" href="https://explorer.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">Pair Explorer</a>
         </div>
@@ -4534,9 +4533,19 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
 
       const priceMinRaw = Math.min(...buckets.map((bucket) => bucket.low));
       const priceMaxRaw = Math.max(...buckets.map((bucket) => bucket.high));
-      const pricePad = Math.max((priceMaxRaw - priceMinRaw) * 0.10, priceMaxRaw * 0.04, 0.0000001);
-      const priceMin = Math.max(0, priceMinRaw - pricePad);
-      const priceMax = priceMaxRaw + pricePad;
+      const currentPriceRaw = getTclSpotPriceUsd();
+      const currentPrice = Number.isFinite(currentPriceRaw) && currentPriceRaw > 0
+        ? currentPriceRaw
+        : buckets[buckets.length - 1].close;
+      const priceScaleMinRaw = Number.isFinite(currentPrice)
+        ? Math.min(priceMinRaw, currentPrice)
+        : priceMinRaw;
+      const priceScaleMaxRaw = Number.isFinite(currentPrice)
+        ? Math.max(priceMaxRaw, currentPrice)
+        : priceMaxRaw;
+      const pricePad = Math.max((priceScaleMaxRaw - priceScaleMinRaw) * 0.10, priceScaleMaxRaw * 0.04, 0.0000001);
+      const priceMin = Math.max(0, priceScaleMinRaw - pricePad);
+      const priceMax = priceScaleMaxRaw + pricePad;
       const maxVolume = Math.max(1, ...buckets.map((bucket) => bucket.buyVolume + bucket.sellVolume));
 
       const xForIndex = (index) => {
@@ -4645,6 +4654,88 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       ctx.lineWidth = 2;
       ctx.stroke();
 
+      const flowReferenceLines = [
+        {
+          label: "High",
+          price: priceMaxRaw,
+          color: "#f5c663",
+          background: "rgba(245, 198, 99, 0.16)",
+          border: "rgba(245, 198, 99, 0.52)",
+          dash: [6, 5]
+        },
+        {
+          label: "Current price",
+          price: currentPrice,
+          color: "#42d7ff",
+          background: "rgba(66, 215, 255, 0.17)",
+          border: "rgba(66, 215, 255, 0.56)",
+          dash: [2, 4]
+        },
+        {
+          label: "Low",
+          price: priceMinRaw,
+          color: "#ff6672",
+          background: "rgba(255, 102, 114, 0.15)",
+          border: "rgba(255, 102, 114, 0.52)",
+          dash: [6, 5]
+        }
+      ].filter((line) => Number.isFinite(line.price) && line.price >= 0);
+
+      const referenceLabelHeight = 24;
+      let previousLabelBottom = chartTop + 4;
+      const referenceLabels = flowReferenceLines
+        .map((line) => ({ ...line, y: yForPrice(line.price) }))
+        .sort((left, right) => left.y - right.y)
+        .map((line) => {
+          const desiredTop = line.y - referenceLabelHeight / 2;
+          const top = Math.min(
+            priceBottom - referenceLabelHeight - 4,
+            Math.max(previousLabelBottom + 4, desiredTop)
+          );
+          previousLabelBottom = top + referenceLabelHeight;
+          return { ...line, labelTop: top };
+        });
+
+      ctx.save();
+      ctx.font = "700 11px Inter, sans-serif";
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      referenceLabels.forEach((line) => {
+        const labelText = `${line.label} ${formatPrice(line.price)}`;
+        const labelWidth = Math.ceil(ctx.measureText(labelText).width) + 18;
+        const labelX = Math.max(chartLeft + 8, chartRight - labelWidth - 8);
+        const labelY = line.labelTop + referenceLabelHeight / 2;
+
+        ctx.strokeStyle = line.color;
+        ctx.globalAlpha = 0.82;
+        ctx.lineWidth = line.label === "Current price" ? 1.4 : 1;
+        ctx.setLineDash(line.dash);
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, line.y);
+        ctx.lineTo(labelX - 8, line.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+
+        if (Math.abs(labelY - line.y) > 4) {
+          ctx.strokeStyle = line.border;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(labelX - 8, line.y);
+          ctx.lineTo(labelX - 3, labelY);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = line.background;
+        ctx.strokeStyle = line.border;
+        drawRoundedRect(ctx, labelX, line.labelTop, labelWidth, referenceLabelHeight, 7);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = line.color;
+        ctx.fillText(labelText, labelX + 9, labelY);
+      });
+      ctx.restore();
+
       const hoverIndex = state.hoverIndex;
       if (Number.isInteger(hoverIndex) && buckets[hoverIndex]) {
         const bucket = buckets[hoverIndex];
@@ -4683,6 +4774,9 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       ui.chartMeta.textContent = `${formatCount(visibleStats.count)} swaps visible | ${formatCompactCurrency(visibleStats.volume)} volume`;
       ui.legendRow.innerHTML = `
         <span class="legend-item"><span class="legend-dot"></span>Price close</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High ${formatPrice(priceMaxRaw)}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low ${formatPrice(priceMinRaw)}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price ${formatPrice(currentPrice)}</span>
         <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
         <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
         <span>${formatCount(visibleStats.count)} swaps visible | ${formatCompactCurrency(visibleStats.volume)} volume</span>
