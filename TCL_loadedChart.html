@@ -3862,35 +3862,37 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       }
     }
 
-    function applyTvHighLowLines(candles) {
-      removeTvHighLowLines();
-      if (!state.settings.highLowLabels || !tvChart.mainSeries || !candles?.length) return;
+function applyTvHighLowLines(candles) {
+  removeTvHighLowLines();
+  if (!state.settings.highLowLabels || !tvChart.mainSeries || !candles?.length) return;
 
-      const bounds = findHighLowInCandles(getVisibleCandlesForTv(candles));
-      if (!bounds) return;
+  const bounds = findHighLowInCandles(getVisibleCandlesForTv(candles));
+  if (!bounds) return;
 
-      const LWC = getLightweightCharts();
-      const lineStyle = LWC?.LineStyle?.Dashed ?? 2;
-      const lineColor = "rgba(120, 123, 134, 0.85)";
+  const LWC = getLightweightCharts();
+  const lineStyle = LWC?.LineStyle?.Dotted ?? 1;
+  const lineColor = "rgba(120, 123, 134, 0.85)";
 
-      tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
-        price: bounds.high,
-        color: lineColor,
-        lineWidth: 1,
-        lineStyle,
-        axisLabelVisible: true,
-        title: `High ${formatTvScalePrice(bounds.high)}`
-      });
+  // High: eticheta pe linie, sus
+  tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
+    price: bounds.high,
+    color: lineColor,
+    lineWidth: 1,
+    lineStyle,
+    axisLabelVisible: true,
+    title: "High"
+  });
 
-      tvChart.lowPriceLine = tvChart.mainSeries.createPriceLine({
-        price: bounds.low,
-        color: lineColor,
-        lineWidth: 1,
-        lineStyle,
-        axisLabelVisible: true,
-        title: `Low ${formatTvScalePrice(bounds.low)}`
-      });
-    }
+  // Low: eticheta pe linie, jos
+  tvChart.lowPriceLine = tvChart.mainSeries.createPriceLine({
+    price: bounds.low,
+    color: lineColor,
+    lineWidth: 1,
+    lineStyle,
+    axisLabelVisible: true,
+    title: "Low"
+  });
+}
 
     function resizeTvChart() {
       if (!tvChart.chart || !ui.tvContainer) return;
@@ -4513,9 +4515,58 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
 
       if (!buckets.length) return;
 
+      const priceMinRaw = Math.min(...buckets.map((bucket) => bucket.low));
+      const priceMaxRaw = Math.max(...buckets.map((bucket) => bucket.high));
+      const currentPriceRaw = getTclSpotPriceUsd();
+      const currentPrice = Number.isFinite(currentPriceRaw) && currentPriceRaw > 0
+        ? currentPriceRaw
+        : buckets[buckets.length - 1].close;
+      const flowReferenceLines = [
+        {
+          label: "High",
+          placement: "above",
+          price: priceMaxRaw,
+          color: "#f5c663",
+          background: "rgba(245, 198, 99, 0.16)",
+          border: "rgba(245, 198, 99, 0.52)",
+          dash: [6, 5]
+        },
+        {
+          label: "Current price",
+          placement: "center",
+          price: currentPrice,
+          color: "#42d7ff",
+          background: "rgba(66, 215, 255, 0.17)",
+          border: "rgba(66, 215, 255, 0.56)",
+          dash: [2, 4]
+        },
+        {
+          label: "Low",
+          placement: "below",
+          price: priceMinRaw,
+          color: "#ff6672",
+          background: "rgba(255, 102, 114, 0.15)",
+          border: "rgba(255, 102, 114, 0.52)",
+          dash: [6, 5]
+        }
+      ]
+        .filter((line) => Number.isFinite(line.price) && line.price >= 0)
+        .map((line) => ({ ...line, priceText: formatPrice(line.price) }));
+
+      ctx.save();
+      ctx.font = "700 10px Inter, sans-serif";
+      const referenceLabelWidth = Math.ceil(Math.max(
+        74,
+        ...flowReferenceLines.map((line) => ctx.measureText(line.priceText).width + 18)
+      ));
+      ctx.restore();
+      const referencePanelGutter = width < 640 ? 8 : 10;
+      const referencePanelPadding = width < 640 ? 10 : 14;
+      const referencePanelWidth = referenceLabelWidth + 12;
+
       const padding = {
         left: width < 640 ? 58 : 76,
-        right: width < 640 ? 16 : 24,
+        right: referencePanelGutter + referencePanelWidth + referencePanelPadding,
         top: 24,
         bottom: width < 640 ? 54 : 64
       };
@@ -4531,20 +4582,13 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       const priceHeight = priceBottom - chartTop;
       const volumePlotHeight = volumeBottom - volumeTop;
 
-      const priceMinRaw = Math.min(...buckets.map((bucket) => bucket.low));
-      const priceMaxRaw = Math.max(...buckets.map((bucket) => bucket.high));
-      const currentPriceRaw = getTclSpotPriceUsd();
-      const currentPrice = Number.isFinite(currentPriceRaw) && currentPriceRaw > 0
-        ? currentPriceRaw
-        : buckets[buckets.length - 1].close;
       const priceScaleMinRaw = Number.isFinite(currentPrice)
         ? Math.min(priceMinRaw, currentPrice)
         : priceMinRaw;
       const priceScaleMaxRaw = Number.isFinite(currentPrice)
         ? Math.max(priceMaxRaw, currentPrice)
         : priceMaxRaw;
-      const pricePad = Math.max((priceScaleMaxRaw - priceScaleMinRaw) * 0.10, priceScaleMaxRaw * 0.04, 0.0000001);
-      const priceMin = Math.max(0, priceScaleMinRaw - pricePad);
+const pricePad = Math.max((priceScaleMaxRaw - priceScaleMinRaw) * 0.18, priceScaleMaxRaw * 0.06, 0.0000001);      const priceMin = Math.max(0, priceScaleMinRaw - pricePad);
       const priceMax = priceScaleMaxRaw + pricePad;
       const maxVolume = Math.max(1, ...buckets.map((bucket) => bucket.buyVolume + bucket.sellVolume));
 
@@ -4654,85 +4698,136 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      const flowReferenceLines = [
-        {
-          label: "High",
-          price: priceMaxRaw,
-          color: "#f5c663",
-          background: "rgba(245, 198, 99, 0.16)",
-          border: "rgba(245, 198, 99, 0.52)",
-          dash: [6, 5]
-        },
-        {
-          label: "Current price",
-          price: currentPrice,
-          color: "#42d7ff",
-          background: "rgba(66, 215, 255, 0.17)",
-          border: "rgba(66, 215, 255, 0.56)",
-          dash: [2, 4]
-        },
-        {
-          label: "Low",
-          price: priceMinRaw,
-          color: "#ff6672",
-          background: "rgba(255, 102, 114, 0.15)",
-          border: "rgba(255, 102, 114, 0.52)",
-          dash: [6, 5]
-        }
-      ].filter((line) => Number.isFinite(line.price) && line.price >= 0);
+const referenceLabelHeight = 38;
+const referenceLabelGap = 12;
+const lowLabelExtraGap = 0;
+const lowLabelHeight = 38;
+const referencePanelLeft = chartRight + referencePanelGutter;
+const referenceLineRight = referencePanelLeft + referenceLabelWidth;
 
-      const referenceLabelHeight = 24;
-      let previousLabelBottom = chartTop + 4;
-      const referenceLabels = flowReferenceLines
-        .map((line) => ({ ...line, y: yForPrice(line.price) }))
-        .sort((left, right) => left.y - right.y)
-        .map((line) => {
-          const desiredTop = line.y - referenceLabelHeight / 2;
-          const top = Math.min(
-            priceBottom - referenceLabelHeight - 4,
-            Math.max(previousLabelBottom + 4, desiredTop)
-          );
-          previousLabelBottom = top + referenceLabelHeight;
-          return { ...line, labelTop: top };
+const clampReferenceLabelTop = (top, line) => {
+  if (line.placement === "above") {
+    return Math.max(chartTop + 4, top);
+  }
+
+  if (line.placement === "below") {
+    const labelH = line.label === "Low" ? lowLabelHeight : referenceLabelHeight;
+    // Never let the label slide back above its reference line
+    return Math.max(line.y + 4, Math.min(priceBottom - labelH - 4, top));
+  }
+
+  return Math.min(
+    priceBottom - referenceLabelHeight - 4,
+    Math.max(chartTop + 4, top)
+  );
+};
+
+const referenceLabels = flowReferenceLines
+  .map((line) => ({ ...line, y: yForPrice(line.price) }))
+  .map((line) => {
+    const top = line.placement === "above"
+  ? line.y - referenceLabelHeight - referenceLabelGap
+  : line.placement === "below"
+    ? line.y + referenceLabelGap + lowLabelExtraGap
+    : line.y - referenceLabelHeight / 2;
+
+    return { ...line, labelTop: clampReferenceLabelTop(top, line) };
+  });
+
+      // Resolve overlaps: push labels apart vertically when prices are close.
+      // Only the Low (below) label moves — it slides further down to avoid
+      // overlapping labels above it. Current and High stay anchored in place.
+      (() => {
+        const gap = 10;
+        const getH = (l) => (l.label === "Low" ? lowLabelHeight : referenceLabelHeight);
+        const getMinTop = (l) => (
+          l.placement === "below"
+            ? l.y + 4
+            : chartTop + 4
+        );
+        const getMaxTop = (l) => priceBottom - getH(l) - 4;
+        // Anchor all non-"below" labels (Current, High) at their natural position.
+        referenceLabels.forEach((label) => {
+          if (label.placement !== "below") {
+            label.labelTop = Math.min(
+              getMaxTop(label),
+              Math.max(getMinTop(label), label.labelTop)
+            );
+          }
         });
 
+        // For each "below" label (Low), push it down past any anchored label
+        // whose box it overlaps. Never go above its own red line (getMinTop).
+        referenceLabels
+          .filter((l) => l.placement === "below")
+          .forEach((low) => {
+            let top = Math.max(getMinTop(low), low.labelTop);
+            const lowH = getH(low);
+            // Repeat until no overlap with any anchored label above/around.
+            let safety = 8;
+            while (safety-- > 0) {
+              let moved = false;
+              referenceLabels.forEach((other) => {
+                if (other === low) return;
+                const oTop = other.labelTop;
+                const oBot = oTop + getH(other);
+                const lTop = top;
+                const lBot = top + lowH;
+                if (lTop < oBot + gap && lBot + gap > oTop) {
+                  // Overlap: push low below the other label.
+                  const candidate = oBot + gap;
+                  if (candidate > top) {
+                    top = candidate;
+                    moved = true;
+                  }
+                }
+              });
+              if (!moved) break;
+            }
+            low.labelTop = Math.max(getMinTop(low), top);
+          });
+      })();
+
       ctx.save();
-      ctx.font = "700 11px Inter, sans-serif";
-      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(5, 9, 16, 0.34)";
+      ctx.fillRect(referencePanelLeft - 6, chartTop, referencePanelWidth, priceBottom - chartTop);
+      ctx.strokeStyle = "rgba(135, 160, 196, 0.14)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(referencePanelLeft - 6, chartTop);
+      ctx.lineTo(referencePanelLeft - 6, priceBottom);
+      ctx.stroke();
+
+      ctx.textBaseline = "top";
       ctx.textAlign = "left";
       referenceLabels.forEach((line) => {
-        const labelText = `${line.label} ${formatPrice(line.price)}`;
-        const labelWidth = Math.ceil(ctx.measureText(labelText).width) + 18;
-        const labelX = Math.max(chartLeft + 8, chartRight - labelWidth - 8);
-        const labelY = line.labelTop + referenceLabelHeight / 2;
-
+        const labelX = referencePanelLeft;
+        const labelY = line.labelTop;
+        const labelWidth = referenceLabelWidth;
+const labelHeight = line.label === "Low" ? lowLabelHeight : referenceLabelHeight;
         ctx.strokeStyle = line.color;
         ctx.globalAlpha = 0.82;
         ctx.lineWidth = line.label === "Current price" ? 1.4 : 1;
         ctx.setLineDash(line.dash);
         ctx.beginPath();
-        ctx.moveTo(chartLeft, line.y);
-        ctx.lineTo(labelX - 8, line.y);
-        ctx.stroke();
+ctx.moveTo(chartLeft, line.y);
+ctx.lineTo(labelX - 8, line.y);
+ctx.stroke();
         ctx.setLineDash([]);
         ctx.globalAlpha = 1;
 
-        if (Math.abs(labelY - line.y) > 4) {
-          ctx.strokeStyle = line.border;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(labelX - 8, line.y);
-          ctx.lineTo(labelX - 3, labelY);
-          ctx.stroke();
-        }
-
         ctx.fillStyle = line.background;
         ctx.strokeStyle = line.border;
-        drawRoundedRect(ctx, labelX, line.labelTop, labelWidth, referenceLabelHeight, 7);
+drawRoundedRect(ctx, labelX, line.labelTop, labelWidth, labelHeight, 7);
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = line.color;
-        ctx.fillText(labelText, labelX + 9, labelY);
+ctx.font = "800 9px Inter, sans-serif";
+ctx.fillStyle = line.color;
+
+ctx.fillText(line.label, labelX + 9, labelY + 6);
+ctx.font = "700 10px Inter, sans-serif";
+ctx.fillText(line.priceText, labelX + 9, labelY + 21);
       });
       ctx.restore();
 
