@@ -270,6 +270,9 @@
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Live Chart</button>
+      <button type="button" class="nav-item" onclick="openLander()" id="btn-Lander">
+        <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png" alt=""> Lander
+      </button>
 	  <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
@@ -280,9 +283,6 @@
       </button>
       <button type="button" class="nav-item" onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">
         <img src="https://axel4ro.github.io/TCLexplorer/images/exchange.png" alt=""> xExchange
-      </button>
-      <button type="button" class="nav-item nav-item--external" onclick="openLander()" id="btn-Lander">
-        <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png" alt=""> Lander ↗
       </button>
       <button type="button" class="nav-item nav-item--external" onclick="openXPortal()" id="btn-xportal">
         <img src="https://axel4ro.github.io/TCLexplorer/images/xPortal.png" alt=""> xPortal ↗
@@ -1071,7 +1071,8 @@ function openXPortal() {
   window.open("https://xportal.com/app", "_blank");
 }
 function openLander() {
-  window.open("https://www.thecursedland.com/lander", "_blank");
+  const route = INTERNAL_PAGE_ROUTES.lander;
+  openInternalPage(route.src, route.title, route);
 }
   let mode = 'buy';
   const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
@@ -2643,6 +2644,26 @@ const INTERNAL_PAGE_ROUTES = {
     loadingTitle: "Loading NFTs...",
     loadingSubtitle: "Preparing collections, images and explorer tools.",
     waitForReadyMessage: true
+  },
+  lander: {
+    src: "https://popugames.github.io/Lander/",
+    title: "Lander",
+    navId: "btn-Lander",
+    routeKey: "lander",
+    loadingTitle: "Loading Lander...",
+    loadingSubtitle: "Opening The Cursed Land Lander inside TCL Explorer.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 2500
+  },
+  "the-cursed-land": {
+    src: "https://www.thecursedland.com/",
+    title: "The Cursed Land",
+    navId: "btn-TCL",
+    routeKey: "the-cursed-land",
+    loadingTitle: "Loading The Cursed Land...",
+    loadingSubtitle: "Opening the official site inside TCL Explorer.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 2500
   },
   "wiki-item-upgrade": {
     src: "Item_Upgrade_Requirements.html",
