@@ -1164,13 +1164,13 @@
   <div class="page-shell" bis_skin_checked="1">
     <div class="topbar" bis_skin_checked="1">
       <button class="back-btn" type="button" onclick="goBackToTclToken()">Back to TCL Token</button>
-      <div class="status-pill is-ready" id="statusPill" bis_skin_checked="1">5,661 local test swaps loaded. API unavailable, using offline demo data.</div>
+      <div class="status-pill is-loading" id="statusPill" bis_skin_checked="1">Loading TCL swaps from Cloudflare...</div>
     </div>
 
     <section class="hero">
       <div class="hero-main" bis_skin_checked="1">
         <div class="brand-row" bis_skin_checked="1">
-          <img src="./TCL Chart - TCL Explorer_files/tcl_icon.png" alt="TCL icon">
+          <img src="images/tcl_icon.png" alt="TCL icon">
           <div bis_skin_checked="1">
             <span class="eyebrow">TCL / USDC</span>
             <h1>TCL Chart</h1>
@@ -1188,23 +1188,23 @@
       <div class="hero-stats" bis_skin_checked="1">
         <div class="stat-card" bis_skin_checked="1">
           <div class="stat-label" bis_skin_checked="1">Live Price</div>
-          <span class="stat-value" id="livePriceValue">$0.00255</span>
-          <div class="stat-note" id="livePriceNote" bis_skin_checked="1">24H change: 0.3%</div>
+          <span class="stat-value" id="livePriceValue">--</span>
+          <div class="stat-note" id="livePriceNote" bis_skin_checked="1">Cloudflare pair snapshot.</div>
         </div>
         <div class="stat-card" bis_skin_checked="1">
           <div class="stat-label" bis_skin_checked="1">24H Volume</div>
-          <span class="stat-value" id="volume24hValue">$4.21K</span>
-          <div class="stat-note" id="txns24hNote" bis_skin_checked="1">3 buys / 5 sells</div>
+          <span class="stat-value" id="volume24hValue">--</span>
+          <div class="stat-note" id="txns24hNote" bis_skin_checked="1">--</div>
         </div>
         <div class="stat-card" bis_skin_checked="1">
           <div class="stat-label" bis_skin_checked="1">All-Time Flow</div>
-          <span class="stat-value" id="totalVolumeValue">$2.93M</span>
-          <div class="stat-note" bis_skin_checked="1"><span class="tone-buy" id="buyVolumeValue">$1.5M</span> buy / <span class="tone-sell" id="sellVolumeValue">$1.43M</span> sell</div>
+          <span class="stat-value" id="totalVolumeValue">--</span>
+          <div class="stat-note" bis_skin_checked="1"><span class="tone-buy" id="buyVolumeValue">--</span> buy / <span class="tone-sell" id="sellVolumeValue">--</span> sell</div>
         </div>
         <div class="stat-card" bis_skin_checked="1">
           <div class="stat-label" bis_skin_checked="1">History</div>
-          <span class="stat-value" id="swapCountValue">5,661</span>
-          <div class="stat-note" id="historyNote" bis_skin_checked="1">13 Jun 2024 to 21 May 2026, 12:00 UTC</div>
+          <span class="stat-value" id="swapCountValue">--</span>
+          <div class="stat-note" id="historyNote" bis_skin_checked="1">--</div>
         </div>
       </div>
     </section>
@@ -1288,7 +1288,7 @@
       <div class="chart-toolbar" bis_skin_checked="1">
         <div class="chart-title" bis_skin_checked="1">
           <h2>Price and Volume</h2>
-          <span id="chartSubtitle">13 Jun 2024 to 21 May 2026</span>
+          <span id="chartSubtitle">Loading Cloudflare data...</span>
         </div>
         <div class="chart-controls" bis_skin_checked="1">
           <div class="timeframe-group tv-only" aria-label="TradingView timeframe" bis_skin_checked="1">
@@ -1423,19 +1423,19 @@
       </div>
       <div class="legend-row" id="legendRow" bis_skin_checked="1">
         <span class="legend-item"><span class="legend-dot"></span>Price close</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High $0.02234</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low $0.00017</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price $0.00255</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High --</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low --</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price --</span>
         <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
         <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
-        <span>5,661 swaps visible | $2.93M volume</span>
+        <span>Waiting for Cloudflare swaps...</span>
       </div>
     </section>
 
     <section class="trades-panel">
       <div class="section-head" bis_skin_checked="1">
         <h2>Latest Swaps</h2>
-        <span class="stat-note" id="latestUpdateValue">Last swap: 21 May 2026, 12:00 UTC</span>
+        <span class="stat-note" id="latestUpdateValue">Last swap: --</span>
       </div>
       <div class="table-wrap" bis_skin_checked="1">
         <table>
@@ -1450,114 +1450,8 @@
             </tr>
           </thead>
           <tbody id="latestTradesBody">
-          <tr>
-            <td>21 May 2026, 12:00 UTC</td>
-            <td><span class="side-pill sell">sell</span></td>
-            <td>$0.00255</td>
-            <td>$862.26</td>
-            <td>338.45K</td>
-            <td><span class="hash-link">local-de...-05660</span></td>
-          </tr>
-        
-          <tr>
-            <td>21 May 2026, 09:00 UTC</td>
-            <td><span class="side-pill sell">sell</span></td>
-            <td>$0.00250</td>
-            <td>$864.61</td>
-            <td>345.16K</td>
-            <td><span class="hash-link">local-de...-05659</span></td>
-          </tr>
-        
-          <tr>
-            <td>21 May 2026, 06:00 UTC</td>
-            <td><span class="side-pill buy">buy</span></td>
-            <td>$0.00252</td>
-            <td>$614.32</td>
-            <td>243.63K</td>
-            <td><span class="hash-link">local-de...-05658</span></td>
-          </tr>
-        
-          <tr>
-            <td>21 May 2026, 03:00 UTC</td>
-            <td><span class="side-pill buy">buy</span></td>
-            <td>$0.00254</td>
-            <td>$413.13</td>
-            <td>162.34K</td>
-            <td><span class="hash-link">local-de...-05657</span></td>
-          </tr>
-        
-          <tr>
-            <td>21 May 2026, 00:00 UTC</td>
-            <td><span class="side-pill sell">sell</span></td>
-            <td>$0.00255</td>
-            <td>$89.11</td>
-            <td>34.92K</td>
-            <td><span class="hash-link">local-de...-05656</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 21:00 UTC</td>
-            <td><span class="side-pill sell">sell</span></td>
-            <td>$0.00254</td>
-            <td>$875.38</td>
-            <td>344.29K</td>
-            <td><span class="hash-link">local-de...-05655</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 18:00 UTC</td>
-            <td><span class="side-pill sell">sell</span></td>
-            <td>$0.00254</td>
-            <td>$465.77</td>
-            <td>183.44K</td>
-            <td><span class="hash-link">local-de...-05654</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 15:00 UTC</td>
-            <td><span class="side-pill buy">buy</span></td>
-            <td>$0.00254</td>
-            <td>$29.74</td>
-            <td>11.71K</td>
-            <td><span class="hash-link">local-de...-05653</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 12:00 UTC</td>
-            <td><span class="side-pill buy">buy</span></td>
-            <td>$0.00256</td>
-            <td>$173.30</td>
-            <td>67.72K</td>
-            <td><span class="hash-link">local-de...-05652</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 09:00 UTC</td>
-            <td><span class="side-pill sell">sell</span></td>
-            <td>$0.00260</td>
-            <td>$28.26</td>
-            <td>10.86K</td>
-            <td><span class="hash-link">local-de...-05651</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 06:00 UTC</td>
-            <td><span class="side-pill buy">buy</span></td>
-            <td>$0.00262</td>
-            <td>$189.64</td>
-            <td>72.38K</td>
-            <td><span class="hash-link">local-de...-05650</span></td>
-          </tr>
-        
-          <tr>
-            <td>20 May 2026, 03:00 UTC</td>
-            <td><span class="side-pill buy">buy</span></td>
-            <td>$0.00265</td>
-            <td>$943.95</td>
-            <td>356.08K</td>
-            <td><span class="hash-link">local-de...-05649</span></td>
-          </tr>
-        </tbody>
+            <tr><td colspan="6">Loading Cloudflare swaps...</td></tr>
+          </tbody>
         </table>
       </div>
     </section>
@@ -1572,13 +1466,8 @@
           <div class="tooltip-row"><span>Swaps</span><strong>8</strong></div>
         </div>
 
-  <script src="./TCL Chart - TCL Explorer_files/lightweight-charts.standalone.production.js.download"></script>
-  <script>
-    if (!window.LightweightCharts) {
-      document.write('<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"><\/script>');
-    }
-  </script><script src="./TCL Chart - TCL Explorer_files/lightweight-charts.standalone.production(1).js.download"></script>
-  <script src="./TCL Chart - TCL Explorer_files/event-push-config.js.download"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="js/event-push-config.js?v=20260519-1"></script>
   <script>
     const CONFIG = {
       listingDate: "2024-06-13T00:00:00Z",
@@ -1683,7 +1572,6 @@
       patternMarkers: [],
       plot: null,
       snapshotMeta: null,
-      localTestMode: false,
       isLoading: false,
       hasFullHistory: false,
       refreshTimer: null
@@ -1882,89 +1770,11 @@
       state.trades = trades;
       state.hasFullHistory = true;
       state.snapshotMeta = snapshot.meta || null;
-      state.localTestMode = false;
       saveCachedTrades({ fullHistory: true });
       return {
         tradeCount: trades.length,
         updatedAt: snapshot.meta?.updatedAt || null,
         sourceLabel: snapshot.meta?.fetchMeta?.sourceLabel || "cloudflare cache"
-      };
-    }
-
-    function createSeededRandom(seed = 7) {
-      let value = Math.max(1, Math.floor(seed)) % 2147483647;
-      return () => {
-        value = (value * 16807) % 2147483647;
-        return (value - 1) / 2147483646;
-      };
-    }
-
-    function buildLocalTestChartSnapshot() {
-      const random = createSeededRandom(459);
-      const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-      const nowTimestamp = Math.floor(Date.now() / 1000);
-      const stepSeconds = 3 * 60 * 60;
-      const trades = [];
-      let price = 0.00034;
-
-      for (let timestamp = listingTimestamp, index = 0; timestamp <= nowTimestamp; timestamp += stepSeconds, index += 1) {
-        const wave = Math.sin(index / 18) * 0.018 + Math.cos(index / 71) * 0.012;
-        const drift = (random() - 0.48) * 0.035;
-        price = Math.max(0.0000001, price * (1 + wave + drift));
-        const volumeUsd = 18 + random() * 940 + (index % 29 === 0 ? random() * 2200 : 0);
-        const side = random() > 0.49 ? "buy" : "sell";
-        trades.push({
-          hash: `local-demo-${timestamp}-${String(index).padStart(5, "0")}`,
-          timestamp,
-          side,
-          price,
-          volumeUsd,
-          tclAmount: volumeUsd / price
-        });
-      }
-
-      const latestTrade = trades[trades.length - 1] || null;
-      const previousDayTrades = trades.filter((trade) => trade.timestamp >= nowTimestamp - DAY_SECONDS);
-      const previousDayVolume = previousDayTrades.reduce((sum, trade) => sum + trade.volumeUsd, 0);
-      const previousDayBuys = previousDayTrades.filter((trade) => trade.side === "buy").length;
-      const previousDaySells = previousDayTrades.length - previousDayBuys;
-      const dayOpen = previousDayTrades[0]?.price || latestTrade?.price || price;
-      const change24h = dayOpen ? (((latestTrade?.price || price) - dayOpen) / dayOpen) * 100 : 0;
-
-      return {
-        ok: true,
-        pair: {
-          priceUsd: String(latestTrade?.price || price),
-          priceChange: { h24: change24h },
-          volume: { h24: previousDayVolume },
-          txns: { h24: { buys: previousDayBuys, sells: previousDaySells } }
-        },
-        trades,
-        meta: {
-          updatedAt: new Date().toISOString(),
-          fetchMeta: { sourceLabel: "local test data" }
-        }
-      };
-    }
-
-    function applyLocalTestChartSnapshot(snapshot) {
-      const trades = (Array.isArray(snapshot?.trades) ? snapshot.trades : [])
-        .filter(hasValidChartTrade)
-        .map(sanitizeTradeForCache)
-        .sort((left, right) => left.timestamp - right.timestamp);
-      if (!trades.length) {
-        throw new Error("Local test snapshot did not produce any TCL swaps.");
-      }
-
-      state.currentPair = snapshot.pair || state.currentPair;
-      state.trades = trades;
-      state.hasFullHistory = true;
-      state.snapshotMeta = snapshot.meta || null;
-      state.localTestMode = true;
-      return {
-        tradeCount: trades.length,
-        updatedAt: snapshot.meta?.updatedAt || null,
-        sourceLabel: snapshot.meta?.fetchMeta?.sourceLabel || "local test data"
       };
     }
 
@@ -2228,13 +2038,13 @@
         .map(sanitizeTradeForCache)
         .filter((trade) =>
           trade?.hash &&
+          !trade.hash.startsWith("local-demo-") &&
           Number.isFinite(trade.timestamp) &&
           Number.isFinite(trade.price) &&
           Number.isFinite(trade.volumeUsd)
         )
         .sort((left, right) => left.timestamp - right.timestamp);
       state.hasFullHistory = cached.fullHistory === true;
-      state.localTestMode = false;
       return state.trades.length > 0;
     }
 
@@ -2636,10 +2446,7 @@
       ui.latestTradesBody.innerHTML = latestTrades.map((trade) => {
         const sideClass = trade.side === "buy" ? "buy" : "sell";
         const hashLabel = trade.hash.slice(0, 8) + "..." + trade.hash.slice(-6);
-        const isLocalTestTrade = state.localTestMode || trade.hash.startsWith("local-demo-");
-        const hashCell = isLocalTestTrade
-          ? `<span class="hash-link">${hashLabel}</span>`
-          : `<a class="hash-link" href="https://explorer.multiversx.com/transactions/${trade.hash}" target="_blank" rel="noreferrer">${hashLabel}</a>`;
+        const hashCell = `<a class="hash-link" href="https://explorer.multiversx.com/transactions/${trade.hash}" target="_blank" rel="noreferrer">${hashLabel}</a>`;
         return `
           <tr>
             <td>${formatDateTime(trade.timestamp * 1000)}</td>
@@ -5151,7 +4958,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
         const cached = loadCachedTrades();
         if (!state.trades.length && applyCachedTrades(cached)) {
           renderAll();
-          setStatus("Local TCL chart cache loaded. Syncing Cloudflare snapshot...", "loading");
+          setStatus("Cached real TCL chart loaded. Syncing Cloudflare snapshot...", "loading");
         }
 
         setStatus(isManual ? "Refreshing TCL chart from Cloudflare..." : "Loading TCL chart from Cloudflare...", "loading");
@@ -5163,28 +4970,15 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
         setStatus(`${formatCount(applied.tradeCount)} swaps loaded from Cloudflare.${updatedAt}`, "ready");
         notifyParentReady();
       } catch (error) {
-        console.warn("Remote TCL chart load unavailable", error);
+        console.error("Failed to load TCL chart from Cloudflare", error);
         if (!state.trades.length) {
           const cached = loadCachedTrades();
           if (applyCachedTrades(cached)) {
             renderAll();
-            setStatus("Cloudflare unavailable. Showing local cached TCL chart.", "ready");
+            setStatus("Cloudflare unavailable. Showing last real cached TCL chart.", "ready");
             notifyParentReady();
             return;
           }
-
-          const localSnapshot = buildLocalTestChartSnapshot();
-          const applied = applyLocalTestChartSnapshot(localSnapshot);
-          renderAll();
-          setStatus(`${formatCount(applied.tradeCount)} local test swaps loaded. API unavailable, using offline demo data.`, "ready");
-          notifyParentReady();
-          return;
-        }
-        if (state.localTestMode) {
-          renderAll();
-          setStatus("API unavailable. Still showing local test chart data.", "ready");
-          notifyParentReady();
-          return;
         }
         if (state.trades.length) {
           renderAll();
