@@ -62,12 +62,15 @@
     }
 
     .page-shell {
+      display: flex;
+      flex-direction: column;
       width: min(1480px, calc(100% - 28px));
       margin: 0 auto;
       padding: 22px 0 34px;
     }
 
     .topbar {
+      order: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -145,6 +148,7 @@
     }
 
     .hero {
+      order: 2;
       display: grid;
       grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
       gap: 16px;
@@ -295,8 +299,14 @@
     }
 
     .chart-panel {
+      order: 1;
+      margin-bottom: 16px;
       border-radius: var(--radius-lg);
       overflow: hidden;
+    }
+
+    .trades-panel {
+      order: 3;
     }
 
     body.tv-mode .chart-panel {
