@@ -1044,7 +1044,7 @@
 </div>
 
 <script src="lang/common.bundle.js?v=20260515-3"></script>
-<script src="lang/events.bundle.js?v=20260515-3"></script>
+<script src="lang/events.bundle.js?v=20260521-1"></script>
 <script src="lang/exp-table.bundle.js?v=20260515-3"></script>
 <script src="lang/web3.bundle.js?v=20260515-3"></script>
 <script src="lang/token.bundle.js?v=20260515-3"></script>
@@ -1754,7 +1754,7 @@ showEventsForDay = function(day) {
     return `<div style="font-size:12px; color:#9ca3af; margin-top:4px;"><strong style="color:#d1d5db;">${label}:</strong> ${display}</div>`;
   };
 
-  events.forEach(ev => {
+  const eventCards = events.map((ev, index) => {
     const [sh, sm] = ev.start.split(":").map(Number);
     const [eh, em] = ev.end.split(":").map(Number);
 
@@ -1776,11 +1776,19 @@ showEventsForDay = function(day) {
     ));
 
     if (end <= start) end.setUTCDate(end.getUTCDate() + 1);
-    if (end < now) {
-      start.setUTCDate(start.getUTCDate() + 7);
-      end.setUTCDate(end.getUTCDate() + 7);
-    }
+    const isActive = now >= start && now <= end;
+    const isEnded = end < now;
+    const sortGroup = isActive ? 0 : (isEnded ? 2 : 1);
+    const sortTime = isActive ? end.getTime() : start.getTime();
 
+    return { ev, start, end, index, sortGroup, sortTime };
+  }).sort((a, b) => {
+    if (a.sortGroup !== b.sortGroup) return a.sortGroup - b.sortGroup;
+    if (a.sortTime !== b.sortTime) return a.sortTime - b.sortTime;
+    return a.index - b.index;
+  });
+
+  eventCards.forEach(({ ev, start, end }) => {
     let statusText = "";
     let borderClass = "";
     let timingHtml = "";
@@ -1800,6 +1808,14 @@ showEventsForDay = function(day) {
         notify("Event Live!", `${ev.name} is now ACTIVE for ${h}h ${m}m`);
         ev._notified = true;
       }
+    } else if (end < now) {
+      statusText = t("events_ended");
+      borderClass = "event-expired";
+      timingHtml = `
+        ${buildEventMetaLine(t("events_starts_label"), start)}
+        ${buildEventMetaLine(t("events_ends_label"), end)}
+        ${buildEventMetaLine(t("events_next_run_label"), new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000))}
+      `;
     } else {
       const diff = Math.floor((start - now) / 60000);
       const h = Math.floor(diff / 60);
