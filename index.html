@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260519-2" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260521-1" />
   <script>
     (() => {
       const ua = navigator.userAgent || "";
@@ -3076,9 +3076,74 @@ const STAKING_SCALE_WIDTH = 980;
 let topbarCtaRotationTimer = null;
 let topbarCtaMode = "earn";
 let topbarInstallActionType = null;
+let deferredPrompt = null;
+const PWA_INSTALL_STATE_KEY = "tclPwaInstalled";
 const PUBLIC_SHARE_BASE_URL = "https://axel4ro.github.io/TCLexplorer/";
 let topbarUtilityRotationTimer = null;
 let topbarUtilityMode = "lang";
+
+function matchesMediaQuery(query) {
+  return typeof window.matchMedia === "function" && window.matchMedia(query).matches;
+}
+
+function isPwaStandaloneMode() {
+  return matchesMediaQuery("(display-mode: standalone)")
+    || matchesMediaQuery("(display-mode: fullscreen)")
+    || matchesMediaQuery("(display-mode: minimal-ui)")
+    || window.navigator.standalone === true;
+}
+
+function getStoredPwaInstalled() {
+  try {
+    return localStorage.getItem(PWA_INSTALL_STATE_KEY) === "1";
+  } catch (_) {
+    return false;
+  }
+}
+
+function setStoredPwaInstalled(installed) {
+  try {
+    if (installed) {
+      localStorage.setItem(PWA_INSTALL_STATE_KEY, "1");
+    } else {
+      localStorage.removeItem(PWA_INSTALL_STATE_KEY);
+    }
+  } catch (_) {}
+}
+
+function isPwaInstalled() {
+  return isPwaStandaloneMode() || getStoredPwaInstalled();
+}
+
+function syncPwaInstallState() {
+  const installed = isPwaInstalled();
+  document.body?.classList.toggle("pwa-installed", installed);
+  if (installed) {
+    deferredPrompt = null;
+    topbarInstallActionType = null;
+    if (topbarCtaMode === "install") topbarCtaMode = "earn";
+    document.getElementById("iosGuideBox")?.remove();
+  }
+  return installed;
+}
+
+function bindPwaDisplayModeWatcher() {
+  if (bindPwaDisplayModeWatcher.bound || typeof window.matchMedia !== "function") return;
+  bindPwaDisplayModeWatcher.bound = true;
+
+  ["(display-mode: standalone)", "(display-mode: fullscreen)", "(display-mode: minimal-ui)"].forEach((query) => {
+    const media = window.matchMedia(query);
+    const sync = () => {
+      syncPwaInstallState();
+      syncTopbarEarnButton();
+    };
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", sync);
+    } else if (typeof media.addListener === "function") {
+      media.addListener(sync);
+    }
+  });
+}
 
 function stopTopbarCtaRotation() {
   if (!topbarCtaRotationTimer) return;
@@ -3087,6 +3152,7 @@ function stopTopbarCtaRotation() {
 }
 
 function getTopbarCtaModes() {
+  if (isPwaInstalled()) return ["earn"];
   if (window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop") {
     return ["install"];
   }
@@ -3111,7 +3177,7 @@ function renderTopbarCtaButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
 
-  const isInstallMode = topbarCtaMode === "install" && !!topbarInstallActionType;
+  const isInstallMode = topbarCtaMode === "install" && !!topbarInstallActionType && !isPwaInstalled();
   topbarEarnBtn.innerHTML = isInstallMode
     ? getTopbarInstallLabel()
     : t("nav_play_and_earn", {}, "🎮Play and Earn💰");
@@ -3151,7 +3217,7 @@ function syncTopbarCtaRail() {
 }
 
 function handleTopbarCtaClick() {
-  if (topbarCtaMode !== "install" || !topbarInstallActionType) {
+  if (isPwaInstalled() || topbarCtaMode !== "install" || !topbarInstallActionType) {
     openEarnGuidePage();
     return;
   }
@@ -3169,10 +3235,11 @@ function syncTopbarEarnButton() {
   const topbarEarnBtn = document.getElementById("topbarEarnBtn");
   if (!topbarEarnBtn) return;
 
+  const pwaInstalled = syncPwaInstallState();
   const shouldHide = document.body.classList.contains("sidebar-open")
     || (
       document.body.classList.contains("sidebar-desktop")
-      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop")
+      && !(window.matchMedia("(min-width: 1024px)").matches && topbarInstallActionType === "desktop" && !pwaInstalled)
     );
 
   topbarEarnBtn.hidden = shouldHide;
@@ -4062,6 +4129,8 @@ function applySidebarLayout() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  syncPwaInstallState();
+  bindPwaDisplayModeWatcher();
   applySidebarLayout();
   window.addEventListener("resize", scheduleSidebarLayout, { passive: true });
   window.addEventListener("resize", syncTopbarCtaRail, { passive: true });
@@ -4629,12 +4698,17 @@ async function askPermission() {
 
 
 /* === INSTALL GUIDE Chrome-like === */
-let deferredPrompt = null;
 
 // 📲 Android (Chrome PWA)
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
+  setStoredPwaInstalled(false);
+
+  if (syncPwaInstallState()) {
+    syncTopbarEarnButton();
+    return;
+  }
 
   if (/android/i.test(navigator.userAgent)) {
     showInstallButton("android");
@@ -4643,28 +4717,52 @@ window.addEventListener("beforeinstallprompt", (e) => {
   }
 });
 
-// 🖥️ iOS & desktop fallback
+// iOS fallback; desktop is shown only when beforeinstallprompt is available.
 window.addEventListener("DOMContentLoaded", () => {
+  if (syncPwaInstallState()) {
+    syncTopbarEarnButton();
+    return;
+  }
+
   const ua = navigator.userAgent.toLowerCase();
 
   if (/iphone|ipad|ipod/.test(ua)) {
     showInstallButton("ios");
-  } else if (!/android/i.test(navigator.userAgent)) {
-    showInstallButton("desktop");
   }
 });
 
 function showInstallButton(type) {
+  if (syncPwaInstallState()) {
+    syncTopbarEarnButton();
+    return;
+  }
+
   topbarInstallActionType = ["android", "ios", "desktop"].includes(type) ? type : null;
   syncTopbarEarnButton();
 }
 
+window.addEventListener("appinstalled", () => {
+  setStoredPwaInstalled(true);
+  syncPwaInstallState();
+  syncTopbarEarnButton();
+});
+
 async function installPWA() {
+  if (isPwaInstalled()) {
+    syncTopbarEarnButton();
+    return;
+  }
+
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
     console.log("User choice:", choice.outcome);
     deferredPrompt = null;
+    if (choice.outcome === "accepted") {
+      setStoredPwaInstalled(true);
+      syncPwaInstallState();
+      syncTopbarEarnButton();
+    }
   } else {
     alert("👉 Open the browser menu and select 'Install TCL Explorer' or 'Install app'.");
   }

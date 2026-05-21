@@ -2193,9 +2193,16 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 }
 
 @media (min-width: 1024px) {
-  body.sidebar-desktop .topbar-earn-btn[data-cta-mode="desktop"] {
+  body:not(.pwa-installed).sidebar-desktop .topbar-earn-btn[data-cta-mode="desktop"] {
     display: inline-flex !important;
   }
+}
+
+body .topbar-cta-rail .install-btn[hidden],
+body.pwa-installed .topbar-earn-btn[data-cta-mode="android"],
+body.pwa-installed .topbar-earn-btn[data-cta-mode="ios"],
+body.pwa-installed .topbar-earn-btn[data-cta-mode="desktop"] {
+  display: none !important;
 }
 
 /* Sentiment last update */
