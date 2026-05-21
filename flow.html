@@ -1,0 +1,5469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCL Flow Chart - TCL Explorer</title>
+  <meta name="theme-color" content="#070b13">
+  <link rel="icon" href="images/tcl_icon.png">
+  <style>
+    :root {
+      --bg: #060910;
+      --panel: #111824;
+      --panel-soft: rgba(17, 24, 36, 0.82);
+      --panel-strong: #151d2b;
+      --line: rgba(135, 160, 196, 0.16);
+      --line-strong: rgba(135, 160, 196, 0.28);
+      --text: #edf4ff;
+      --muted: #8b98ac;
+      --soft: #657189;
+      --accent: #42d7ff;
+      --accent-soft: rgba(66, 215, 255, 0.14);
+      --buy: #35df91;
+      --buy-soft: rgba(53, 223, 145, 0.16);
+      --sell: #ff6672;
+      --sell-soft: rgba(255, 102, 114, 0.16);
+      --gold: #f5c663;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(53, 223, 145, 0.12), transparent 28%),
+        radial-gradient(circle at 92% 10%, rgba(66, 215, 255, 0.12), transparent 26%),
+        linear-gradient(160deg, #05070d 0%, #0b101a 48%, #05070d 100%);
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page-shell {
+      width: min(1480px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 34px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .back-btn,
+    .tool-btn,
+    .range-btn {
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .back-btn:hover,
+    .tool-btn:hover,
+    .range-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      max-width: min(620px, 100%);
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-pill::before {
+      content: "";
+      flex: 0 0 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      box-shadow: 0 0 0 6px rgba(101, 113, 137, 0.12);
+    }
+
+    .status-pill.is-loading::before {
+      background: var(--gold);
+      box-shadow: 0 0 0 6px rgba(245, 198, 99, 0.13);
+    }
+
+    .status-pill.is-ready::before {
+      background: var(--buy);
+      box-shadow: 0 0 0 6px rgba(53, 223, 145, 0.13);
+    }
+
+    .status-pill.is-error::before {
+      background: var(--sell);
+      box-shadow: 0 0 0 6px rgba(255, 102, 114, 0.13);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hero-main,
+    .stat-card,
+    .chart-panel,
+    .trades-panel {
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: linear-gradient(180deg, rgba(17, 24, 36, 0.95), rgba(10, 15, 25, 0.94));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      position: relative;
+      min-height: 184px;
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(66, 215, 255, 0.42), transparent);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .brand-row img {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.26);
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 4.2rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      margin: 0;
+      max-width: 720px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.98rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .tool-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .tool-btn.primary {
+      border-color: rgba(66, 215, 255, 0.26);
+      background: linear-gradient(135deg, rgba(66, 215, 255, 0.16), rgba(53, 223, 145, 0.12));
+    }
+
+    .mode-toggle.is-active {
+      color: #031019;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--buy));
+      box-shadow: 0 12px 28px rgba(66, 215, 255, 0.16);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      min-height: 86px;
+      padding: 14px;
+      border-radius: var(--radius-md);
+    }
+
+    .stat-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      display: block;
+      color: var(--text);
+      font-size: clamp(1.15rem, 2.4vw, 1.72rem);
+      font-weight: 800;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-note {
+      margin-top: 8px;
+      color: var(--soft);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .tone-buy {
+      color: var(--buy);
+    }
+
+    .tone-sell {
+      color: var(--sell);
+    }
+
+    .chart-panel {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    body.tv-mode .chart-panel {
+      overflow: visible;
+    }
+
+    .tv-commandbar {
+      display: none;
+      position: relative;
+      z-index: 50;
+      min-height: 44px;
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(5, 7, 12, 0.78);
+      overflow: visible;
+    }
+
+    body.tv-mode .tv-commandbar {
+      display: block;
+    }
+
+    .tv-commandbar-scroll {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tv-symbol {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tv-divider {
+      flex: 0 0 1px;
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .tv-command-btn,
+    .tv-menu-btn,
+    .tv-tool-btn,
+    .tv-scale-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    }
+
+    .tv-command-btn,
+    .tv-menu-btn {
+      min-height: 30px;
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tv-command-btn:hover,
+    .tv-menu-btn:hover,
+    .tv-tool-btn:hover,
+    .tv-scale-btn:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .tv-command-btn.is-active,
+    .tv-menu-btn.is-active,
+    .tv-tool-btn.is-active,
+    .tv-scale-btn.is-active {
+      color: #031019;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--buy));
+    }
+
+    .tv-dropdown {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .tv-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      z-index: 30;
+      display: none;
+      min-width: 236px;
+      max-height: min(520px, calc(100vh - 120px));
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 12px;
+      background: rgba(21, 24, 32, 0.98);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+      pointer-events: auto;
+    }
+
+    .tv-dropdown.is-open .tv-menu,
+    .tv-dropdown.is-open .tv-settings-panel {
+      display: block;
+    }
+
+    .tv-dropdown.is-floating .tv-menu,
+    .tv-dropdown.is-floating .tv-settings-panel {
+      position: fixed;
+      z-index: 1200;
+    }
+
+    .tv-menu-section {
+      padding: 7px 8px 5px;
+      color: var(--soft);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .tv-menu-item {
+      width: 100%;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 9px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.86rem;
+    }
+
+    .tv-menu-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .tv-menu-item.is-active {
+      color: #031019;
+      background: linear-gradient(135deg, var(--accent), var(--buy));
+      font-weight: 800;
+    }
+
+    .tv-settings-panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 35;
+      display: none;
+      width: min(360px, calc(100vw - 32px));
+      max-height: min(520px, calc(100vh - 120px));
+      overflow-y: auto;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 14px;
+      background: rgba(21, 24, 32, 0.98);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.44);
+      pointer-events: auto;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 36px;
+      padding: 7px 4px;
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+
+    .settings-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: #35df91;
+    }
+
+    .tv-workspace {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    body.tv-mode .tv-workspace {
+      grid-template-columns: 48px minmax(0, 1fr) 40px;
+      min-height: 680px;
+      overflow: hidden;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+
+    body.tv-mode .chart-toolbar {
+      display: none;
+    }
+
+    .tv-left-tools,
+    .tv-scale-tools {
+      display: none;
+      background: rgba(5, 7, 12, 0.82);
+    }
+
+    body.tv-mode .tv-left-tools,
+    body.tv-mode .tv-scale-tools {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 6px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    body.tv-mode .tv-scale-tools {
+      border-right: 0;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    body.tv-mode .chart-stage {
+      position: relative;
+      min-height: 680px;
+      padding: 0;
+    }
+
+    body.tv-mode #tclChartCanvas {
+      display: none;
+    }
+
+    #tvChartContainer {
+      display: none;
+      width: 100%;
+      height: 680px;
+      border-radius: 0;
+      background: #131722;
+    }
+
+    body.tv-mode #tvChartContainer {
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
+    #tvDrawingCanvas {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      width: 100%;
+      height: 680px;
+      pointer-events: none;
+    }
+
+    body.tv-mode #tvDrawingCanvas {
+      display: block;
+      touch-action: none;
+    }
+
+    body.tv-mode .chart-stage.is-drawing-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+
+    body.tv-mode .chart-stage.is-text-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: text;
+    }
+
+    body.tv-mode .chart-stage.is-eraser-tool #tvDrawingCanvas {
+      pointer-events: auto;
+      cursor: not-allowed;
+    }
+
+    .tv-chart-legend {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 58px;
+      z-index: 8;
+      max-width: calc(100% - 120px);
+      padding: 8px 10px;
+      border: 1px solid #2a2e39;
+      border-radius: 4px;
+      background: rgba(19, 23, 34, 0.92);
+      pointer-events: none;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #d1d4dc;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+    }
+
+    body.tv-mode .tv-chart-legend {
+      display: block;
+    }
+
+    .tv-chart-legend .tv-legend-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-weight: 700;
+      color: #f0f3fa;
+    }
+
+    .tv-chart-legend .tv-legend-meta {
+      color: #787b86;
+      font-weight: 600;
+      font-size: 0.72rem;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc span {
+      color: #787b86;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc strong {
+      color: #d1d4dc;
+      font-weight: 700;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc .is-up {
+      color: #26a69a;
+    }
+
+    .tv-chart-legend .tv-legend-ohlc .is-down {
+      color: #ef5350;
+    }
+
+    .tv-realtime-btn {
+      display: none;
+      position: absolute;
+      right: 52px;
+      bottom: 88px;
+      z-index: 8;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid #2a2e39;
+      border-radius: 4px;
+      background: rgba(19, 23, 34, 0.94);
+      color: #d1d4dc;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .tv-realtime-btn:hover {
+      background: #2a2e39;
+      color: #fff;
+    }
+
+    body.tv-mode .tv-realtime-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body.tv-mode .legend-row {
+      display: none;
+    }
+
+    body.tv-mode .chart-empty {
+      inset: 0;
+      z-index: 3;
+    }
+
+    .tv-tool-btn,
+    .tv-scale-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 900;
+      position: relative;
+    }
+
+    .tv-tool-btn svg,
+    .tv-scale-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .tv-scale-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Tooltip for tool buttons */
+    .tv-tool-btn[title]::after,
+    .tv-scale-btn[title]::after {
+      content: attr(title);
+      position: absolute;
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(21, 24, 32, 0.97);
+      color: var(--text);
+      font-size: 0.74rem;
+      font-weight: 700;
+      white-space: nowrap;
+      padding: 5px 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 200;
+    }
+
+    .tv-tool-btn[title]:hover::after,
+    .tv-scale-btn[title]:hover::after {
+      opacity: 1;
+    }
+
+    /* Right sidebar tooltips appear to the left */
+    .tv-scale-tools .tv-scale-btn[title]::after {
+      left: auto;
+      right: calc(100% + 10px);
+    }
+
+    .tv-tool-btn.is-active,
+    .tv-tool-btn.is-active svg {
+      color: #031019;
+    }
+
+    .tv-tool-separator {
+      width: 28px;
+      height: 1px;
+      margin: 3px 0;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .tv-price-badge {
+      position: absolute;
+      right: 52px;
+      z-index: 9;
+      display: none;
+      min-width: 82px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      color: #031019;
+      background: var(--sell);
+      font-size: 0.78rem;
+      font-weight: 900;
+      text-align: center;
+      pointer-events: none;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+    }
+
+    body.tv-mode .tv-price-badge {
+      display: none;
+    }
+
+    .chart-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .chart-title h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      letter-spacing: 0;
+    }
+
+    .chart-title span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .chart-controls {
+      display: grid;
+      gap: 10px;
+      justify-items: end;
+    }
+
+    .range-group {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(66px, 1fr));
+      gap: 8px;
+      padding: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .timeframe-group {
+      display: none;
+      grid-template-columns: repeat(6, minmax(50px, 1fr));
+      gap: 8px;
+      padding: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .indicator-group {
+      display: none;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      max-width: 560px;
+    }
+
+    body.tv-mode .timeframe-group {
+      display: grid;
+    }
+
+    body.tv-mode .indicator-group {
+      display: flex;
+    }
+
+    .range-btn,
+    .indicator-btn {
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .indicator-btn {
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .indicator-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+    }
+
+    .range-btn.is-active,
+    .indicator-btn.is-active {
+      color: #031019;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--buy));
+    }
+
+    .chart-stage {
+      position: relative;
+      min-height: 560px;
+      padding: 12px 12px 8px;
+    }
+
+    #tclChartCanvas {
+      display: block;
+      width: 100%;
+      height: 540px;
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(5, 9, 16, 0.34), rgba(5, 9, 16, 0.78)),
+        #070d17;
+    }
+
+    .chart-empty {
+      position: absolute;
+      inset: 12px;
+      display: none;
+      place-items: center;
+      border: 1px dashed rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      color: var(--muted);
+      text-align: center;
+      padding: 18px;
+      background: rgba(7, 13, 23, 0.72);
+    }
+
+    .chart-empty.is-visible {
+      display: grid;
+    }
+
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px 16px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .legend-dot.buy {
+      background: var(--buy);
+    }
+
+    .legend-dot.sell {
+      background: var(--sell);
+    }
+
+    .trades-panel {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      text-align: left;
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .side-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 58px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+    }
+
+    .side-pill.buy {
+      color: #062112;
+      background: var(--buy);
+    }
+
+    .side-pill.sell {
+      color: #23080b;
+      background: var(--sell);
+    }
+
+    .hash-link {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 20;
+      display: none;
+      min-width: 230px;
+      max-width: 280px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: rgba(8, 13, 22, 0.94);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
+      pointer-events: none;
+      backdrop-filter: blur(12px);
+    }
+
+    .tooltip.is-visible {
+      display: block;
+    }
+
+    .tooltip-title {
+      margin-bottom: 8px;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .tooltip-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .tooltip-row strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 980px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-controls {
+        justify-items: stretch;
+      }
+
+      .range-group,
+      .timeframe-group {
+        width: 100%;
+      }
+
+      .indicator-group {
+        justify-content: flex-start;
+      }
+
+      body.tv-mode .tv-workspace {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      body.tv-mode .tv-scale-tools {
+        display: none;
+      }
+
+      .tv-price-badge {
+        right: 14px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-shell {
+        width: min(100% - 20px, 1480px);
+        padding-top: 14px;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-pill,
+      .back-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .hero-main {
+        min-height: 0;
+        padding: 18px;
+      }
+
+      .brand-row {
+        align-items: flex-start;
+      }
+
+      .brand-row img {
+        width: 44px;
+        height: 44px;
+      }
+
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .range-group,
+      .timeframe-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-radius: 18px;
+      }
+
+      #tclChartCanvas {
+        height: 430px;
+      }
+
+      .chart-stage {
+        min-height: 450px;
+        padding: 8px;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="topbar">
+      <button class="back-btn" type="button" onclick="goBackToTclToken()">Back to TCL Token</button>
+      <div class="status-pill is-loading" id="statusPill">Loading TCL swaps...</div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-main">
+        <div class="brand-row">
+          <img src="images/tcl_icon.png" alt="TCL icon">
+          <div>
+            <span class="eyebrow">TCL / USDC</span>
+            <h1>TCL Flow Chart</h1>
+          </div>
+        </div>
+        <p class="hero-copy">All-time TCL swap chart built from MultiversX pair transfers, with live buy and sell flow from the first parsed swap to the latest on-chain update.</p>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="stat-label">Live Price</div>
+          <span class="stat-value" id="livePriceValue">--</span>
+          <div class="stat-note" id="livePriceNote">Live pair snapshot.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">24H Volume</div>
+          <span class="stat-value" id="volume24hValue">--</span>
+          <div class="stat-note" id="txns24hNote">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">All-Time Flow</div>
+          <span class="stat-value" id="totalVolumeValue">--</span>
+          <div class="stat-note"><span class="tone-buy" id="buyVolumeValue">--</span> buy / <span class="tone-sell" id="sellVolumeValue">--</span> sell</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">History</div>
+          <span class="stat-value" id="swapCountValue">--</span>
+          <div class="stat-note" id="historyNote">--</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-panel">
+      <div class="tv-commandbar" aria-label="TradingView style chart controls">
+        <div class="tv-commandbar-scroll">
+        <div class="tv-symbol">TCLUSDC <span style="color:var(--soft);font-weight:700;">MultiversX</span></div>
+        <div class="tv-divider" aria-hidden="true"></div>
+        <button class="tv-command-btn" type="button" data-timeframe="1m">1m</button>
+        <button class="tv-command-btn" type="button" data-timeframe="5m">5m</button>
+        <button class="tv-command-btn" type="button" data-timeframe="15m">15m</button>
+        <button class="tv-command-btn" type="button" data-timeframe="30m">30m</button>
+        <button class="tv-command-btn" type="button" data-timeframe="1h">1h</button>
+        <button class="tv-command-btn" type="button" data-timeframe="4h">4h</button>
+        <button class="tv-command-btn is-active" type="button" data-timeframe="1d">D</button>
+        <div class="tv-dropdown">
+          <button class="tv-menu-btn" type="button" data-dropdown="timeframeMenu">More</button>
+          <div class="tv-menu" id="timeframeMenu">
+            <div class="tv-menu-section">Minutes</div>
+            <button class="tv-menu-item" type="button" data-timeframe="1m">1 minute</button>
+            <button class="tv-menu-item" type="button" data-timeframe="5m">5 minutes</button>
+            <button class="tv-menu-item" type="button" data-timeframe="15m">15 minutes</button>
+            <button class="tv-menu-item" type="button" data-timeframe="30m">30 minutes</button>
+            <div class="tv-menu-section">Hours</div>
+            <button class="tv-menu-item" type="button" data-timeframe="1h">1 hour</button>
+            <button class="tv-menu-item" type="button" data-timeframe="4h">4 hours</button>
+            <div class="tv-menu-section">Days</div>
+            <button class="tv-menu-item is-active" type="button" data-timeframe="1d">1 day</button>
+            <button class="tv-menu-item" type="button" data-timeframe="1w">1 week</button>
+            <button class="tv-menu-item" type="button" data-timeframe="1mo">1 month</button>
+          </div>
+        </div>
+        <div class="tv-divider" aria-hidden="true"></div>
+        <div class="tv-dropdown">
+          <button class="tv-menu-btn" id="chartTypeButton" type="button" data-dropdown="chartTypeMenu">Candles</button>
+          <div class="tv-menu" id="chartTypeMenu">
+            <div class="tv-menu-section">Chart type</div>
+            <button class="tv-menu-item is-active" type="button" data-chart-style="candles">Candles</button>
+            <button class="tv-menu-item" type="button" data-chart-style="hollow">Hollow candles</button>
+            <button class="tv-menu-item" type="button" data-chart-style="volume">Volume candles</button>
+            <button class="tv-menu-item" type="button" data-chart-style="bars">Bars</button>
+            <button class="tv-menu-item" type="button" data-chart-style="heikin">Heikin Ashi</button>
+            <button class="tv-menu-item" type="button" data-chart-style="line">Line</button>
+            <button class="tv-menu-item" type="button" data-chart-style="line-markers">Line with markers</button>
+            <button class="tv-menu-item" type="button" data-chart-style="area">Area</button>
+            <button class="tv-menu-item" type="button" data-chart-style="hlc-area">HLC area</button>
+            <button class="tv-menu-item" type="button" data-chart-style="columns">Columns</button>
+          </div>
+        </div>
+        <div class="tv-dropdown">
+          <button class="tv-menu-btn" type="button" data-dropdown="indicatorMenu">Indicators</button>
+          <div class="tv-menu" id="indicatorMenu">
+            <div class="tv-menu-section">Favorite indicators</div>
+            <button class="tv-menu-item is-active" type="button" data-indicator="ema20">EMA 20</button>
+            <button class="tv-menu-item is-active" type="button" data-indicator="sma50">SMA 50</button>
+            <button class="tv-menu-item" type="button" data-indicator="bb20">Bollinger Bands</button>
+            <button class="tv-menu-item" type="button" data-indicator="vwap">VWAP</button>
+            <button class="tv-menu-item is-active" type="button" data-indicator="patterns">Candle Patterns</button>
+          </div>
+        </div>
+        <div class="tv-divider" aria-hidden="true"></div>
+        <button class="tv-command-btn" type="button" data-zoom="in">Zoom +</button>
+        <button class="tv-command-btn" type="button" data-zoom="out">Zoom -</button>
+        <button class="tv-command-btn" type="button" data-zoom="fit">Fit</button>
+        <button class="tv-command-btn" type="button" data-chart-action="realtime" title="Scroll to latest bar">Realtime</button>
+        <div class="tv-dropdown" style="margin-left:auto;">
+          <button class="tv-menu-btn" type="button" data-dropdown="settingsPanel">Settings</button>
+          <div class="tv-settings-panel" id="settingsPanel">
+            <div class="tv-menu-section">Chart settings</div>
+            <label class="settings-row"><span>Grid lines</span><input type="checkbox" data-setting="grid"></label>
+            <label class="settings-row"><span>Volume pane</span><input type="checkbox" data-setting="volume" checked=""></label>
+            <label class="settings-row"><span>Last price line</span><input type="checkbox" data-setting="lastPriceLine" checked=""></label>
+            <label class="settings-row"><span>High and low labels</span><input type="checkbox" data-setting="highLowLabels" checked=""></label>
+            <label class="settings-row"><span>Right price labels</span><input type="checkbox" data-setting="priceLabels" checked=""></label>
+            <label class="settings-row"><span>Log scale</span><input type="checkbox" data-setting="logScale"></label>
+          </div>
+        </div>
+        </div>
+      </div>
+      <div class="chart-toolbar">
+        <div class="chart-title">
+          <h2>Price and Volume</h2>
+          <span id="chartSubtitle">Loading chart data...</span>
+          <span id="chartMeta">Waiting for swaps...</span>
+        </div>
+        <div class="chart-controls">
+          <div class="timeframe-group tv-only" aria-label="TradingView timeframe">
+            <button class="range-btn" type="button" data-timeframe="15m">15m</button>
+            <button class="range-btn" type="button" data-timeframe="1h">1H</button>
+            <button class="range-btn" type="button" data-timeframe="4h">4H</button>
+            <button class="range-btn is-active" type="button" data-timeframe="1d">1D</button>
+            <button class="range-btn" type="button" data-timeframe="1w">1W</button>
+            <button class="range-btn" type="button" data-timeframe="1mo">1M</button>
+          </div>
+          <div class="range-group" aria-label="Chart range">
+            <button class="range-btn is-active" type="button" data-range="all">All</button>
+            <button class="range-btn" type="button" data-range="365">1Y</button>
+            <button class="range-btn" type="button" data-range="90">90D</button>
+            <button class="range-btn" type="button" data-range="30">30D</button>
+          </div>
+          <div class="indicator-group tv-only" aria-label="TradingView indicators">
+            <button class="indicator-btn is-active" type="button" data-indicator="ema20">EMA 20</button>
+            <button class="indicator-btn is-active" type="button" data-indicator="sma50">SMA 50</button>
+            <button class="indicator-btn" type="button" data-indicator="bb20">Bollinger</button>
+            <button class="indicator-btn" type="button" data-indicator="vwap">VWAP</button>
+            <button class="indicator-btn is-active" type="button" data-indicator="patterns">Patterns</button>
+          </div>
+        </div>
+      </div>
+      <div class="tv-workspace">
+        <aside class="tv-left-tools" aria-label="Chart drawing tools">
+          <!-- Crosshair -->
+          <button class="tv-tool-btn is-active" type="button" data-tool="crosshair" title="Crosshair">
+            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5"></circle><line x1="8" y1="1" x2="8" y2="5"></line><line x1="8" y1="11" x2="8" y2="15"></line><line x1="1" y1="8" x2="5" y2="8"></line><line x1="11" y1="8" x2="15" y2="8"></line></svg>
+          </button>
+          <!-- Trend line -->
+          <button class="tv-tool-btn" type="button" data-tool="trend" title="Trend line">
+            <svg viewBox="0 0 16 16"><line x1="2" y1="13" x2="14" y2="3"></line><circle cx="2" cy="13" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="14" cy="3" r="1.5" fill="currentColor" stroke="none"></circle></svg>
+          </button>
+          <!-- Horizontal line -->
+          <button class="tv-tool-btn" type="button" data-tool="hline" title="Horizontal line">
+            <svg viewBox="0 0 16 16"><line x1="1" y1="8" x2="15" y2="8" stroke-dasharray="2 2"></line><circle cx="1" cy="8" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="15" cy="8" r="1.5" fill="currentColor" stroke="none"></circle></svg>
+          </button>
+          <!-- Ray -->
+          <button class="tv-tool-btn" type="button" data-tool="ray" title="Ray">
+            <svg viewBox="0 0 16 16"><line x1="2" y1="12" x2="15" y2="4"></line><circle cx="2" cy="12" r="1.5" fill="currentColor" stroke="none"></circle><polyline points="12,3 15,4 13,7" fill="none"></polyline></svg>
+          </button>
+          <!-- Extended line -->
+          <button class="tv-tool-btn" type="button" data-tool="extended" title="Extended line">
+            <svg viewBox="0 0 16 16"><line x1="1" y1="13" x2="15" y2="3"></line><polyline points="3,13 1,13 2,11"></polyline><polyline points="13,3 15,3 14,5"></polyline></svg>
+          </button>
+          <!-- Arrow line -->
+          <button class="tv-tool-btn" type="button" data-tool="arrow" title="Arrow">
+            <svg viewBox="0 0 16 16"><line x1="2" y1="13" x2="13" y2="4"></line><polyline points="9,3 13,4 12,8"></polyline></svg>
+          </button>
+          <!-- Vertical line -->
+          <button class="tv-tool-btn" type="button" data-tool="vline" title="Vertical line">
+            <svg viewBox="0 0 16 16"><line x1="8" y1="1" x2="8" y2="15" stroke-dasharray="2 2"></line><circle cx="8" cy="1.5" r="1.4" fill="currentColor" stroke="none"></circle><circle cx="8" cy="14.5" r="1.4" fill="currentColor" stroke="none"></circle></svg>
+          </button>
+          <!-- Brush -->
+          <button class="tv-tool-btn" type="button" data-tool="brush" title="Brush">
+            <svg viewBox="0 0 16 16"><path d="M2 13 Q5 9 8 7 Q11 5 13 3" stroke-width="2"></path><path d="M2 13 Q2.5 14.5 4 14 Q4 12 2 13Z" fill="currentColor" stroke="none"></path></svg>
+          </button>
+          <!-- Text -->
+          <button class="tv-tool-btn" type="button" data-tool="text" title="Text">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 3.2 H13"></path>
+              <path d="M8 3.2 V13"></path>
+              <path d="M5.8 13 H10.2"></path>
+            </svg>
+          </button>
+          <div class="tv-tool-separator"></div>
+          <!-- Rectangle -->
+          <button class="tv-tool-btn" type="button" data-tool="rect" title="Rectangle">
+            <svg viewBox="0 0 16 16"><rect x="3" y="4" width="10" height="8" rx="1.2"></rect></svg>
+          </button>
+          <!-- Ellipse -->
+          <button class="tv-tool-btn" type="button" data-tool="ellipse" title="Ellipse">
+            <svg viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="5" ry="3.6"></ellipse></svg>
+          </button>
+          <!-- Measure -->
+          <button class="tv-tool-btn" type="button" data-tool="measure" title="Measure">
+            <svg viewBox="0 0 16 16"><line x1="2" y1="8" x2="14" y2="8"></line><line x1="2" y1="5" x2="2" y2="11"></line><line x1="14" y1="5" x2="14" y2="11"></line><line x1="6" y1="6.5" x2="6" y2="9.5"></line><line x1="10" y1="6.5" x2="10" y2="9.5"></line></svg>
+          </button>
+          <div class="tv-tool-separator"></div>
+          <button class="tv-tool-btn" type="button" data-tool="undo" title="Undo drawing">↶</button>
+          <button class="tv-tool-btn" type="button" data-tool="redo" title="Redo drawing">↷</button>
+          <button class="tv-tool-btn" type="button" data-tool="hide" title="Hide / show drawings">◉</button>
+          <button class="tv-tool-btn" type="button" data-tool="keep" title="Keep drawing mode">∞</button>
+          <button class="tv-tool-btn" type="button" data-tool="lock" title="Lock drawings">🔒</button>
+          <!-- Magnet -->
+          <button class="tv-tool-btn" type="button" data-tool="magnet" title="Magnet">
+            <svg viewBox="0 0 16 16"><path d="M4 3 L4 9 Q4 13 8 13 Q12 13 12 9 L12 3"></path><line x1="2" y1="3" x2="6" y2="3" stroke-width="2.2"></line><line x1="10" y1="3" x2="14" y2="3" stroke-width="2.2"></line></svg>
+          </button>
+          <!-- Clear drawings / Eraser -->
+          <button class="tv-tool-btn" type="button" data-tool="eraser" title="Clear drawings">
+            <svg viewBox="0 0 16 16"><path d="M3 13 L9 3 L13 3 L13 7 L7 13 Z"></path><line x1="1" y1="13" x2="15" y2="13"></line><line x1="6" y1="10" x2="11" y2="5" stroke="rgba(0,0,0,0.4)" stroke-width="1"></line></svg>
+          </button>
+        </aside>
+        <div class="chart-stage">
+          <canvas id="tclChartCanvas" width="1454" height="540"></canvas>
+          <div id="tvChartContainer" aria-label="TradingView lightweight chart"></div>
+          <canvas id="tvDrawingCanvas" aria-label="TradingView drawing layer"></canvas>
+          <div class="tv-chart-legend" id="tvChartLegend" aria-live="polite">
+            <div class="tv-legend-head">
+              <span id="tvLegendSymbol">TCL/USDC</span>
+              <span class="tv-legend-meta" id="tvLegendMeta">15m - Candles</span>
+            </div>
+            <div class="tv-legend-ohlc" id="tvLegendOhlc">
+              <span>Open <strong id="tvLegO">—</strong></span>
+              <span>High <strong id="tvLegH">—</strong></span>
+              <span>Low <strong id="tvLegL">—</strong></span>
+              <span>Close <strong id="tvLegC">—</strong></span>
+              <span>Volume <strong id="tvLegV">—</strong></span>
+              <span>Change <strong id="tvLegChg">—</strong></span>
+            </div>
+          </div>
+          <button class="tv-realtime-btn" id="tvRealtimeBtn" type="button" title="Go to realtime (Alt+R)">▶</button>
+          <div class="chart-empty" id="chartEmpty">No swap data loaded yet.</div>
+          <div class="tv-price-badge" id="lastPriceBadge">--</div>
+        </div>
+        <aside class="tv-scale-tools" aria-label="Scale tools">
+          <!-- Auto fit -->
+          <button class="tv-scale-btn is-active" type="button" data-scale-action="auto" title="Auto scale">
+            <svg viewBox="0 0 16 16"><path d="M2 10 L2 14 L6 14"></path><path d="M14 6 L14 2 L10 2"></path><line x1="2" y1="14" x2="7" y2="9"></line><line x1="14" y1="2" x2="9" y2="7"></line></svg>
+          </button>
+          <!-- Log scale -->
+          <button class="tv-scale-btn" type="button" data-scale-action="log" title="Log scale">
+            <svg viewBox="0 0 16 16" stroke="none" fill="currentColor"><text x="1" y="12" font-size="8.5" font-family="monospace" font-weight="800">ln</text></svg>
+          </button>
+          <!-- Settings -->
+          <button class="tv-scale-btn" type="button" data-scale-action="settings" title="Scale settings">
+            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"></circle><path d="M8 1.5 L8 3.5 M8 12.5 L8 14.5 M1.5 8 L3.5 8 M12.5 8 L14.5 8 M3.6 3.6 L5 5 M11 11 L12.4 12.4 M12.4 3.6 L11 5 M5 11 L3.6 12.4"></path></svg>
+          </button>
+        </aside>
+      </div>
+      <div class="legend-row" id="legendRow">
+        <span class="legend-item"><span class="legend-dot"></span>Price close</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High --</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low --</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price --</span>
+        <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
+        <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
+        <span>Waiting for swaps...</span>
+      </div>
+    </section>
+
+    <section class="trades-panel">
+      <div class="section-head">
+        <h2>Latest Swaps</h2>
+        <span class="stat-note" id="latestUpdateValue">Last swap: --</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Side</th>
+              <th>Price</th>
+              <th>Volume</th>
+              <th>TCL</th>
+              <th>Tx</th>
+            </tr>
+          </thead>
+          <tbody id="latestTradesBody">
+            <tr><td colspan="6">Loading swaps...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="tooltip" id="chartTooltip" style="left: 1581px; top: 525px;">
+          <div class="tooltip-title">12 Nov 2025</div>
+          <div class="tooltip-row"><span>Close</span><strong>$0.00749</strong></div>
+          <div class="tooltip-row"><span>High / Low</span><strong>$0.00792 / $0.00749</strong></div>
+          <div class="tooltip-row"><span>Buy volume</span><strong class="tone-buy">$2,024.14</strong></div>
+          <div class="tooltip-row"><span>Sell volume</span><strong class="tone-sell">$1,690.96</strong></div>
+          <div class="tooltip-row"><span>Swaps</span><strong>8</strong></div>
+        </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="js/event-push-config.js?v=20260519-1"></script>
+  <script>
+    const CONFIG = {
+      listingDate: "2024-06-13T00:00:00Z",
+      pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+      baseTokenAddress: "TCL-fe459d",
+      quoteTokenAddress: "USDC-c76f1f",
+      dexUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+      transferUrlBase: "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
+      transferPageSize: 2000,
+      transferMaxPages: 24,
+      recentTransferPageSize: 500,
+      recentTransferMaxPages: 4,
+      refreshMs: 5 * 60 * 1000
+    };
+
+    const CACHE_KEY = "tcl-chart-trades-v1";
+    const CHART_SNAPSHOT_API_URL = resolveChartSnapshotApiUrl();
+    const DAY_SECONDS = 24 * 60 * 60;
+    const ui = {
+      statusPill: document.getElementById("statusPill"),
+      refreshButton: document.getElementById("refreshButton"),
+      livePriceValue: document.getElementById("livePriceValue"),
+      livePriceNote: document.getElementById("livePriceNote"),
+      volume24hValue: document.getElementById("volume24hValue"),
+      txns24hNote: document.getElementById("txns24hNote"),
+      totalVolumeValue: document.getElementById("totalVolumeValue"),
+      buyVolumeValue: document.getElementById("buyVolumeValue"),
+      sellVolumeValue: document.getElementById("sellVolumeValue"),
+      swapCountValue: document.getElementById("swapCountValue"),
+      historyNote: document.getElementById("historyNote"),
+      chartSubtitle: document.getElementById("chartSubtitle"),
+      chartMeta: document.getElementById("chartMeta"),
+      chartEmpty: document.getElementById("chartEmpty"),
+      latestUpdateValue: document.getElementById("latestUpdateValue"),
+      latestTradesBody: document.getElementById("latestTradesBody"),
+      canvas: document.getElementById("tclChartCanvas"),
+      tvContainer: document.getElementById("tvChartContainer"),
+      tvDrawingCanvas: document.getElementById("tvDrawingCanvas"),
+      tvChartLegend: document.getElementById("tvChartLegend"),
+      tvLegendSymbol: document.getElementById("tvLegendSymbol"),
+      tvLegendMeta: document.getElementById("tvLegendMeta"),
+      tvLegO: document.getElementById("tvLegO"),
+      tvLegH: document.getElementById("tvLegH"),
+      tvLegL: document.getElementById("tvLegL"),
+      tvLegC: document.getElementById("tvLegC"),
+      tvLegV: document.getElementById("tvLegV"),
+      tvLegChg: document.getElementById("tvLegChg"),
+      tvRealtimeBtn: document.getElementById("tvRealtimeBtn"),
+      chartActionButtons: document.querySelectorAll("[data-chart-action]"),
+      tooltip: document.getElementById("chartTooltip"),
+      legendRow: document.getElementById("legendRow"),
+      modeButtons: document.querySelectorAll("[data-chart-mode]"),
+      timeframeButtons: document.querySelectorAll("[data-timeframe]"),
+      indicatorButtons: document.querySelectorAll("[data-indicator]"),
+      dropdownButtons: document.querySelectorAll("[data-dropdown]"),
+      chartStyleButtons: document.querySelectorAll("[data-chart-style]"),
+      chartTypeButton: document.getElementById("chartTypeButton"),
+      zoomButtons: document.querySelectorAll("[data-zoom]"),
+      toolButtons: document.querySelectorAll("[data-tool]"),
+      settingInputs: document.querySelectorAll("[data-setting]"),
+      scaleButtons: document.querySelectorAll("[data-scale-action]"),
+      lastPriceBadge: document.getElementById("lastPriceBadge")
+    };
+
+    const state = {
+      trades: [],
+      currentPair: null,
+      chartMode: "flow",
+      chartStyle: "candles",
+      activeRange: "all",
+      activeTimeframe: "1d",
+      tvNeedsFit: true,
+      activeTool: "crosshair",
+      indicators: {
+        ema20: true,
+        sma50: true,
+        bb20: false,
+        vwap: false,
+        patterns: true
+      },
+      settings: {
+        grid: false,
+        volume: true,
+        lastPriceLine: true,
+        highLowLabels: true,
+        priceLabels: true,
+        logScale: false
+      },
+      annotations: [],
+      pendingAnnotation: null,
+      selectedAnnotationIndex: -1,
+      drawingDrag: null,
+      isPointerDrawing: false,
+      undoStack: [],
+      redoStack: [],
+      drawingsHidden: false,
+      keepDrawing: false,
+      drawingsLocked: false,
+      snapToCandle: false,
+      hoverIndex: null,
+      buckets: [],
+      patternMarkers: [],
+      plot: null,
+      snapshotMeta: null,
+      isLoading: false,
+      hasFullHistory: false,
+      refreshTimer: null
+    };
+
+    const CHART_STYLE_LABELS = {
+      candles: "Candles",
+      hollow: "Hollow",
+      volume: "Volume Candles",
+      bars: "Bars",
+      heikin: "Heikin Ashi",
+      line: "Line",
+      "line-markers": "Line + Markers",
+      area: "Area",
+      "hlc-area": "HLC Area",
+      columns: "Columns"
+    };
+
+    function setStatus(message, tone = "loading") {
+      ui.statusPill.textContent = message;
+      ui.statusPill.classList.remove("is-loading", "is-ready", "is-error");
+      ui.statusPill.classList.add(`is-${tone}`);
+    }
+
+    function toNumber(value, fallback = 0) {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : fallback;
+    }
+
+    function formatCurrency(value, decimals = 2) {
+      if (!Number.isFinite(value)) return "--";
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      }).format(value);
+    }
+
+    function formatCompactCurrency(value) {
+      if (!Number.isFinite(value)) return "--";
+      if (Math.abs(value) < 1) return formatCurrency(value, 4);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        notation: Math.abs(value) >= 1000 ? "compact" : "standard",
+        minimumFractionDigits: Math.abs(value) >= 1000 ? 0 : 2,
+        maximumFractionDigits: 2
+      }).format(value);
+    }
+
+    function formatFlowCurrency(value) {
+      if (!Number.isFinite(value)) return "--";
+      if (Math.abs(value) < 1000000) return formatCurrency(value, Math.abs(value) < 1 ? 4 : 2);
+      return formatCompactCurrency(value);
+    }
+
+    function formatPrice(value) {
+      if (!Number.isFinite(value) || value < 0) return "--";
+      if (value === 0) return "$0";
+      if (value >= 1) return formatCurrency(value, 4);
+      return "$" + value.toFixed(5);
+    }
+
+    function formatCompactToken(value) {
+      if (!Number.isFinite(value)) return "--";
+      return new Intl.NumberFormat("en-US", {
+        notation: Math.abs(value) >= 1000 ? "compact" : "standard",
+        maximumFractionDigits: Math.abs(value) >= 1000 ? 2 : 2,
+        minimumFractionDigits: Math.abs(value) >= 1000 ? 0 : 2
+      }).format(value);
+    }
+
+    function formatCount(value) {
+      if (!Number.isFinite(value)) return "--";
+      return value.toLocaleString("en-US");
+    }
+
+    function formatPercent(value) {
+      if (!Number.isFinite(value)) return "--";
+      return value.toFixed(1) + "%";
+    }
+
+    function formatDate(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "--";
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC"
+      });
+    }
+
+    function formatDateTime(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "--";
+      return date.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "UTC"
+      }) + " UTC";
+    }
+
+    function buildCacheBustedUrl(url) {
+      const separator = url.includes("?") ? "&" : "?";
+      return `${url}${separator}v=${Date.now()}`;
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(buildCacheBustedUrl(url), {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    function resolveChartSnapshotApiUrl() {
+      const fallback = "https://tcl-event-push.axel4ro.workers.dev/api/technicals";
+      const configured = window.TCL_EVENT_PUSH_CONFIG?.apiBaseUrl;
+      if (typeof configured !== "string" || !configured.trim()) {
+        return fallback;
+      }
+
+      const cleaned = configured.trim().replace(/\/+$/, "");
+      if (cleaned.endsWith("/api/push")) {
+        return `${cleaned.slice(0, -"/api/push".length)}/api/technicals`;
+      }
+      if (cleaned.endsWith("/api")) {
+        return `${cleaned}/technicals`;
+      }
+      return `${cleaned}/api/technicals`;
+    }
+
+    async function fetchCloudflareChartSnapshot(isManual = false) {
+      const url = new URL(CHART_SNAPSHOT_API_URL, window.location.href);
+      url.searchParams.set("v", String(Date.now()));
+      if (isManual) {
+        url.searchParams.set("refresh", "1");
+      }
+
+      const response = await fetch(url.toString(), {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) {
+        throw new Error(`Chart request failed with status ${response.status}`);
+      }
+
+      const snapshot = await response.json();
+      if (snapshot?.ok === false) {
+        throw new Error(snapshot.error || "Chart snapshot returned an error.");
+      }
+      if (!Array.isArray(snapshot?.trades) || !snapshot.trades.length) {
+        throw new Error("Chart snapshot did not return swap trades.");
+      }
+
+      return snapshot;
+    }
+
+    function hasValidChartTrade(trade) {
+      return Boolean(
+        trade &&
+        typeof trade.hash === "string" &&
+        trade.hash.length &&
+        Number.isFinite(Number(trade.timestamp)) &&
+        Number.isFinite(Number(trade.price)) &&
+        Number(trade.price) > 0 &&
+        Number.isFinite(Number(trade.volumeUsd)) &&
+        Number(trade.volumeUsd) > 0 &&
+        Number.isFinite(Number(trade.tclAmount)) &&
+        Number(trade.tclAmount) > 0 &&
+        (trade.side === "buy" || trade.side === "sell")
+      );
+    }
+
+    function applyCloudflareChartSnapshot(snapshot) {
+      const trades = (Array.isArray(snapshot?.trades) ? snapshot.trades : [])
+        .filter(hasValidChartTrade)
+        .map(sanitizeTradeForCache)
+        .sort((left, right) => left.timestamp - right.timestamp);
+      if (!trades.length) {
+        throw new Error("No valid TCL swaps were found in the chart snapshot.");
+      }
+
+      state.currentPair = snapshot.pair || state.currentPair;
+      state.trades = trades;
+      state.hasFullHistory = true;
+      state.snapshotMeta = snapshot.meta || null;
+      saveCachedTrades({ fullHistory: true });
+      return {
+        tradeCount: trades.length,
+        updatedAt: snapshot.meta?.updatedAt || null,
+        sourceLabel: snapshot.meta?.fetchMeta?.sourceLabel || "cloudflare cache"
+      };
+    }
+
+    function getStaticPairReference() {
+      return {
+        pairAddress: CONFIG.pairAddress,
+        baseToken: { address: CONFIG.baseTokenAddress },
+        quoteToken: { address: CONFIG.quoteTokenAddress }
+      };
+    }
+
+    function decimalStringToNumber(value, decimals) {
+      if (typeof value !== "string" || !value.length) return Number.NaN;
+      const negative = value.startsWith("-");
+      const digits = negative ? value.slice(1) : value;
+      if (!/^\d+$/.test(digits)) return Number.NaN;
+      const padded = digits.padStart(decimals + 1, "0");
+      const whole = padded.slice(0, padded.length - decimals);
+      const fraction = padded.slice(padded.length - decimals);
+      const formatted = decimals > 0 ? `${whole}.${fraction}` : whole;
+      const numeric = Number(negative ? `-${formatted}` : formatted);
+      return Number.isFinite(numeric) ? numeric : Number.NaN;
+    }
+
+    function resolveTokenDecimals(token, pair) {
+      if (token === pair?.quoteToken?.address || token === CONFIG.quoteTokenAddress) return 6;
+      return 18;
+    }
+
+    function normalizeTradeTransfer(transfer, pair) {
+      if (!transfer?.token || !transfer?.value) return null;
+      const decimals = Number(transfer.decimals ?? resolveTokenDecimals(transfer.token, pair));
+      const amount = decimalStringToNumber(transfer.value, decimals);
+      if (!Number.isFinite(amount) || amount <= 0) return null;
+      return { token: transfer.token, amount };
+    }
+
+    function parseTrades(transfers, pair) {
+      const tradeList = [];
+      const groupedSwaps = new Map();
+
+      for (const entry of transfers) {
+        if (entry?.status !== "success") continue;
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList) || !transferList.length) continue;
+
+        const primaryTransfer = normalizeTradeTransfer(transferList[0], pair);
+        if (!primaryTransfer) continue;
+
+        const timestamp = Number(entry.timestamp);
+        if (!Number.isFinite(timestamp)) continue;
+
+        const groupHash = String(entry.originalTxHash || entry.txHash || "");
+        if (!groupHash) continue;
+
+        let groupedSwap = groupedSwaps.get(groupHash);
+        if (!groupedSwap) {
+          groupedSwap = {
+            hash: groupHash,
+            timestamp,
+            inputToken: null,
+            inputAmount: 0,
+            outputToken: null,
+            outputAmount: 0,
+            invalid: false
+          };
+          groupedSwaps.set(groupHash, groupedSwap);
+        } else if (timestamp < groupedSwap.timestamp) {
+          groupedSwap.timestamp = timestamp;
+        }
+
+        if (entry.receiver === pair?.pairAddress && entry.function === "swapTokensFixedInput") {
+          if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+            groupedSwap.invalid = true;
+            continue;
+          }
+          groupedSwap.inputToken = primaryTransfer.token;
+          groupedSwap.inputAmount += primaryTransfer.amount;
+          continue;
+        }
+
+        const isPairOutput =
+          entry.sender === pair?.pairAddress &&
+          entry.function !== "depositSwapFees" &&
+          (primaryTransfer.token === pair?.baseToken?.address || primaryTransfer.token === pair?.quoteToken?.address);
+
+        if (!isPairOutput) continue;
+
+        if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+          groupedSwap.invalid = true;
+          continue;
+        }
+
+        groupedSwap.outputToken = primaryTransfer.token;
+        groupedSwap.outputAmount += primaryTransfer.amount;
+      }
+
+      for (const groupedSwap of groupedSwaps.values()) {
+        if (groupedSwap.invalid) continue;
+
+        const hasValidInput = groupedSwap.inputAmount > 0 && typeof groupedSwap.inputToken === "string";
+        const hasValidOutput = groupedSwap.outputAmount > 0 && typeof groupedSwap.outputToken === "string";
+        if (!hasValidInput || !hasValidOutput) continue;
+
+        let tclAmount = 0;
+        let usdcAmount = 0;
+        let side = null;
+
+        if (
+          groupedSwap.inputToken === pair.quoteToken.address &&
+          groupedSwap.outputToken === pair.baseToken.address
+        ) {
+          usdcAmount = groupedSwap.inputAmount;
+          tclAmount = groupedSwap.outputAmount;
+          side = "buy";
+        } else if (
+          groupedSwap.inputToken === pair.baseToken.address &&
+          groupedSwap.outputToken === pair.quoteToken.address
+        ) {
+          tclAmount = groupedSwap.inputAmount;
+          usdcAmount = groupedSwap.outputAmount;
+          side = "sell";
+        } else {
+          continue;
+        }
+
+        const price = usdcAmount / tclAmount;
+        if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(usdcAmount) || usdcAmount <= 0) {
+          continue;
+        }
+
+        tradeList.push({
+          hash: groupedSwap.hash,
+          timestamp: groupedSwap.timestamp,
+          side,
+          price,
+          volumeUsd: usdcAmount,
+          tclAmount
+        });
+      }
+
+      return tradeList.sort((left, right) => left.timestamp - right.timestamp);
+    }
+
+    async function fetchTransferHistory(onPage) {
+      const transfers = [];
+      const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+      let oldestTimestamp = null;
+      let beforeCursor = null;
+      let reachedListingStart = false;
+      let exhaustedHistory = false;
+      let hitPageLimit = false;
+
+      for (let pageIndex = 0; pageIndex < CONFIG.transferMaxPages; pageIndex += 1) {
+        const params = new URLSearchParams({
+          size: String(CONFIG.transferPageSize),
+          status: "success",
+          order: "desc"
+        });
+        if (beforeCursor != null) params.set("before", String(beforeCursor));
+        onPage?.(pageIndex + 1);
+
+        const page = await fetchJson(`${CONFIG.transferUrlBase}?${params.toString()}`);
+        if (!Array.isArray(page) || !page.length) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        transfers.push(...page);
+        const timestamps = page
+          .map((item) => Number(item?.timestamp))
+          .filter((timestamp) => Number.isFinite(timestamp));
+        if (timestamps.length) {
+          oldestTimestamp = oldestTimestamp == null ? Math.min(...timestamps) : Math.min(oldestTimestamp, ...timestamps);
+        }
+
+        if (oldestTimestamp != null && oldestTimestamp <= listingTimestamp) {
+          reachedListingStart = true;
+          break;
+        }
+
+        if (page.length < CONFIG.transferPageSize) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        beforeCursor = oldestTimestamp != null ? oldestTimestamp - 1 : null;
+        if (beforeCursor == null || beforeCursor <= 0) {
+          exhaustedHistory = true;
+          break;
+        }
+
+        if (pageIndex === CONFIG.transferMaxPages - 1) hitPageLimit = true;
+      }
+
+      return { transfers, reachedListingStart, exhaustedHistory, hitPageLimit, oldestTimestamp };
+    }
+
+    async function fetchRecentTransferHistory(afterTimestamp) {
+      if (!Number.isFinite(afterTimestamp)) return { transfers: [] };
+      const transfers = [];
+      let newestTimestamp = null;
+      let afterCursor = Math.floor(afterTimestamp) + 1;
+      const pageSize = CONFIG.recentTransferPageSize || CONFIG.transferPageSize;
+      const maxPages = CONFIG.recentTransferMaxPages || CONFIG.transferMaxPages;
+
+      for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+        const params = new URLSearchParams({
+          size: String(pageSize),
+          status: "success",
+          order: "asc",
+          after: String(afterCursor)
+        });
+
+        const page = await fetchJson(`${CONFIG.transferUrlBase}?${params.toString()}`);
+        if (!Array.isArray(page) || !page.length) break;
+
+        transfers.push(...page);
+        const timestamps = page
+          .map((item) => Number(item?.timestamp))
+          .filter((timestamp) => Number.isFinite(timestamp));
+
+        if (timestamps.length) {
+          newestTimestamp = newestTimestamp == null ? Math.max(...timestamps) : Math.max(newestTimestamp, ...timestamps);
+        }
+
+        if (page.length < CONFIG.transferPageSize) break;
+        afterCursor = newestTimestamp != null ? newestTimestamp + 1 : afterCursor + 1;
+      }
+
+      return { transfers };
+    }
+
+    function sanitizeTradeForCache(trade) {
+      return {
+        hash: String(trade?.hash || ""),
+        timestamp: Number(trade?.timestamp),
+        side: trade?.side === "buy" ? "buy" : "sell",
+        price: Number(trade?.price),
+        volumeUsd: Number(trade?.volumeUsd),
+        tclAmount: Number(trade?.tclAmount)
+      };
+    }
+
+    function loadCachedTrades() {
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.trades)) return null;
+        return parsed;
+      } catch (error) {
+        console.warn("Could not read cached TCL chart trades", error);
+        return null;
+      }
+    }
+
+    function applyCachedTrades(cached) {
+      if (!cached?.trades?.length) return false;
+      state.trades = cached.trades
+        .map(sanitizeTradeForCache)
+        .filter((trade) =>
+          trade?.hash &&
+          !trade.hash.startsWith("local-demo-") &&
+          Number.isFinite(trade.timestamp) &&
+          Number.isFinite(trade.price) &&
+          Number.isFinite(trade.volumeUsd)
+        )
+        .sort((left, right) => left.timestamp - right.timestamp);
+      state.hasFullHistory = cached.fullHistory === true;
+      return state.trades.length > 0;
+    }
+
+    function saveCachedTrades(meta = {}) {
+      try {
+        const fullHistory = meta.fullHistory === true || (meta.fullHistory == null && state.hasFullHistory === true);
+        state.hasFullHistory = fullHistory;
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          version: 1,
+          savedAt: Math.floor(Date.now() / 1000),
+          fullHistory,
+          trades: state.trades.map(sanitizeTradeForCache)
+        }));
+      } catch (error) {
+        console.warn("Could not cache TCL chart trades", error);
+      }
+    }
+
+    function mergeTrades(nextTrades) {
+      const byHash = new Map(state.trades.map((trade) => [trade.hash, trade]));
+      let addedTrades = 0;
+      for (const trade of nextTrades) {
+        if (!trade?.hash || !Number.isFinite(trade.timestamp)) continue;
+        if (!byHash.has(trade.hash)) addedTrades += 1;
+        byHash.set(trade.hash, sanitizeTradeForCache(trade));
+      }
+      state.trades = Array.from(byHash.values())
+        .filter((trade) => Number.isFinite(trade.price) && Number.isFinite(trade.volumeUsd))
+        .sort((left, right) => left.timestamp - right.timestamp);
+      return addedTrades;
+    }
+
+    function getAllStats() {
+      let buyVolume = 0;
+      let sellVolume = 0;
+      let buyTrades = 0;
+      let sellTrades = 0;
+      let tclAmount = 0;
+
+      for (const trade of state.trades) {
+        if (trade.side === "buy") {
+          buyVolume += trade.volumeUsd;
+          buyTrades += 1;
+        } else if (trade.side === "sell") {
+          sellVolume += trade.volumeUsd;
+          sellTrades += 1;
+        }
+        tclAmount += Number(trade.tclAmount) || 0;
+      }
+
+      const totalVolume = buyVolume + sellVolume;
+      return {
+        buyVolume,
+        sellVolume,
+        totalVolume,
+        buyTrades,
+        sellTrades,
+        totalTrades: buyTrades + sellTrades,
+        buyDominancePct: totalVolume > 0 ? (buyVolume / totalVolume) * 100 : 0,
+        tclAmount,
+        oldestTrade: state.trades[0] || null,
+        latestTrade: state.trades[state.trades.length - 1] || null
+      };
+    }
+
+    function getVisibleTrades() {
+      if (!state.trades.length) return state.trades;
+      let visibleTrades = state.trades;
+      if (state.activeRange !== "all") {
+        const latestTimestamp = state.trades[state.trades.length - 1].timestamp;
+        const days = Number(state.activeRange);
+        const minTimestamp = latestTimestamp - (days * DAY_SECONDS);
+        visibleTrades = state.trades.filter((trade) => trade.timestamp >= minTimestamp);
+      }
+
+      return visibleTrades;
+    }
+
+    function startOfUtcDay(timestamp) {
+      const date = new Date(timestamp * 1000);
+      return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / 1000;
+    }
+
+    function buildDailyBuckets(trades) {
+      if (!trades.length) return [];
+      const bucketMap = new Map();
+
+      for (const trade of trades) {
+        const day = startOfUtcDay(trade.timestamp);
+        let bucket = bucketMap.get(day);
+        if (!bucket) {
+          bucket = {
+            timestamp: day,
+            open: trade.price,
+            high: trade.price,
+            low: trade.price,
+            close: trade.price,
+            buyVolume: 0,
+            sellVolume: 0,
+            tradeCount: 0,
+            buyCount: 0,
+            sellCount: 0
+          };
+          bucketMap.set(day, bucket);
+        }
+
+        bucket.high = Math.max(bucket.high, trade.price);
+        bucket.low = Math.min(bucket.low, trade.price);
+        bucket.close = trade.price;
+        bucket.tradeCount += 1;
+
+        if (trade.side === "buy") {
+          bucket.buyVolume += trade.volumeUsd;
+          bucket.buyCount += 1;
+        } else {
+          bucket.sellVolume += trade.volumeUsd;
+          bucket.sellCount += 1;
+        }
+      }
+
+      const raw = Array.from(bucketMap.values()).sort((left, right) => left.timestamp - right.timestamp);
+      if (raw.length <= 1) return raw;
+
+      const filled = [];
+      let cursor = raw[0].timestamp;
+      const lastDay = raw[raw.length - 1].timestamp;
+      let index = 0;
+      let previousClose = raw[0].open;
+
+      while (cursor <= lastDay) {
+        const bucket = raw[index]?.timestamp === cursor ? raw[index] : null;
+        if (bucket) {
+          filled.push(bucket);
+          previousClose = bucket.close;
+          index += 1;
+        } else {
+          filled.push({
+            timestamp: cursor,
+            open: previousClose,
+            high: previousClose,
+            low: previousClose,
+            close: previousClose,
+            buyVolume: 0,
+            sellVolume: 0,
+            tradeCount: 0,
+            buyCount: 0,
+            sellCount: 0,
+            isEmpty: true
+          });
+        }
+        cursor += DAY_SECONDS;
+      }
+
+      return filled;
+    }
+
+    function startOfTimeframe(timestamp, timeframe) {
+      const date = new Date(timestamp * 1000);
+      if (timeframe === "1mo") {
+        return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1) / 1000;
+      }
+      if (timeframe === "1w") {
+        const day = date.getUTCDay() || 7;
+        const monday = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - day + 1);
+        return monday / 1000;
+      }
+
+      const seconds = {
+        "1m": 60,
+        "5m": 5 * 60,
+        "15m": 15 * 60,
+        "30m": 30 * 60,
+        "1h": 60 * 60,
+        "4h": 4 * 60 * 60,
+        "1d": DAY_SECONDS
+      }[timeframe] || DAY_SECONDS;
+
+      return Math.floor(timestamp / seconds) * seconds;
+    }
+
+    function formatTimeframeLabel(timeframe) {
+      return {
+        "1m": "1m",
+        "5m": "5m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1H",
+        "4h": "4H",
+        "1d": "1D",
+        "1w": "1W",
+        "1mo": "1M"
+      }[timeframe] || "1D";
+    }
+
+    function buildTimeframeCandles(trades, timeframe) {
+      if (!trades.length) return [];
+      const candleMap = new Map();
+
+      for (const trade of trades) {
+        const candleTime = startOfTimeframe(trade.timestamp, timeframe);
+        let candle = candleMap.get(candleTime);
+        if (!candle) {
+          candle = {
+            timestamp: candleTime,
+            open: trade.price,
+            high: trade.price,
+            low: trade.price,
+            close: trade.price,
+            buyVolume: 0,
+            sellVolume: 0,
+            tradeCount: 0,
+            buyCount: 0,
+            sellCount: 0
+          };
+          candleMap.set(candleTime, candle);
+        }
+
+        candle.high = Math.max(candle.high, trade.price);
+        candle.low = Math.min(candle.low, trade.price);
+        candle.close = trade.price;
+        candle.tradeCount += 1;
+
+        if (trade.side === "buy") {
+          candle.buyVolume += trade.volumeUsd;
+          candle.buyCount += 1;
+        } else {
+          candle.sellVolume += trade.volumeUsd;
+          candle.sellCount += 1;
+        }
+      }
+
+      return Array.from(candleMap.values()).sort((left, right) => left.timestamp - right.timestamp);
+    }
+
+    function buildHeikinAshiCandles(candles) {
+      const result = [];
+      for (let index = 0; index < candles.length; index += 1) {
+        const candle = candles[index];
+        const haClose = (candle.open + candle.high + candle.low + candle.close) / 4;
+        const previous = result[index - 1];
+        const haOpen = previous ? (previous.open + previous.close) / 2 : (candle.open + candle.close) / 2;
+        result.push({
+          ...candle,
+          realOpen: candle.open,
+          realClose: candle.close,
+          open: haOpen,
+          close: haClose,
+          high: Math.max(candle.high, haOpen, haClose),
+          low: Math.min(candle.low, haOpen, haClose),
+          isSynthetic: true
+        });
+      }
+      return result;
+    }
+
+    function calculateSma(candles, period) {
+      const values = Array(candles.length).fill(null);
+      let sum = 0;
+      for (let index = 0; index < candles.length; index += 1) {
+        sum += candles[index].close;
+        if (index >= period) sum -= candles[index - period].close;
+        if (index >= period - 1) values[index] = sum / period;
+      }
+      return values;
+    }
+
+    function calculateEma(candles, period) {
+      const values = Array(candles.length).fill(null);
+      const multiplier = 2 / (period + 1);
+      let ema = null;
+      let seedSum = 0;
+
+      for (let index = 0; index < candles.length; index += 1) {
+        const close = candles[index].close;
+        if (index < period) {
+          seedSum += close;
+          if (index === period - 1) {
+            ema = seedSum / period;
+            values[index] = ema;
+          }
+          continue;
+        }
+        ema = (close - ema) * multiplier + ema;
+        values[index] = ema;
+      }
+      return values;
+    }
+
+    function calculateBollinger(candles, period = 20, factor = 2) {
+      const upper = Array(candles.length).fill(null);
+      const middle = Array(candles.length).fill(null);
+      const lower = Array(candles.length).fill(null);
+
+      for (let index = period - 1; index < candles.length; index += 1) {
+        const slice = candles.slice(index - period + 1, index + 1).map((candle) => candle.close);
+        const average = slice.reduce((sum, value) => sum + value, 0) / period;
+        const variance = slice.reduce((sum, value) => sum + Math.pow(value - average, 2), 0) / period;
+        const deviation = Math.sqrt(variance);
+        middle[index] = average;
+        upper[index] = average + deviation * factor;
+        lower[index] = Math.max(0, average - deviation * factor);
+      }
+
+      return { upper, middle, lower };
+    }
+
+    function calculateVwap(candles) {
+      const values = Array(candles.length).fill(null);
+      let priceVolumeSum = 0;
+      let volumeSum = 0;
+
+      for (let index = 0; index < candles.length; index += 1) {
+        const candle = candles[index];
+        const volume = candle.buyVolume + candle.sellVolume;
+        if (volume <= 0) continue;
+        const typical = (candle.high + candle.low + candle.close) / 3;
+        priceVolumeSum += typical * volume;
+        volumeSum += volume;
+        values[index] = volumeSum > 0 ? priceVolumeSum / volumeSum : null;
+      }
+
+      return values;
+    }
+
+    function detectCandlePatterns(candles) {
+      const markers = [];
+      for (let index = 0; index < candles.length; index += 1) {
+        const candle = candles[index];
+        const previous = candles[index - 1];
+        const range = Math.max(candle.high - candle.low, candle.close * 0.00001);
+        const body = Math.abs(candle.close - candle.open);
+        const upperShadow = candle.high - Math.max(candle.open, candle.close);
+        const lowerShadow = Math.min(candle.open, candle.close) - candle.low;
+        const isBullish = candle.close >= candle.open;
+        const isBearish = candle.close < candle.open;
+
+        if (body <= range * 0.1) {
+          markers.push({ index, label: "Doji", color: "#f5c663", position: "above", type: "doji" });
+        }
+        if (lowerShadow >= body * 2.2 && upperShadow <= Math.max(body, range * 0.18)) {
+          markers.push({ index, label: "Hammer", color: "#35df91", position: "below", type: "hammer" });
+        }
+        if (upperShadow >= body * 2.2 && lowerShadow <= Math.max(body, range * 0.18)) {
+          markers.push({ index, label: "Star", color: "#ff6672", position: "above", type: "shooting-star" });
+        }
+
+        if (previous) {
+          const prevBullish = previous.close >= previous.open;
+          const prevBearish = previous.close < previous.open;
+          const currentBodyHigh = Math.max(candle.open, candle.close);
+          const currentBodyLow = Math.min(candle.open, candle.close);
+          const previousBodyHigh = Math.max(previous.open, previous.close);
+          const previousBodyLow = Math.min(previous.open, previous.close);
+
+          if (prevBearish && isBullish && currentBodyHigh >= previousBodyHigh && currentBodyLow <= previousBodyLow) {
+            markers.push({ index, label: "Bull Engulf", color: "#35df91", position: "below", type: "bullish-engulfing" });
+          }
+          if (prevBullish && isBearish && currentBodyHigh >= previousBodyHigh && currentBodyLow <= previousBodyLow) {
+            markers.push({ index, label: "Bear Engulf", color: "#ff6672", position: "above", type: "bearish-engulfing" });
+          }
+        }
+      }
+
+      return markers;
+    }
+
+    function renderStats() {
+      const stats = getAllStats();
+      const pair = state.currentPair;
+      const livePrice = Number.parseFloat(pair?.priceUsd);
+      const change24h = toNumber(pair?.priceChange?.h24, Number.NaN);
+      const volume24h = toNumber(pair?.volume?.h24, Number.NaN);
+      const buys24h = toNumber(pair?.txns?.h24?.buys, Number.NaN);
+      const sells24h = toNumber(pair?.txns?.h24?.sells, Number.NaN);
+
+      ui.livePriceValue.textContent = formatPrice(Number.isFinite(livePrice) ? livePrice : stats.latestTrade?.price);
+      ui.livePriceNote.textContent = Number.isFinite(change24h) ? `24H change: ${formatPercent(change24h)}` : "Live pair snapshot.";
+      ui.volume24hValue.textContent = formatCompactCurrency(volume24h);
+      ui.txns24hNote.textContent = Number.isFinite(buys24h + sells24h) ? `${formatCount(buys24h)} buys / ${formatCount(sells24h)} sells` : "--";
+      ui.totalVolumeValue.textContent = formatFlowCurrency(stats.totalVolume);
+      ui.buyVolumeValue.textContent = formatFlowCurrency(stats.buyVolume);
+      ui.sellVolumeValue.textContent = formatFlowCurrency(stats.sellVolume);
+      ui.swapCountValue.textContent = formatCount(stats.totalTrades);
+
+      if (stats.oldestTrade && stats.latestTrade) {
+        ui.historyNote.textContent = `${formatDate(stats.oldestTrade.timestamp * 1000)} to ${formatDateTime(stats.latestTrade.timestamp * 1000)}`;
+      } else {
+        ui.historyNote.textContent = "--";
+      }
+    }
+
+    function renderLatestTrades() {
+      const latestTrades = state.trades.slice(-12).reverse();
+      if (!latestTrades.length) {
+        ui.latestTradesBody.innerHTML = '<tr><td colspan="6">No swaps loaded.</td></tr>';
+        return;
+      }
+
+      ui.latestTradesBody.innerHTML = latestTrades.map((trade) => {
+        const sideClass = trade.side === "buy" ? "buy" : "sell";
+        const hashLabel = trade.hash.slice(0, 8) + "..." + trade.hash.slice(-6);
+        const hashCell = `<a class="hash-link" href="https://explorer.multiversx.com/transactions/${trade.hash}" target="_blank" rel="noreferrer">${hashLabel}</a>`;
+        return `
+          <tr>
+            <td>${formatDateTime(trade.timestamp * 1000)}</td>
+            <td><span class="side-pill ${sideClass}">${trade.side}</span></td>
+            <td>${formatPrice(trade.price)}</td>
+            <td>${formatCurrency(trade.volumeUsd, trade.volumeUsd < 1 ? 4 : 2)}</td>
+            <td>${formatCompactToken(trade.tclAmount)}</td>
+            <td>${hashCell}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function setupCanvas() {
+      const rect = ui.canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      ui.canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      ui.canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      const ctx = ui.canvas.getContext("2d");
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { ctx, width: rect.width, height: rect.height };
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function getNiceTicks(min, max, count = 5) {
+      if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) return [min || 0];
+      const span = max - min;
+      const rawStep = span / Math.max(1, count - 1);
+      const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const residual = rawStep / magnitude;
+      const niceStep = residual >= 5 ? 5 * magnitude : residual >= 2 ? 2 * magnitude : magnitude;
+      const ticks = [];
+      let value = Math.ceil(min / niceStep) * niceStep;
+      while (value <= max + niceStep * 0.5 && ticks.length < count + 2) {
+        ticks.push(value);
+        value += niceStep;
+      }
+      return ticks;
+    }
+
+    function drawIndicatorLine(ctx, values, options) {
+      const { xForIndex, yForPrice, color, width = 1.6, dash = [] } = options;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      let started = false;
+      values.forEach((value, index) => {
+        if (!Number.isFinite(value)) {
+          started = false;
+          return;
+        }
+        const x = xForIndex(index);
+        const y = yForPrice(value);
+        if (!started) {
+          ctx.moveTo(x, y);
+          started = true;
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function getNearestCandleIndex(candles, timestamp) {
+      if (!candles.length) return -1;
+      let nearestIndex = 0;
+      let nearestDistance = Math.abs(candles[0].timestamp - timestamp);
+      for (let index = 1; index < candles.length; index += 1) {
+        const distance = Math.abs(candles[index].timestamp - timestamp);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      }
+      return nearestIndex;
+    }
+
+    function getAnnotationPointPosition(candles, point) {
+      const nearestIndex = getNearestCandleIndex(candles, point.timestamp);
+      if (nearestIndex < 0 || !state.plot) return null;
+      return {
+        x: state.plot.xForIndex(nearestIndex),
+        y: state.plot.yForPrice(point.price),
+        index: nearestIndex
+      };
+    }
+
+    function drawAnnotationLabel(ctx, text, x, y, options = {}) {
+      const paddingX = 7;
+      const paddingY = 4;
+      ctx.save();
+      ctx.font = "11px Inter, sans-serif";
+      ctx.textBaseline = "middle";
+      const width = ctx.measureText(text).width + paddingX * 2;
+      const height = 22;
+      const left = Math.max(state.plot.chartLeft + 6, Math.min(state.plot.chartRight - width - 6, x));
+      const top = Math.max(state.plot.chartTop + 6, Math.min(state.plot.priceBottom - height - 6, y - height / 2));
+      ctx.fillStyle = options.background || "rgba(10, 15, 25, 0.92)";
+      ctx.strokeStyle = options.border || "rgba(255, 255, 255, 0.16)";
+      ctx.lineWidth = 1;
+      if (typeof ctx.roundRect === "function") {
+        ctx.beginPath();
+        ctx.roundRect(left, top, width, height, 7);
+      } else {
+        drawRoundedRect(ctx, left, top, width, height, 7);
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = options.color || "#edf4ff";
+      ctx.fillText(text, left + paddingX, top + height / 2 + 0.5);
+      ctx.restore();
+    }
+
+    function drawAnnotations(ctx, candles) {
+      if (!state.annotations.length && !state.pendingAnnotation) return;
+      const annotations = [...state.annotations];
+      if (state.pendingAnnotation) annotations.push({
+        type: state.pendingAnnotation.type,
+        points: [state.pendingAnnotation.point],
+        isPending: true
+      });
+
+      ctx.save();
+      annotations.forEach((annotation) => {
+        if (annotation.type === "hline") {
+          const y = state.plot.yForPrice(annotation.price);
+          if (y < state.plot.chartTop || y > state.plot.priceBottom) return;
+          ctx.strokeStyle = annotation.isPending ? "rgba(245, 198, 99, 0.76)" : "rgba(245, 198, 99, 0.62)";
+          ctx.setLineDash([7, 6]);
+          ctx.beginPath();
+          ctx.moveTo(state.plot.chartLeft, y);
+          ctx.lineTo(state.plot.chartRight, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          drawAnnotationLabel(ctx, annotation.label || formatPrice(annotation.price), state.plot.chartRight - 90, y - 12, {
+            color: "#f5c663",
+            border: "rgba(245, 198, 99, 0.28)"
+          });
+          return;
+        }
+
+        if (annotation.type === "text") {
+          const point = getAnnotationPointPosition(candles, annotation.point);
+          if (!point) return;
+          drawAnnotationLabel(ctx, annotation.label || "TCL note", point.x + 8, point.y - 18, {
+            color: "#42d7ff",
+            border: "rgba(66, 215, 255, 0.24)"
+          });
+          return;
+        }
+
+        const first = getAnnotationPointPosition(candles, annotation.points?.[0] || annotation.point);
+        const second = getAnnotationPointPosition(candles, annotation.points?.[1] || annotation.points?.[0] || annotation.point);
+        if (!first || !second) return;
+
+        const isMeasure = annotation.type === "measure";
+        const isBrush = annotation.type === "brush";
+        ctx.strokeStyle = isMeasure ? "#f5c663" : (isBrush ? "rgba(66, 215, 255, 0.72)" : "rgba(237, 244, 255, 0.72)");
+        ctx.lineWidth = isBrush ? 3 : 1.6;
+        ctx.setLineDash(annotation.isPending ? [4, 5] : []);
+        ctx.beginPath();
+        ctx.moveTo(first.x, first.y);
+        if (annotation.type === "ray" && first.x !== second.x) {
+          const slope = (second.y - first.y) / (second.x - first.x);
+          const rayY = first.y + slope * (state.plot.chartRight - first.x);
+          ctx.lineTo(state.plot.chartRight, rayY);
+        } else {
+          ctx.lineTo(second.x, second.y);
+        }
+        ctx.stroke();
+        if (annotation.type === "arrow") {
+          const angle = Math.atan2(second.y - first.y, second.x - first.x);
+          const size = 9;
+          ctx.beginPath();
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - size * Math.cos(angle - Math.PI / 6), second.y - size * Math.sin(angle - Math.PI / 6));
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - size * Math.cos(angle + Math.PI / 6), second.y - size * Math.sin(angle + Math.PI / 6));
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        if (isMeasure && !annotation.isPending) {
+          const startPrice = annotation.points[0].price;
+          const endPrice = annotation.points[1].price;
+          const pct = startPrice ? ((endPrice - startPrice) / startPrice) * 100 : 0;
+          drawAnnotationLabel(ctx, `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`, (first.x + second.x) / 2 + 8, (first.y + second.y) / 2 - 12, {
+            color: pct >= 0 ? "#35df91" : "#ff6672",
+            border: "rgba(255, 255, 255, 0.18)"
+          });
+        }
+      });
+      ctx.restore();
+    }
+
+    const tvChart = {
+      chart: null,
+      mainSeries: null,
+      volumeSeries: null,
+      emaSeries: null,
+      smaSeries: null,
+      bbUpperSeries: null,
+      bbMiddleSeries: null,
+      bbLowerSeries: null,
+      vwapSeries: null,
+      highPriceLine: null,
+      lowPriceLine: null,
+      userPriceLines: [],
+      activeStyle: null,
+      resizeObserver: null,
+      rangeHandler: null,
+      crosshairHandler: null,
+      clickHandler: null,
+      livePriceLine: null
+    };
+
+    const TV_THEME = {
+      bg: "#131722",
+      grid: "#363c4e",
+      border: "#2a2e39",
+      text: "#d1d4dc",
+      muted: "#787b86",
+      bull: "#26a69a",
+      bear: "#ef5350",
+      crosshair: "#758696",
+      labelBg: "#2962ff",
+      ema: "#f5c663",
+      sma: "#2196f3"
+    };
+    const TV_BULL = TV_THEME.bull;
+    const TV_BEAR = TV_THEME.bear;
+    const TV_PRICE_DECIMALS = 7;
+    const TV_PRICE_MIN_MOVE = 0.0000001;
+
+    function getTvPriceFormat() {
+      return {
+        type: "price",
+        precision: TV_PRICE_DECIMALS,
+        minMove: TV_PRICE_MIN_MOVE
+      };
+    }
+
+    function formatTvScalePrice(price) {
+      if (!Number.isFinite(price)) return "";
+      return Number(price).toFixed(TV_PRICE_DECIMALS);
+    }
+
+    function getLightweightCharts() {
+      return window.LightweightCharts || null;
+    }
+
+    function destroyTvChart() {
+      if (tvChart.resizeObserver) {
+        tvChart.resizeObserver.disconnect();
+        tvChart.resizeObserver = null;
+      }
+      if (tvChart.rangeHandler && tvChart.chart) {
+        tvChart.chart.timeScale().unsubscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
+        tvChart.rangeHandler = null;
+      }
+      if (tvChart.crosshairHandler && tvChart.chart) {
+        tvChart.chart.unsubscribeCrosshairMove(tvChart.crosshairHandler);
+        tvChart.crosshairHandler = null;
+      }
+      if (tvChart.clickHandler && tvChart.chart) {
+        tvChart.chart.unsubscribeClick(tvChart.clickHandler);
+        tvChart.clickHandler = null;
+      }
+      removeTvUserPriceLines();
+      removeTvLivePriceLine();
+      if (tvChart.chart) {
+        tvChart.chart.remove();
+        tvChart.chart = null;
+      }
+      tvChart.mainSeries = null;
+      tvChart.volumeSeries = null;
+      tvChart.emaSeries = null;
+      tvChart.smaSeries = null;
+      tvChart.bbUpperSeries = null;
+      tvChart.bbMiddleSeries = null;
+      tvChart.bbLowerSeries = null;
+      tvChart.vwapSeries = null;
+      tvChart.highPriceLine = null;
+      tvChart.lowPriceLine = null;
+      tvChart.userPriceLines = [];
+      tvChart.livePriceLine = null;
+      tvChart.activeStyle = null;
+    }
+
+    function getTclSpotPriceUsd() {
+      const pair = state.currentPair;
+      const fromPair = Number.parseFloat(pair?.priceUsd);
+      if (Number.isFinite(fromPair) && fromPair > 0) return fromPair;
+      const latest = state.trades[state.trades.length - 1];
+      if (latest && Number.isFinite(latest.price) && latest.price > 0) return latest.price;
+      return Number.NaN;
+    }
+
+    function removeTvLivePriceLine() {
+      if (tvChart.livePriceLine && tvChart.mainSeries) {
+        try {
+          tvChart.mainSeries.removePriceLine(tvChart.livePriceLine);
+        } catch (error) {
+          /* ignore */
+        }
+      }
+      tvChart.livePriceLine = null;
+    }
+
+    function applyTvLivePriceLine(candles = state.buckets) {
+      if (!tvChart.mainSeries) return;
+      if (!state.settings.lastPriceLine) {
+        removeTvLivePriceLine();
+        return;
+      }
+
+      const spot = getTclSpotPriceUsd();
+      if (!Number.isFinite(spot) || spot <= 0) {
+        removeTvLivePriceLine();
+        return;
+      }
+
+      const lastClose = candles?.length ? candles[candles.length - 1].close : spot;
+      const isUp = spot >= lastClose;
+      const color = isUp ? TV_THEME.bull : TV_THEME.bear;
+      const LWC = getLightweightCharts();
+      const lineStyle = LWC?.LineStyle?.Dashed ?? 2;
+      const label = formatTvScalePrice(spot);
+
+      if (tvChart.livePriceLine && typeof tvChart.livePriceLine.applyOptions === "function") {
+        tvChart.livePriceLine.applyOptions({
+          price: spot,
+          color,
+          lineStyle,
+          lineWidth: 1,
+          axisLabelVisible: true,
+          title: label
+        });
+        return;
+      }
+
+      removeTvLivePriceLine();
+      tvChart.livePriceLine = tvChart.mainSeries.createPriceLine({
+        price: spot,
+        color,
+        lineStyle,
+        lineWidth: 1,
+        axisLabelVisible: true,
+        title: label
+      });
+    }
+
+    function removeTvUserPriceLines() {
+      if (!tvChart.mainSeries) {
+        tvChart.userPriceLines = [];
+        return;
+      }
+      tvChart.userPriceLines.forEach((line) => {
+        try {
+          tvChart.mainSeries.removePriceLine(line);
+        } catch (error) {
+          /* ignore stale refs */
+        }
+      });
+      tvChart.userPriceLines = [];
+    }
+
+    function getCandleByTvTime(time) {
+      if (!Number.isFinite(time) || !state.buckets.length) return null;
+      const target = Math.floor(time);
+      let match = state.buckets.find((candle) => candle.timestamp === target);
+      if (match) return match;
+      let nearest = state.buckets[0];
+      let nearestDistance = Math.abs(nearest.timestamp - target);
+      for (let index = 1; index < state.buckets.length; index += 1) {
+        const candle = state.buckets[index];
+        const distance = Math.abs(candle.timestamp - target);
+        if (distance < nearestDistance) {
+          nearest = candle;
+          nearestDistance = distance;
+        }
+      }
+      return nearest;
+    }
+
+    function updateTvLegendHead() {
+      if (!ui.tvLegendSymbol || !ui.tvLegendMeta) return;
+      ui.tvLegendSymbol.textContent = "TCLUSDC";
+      ui.tvLegendMeta.textContent = `${formatTimeframeLabel(state.activeTimeframe)} - ${CHART_STYLE_LABELS[state.chartStyle] || "Candles"}`;
+    }
+
+    function updateTvLegend(candle) {
+      updateTvLegendHead();
+      if (!candle) {
+        const latest = state.buckets[state.buckets.length - 1];
+        if (!latest) return;
+        candle = latest;
+      }
+
+      const isUp = candle.close >= candle.open;
+      const toneClass = isUp ? "is-up" : "is-down";
+      const volume = candle.buyVolume + candle.sellVolume;
+      const changePct = candle.open ? ((candle.close - candle.open) / candle.open) * 100 : 0;
+
+      const setLeg = (node, value) => {
+        if (!node) return;
+        node.textContent = formatTvScalePrice(value);
+        node.classList.remove("is-up", "is-down");
+        node.classList.add(toneClass);
+      };
+
+      setLeg(ui.tvLegO, candle.open);
+      setLeg(ui.tvLegH, candle.high);
+      setLeg(ui.tvLegL, candle.low);
+      setLeg(ui.tvLegC, candle.close);
+      if (ui.tvLegV) {
+        ui.tvLegV.textContent = formatCompactCurrency(volume);
+        ui.tvLegV.classList.remove("is-up", "is-down");
+        ui.tvLegV.classList.add(toneClass);
+      }
+      if (ui.tvLegChg) {
+        ui.tvLegChg.textContent = `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`;
+        ui.tvLegChg.classList.remove("is-up", "is-down");
+        ui.tvLegChg.classList.add(toneClass);
+      }
+    }
+
+    function bindTvChartInteractions() {
+      if (!tvChart.chart || tvChart.crosshairHandler) return;
+
+      tvChart.crosshairHandler = (param) => {
+        if (!param?.point || param.point.x < 0 || param.point.y < 0 || param.time == null) {
+          updateTvLegend(state.buckets[state.buckets.length - 1] || null);
+          return;
+        }
+        updateTvLegend(getCandleByTvTime(param.time));
+      };
+      tvChart.chart.subscribeCrosshairMove(tvChart.crosshairHandler);
+
+      tvChart.clickHandler = (param) => {
+        handleTvDrawingClick(param);
+      };
+      tvChart.chart.subscribeClick(tvChart.clickHandler);
+    }
+
+
+
+    function refreshTvUserPriceLines() {
+      if (!tvChart.mainSeries) return;
+      removeTvUserPriceLines();
+      state.annotations
+        .filter((annotation) => annotation.type === "hline" && Number.isFinite(annotation.price))
+        .slice(-24)
+        .forEach((annotation) => addTvPriceLine(annotation.price));
+    }
+
+    function resizeTvDrawingCanvas() {
+      if (!ui.tvDrawingCanvas || !ui.tvContainer) return;
+      const rect = ui.tvContainer.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      ui.tvDrawingCanvas.style.width = `${Math.max(1, rect.width)}px`;
+      ui.tvDrawingCanvas.style.height = `${Math.max(1, rect.height)}px`;
+      ui.tvDrawingCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      ui.tvDrawingCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      const ctx = ui.tvDrawingCanvas.getContext("2d");
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawTvAnnotations();
+    }
+
+    function syncTvDrawingCursor() {
+      const stage = ui.tvContainer?.closest(".chart-stage");
+      if (!stage) return;
+      const drawingTools = ["crosshair", "trend", "ray", "extended", "arrow", "hline", "vline", "brush", "text", "rect", "ellipse", "measure"];
+      stage.classList.toggle("is-drawing-tool", state.chartMode === "tv" && drawingTools.includes(state.activeTool));
+      stage.classList.toggle("is-text-tool", state.chartMode === "tv" && state.activeTool === "text");
+      stage.classList.toggle("is-eraser-tool", state.chartMode === "tv" && state.activeTool === "eraser");
+    }
+
+    function getTvPointFromParam(param) {
+      if (!param?.point || !tvChart.mainSeries || !state.buckets.length) return null;
+      let price = tvChart.mainSeries.coordinateToPrice(param.point.y);
+      if (!Number.isFinite(price)) return null;
+
+      let candle = null;
+      if (param.time != null) {
+        candle = getCandleByTvTime(param.time);
+      }
+      if (!candle) {
+        const logical = tvChart.chart?.timeScale?.().coordinateToLogical?.(param.point.x);
+        if (Number.isFinite(logical)) {
+          const index = Math.max(0, Math.min(state.buckets.length - 1, Math.round(logical)));
+          candle = state.buckets[index];
+        }
+      }
+      if (!candle) return null;
+
+      if (state.snapToCandle) {
+        price = candle.close;
+      }
+
+      return {
+        timestamp: candle.timestamp,
+        price,
+        label: formatTvScalePrice(price)
+      };
+    }
+
+    function getTvPointPosition(point) {
+      if (!point || !tvChart.chart || !tvChart.mainSeries) return null;
+      const x = tvChart.chart.timeScale().timeToCoordinate(point.timestamp);
+      const y = tvChart.mainSeries.priceToCoordinate(point.price);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      return { x, y };
+    }
+
+
+    function cloneTvPoint(point) {
+      return point ? { timestamp: point.timestamp, price: point.price, label: point.label } : point;
+    }
+
+    function cloneTvAnnotation(annotation) {
+      const copy = { ...annotation };
+      if (annotation.point) copy.point = cloneTvPoint(annotation.point);
+      if (Array.isArray(annotation.points)) copy.points = annotation.points.map(cloneTvPoint);
+      return copy;
+    }
+
+    function getTvCandleIndexByTimestamp(timestamp) {
+      if (!state.buckets.length) return -1;
+      let nearestIndex = 0;
+      let nearestDistance = Math.abs(Number(state.buckets[0].timestamp) - Number(timestamp));
+      for (let index = 1; index < state.buckets.length; index += 1) {
+        const distance = Math.abs(Number(state.buckets[index].timestamp) - Number(timestamp));
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      }
+      return nearestIndex;
+    }
+
+    function getTvPointFromIndexAndPrice(index, price) {
+      if (!state.buckets.length) return null;
+      const safeIndex = Math.max(0, Math.min(state.buckets.length - 1, Math.round(index)));
+      const candle = state.buckets[safeIndex];
+      const safePrice = Math.max(0.000000001, Number(price));
+      return {
+        timestamp: candle.timestamp,
+        price: safePrice,
+        label: formatTvScalePrice(safePrice)
+      };
+    }
+
+    function moveTvPointByDelta(point, candleDelta, priceDelta) {
+      const index = getTvCandleIndexByTimestamp(point.timestamp);
+      if (index < 0) return cloneTvPoint(point);
+      return getTvPointFromIndexAndPrice(index + candleDelta, Number(point.price) + priceDelta);
+    }
+
+    function moveTvAnnotationByDelta(annotation, candleDelta, priceDelta) {
+      if (!annotation) return annotation;
+      if (annotation.type === "hline") {
+        const price = Math.max(0.000000001, Number(annotation.price) + priceDelta);
+        return { ...annotation, price, label: formatTvScalePrice(price) };
+      }
+      const moved = cloneTvAnnotation(annotation);
+      if (moved.point) moved.point = moveTvPointByDelta(moved.point, candleDelta, priceDelta);
+      if (Array.isArray(moved.points)) moved.points = moved.points.map((point) => moveTvPointByDelta(point, candleDelta, priceDelta));
+      return moved;
+    }
+
+    function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+      const dx = bx - ax;
+      const dy = by - ay;
+      if (!dx && !dy) return Math.hypot(px - ax, py - ay);
+      const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+      return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    }
+
+    function getTvAnnotationHitDistance(annotation, x, y) {
+      if (!annotation) return Infinity;
+      if (annotation.type === "hline") {
+        if (!tvChart.mainSeries || !Number.isFinite(annotation.price)) return Infinity;
+        const lineY = tvChart.mainSeries.priceToCoordinate(annotation.price);
+        return Number.isFinite(lineY) ? Math.abs(y - lineY) : Infinity;
+      }
+      if (annotation.type === "text") {
+        const p = getTvPointPosition(annotation.point);
+        if (!p) return Infinity;
+        return (x >= p.x && x <= p.x + 150 && y >= p.y - 34 && y <= p.y + 12) ? 0 : Math.hypot(x - p.x, y - p.y);
+      }
+      const points = annotation.points || (annotation.point ? [annotation.point] : []);
+      const screenPoints = points.map(getTvPointPosition).filter(Boolean);
+      if (!screenPoints.length) return Infinity;
+      if (annotation.type === "vline") return Math.abs(x - screenPoints[0].x);
+      if (["rect", "ellipse", "measure"].includes(annotation.type) && screenPoints.length >= 2) {
+        const a = screenPoints[0];
+        const b = screenPoints[1];
+        const left = Math.min(a.x, b.x);
+        const right = Math.max(a.x, b.x);
+        const top = Math.min(a.y, b.y);
+        const bottom = Math.max(a.y, b.y);
+        if (x >= left && x <= right && y >= top && y <= bottom) {
+          const edgeDistance = Math.min(Math.abs(x - left), Math.abs(x - right), Math.abs(y - top), Math.abs(y - bottom));
+          return Math.min(edgeDistance, 5);
+        }
+        return Math.min(
+          pointToSegmentDistance(x, y, left, top, right, top),
+          pointToSegmentDistance(x, y, right, top, right, bottom),
+          pointToSegmentDistance(x, y, right, bottom, left, bottom),
+          pointToSegmentDistance(x, y, left, bottom, left, top)
+        );
+      }
+      let best = Infinity;
+      for (let i = 1; i < screenPoints.length; i += 1) {
+        best = Math.min(best, pointToSegmentDistance(x, y, screenPoints[i - 1].x, screenPoints[i - 1].y, screenPoints[i].x, screenPoints[i].y));
+      }
+      if (screenPoints.length === 1) best = Math.hypot(x - screenPoints[0].x, y - screenPoints[0].y);
+      return best;
+    }
+
+    function findTvAnnotationAtPointer(event) {
+      if (!ui.tvDrawingCanvas || state.drawingsHidden) return -1;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const tolerance = 10;
+      let bestIndex = -1;
+      let bestDistance = tolerance;
+      for (let index = state.annotations.length - 1; index >= 0; index -= 1) {
+        const distance = getTvAnnotationHitDistance(state.annotations[index], x, y);
+        if (distance <= bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      }
+      return bestIndex;
+    }
+
+    function deleteTvAnnotationAtIndex(index) {
+      if (index < 0 || index >= state.annotations.length || state.drawingsLocked) return false;
+      pushTvAnnotationHistory();
+      state.annotations.splice(index, 1);
+      state.selectedAnnotationIndex = -1;
+      refreshTvUserPriceLines();
+      drawTvAnnotations();
+      return true;
+    }
+
+    function addTvPriceLine(price) {
+      if (!tvChart.mainSeries || !Number.isFinite(price)) return;
+      const LWC = getLightweightCharts();
+      const line = tvChart.mainSeries.createPriceLine({
+        price,
+        color: TV_THEME.ema,
+        lineWidth: 1,
+        lineStyle: LWC?.LineStyle?.Dashed ?? 2,
+        axisLabelVisible: true,
+        title: formatTvScalePrice(price)
+      });
+      tvChart.userPriceLines.push(line);
+      if (tvChart.userPriceLines.length > 24) {
+        const oldest = tvChart.userPriceLines.shift();
+        tvChart.mainSeries.removePriceLine(oldest);
+      }
+    }
+
+    function drawTvLabel(ctx, text, x, y, options = {}) {
+      const lines = String(text || "").split("\n");
+      const paddingX = 8;
+      const paddingY = options.multiline ? 7 : 0;
+      const lineHeight = options.multiline ? 18 : 24;
+      const height = options.multiline ? (lines.length * lineHeight + paddingY * 2) : 24;
+      ctx.save();
+      ctx.font = options.multiline ? "700 12px Inter, sans-serif" : "12px Inter, sans-serif";
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const width = Math.max(...lines.map((line) => ctx.measureText(line).width)) + paddingX * 2;
+      const left = Math.max(6, Math.min(rect.width - width - 6, x));
+      const top = Math.max(6, Math.min(rect.height - height - 6, y - height / 2));
+      ctx.fillStyle = options.background || "rgba(19, 23, 34, 0.94)";
+      ctx.strokeStyle = options.border || "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(left, top, width, height, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = options.color || "#d1d4dc";
+      ctx.textBaseline = options.multiline ? "top" : "middle";
+      lines.forEach((line, index) => {
+        ctx.fillText(line, left + paddingX, options.multiline ? top + paddingY + index * lineHeight : top + height / 2);
+      });
+      ctx.restore();
+    }
+
+    function drawTvAnnotations() {
+      if (!ui.tvDrawingCanvas) return;
+      const ctx = ui.tvDrawingCanvas.getContext("2d");
+      if (!ctx) return;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      if (state.chartMode !== "tv" || !tvChart.chart || !tvChart.mainSeries || state.drawingsHidden) return;
+
+      const annotations = state.annotations.map((annotation, index) => ({ ...annotation, __index: index }));
+      if (state.pendingAnnotation) {
+        annotations.push({
+          type: state.pendingAnnotation.type,
+          points: state.pendingAnnotation.points || [
+            state.pendingAnnotation.point,
+            state.pendingAnnotation.previewPoint || state.pendingAnnotation.point
+          ],
+          isPending: true,
+          __index: -1
+        });
+      }
+
+      ctx.save();
+      annotations.forEach((annotation) => {
+        const isSelected = annotation.__index === state.selectedAnnotationIndex;
+        if (annotation.type === "hline") {
+          if (isSelected && tvChart.mainSeries && Number.isFinite(annotation.price)) {
+            const y = tvChart.mainSeries.priceToCoordinate(annotation.price);
+            if (Number.isFinite(y)) {
+              ctx.save();
+              ctx.strokeStyle = "#2962ff";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([6, 4]);
+              ctx.beginPath();
+              ctx.moveTo(8, y);
+              ctx.lineTo(rect.width - 8, y);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+          return;
+        }
+
+        if (annotation.type === "text") {
+          const point = getTvPointPosition(annotation.point);
+          if (!point) return;
+          drawTvLabel(ctx, annotation.label || "Text", point.x + 8, point.y - 12, {
+            color: "#42d7ff",
+            border: isSelected ? "#2962ff" : "rgba(66, 215, 255, 0.35)"
+          });
+          if (isSelected) {
+            ctx.save();
+            ctx.strokeStyle = "#2962ff";
+            ctx.lineWidth = 1.4;
+            ctx.setLineDash([4, 3]);
+            ctx.strokeRect(point.x - 4, point.y - 24, 162, 34);
+            ctx.restore();
+          }
+          return;
+        }
+
+        const points = annotation.points || (annotation.point ? [annotation.point] : []);
+        const firstPoint = points[0];
+        const secondPoint = points[1] || points[0];
+        const first = getTvPointPosition(firstPoint);
+        const second = getTvPointPosition(secondPoint);
+        if (!first || !second) return;
+
+        const isMeasure = annotation.type === "measure";
+        const isBrush = annotation.type === "brush";
+        ctx.strokeStyle = isSelected ? "#2962ff" : (isMeasure ? "#f5c663" : (isBrush ? "rgba(66, 215, 255, 0.82)" : "rgba(237,244,255,0.82)"));
+        ctx.lineWidth = isSelected ? 2.4 : (isBrush ? 3.2 : 1.7);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.setLineDash(annotation.isPending && !isBrush ? [4, 5] : []);
+
+        if (annotation.type === "rect") {
+          const left = Math.min(first.x, second.x);
+          const top = Math.min(first.y, second.y);
+          const width = Math.abs(second.x - first.x);
+          const height = Math.abs(second.y - first.y);
+          ctx.fillStyle = "rgba(66, 215, 255, 0.08)";
+          ctx.strokeRect(left, top, width, height);
+          ctx.fillRect(left, top, width, height);
+          ctx.setLineDash([]);
+          return;
+        }
+
+        if (annotation.type === "ellipse") {
+          ctx.beginPath();
+          ctx.ellipse((first.x + second.x) / 2, (first.y + second.y) / 2, Math.abs(second.x - first.x) / 2, Math.abs(second.y - first.y) / 2, 0, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(66, 215, 255, 0.08)";
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+          return;
+        }
+
+        if (annotation.type === "vline") {
+          ctx.beginPath();
+          ctx.moveTo(first.x, 8);
+          ctx.lineTo(first.x, rect.height - 8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          return;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(first.x, first.y);
+        if (["ray", "extended"].includes(annotation.type) && first.x !== second.x) {
+          const slope = (second.y - first.y) / (second.x - first.x);
+          if (annotation.type === "extended") {
+            const leftX = 8;
+            const rightX = rect.width - 8;
+            ctx.moveTo(leftX, first.y + slope * (leftX - first.x));
+            ctx.lineTo(rightX, first.y + slope * (rightX - first.x));
+          } else {
+            const targetX = second.x >= first.x ? rect.width - 8 : 8;
+            ctx.lineTo(targetX, first.y + slope * (targetX - first.x));
+          }
+        } else if (isBrush) {
+          const drawablePoints = points.map(getTvPointPosition).filter(Boolean);
+          if (drawablePoints.length === 1) {
+            ctx.arc(drawablePoints[0].x, drawablePoints[0].y, 1.8, 0, Math.PI * 2);
+          } else {
+            ctx.moveTo(drawablePoints[0].x, drawablePoints[0].y);
+            for (let i = 1; i < drawablePoints.length - 1; i += 1) {
+              const midX = (drawablePoints[i].x + drawablePoints[i + 1].x) / 2;
+              const midY = (drawablePoints[i].y + drawablePoints[i + 1].y) / 2;
+              ctx.quadraticCurveTo(drawablePoints[i].x, drawablePoints[i].y, midX, midY);
+            }
+            const last = drawablePoints[drawablePoints.length - 1];
+            ctx.lineTo(last.x, last.y);
+          }
+        } else {
+          ctx.lineTo(second.x, second.y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (isSelected) {
+          ctx.save();
+          ctx.fillStyle = "#2962ff";
+          [first, second].forEach((handle) => {
+            ctx.beginPath();
+            ctx.arc(handle.x, handle.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.restore();
+        }
+
+        if (isMeasure && annotation.points?.length >= 2) {
+          const startData = annotation.points[0];
+          const endData = annotation.points[1];
+          const startPrice = Number(startData.price);
+          const endPrice = Number(endData.price);
+          const diff = endPrice - startPrice;
+          const pct = startPrice ? (diff / startPrice) * 100 : 0;
+          const isUp = diff >= 0;
+          const boxColor = isUp ? "#2962ff" : "#f23645";
+          const fillColor = isUp ? "rgba(41, 98, 255, 0.22)" : "rgba(242, 54, 69, 0.22)";
+          const lineColor = isUp ? "#2962ff" : "#f23645";
+          const left = Math.min(first.x, second.x);
+          const top = Math.min(first.y, second.y);
+          const width = Math.abs(second.x - first.x);
+          const height = Math.abs(second.y - first.y);
+
+          ctx.save();
+          ctx.fillStyle = fillColor;
+          ctx.strokeStyle = lineColor;
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([]);
+          ctx.fillRect(left, top, width, height);
+          ctx.strokeRect(left, top, width, height);
+
+          ctx.beginPath();
+          ctx.moveTo(first.x, first.y);
+          ctx.lineTo(first.x, second.y);
+          ctx.lineTo(second.x, second.y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          const arrow = 5;
+          ctx.moveTo(first.x, second.y);
+          ctx.lineTo(first.x - arrow, second.y + (isUp ? arrow : -arrow));
+          ctx.moveTo(first.x, second.y);
+          ctx.lineTo(first.x + arrow, second.y + (isUp ? arrow : -arrow));
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - (second.x >= first.x ? arrow : -arrow), second.y - arrow);
+          ctx.moveTo(second.x, second.y);
+          ctx.lineTo(second.x - (second.x >= first.x ? arrow : -arrow), second.y + arrow);
+          ctx.stroke();
+          ctx.restore();
+
+          const timeframeSeconds = {
+            "1m": 60,
+            "5m": 5 * 60,
+            "15m": 15 * 60,
+            "30m": 30 * 60,
+            "1h": 60 * 60,
+            "4h": 4 * 60 * 60,
+            "1d": DAY_SECONDS,
+            "1w": 7 * DAY_SECONDS,
+            "1mo": 30 * DAY_SECONDS
+          }[state.activeTimeframe] || DAY_SECONDS;
+          const bars = Math.max(1, Math.round(Math.abs(Number(endData.timestamp) - Number(startData.timestamp)) / timeframeSeconds));
+          const volume = state.buckets
+            .filter((candle) => candle.timestamp >= Math.min(startData.timestamp, endData.timestamp) && candle.timestamp <= Math.max(startData.timestamp, endData.timestamp))
+            .reduce((sum, candle) => sum + toNumber(candle.volumeUsd ?? candle.volume, 0), 0);
+          const header = `${diff >= 0 ? "+" : ""}${formatTvScalePrice(diff)} (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)`;
+          const labelX = left + Math.min(Math.max(width / 2 - 58, 0), Math.max(width - 116, 0));
+          const labelY = isUp ? top - 10 : top + height + 38;
+          drawTvLabel(ctx, `${header} , ${bars}
+${bars} bars, ${formatTimeframeLabel(state.activeTimeframe)}
+Vol ${formatCompactToken(volume)}`, labelX, labelY, {
+            color: "#ffffff",
+            background: boxColor,
+            border: boxColor,
+            multiline: true
+          });
+        }
+      });
+      ctx.restore();
+    }
+
+    function shouldUseTvDragTool() {
+      return state.chartMode === "tv" && ["trend", "ray", "measure", "brush"].includes(state.activeTool);
+    }
+
+    function setTvNativeDragEnabled(enabled) {
+      if (!tvChart.chart) return;
+      if (enabled) {
+        tvChart.chart.applyOptions(getTvChartOptions());
+        return;
+      }
+      tvChart.chart.applyOptions({
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: false,
+          horzTouchDrag: false,
+          vertTouchDrag: false
+        },
+        handleScale: {
+          axisPressedMouseMove: false,
+          mouseWheel: true,
+          pinch: false
+        },
+        kineticScroll: {
+          touch: false,
+          mouse: false
+        }
+      });
+    }
+
+    function getTvPointFromPointerEvent(event) {
+      if (!ui.tvDrawingCanvas || !tvChart.chart) return null;
+      const rect = ui.tvDrawingCanvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+      const time = tvChart.chart.timeScale().coordinateToTime(x);
+      return getTvPointFromParam({ point: { x, y }, time });
+    }
+
+    function distanceBetweenTvPoints(a, b) {
+      const pa = getTvPointPosition(a);
+      const pb = getTvPointPosition(b);
+      if (!pa || !pb) return Infinity;
+      return Math.hypot(pa.x - pb.x, pa.y - pb.y);
+    }
+
+    function cloneTvAnnotationList(list) {
+      return (Array.isArray(list) ? list : []).map(cloneTvAnnotation);
+    }
+
+    function pushTvAnnotationHistory(snapshot = state.annotations) {
+      state.undoStack.push(cloneTvAnnotationList(snapshot));
+      if (state.undoStack.length > 80) {
+        state.undoStack.shift();
+      }
+      state.redoStack = [];
+    }
+
+    function restoreTvAnnotationSnapshot(snapshot) {
+      state.annotations = cloneTvAnnotationList(snapshot);
+      state.pendingAnnotation = null;
+      state.selectedAnnotationIndex = -1;
+      refreshTvUserPriceLines();
+      drawTvAnnotations();
+    }
+
+    function pushTvAnnotation(annotation) {
+      if (state.drawingsLocked) return;
+      pushTvAnnotationHistory();
+      state.annotations.push(annotation);
+      if (state.annotations.length > 160) {
+        state.annotations = state.annotations.slice(-160);
+      }
+    }
+
+    function undoTvAnnotation() {
+      if (!state.undoStack.length || state.drawingsLocked) return;
+      state.redoStack.push(cloneTvAnnotationList(state.annotations));
+      restoreTvAnnotationSnapshot(state.undoStack.pop());
+    }
+
+    function redoTvAnnotation() {
+      if (!state.redoStack.length || state.drawingsLocked) return;
+      state.undoStack.push(cloneTvAnnotationList(state.annotations));
+      restoreTvAnnotationSnapshot(state.redoStack.pop());
+    }
+
+    function resetTvActiveToolAfterDrawing() {
+      if (!state.keepDrawing) {
+        state.activeTool = "crosshair";
+        syncToolChrome();
+      }
+    }
+
+    function handleTvDrawingClick(param) {
+      if (state.chartMode !== "tv" || ["crosshair", "magnet", "undo", "redo", "hide", "keep", "lock"].includes(state.activeTool) || state.isPointerDrawing) return;
+      const point = getTvPointFromParam(param);
+      if (!point) return;
+
+      if (state.activeTool === "hline") {
+        pushTvAnnotation({ type: "hline", price: point.price, label: formatTvScalePrice(point.price) });
+        addTvPriceLine(point.price);
+        state.pendingAnnotation = null;
+        resetTvActiveToolAfterDrawing();
+      } else if (state.activeTool === "vline") {
+        pushTvAnnotation({ type: "vline", points: [point] });
+        state.pendingAnnotation = null;
+        resetTvActiveToolAfterDrawing();
+      } else if (state.activeTool === "text") {
+        const label = window.prompt("Text label:", "TCL note");
+        pushTvAnnotation({ type: "text", point, label: label && label.trim() ? label.trim() : "TCL note" });
+        state.pendingAnnotation = null;
+        resetTvActiveToolAfterDrawing();
+      } else if (["trend", "ray", "extended", "arrow", "rect", "ellipse", "measure"].includes(state.activeTool)) {
+        if (state.pendingAnnotation?.type === state.activeTool) {
+          pushTvAnnotation({ type: state.activeTool, points: [state.pendingAnnotation.point, point] });
+          state.pendingAnnotation = null;
+          resetTvActiveToolAfterDrawing();
+        } else {
+          state.pendingAnnotation = { type: state.activeTool, point, previewPoint: point };
+        }
+      }
+
+      drawTvAnnotations();
+    }
+
+    function handleTvDrawingPointerDown(event) {
+      if (state.chartMode !== "tv") return;
+      if (state.drawingsLocked && !["lock", "hide", "undo", "redo"].includes(state.activeTool)) return;
+
+      const hitIndex = findTvAnnotationAtPointer(event);
+
+      if (state.activeTool === "eraser") {
+        event.preventDefault();
+        if (hitIndex >= 0) {
+          deleteTvAnnotationAtIndex(hitIndex);
+        } else {
+          state.selectedAnnotationIndex = -1;
+          drawTvAnnotations();
+        }
+        return;
+      }
+
+      const selectableTools = ["crosshair", "magnet", "undo", "redo", "hide", "keep", "lock"];
+      if (hitIndex >= 0 && !["undo", "redo", "hide", "keep", "lock"].includes(state.activeTool)) {
+        const point = getTvPointFromPointerEvent(event);
+        if (!point) return;
+        event.preventDefault();
+        ui.tvDrawingCanvas.setPointerCapture?.(event.pointerId);
+        state.selectedAnnotationIndex = hitIndex;
+        state.pendingAnnotation = null;
+        state.isPointerDrawing = true;
+        state.drawingDrag = {
+          pointerId: event.pointerId,
+          tool: "move",
+          startPoint: point,
+          lastPoint: point,
+          moved: false,
+          annotationIndex: hitIndex,
+          historySnapshot: cloneTvAnnotationList(state.annotations),
+          originalAnnotation: cloneTvAnnotation(state.annotations[hitIndex]),
+          startCandleIndex: getTvCandleIndexByTimestamp(point.timestamp),
+          startPrice: point.price
+        };
+        setTvNativeDragEnabled(false);
+        drawTvAnnotations();
+        return;
+      }
+
+      if (selectableTools.includes(state.activeTool)) {
+        state.selectedAnnotationIndex = -1;
+        drawTvAnnotations();
+        return;
+      }
+
+      const point = getTvPointFromPointerEvent(event);
+      if (!point) return;
+
+      event.preventDefault();
+      ui.tvDrawingCanvas.setPointerCapture?.(event.pointerId);
+      state.selectedAnnotationIndex = -1;
+      state.isPointerDrawing = true;
+      state.drawingDrag = {
+        pointerId: event.pointerId,
+        tool: state.activeTool,
+        startPoint: point,
+        lastPoint: point,
+        moved: false
+      };
+      setTvNativeDragEnabled(false);
+
+      if (state.activeTool === "hline") {
+        pushTvAnnotation({ type: "hline", price: point.price, label: formatTvScalePrice(point.price) });
+        addTvPriceLine(point.price);
+        state.drawingDrag = null;
+        state.isPointerDrawing = false;
+        setTvNativeDragEnabled(true);
+        drawTvAnnotations();
+        resetTvActiveToolAfterDrawing();
+        return;
+      }
+
+      if (state.activeTool === "vline") {
+        pushTvAnnotation({ type: "vline", points: [point] });
+        state.drawingDrag = null;
+        state.isPointerDrawing = false;
+        setTvNativeDragEnabled(true);
+        drawTvAnnotations();
+        resetTvActiveToolAfterDrawing();
+        return;
+      }
+
+      if (state.activeTool === "text") {
+        const label = window.prompt("Text label:", "TCL note");
+        pushTvAnnotation({ type: "text", point, label: label && label.trim() ? label.trim() : "TCL note" });
+        resetTvActiveToolAfterDrawing();
+        state.drawingDrag = null;
+        state.isPointerDrawing = false;
+        setTvNativeDragEnabled(true);
+        drawTvAnnotations();
+        return;
+      }
+
+      if (state.activeTool === "brush") {
+        state.pendingAnnotation = { type: "brush", points: [point] };
+      } else {
+        state.pendingAnnotation = { type: state.activeTool, point, previewPoint: point };
+      }
+      drawTvAnnotations();
+    }
+
+    function handleTvDrawingPointerMove(event) {
+      const drag = state.drawingDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const point = getTvPointFromPointerEvent(event);
+      if (!point) return;
+
+      event.preventDefault();
+      drag.moved = true;
+      drag.lastPoint = point;
+
+      if (drag.tool === "move") {
+        const currentIndex = getTvCandleIndexByTimestamp(point.timestamp);
+        const candleDelta = Number.isFinite(currentIndex) && Number.isFinite(drag.startCandleIndex) ? currentIndex - drag.startCandleIndex : 0;
+        const priceDelta = Number(point.price) - Number(drag.startPrice);
+        if (drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
+          state.annotations[drag.annotationIndex] = moveTvAnnotationByDelta(drag.originalAnnotation, candleDelta, priceDelta);
+          refreshTvUserPriceLines();
+        }
+        drawTvAnnotations();
+        return;
+      }
+
+      if (drag.tool === "brush") {
+        const points = state.pendingAnnotation?.points || [];
+        const last = points[points.length - 1];
+        if (!last || distanceBetweenTvPoints(last, point) >= 2) {
+          points.push(point);
+          state.pendingAnnotation = { type: "brush", points };
+        }
+      } else {
+        state.pendingAnnotation = { type: drag.tool, point: drag.startPoint, previewPoint: point };
+      }
+      drawTvAnnotations();
+    }
+
+    function handleTvDrawingPointerUp(event) {
+      const drag = state.drawingDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+
+      const endPoint = getTvPointFromPointerEvent(event) || drag.lastPoint || drag.startPoint;
+      if (drag.tool === "move") {
+        if (drag.moved && drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
+          pushTvAnnotationHistory(drag.historySnapshot || []);
+          refreshTvUserPriceLines();
+        }
+      } else if (drag.tool === "brush") {
+        const points = (state.pendingAnnotation?.points || [drag.startPoint]).slice();
+        if (points.length < 2) points.push(endPoint);
+        pushTvAnnotation({ type: "brush", points });
+      } else if (["trend", "ray", "extended", "arrow", "rect", "ellipse", "measure"].includes(drag.tool)) {
+        pushTvAnnotation({ type: drag.tool, points: [drag.startPoint, endPoint] });
+      }
+
+      state.pendingAnnotation = null;
+      state.drawingDrag = null;
+      state.isPointerDrawing = false;
+      ui.tvDrawingCanvas.releasePointerCapture?.(event.pointerId);
+      setTvNativeDragEnabled(true);
+      drawTvAnnotations();
+      if (drag.tool !== "move") resetTvActiveToolAfterDrawing();
+    }
+
+    function handleTvDrawingPointerCancel(event) {
+      const drag = state.drawingDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      if (drag.tool === "move" && drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
+        state.annotations[drag.annotationIndex] = cloneTvAnnotation(drag.originalAnnotation);
+        refreshTvUserPriceLines();
+      }
+      state.pendingAnnotation = null;
+      state.drawingDrag = null;
+      state.isPointerDrawing = false;
+      setTvNativeDragEnabled(true);
+      drawTvAnnotations();
+    }
+
+    function scrollTvToRealtime() {
+      if (!tvChart.chart) return;
+      const timeScale = tvChart.chart.timeScale();
+      if (typeof timeScale.scrollToRealTime === "function") {
+        timeScale.scrollToRealTime();
+      } else {
+        timeScale.scrollToPosition(0, false);
+      }
+      state.tvNeedsFit = false;
+    }
+
+    function panTvChart(direction) {
+      if (!tvChart.chart) return;
+      const timeScale = tvChart.chart.timeScale();
+      const logicalRange = timeScale.getVisibleLogicalRange();
+      if (!logicalRange) return;
+      const shift = Math.max(3, (logicalRange.to - logicalRange.from) * 0.12) * (direction === "left" ? 1 : -1);
+      timeScale.setVisibleLogicalRange({
+        from: logicalRange.from + shift,
+        to: logicalRange.to + shift
+      });
+    }
+
+    function handleTvKeydown(event) {
+      if (state.chartMode !== "tv" || !tvChart.chart) return;
+      const target = event.target;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+
+      if (event.altKey && (event.key === "r" || event.key === "R")) {
+        event.preventDefault();
+        scrollTvToRealtime();
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        panTvChart("left");
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        panTvChart("right");
+        return;
+      }
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        zoomTvChart("in");
+        return;
+      }
+      if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        zoomTvChart("out");
+        return;
+      }
+      if (event.key === "0" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        state.tvNeedsFit = true;
+        fitTvChartContent();
+      }
+    }
+
+    function findHighLowInCandles(candles) {
+      if (!candles.length) return null;
+      let high = candles[0].high;
+      let low = candles[0].low;
+      for (let index = 1; index < candles.length; index += 1) {
+        const candle = candles[index];
+        if (candle.high > high) high = candle.high;
+        if (candle.low < low) low = candle.low;
+      }
+      return { high, low };
+    }
+
+    function getVisibleCandlesForTv(candles) {
+      if (!tvChart.chart || candles.length <= 1) return candles;
+      const logicalRange = tvChart.chart.timeScale().getVisibleLogicalRange();
+      if (!logicalRange) return candles;
+
+      const from = Math.max(0, Math.floor(logicalRange.from));
+      const to = Math.min(candles.length - 1, Math.ceil(logicalRange.to));
+      if (from >= to) return candles;
+      return candles.slice(from, to + 1);
+    }
+
+    function removeTvHighLowLines() {
+      if (!tvChart.mainSeries) {
+        tvChart.highPriceLine = null;
+        tvChart.lowPriceLine = null;
+        return;
+      }
+      if (tvChart.highPriceLine) {
+        tvChart.mainSeries.removePriceLine(tvChart.highPriceLine);
+        tvChart.highPriceLine = null;
+      }
+      if (tvChart.lowPriceLine) {
+        tvChart.mainSeries.removePriceLine(tvChart.lowPriceLine);
+        tvChart.lowPriceLine = null;
+      }
+    }
+
+function applyTvHighLowLines(candles) {
+  removeTvHighLowLines();
+  if (!state.settings.highLowLabels || !tvChart.mainSeries || !candles?.length) return;
+
+  const bounds = findHighLowInCandles(getVisibleCandlesForTv(candles));
+  if (!bounds) return;
+
+  const LWC = getLightweightCharts();
+  const lineStyle = LWC?.LineStyle?.Dotted ?? 1;
+  const lineColor = "rgba(120, 123, 134, 0.85)";
+
+  // High: eticheta pe linie, sus
+  tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
+    price: bounds.high,
+    color: lineColor,
+    lineWidth: 1,
+    lineStyle,
+    axisLabelVisible: true,
+    title: "High"
+  });
+
+  // Low: eticheta pe linie, jos
+  tvChart.lowPriceLine = tvChart.mainSeries.createPriceLine({
+    price: bounds.low,
+    color: lineColor,
+    lineWidth: 1,
+    lineStyle,
+    axisLabelVisible: true,
+    title: "Low"
+  });
+}
+
+    function resizeTvChart() {
+      if (!tvChart.chart || !ui.tvContainer) return;
+      const rect = ui.tvContainer.getBoundingClientRect();
+      tvChart.chart.applyOptions({
+        width: Math.max(1, Math.floor(rect.width)),
+        height: Math.max(1, Math.floor(rect.height))
+      });
+      resizeTvDrawingCanvas();
+    }
+
+    function applyTvPriceScale() {
+      if (!tvChart.chart) return;
+      const LWC = getLightweightCharts();
+      const priceFormat = getTvPriceFormat();
+
+      tvChart.chart.applyOptions({
+        localization: {
+          priceFormatter: formatTvScalePrice
+        }
+      });
+
+      tvChart.chart.priceScale("right").applyOptions({
+        visible: state.settings.priceLabels,
+        borderColor: TV_THEME.border,
+        minimumWidth: 118,
+        ticksVisible: true,
+        alignLabels: true,
+        entireTextOnly: false,
+        scaleMargins: {
+          top: 0.05,
+          bottom: state.settings.volume ? 0.28 : 0.05
+        },
+        mode: state.settings.logScale && LWC?.PriceScaleMode?.Logarithmic != null
+          ? LWC.PriceScaleMode.Logarithmic
+          : 0
+      });
+
+      const seriesList = [
+        tvChart.mainSeries,
+        tvChart.emaSeries,
+        tvChart.smaSeries,
+        tvChart.vwapSeries,
+        tvChart.bbUpperSeries,
+        tvChart.bbMiddleSeries,
+        tvChart.bbLowerSeries
+      ];
+      seriesList.forEach((series) => {
+        if (!series || typeof series.applyOptions !== "function") return;
+        series.applyOptions({ priceFormat });
+      });
+    }
+
+    function applyTvMainSeriesOptions() {
+      if (!tvChart.mainSeries) return;
+      tvChart.mainSeries.applyOptions({
+        lastValueVisible: false,
+        priceLineVisible: false
+      });
+    }
+
+    function applyTvChartSettings(candles = state.buckets) {
+      if (!tvChart.chart) return;
+      tvChart.chart.applyOptions(getTvChartOptions());
+      applyTvPriceScale();
+      applyTvMainSeriesOptions();
+      ensureTvVolumeSeries();
+      if (tvChart.volumeSeries) {
+        tvChart.volumeSeries.applyOptions({ visible: state.settings.volume });
+        if (candles.length) {
+          tvChart.volumeSeries.setData(state.settings.volume ? buildTvVolumeData(candles) : []);
+        }
+      }
+      applyTvHighLowLines(candles);
+      applyTvLivePriceLine(candles);
+      refreshTvUserPriceLines();
+    }
+
+    function getTvChartOptions() {
+      const LWC = getLightweightCharts();
+      const shortTf = ["1m", "5m", "15m", "30m"].includes(state.activeTimeframe);
+      const axisScale = { time: true, price: true };
+      return {
+        layout: {
+          background: { type: "solid", color: TV_THEME.bg },
+          textColor: TV_THEME.text,
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Trebuchet MS', Inter, sans-serif",
+          fontSize: 12
+        },
+        localization: {
+          locale: "en-US",
+          priceFormatter: formatTvScalePrice,
+          timeFormatter: (timestamp) => {
+            const date = new Date(timestamp * 1000);
+            if (shortTf) {
+              return date.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+                timeZone: "UTC"
+              });
+            }
+            return date.toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "2-digit",
+              timeZone: "UTC"
+            });
+          }
+        },
+        grid: {
+          vertLines: { visible: state.settings.grid, color: TV_THEME.grid },
+          horzLines: { visible: state.settings.grid, color: TV_THEME.grid }
+        },
+        crosshair: {
+          mode: LWC?.CrosshairMode?.Normal ?? 0,
+          vertLine: {
+            width: 1,
+            color: TV_THEME.crosshair,
+            style: LWC?.LineStyle?.Dashed ?? 2,
+            labelBackgroundColor: TV_THEME.labelBg
+          },
+          horzLine: {
+            width: 1,
+            color: TV_THEME.crosshair,
+            style: LWC?.LineStyle?.Dashed ?? 2,
+            labelBackgroundColor: TV_THEME.labelBg
+          }
+        },
+        rightPriceScale: {
+          visible: state.settings.priceLabels,
+          borderColor: TV_THEME.border,
+          minimumWidth: 118,
+          ticksVisible: true,
+          alignLabels: true,
+          entireTextOnly: false,
+          scaleMargins: {
+            top: 0.08,
+            bottom: state.settings.volume ? 0.26 : 0.08
+          },
+          mode: state.settings.logScale && LWC?.PriceScaleMode?.Logarithmic != null
+            ? LWC.PriceScaleMode.Logarithmic
+            : 0
+        },
+        timeScale: {
+          borderColor: TV_THEME.border,
+          timeVisible: true,
+          secondsVisible: shortTf,
+          rightOffset: 12,
+          barSpacing: 6,
+          minBarSpacing: 0.5,
+          fixLeftEdge: false,
+          fixRightEdge: false,
+          rightBarStaysOnScroll: true,
+          lockVisibleTimeRangeOnResize: true
+        },
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: false
+        },
+        handleScale: {
+          axisPressedMouseMove: axisScale,
+          mouseWheel: true,
+          pinch: true
+        },
+        kineticScroll: {
+          touch: true,
+          mouse: true
+        }
+      };
+    }
+
+    function removeTvSeries(series) {
+      if (series && tvChart.chart) {
+        tvChart.chart.removeSeries(series);
+      }
+    }
+
+    function createTvMainSeries(style) {
+      const LWC = getLightweightCharts();
+      if (!tvChart.chart || !LWC) return null;
+
+      const priceFormat = getTvPriceFormat();
+      const priceSeriesOptions = {
+        priceFormat,
+        lastValueVisible: false,
+        priceLineVisible: false
+      };
+
+      if (["line", "line-markers"].includes(style)) {
+        return tvChart.chart.addLineSeries({
+          color: TV_THEME.sma,
+          lineWidth: 2,
+          crosshairMarkerVisible: true,
+          ...priceSeriesOptions
+        });
+      }
+
+      if (["area", "hlc-area"].includes(style)) {
+        return tvChart.chart.addAreaSeries({
+          lineColor: TV_THEME.sma,
+          topColor: "rgba(33, 150, 243, 0.28)",
+          bottomColor: "rgba(33, 150, 243, 0)",
+          lineWidth: 2,
+          ...priceSeriesOptions
+        });
+      }
+
+      if (style === "bars") {
+        return tvChart.chart.addBarSeries({
+          upColor: TV_BULL,
+          downColor: TV_BEAR,
+          thinBars: false,
+          ...priceSeriesOptions
+        });
+      }
+
+      if (style === "columns") {
+        return tvChart.chart.addHistogramSeries({
+          ...priceSeriesOptions
+        });
+      }
+
+      const hollow = style === "hollow";
+      const volumeStyle = style === "volume";
+      return tvChart.chart.addCandlestickSeries({
+        upColor: hollow ? "rgba(5, 9, 16, 0.62)" : (volumeStyle ? "rgba(53, 223, 145, 0.55)" : TV_BULL),
+        downColor: volumeStyle ? "rgba(255, 102, 114, 0.55)" : TV_BEAR,
+        borderUpColor: TV_BULL,
+        borderDownColor: TV_BEAR,
+        wickUpColor: TV_BULL,
+        wickDownColor: TV_BEAR,
+        borderVisible: true,
+        ...priceSeriesOptions
+      });
+    }
+
+    function ensureTvVolumeSeries() {
+      if (!tvChart.chart) return null;
+      if (!state.settings.volume) {
+        removeTvSeries(tvChart.volumeSeries);
+        tvChart.volumeSeries = null;
+        return null;
+      }
+      if (!tvChart.volumeSeries) {
+        tvChart.volumeSeries = tvChart.chart.addHistogramSeries({
+          priceFormat: { type: "volume" },
+          priceScaleId: "",
+          lastValueVisible: false,
+          priceLineVisible: false
+        });
+        tvChart.volumeSeries.priceScale().applyOptions({
+          scaleMargins: { top: 0.82, bottom: 0 },
+          borderColor: TV_THEME.border
+        });
+      }
+      return tvChart.volumeSeries;
+    }
+
+    function ensureTvIndicatorSeries() {
+      if (!tvChart.chart) return;
+
+      if (state.indicators.ema20 && !tvChart.emaSeries) {
+        tvChart.emaSeries = tvChart.chart.addLineSeries({
+          color: TV_THEME.ema,
+          lineWidth: 2,
+          priceFormat: getTvPriceFormat(),
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        });
+      } else if (!state.indicators.ema20) {
+        removeTvSeries(tvChart.emaSeries);
+        tvChart.emaSeries = null;
+      }
+
+      if (state.indicators.sma50 && !tvChart.smaSeries) {
+        tvChart.smaSeries = tvChart.chart.addLineSeries({
+          color: TV_THEME.sma,
+          lineWidth: 1.5,
+          priceFormat: getTvPriceFormat(),
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        });
+      } else if (!state.indicators.sma50) {
+        removeTvSeries(tvChart.smaSeries);
+        tvChart.smaSeries = null;
+      }
+
+      if (state.indicators.vwap && !tvChart.vwapSeries) {
+        tvChart.vwapSeries = tvChart.chart.addLineSeries({
+          color: "#e879f9",
+          lineWidth: 1.5,
+          priceFormat: getTvPriceFormat(),
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        });
+      } else if (!state.indicators.vwap) {
+        removeTvSeries(tvChart.vwapSeries);
+        tvChart.vwapSeries = null;
+      }
+
+      if (state.indicators.bb20) {
+        if (!tvChart.bbUpperSeries) {
+          tvChart.bbUpperSeries = tvChart.chart.addLineSeries({
+            color: "rgba(168, 85, 247, 0.88)",
+            lineWidth: 1,
+            lineStyle: 2,
+            priceFormat: getTvPriceFormat(),
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false
+          });
+          tvChart.bbMiddleSeries = tvChart.chart.addLineSeries({
+            color: "rgba(168, 85, 247, 0.55)",
+            lineWidth: 1,
+            priceFormat: getTvPriceFormat(),
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false
+          });
+          tvChart.bbLowerSeries = tvChart.chart.addLineSeries({
+            color: "rgba(168, 85, 247, 0.88)",
+            lineWidth: 1,
+            lineStyle: 2,
+            priceFormat: getTvPriceFormat(),
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false
+          });
+        }
+      } else {
+        removeTvSeries(tvChart.bbUpperSeries);
+        removeTvSeries(tvChart.bbMiddleSeries);
+        removeTvSeries(tvChart.bbLowerSeries);
+        tvChart.bbUpperSeries = null;
+        tvChart.bbMiddleSeries = null;
+        tvChart.bbLowerSeries = null;
+      }
+    }
+
+    function ensureTvChart() {
+      const LWC = getLightweightCharts();
+      if (!LWC || !ui.tvContainer) return false;
+
+      if (!tvChart.chart) {
+        const rect = ui.tvContainer.getBoundingClientRect();
+        tvChart.chart = LWC.createChart(ui.tvContainer, {
+          ...getTvChartOptions(),
+          width: Math.max(1, Math.floor(rect.width)),
+          height: Math.max(1, Math.floor(rect.height))
+        });
+
+        tvChart.rangeHandler = () => {
+          state.tvNeedsFit = false;
+          if (state.settings.highLowLabels && state.buckets.length) {
+            applyTvHighLowLines(state.buckets);
+          }
+          applyTvLivePriceLine(state.buckets);
+          drawTvAnnotations();
+        };
+        tvChart.chart.timeScale().subscribeVisibleLogicalRangeChange(tvChart.rangeHandler);
+
+        if (!tvChart.resizeObserver) {
+          tvChart.resizeObserver = new ResizeObserver(() => resizeTvChart());
+          tvChart.resizeObserver.observe(ui.tvContainer);
+        }
+
+        ui.tvContainer.addEventListener("dblclick", () => {
+          if (state.chartMode === "tv" && tvChart.chart) {
+            fitTvChartContent();
+          }
+        });
+        bindTvChartInteractions();
+      }
+
+      if (tvChart.activeStyle !== state.chartStyle) {
+        removeTvUserPriceLines();
+        removeTvLivePriceLine();
+        removeTvHighLowLines();
+        removeTvSeries(tvChart.mainSeries);
+        tvChart.mainSeries = createTvMainSeries(state.chartStyle);
+        tvChart.activeStyle = state.chartStyle;
+      }
+
+      ensureTvVolumeSeries();
+      ensureTvIndicatorSeries();
+      applyTvChartSettings();
+      return Boolean(tvChart.mainSeries);
+    }
+
+    function candlesToTvBars(candles) {
+      return candles.map((candle) => ({
+        time: candle.timestamp,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close
+      }));
+    }
+
+    function candlesToTvLine(candles, useHlc = false) {
+      return candles.map((candle) => ({
+        time: candle.timestamp,
+        value: useHlc ? (candle.high + candle.low + candle.close) / 3 : candle.close
+      }));
+    }
+
+    function indicatorToTvLine(candles, values) {
+      const points = [];
+      candles.forEach((candle, index) => {
+        const value = values[index];
+        if (!Number.isFinite(value)) return;
+        points.push({ time: candle.timestamp, value });
+      });
+      return points;
+    }
+
+    function buildTvVolumeData(candles) {
+      return candles.map((candle) => {
+        const isUp = candle.close >= candle.open;
+        return {
+          time: candle.timestamp,
+          value: candle.buyVolume + candle.sellVolume,
+          color: isUp ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)"
+        };
+      });
+    }
+
+    function buildTvPatternMarkers(candles, patterns) {
+      const LWC = getLightweightCharts();
+      if (!LWC || !patterns.length) return [];
+      return patterns.map((marker) => {
+        const candle = candles[marker.index];
+        if (!candle) return null;
+        return {
+          time: candle.timestamp,
+          position: marker.position === "below" ? "belowBar" : "aboveBar",
+          color: marker.color,
+          shape: marker.position === "below" ? "arrowUp" : "arrowDown",
+          text: marker.label
+        };
+      }).filter(Boolean);
+    }
+
+    function applyTvMainSeriesData(candles) {
+      if (!tvChart.mainSeries) return;
+      const style = state.chartStyle;
+
+      if (["line", "line-markers"].includes(style)) {
+        tvChart.mainSeries.setData(candlesToTvLine(candles));
+        return;
+      }
+
+      if (["area", "hlc-area"].includes(style)) {
+        tvChart.mainSeries.setData(candlesToTvLine(candles, style === "hlc-area"));
+        return;
+      }
+
+      if (style === "columns") {
+        tvChart.mainSeries.setData(candles.map((candle) => ({
+          time: candle.timestamp,
+          value: candle.close,
+          color: candle.close >= candle.open ? TV_BULL : TV_BEAR
+        })));
+        return;
+      }
+
+      tvChart.mainSeries.setData(candlesToTvBars(candles));
+    }
+
+    function updateTvChartData(candles, indicators) {
+      if (!ensureTvChart()) return;
+
+      applyTvMainSeriesData(candles);
+
+      if (tvChart.volumeSeries) {
+        tvChart.volumeSeries.setData(state.settings.volume ? buildTvVolumeData(candles) : []);
+      }
+
+      if (tvChart.emaSeries) {
+        tvChart.emaSeries.setData(indicatorToTvLine(candles, indicators.ema20));
+      }
+      if (tvChart.smaSeries) {
+        tvChart.smaSeries.setData(indicatorToTvLine(candles, indicators.sma50));
+      }
+      if (tvChart.vwapSeries) {
+        tvChart.vwapSeries.setData(indicatorToTvLine(candles, indicators.vwap));
+      }
+      if (tvChart.bbUpperSeries && tvChart.bbMiddleSeries && tvChart.bbLowerSeries) {
+        tvChart.bbUpperSeries.setData(indicatorToTvLine(candles, indicators.bollinger.upper));
+        tvChart.bbMiddleSeries.setData(indicatorToTvLine(candles, indicators.bollinger.middle));
+        tvChart.bbLowerSeries.setData(indicatorToTvLine(candles, indicators.bollinger.lower));
+      }
+
+      if (state.indicators.patterns && typeof tvChart.mainSeries.setMarkers === "function") {
+        tvChart.mainSeries.setMarkers(buildTvPatternMarkers(candles, indicators.patterns));
+      } else if (typeof tvChart.mainSeries.setMarkers === "function") {
+        tvChart.mainSeries.setMarkers([]);
+      }
+
+      applyTvChartSettings(candles);
+    }
+
+    function fitTvChartContent() {
+      if (!tvChart.chart) return;
+      state.tvNeedsFit = false;
+      tvChart.chart.timeScale().fitContent();
+    }
+
+    function zoomTvChart(direction) {
+      if (!tvChart.chart) return;
+      const timeScale = tvChart.chart.timeScale();
+      const logicalRange = timeScale.getVisibleLogicalRange();
+      if (!logicalRange) {
+        fitTvChartContent();
+        return;
+      }
+
+      const span = logicalRange.to - logicalRange.from;
+      const minBars = 25;
+      const maxBars = Math.max(minBars, state.buckets.length || minBars);
+      const zoomFactor = direction === "in" ? 0.82 : 1.22;
+      const nextSpan = Math.max(minBars, Math.min(maxBars, span * zoomFactor));
+      const center = (logicalRange.from + logicalRange.to) / 2;
+
+      timeScale.setVisibleLogicalRange({
+        from: center - nextSpan / 2,
+        to: center + nextSpan / 2
+      });
+      state.tvNeedsFit = false;
+    }
+
+    function renderTradingViewChart() {
+      const LWC = getLightweightCharts();
+      const visibleTrades = getVisibleTrades();
+      let candles = buildTimeframeCandles(visibleTrades, state.activeTimeframe);
+      if (state.chartStyle === "heikin") {
+        candles = buildHeikinAshiCandles(candles);
+      }
+
+      const ema20 = calculateEma(candles, 20);
+      const sma50 = calculateSma(candles, 50);
+      const bollinger = calculateBollinger(candles, 20, 2);
+      const vwap = calculateVwap(candles);
+      const patterns = state.indicators.patterns ? detectCandlePatterns(candles) : [];
+
+      state.buckets = candles;
+      state.patternMarkers = patterns;
+      state.plot = null;
+      ui.chartEmpty.classList.toggle("is-visible", !candles.length);
+
+      if (!candles.length || !LWC) {
+        destroyTvChart();
+        ui.lastPriceBadge.textContent = "--";
+        return;
+      }
+
+      if (!ensureTvChart()) return;
+
+      updateTvChartData(candles, { ema20, sma50, vwap, bollinger, patterns });
+      resizeTvChart();
+
+      if (state.tvNeedsFit) {
+        fitTvChartContent();
+      }
+
+      applyTvLivePriceLine(state.buckets);
+      resizeTvDrawingCanvas();
+      syncTvDrawingCursor();
+      drawTvAnnotations();
+
+      updateTvLegend(state.buckets[state.buckets.length - 1] || null);
+
+      const visibleStats = visibleTrades.reduce((acc, trade) => {
+        acc.volume += trade.volumeUsd;
+        acc.count += 1;
+        if (trade.side === "buy") acc.buy += trade.volumeUsd;
+        else acc.sell += trade.volumeUsd;
+        return acc;
+      }, { volume: 0, buy: 0, sell: 0, count: 0 });
+
+      const firstCandle = candles[0];
+      const lastCandle = candles[candles.length - 1];
+      if (ui.chartSubtitle) {
+        ui.chartSubtitle.textContent = `TradingView Candles | ${formatTimeframeLabel(state.activeTimeframe)} | ${formatDate(firstCandle.timestamp * 1000)} to ${formatDate(lastCandle.timestamp * 1000)}`;
+      }
+      if (ui.chartMeta) {
+        ui.chartMeta.textContent = `${formatCount(candles.length)} candles | ${formatCount(visibleStats.count)} swaps | ${formatCompactCurrency(visibleStats.volume)} volume`;
+      }
+      if (ui.legendRow) {
+        ui.legendRow.innerHTML = `
+        <span class="legend-item"><span class="legend-dot buy"></span>Bull candle</span>
+        <span class="legend-item"><span class="legend-dot sell"></span>Bear candle</span>
+        ${state.indicators.ema20 ? '<span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>EMA 20</span>' : ''}
+        ${state.indicators.sma50 ? '<span class="legend-item"><span class="legend-dot"></span>SMA 50</span>' : ''}
+        ${state.indicators.bb20 ? '<span class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>Bollinger 20</span>' : ''}
+        ${state.indicators.vwap ? '<span class="legend-item"><span class="legend-dot" style="background:#e879f9"></span>VWAP</span>' : ''}
+        ${state.indicators.patterns ? '<span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>Candle patterns</span>' : ''}
+        <span>${formatCount(candles.length)} candles loaded</span>
+      `;
+      }
+    }
+
+    function renderChart() {
+      if (state.chartMode === "tv") {
+        renderTradingViewChart();
+        return;
+      }
+
+      destroyTvChart();
+      const visibleTrades = getVisibleTrades();
+      const buckets = buildDailyBuckets(visibleTrades);
+      state.buckets = buckets;
+      state.patternMarkers = [];
+      ui.chartEmpty.classList.toggle("is-visible", !buckets.length);
+
+      const { ctx, width, height } = setupCanvas();
+      ctx.clearRect(0, 0, width, height);
+
+      if (!buckets.length) return;
+
+      const priceMinRaw = Math.min(...buckets.map((bucket) => bucket.low));
+      const priceMaxRaw = Math.max(...buckets.map((bucket) => bucket.high));
+      const currentPriceRaw = getTclSpotPriceUsd();
+      const currentPrice = Number.isFinite(currentPriceRaw) && currentPriceRaw > 0
+        ? currentPriceRaw
+        : buckets[buckets.length - 1].close;
+      const flowReferenceLines = [
+        {
+          label: "High",
+          placement: "above",
+          price: priceMaxRaw,
+          color: "#f5c663",
+          background: "rgba(245, 198, 99, 0.16)",
+          border: "rgba(245, 198, 99, 0.52)",
+          dash: [6, 5]
+        },
+        {
+          label: "Current price",
+          placement: "center",
+          price: currentPrice,
+          color: "#42d7ff",
+          background: "rgba(66, 215, 255, 0.17)",
+          border: "rgba(66, 215, 255, 0.56)",
+          dash: [2, 4]
+        },
+        {
+          label: "Low",
+          placement: "below",
+          price: priceMinRaw,
+          color: "#ff6672",
+          background: "rgba(255, 102, 114, 0.15)",
+          border: "rgba(255, 102, 114, 0.52)",
+          dash: [6, 5]
+        }
+      ]
+        .filter((line) => Number.isFinite(line.price) && line.price >= 0)
+        .map((line) => ({ ...line, priceText: formatPrice(line.price) }));
+
+      ctx.save();
+      // Measure the widest reference tag (label name OR price) so the right
+      // side panel auto-fits to the longest tag without leaving empty space.
+      ctx.font = "800 9px Inter, sans-serif";
+      const referenceLabelTitleWidth = Math.max(
+        ...flowReferenceLines.map((line) => ctx.measureText(line.label).width)
+      );
+      ctx.font = "700 10px Inter, sans-serif";
+      const referenceLabelPriceWidth = Math.max(
+        ...flowReferenceLines.map((line) => ctx.measureText(line.priceText).width)
+      );
+      // Inner badge horizontal padding (matches the +9 used when drawing the
+      // text inside the rounded rect). Use a tight value so the tag just fits.
+      const referenceBadgeInnerPad = 9;
+      const referenceLabelWidth = Math.ceil(
+        Math.max(referenceLabelTitleWidth, referenceLabelPriceWidth) +
+          referenceBadgeInnerPad * 2
+      );
+
+      // Measure widest price-axis tick label so the left side has enough room
+      // to keep ALL tick labels inside the panel (and not overlap the plot).
+      ctx.font = "12px Inter, sans-serif";
+      const tickCandidates = getNiceTicks(priceMinRaw, priceMaxRaw, 5);
+      const maxTickLabelWidth = Math.max(
+        0,
+        ...tickCandidates.map((tick) => ctx.measureText(formatPrice(tick)).width)
+      );
+      ctx.restore();
+
+      // Right side: keep the panel flush to the canvas edge, just leave a small
+      // gutter between the chart plot and the badge column.
+      const referencePanelGutter = width < 640 ? 8 : 10;
+      // The "panel" wraps the badge with a 1px border on each side so it
+      // visually auto-fits the longest tag with no trailing empty space.
+      const referencePanelWidth = referenceLabelWidth;
+
+      // Left padding fits the longest tick label inside the panel
+      // (inner left margin + label + breathing space before the chart line).
+      const tickInnerLeftMargin = 8;
+      const tickToPlotGap = 6;
+      const dynamicLeft = Math.ceil(
+        tickInnerLeftMargin + maxTickLabelWidth + tickToPlotGap
+      );
+      const minLeft = width < 640 ? 58 : 76;
+
+      const padding = {
+        left: Math.max(minLeft, dynamicLeft),
+        right: referencePanelGutter + referencePanelWidth,
+        top: 24,
+        bottom: width < 640 ? 54 : 64
+      };
+      const volumeHeight = Math.max(86, Math.min(150, height * 0.26));
+      const chartLeft = padding.left;
+      const chartRight = width - padding.right;
+      const chartTop = padding.top;
+      const chartBottom = height - padding.bottom;
+      const priceBottom = chartBottom - volumeHeight - 24;
+      const volumeTop = priceBottom + 28;
+      const volumeBottom = chartBottom;
+      const plotWidth = chartRight - chartLeft;
+      const priceHeight = priceBottom - chartTop;
+      const volumePlotHeight = volumeBottom - volumeTop;
+
+      const priceScaleMinRaw = Number.isFinite(currentPrice)
+        ? Math.min(priceMinRaw, currentPrice)
+        : priceMinRaw;
+      const priceScaleMaxRaw = Number.isFinite(currentPrice)
+        ? Math.max(priceMaxRaw, currentPrice)
+        : priceMaxRaw;
+const pricePad = Math.max((priceScaleMaxRaw - priceScaleMinRaw) * 0.18, priceScaleMaxRaw * 0.06, 0.0000001);      const priceMin = Math.max(0, priceScaleMinRaw - pricePad);
+      const priceMax = priceScaleMaxRaw + pricePad;
+      const maxVolume = Math.max(1, ...buckets.map((bucket) => bucket.buyVolume + bucket.sellVolume));
+
+      const xForIndex = (index) => {
+        if (buckets.length <= 1) return chartLeft + plotWidth / 2;
+        return chartLeft + (index / (buckets.length - 1)) * plotWidth;
+      };
+      const yForPrice = (price) => priceBottom - ((price - priceMin) / (priceMax - priceMin || 1)) * priceHeight;
+
+      state.plot = {
+        chartLeft,
+        chartRight,
+        chartTop,
+        chartBottom,
+        priceBottom,
+        volumeTop,
+        volumeBottom,
+        xForIndex,
+        yForPrice
+      };
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(135, 160, 196, 0.12)";
+      ctx.lineWidth = 1;
+      ctx.font = "12px Inter, sans-serif";
+      ctx.fillStyle = "rgba(237, 244, 255, 0.56)";
+      ctx.textBaseline = "middle";
+
+      for (const tick of getNiceTicks(priceMin, priceMax, 5)) {
+        const y = yForPrice(tick);
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, y);
+        ctx.lineTo(chartRight, y);
+        ctx.stroke();
+        ctx.fillText(formatPrice(tick), tickInnerLeftMargin, y);
+      }
+
+      ctx.strokeStyle = "rgba(135, 160, 196, 0.16)";
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, volumeTop);
+      ctx.lineTo(chartRight, volumeTop);
+      ctx.moveTo(chartLeft, volumeBottom);
+      ctx.lineTo(chartRight, volumeBottom);
+      ctx.stroke();
+
+      const dateTickCount = width < 640 ? 3 : 6;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let i = 0; i < dateTickCount; i += 1) {
+        const index = Math.round((i / Math.max(1, dateTickCount - 1)) * (buckets.length - 1));
+        const bucket = buckets[index];
+        const x = xForIndex(index);
+        ctx.textAlign = i === 0 ? "left" : (i === dateTickCount - 1 ? "right" : "center");
+        ctx.fillText(formatDate(bucket.timestamp * 1000), x, chartBottom + 12);
+        ctx.strokeStyle = "rgba(135, 160, 196, 0.08)";
+        ctx.beginPath();
+        ctx.moveTo(x, chartTop);
+        ctx.lineTo(x, volumeBottom);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      const barWidth = Math.max(1, Math.min(12, plotWidth / Math.max(1, buckets.length) * 0.62));
+      buckets.forEach((bucket, index) => {
+        const x = xForIndex(index) - barWidth / 2;
+        const buyHeight = (bucket.buyVolume / maxVolume) * volumePlotHeight;
+        const sellHeight = (bucket.sellVolume / maxVolume) * volumePlotHeight;
+        let y = volumeBottom;
+
+        if (buyHeight > 0) {
+          ctx.fillStyle = "rgba(53, 223, 145, 0.68)";
+          ctx.fillRect(x, y - buyHeight, barWidth, buyHeight);
+          y -= buyHeight;
+        }
+
+        if (sellHeight > 0) {
+          ctx.fillStyle = "rgba(255, 102, 114, 0.68)";
+          ctx.fillRect(x, y - sellHeight, barWidth, sellHeight);
+        }
+      });
+
+      const gradient = ctx.createLinearGradient(0, chartTop, 0, priceBottom);
+      gradient.addColorStop(0, "rgba(66, 215, 255, 0.28)");
+      gradient.addColorStop(1, "rgba(66, 215, 255, 0)");
+
+      ctx.beginPath();
+      buckets.forEach((bucket, index) => {
+        const x = xForIndex(index);
+        const y = yForPrice(bucket.close);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineTo(xForIndex(buckets.length - 1), priceBottom);
+      ctx.lineTo(xForIndex(0), priceBottom);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      ctx.beginPath();
+      buckets.forEach((bucket, index) => {
+        const x = xForIndex(index);
+        const y = yForPrice(bucket.close);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#42d7ff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+const referenceLabelHeight = 38;
+const referenceLabelGap = 12;
+const lowLabelExtraGap = 0;
+const lowLabelHeight = 38;
+// Auto-fit: place the badge column flush with the right edge of the canvas
+// so there is no empty space between the longest tag and the panel edge.
+const referencePanelLeft = width - referenceLabelWidth;
+const referenceLineRight = referencePanelLeft + referenceLabelWidth;
+
+const clampReferenceLabelTop = (top, line) => {
+  if (line.placement === "above") {
+    return Math.max(chartTop + 4, top);
+  }
+
+  if (line.placement === "below") {
+    const labelH = line.label === "Low" ? lowLabelHeight : referenceLabelHeight;
+    // Never let the label slide back above its reference line
+    return Math.max(line.y + 4, Math.min(priceBottom - labelH - 4, top));
+  }
+
+  return Math.min(
+    priceBottom - referenceLabelHeight - 4,
+    Math.max(chartTop + 4, top)
+  );
+};
+
+const referenceLabels = flowReferenceLines
+  .map((line) => ({ ...line, y: yForPrice(line.price) }))
+  .map((line) => {
+    const top = line.placement === "above"
+  ? line.y - referenceLabelHeight - referenceLabelGap
+  : line.placement === "below"
+    ? line.y + referenceLabelGap + lowLabelExtraGap
+    : line.y - referenceLabelHeight / 2;
+
+    return { ...line, labelTop: clampReferenceLabelTop(top, line) };
+  });
+
+      // Resolve overlaps: push labels apart vertically when prices are close.
+      // Only the Low (below) label moves — it slides further down to avoid
+      // overlapping labels above it. Current and High stay anchored in place.
+      (() => {
+        const gap = 10;
+        const getH = (l) => (l.label === "Low" ? lowLabelHeight : referenceLabelHeight);
+        const getMinTop = (l) => (
+          l.placement === "below"
+            ? l.y + 4
+            : chartTop + 4
+        );
+        const getMaxTop = (l) => priceBottom - getH(l) - 4;
+        // Anchor all non-"below" labels (Current, High) at their natural position.
+        referenceLabels.forEach((label) => {
+          if (label.placement !== "below") {
+            label.labelTop = Math.min(
+              getMaxTop(label),
+              Math.max(getMinTop(label), label.labelTop)
+            );
+          }
+        });
+
+        // For each "below" label (Low), push it down past any anchored label
+        // whose box it overlaps. Never go above its own red line (getMinTop).
+        referenceLabels
+          .filter((l) => l.placement === "below")
+          .forEach((low) => {
+            let top = Math.max(getMinTop(low), low.labelTop);
+            const lowH = getH(low);
+            // Repeat until no overlap with any anchored label above/around.
+            let safety = 8;
+            while (safety-- > 0) {
+              let moved = false;
+              referenceLabels.forEach((other) => {
+                if (other === low) return;
+                const oTop = other.labelTop;
+                const oBot = oTop + getH(other);
+                const lTop = top;
+                const lBot = top + lowH;
+                if (lTop < oBot + gap && lBot + gap > oTop) {
+                  // Overlap: push low below the other label.
+                  const candidate = oBot + gap;
+                  if (candidate > top) {
+                    top = candidate;
+                    moved = true;
+                  }
+                }
+              });
+              if (!moved) break;
+            }
+            low.labelTop = Math.max(getMinTop(low), top);
+          });
+      })();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(5, 9, 16, 0.34)";
+      ctx.fillRect(referencePanelLeft, chartTop, referencePanelWidth, priceBottom - chartTop);
+      ctx.strokeStyle = "rgba(135, 160, 196, 0.14)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(referencePanelLeft, chartTop);
+      ctx.lineTo(referencePanelLeft, priceBottom);
+      ctx.stroke();
+
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      referenceLabels.forEach((line) => {
+        const labelX = referencePanelLeft;
+        const labelY = line.labelTop;
+        const labelWidth = referenceLabelWidth;
+const labelHeight = line.label === "Low" ? lowLabelHeight : referenceLabelHeight;
+        ctx.strokeStyle = line.color;
+        ctx.globalAlpha = 0.82;
+        ctx.lineWidth = line.label === "Current price" ? 1.4 : 1;
+        ctx.setLineDash(line.dash);
+        ctx.beginPath();
+ctx.moveTo(chartLeft, line.y);
+ctx.lineTo(labelX - 8, line.y);
+ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+
+        ctx.fillStyle = line.background;
+        ctx.strokeStyle = line.border;
+drawRoundedRect(ctx, labelX, line.labelTop, labelWidth, labelHeight, 7);
+        ctx.fill();
+        ctx.stroke();
+ctx.font = "800 9px Inter, sans-serif";
+ctx.fillStyle = line.color;
+
+ctx.fillText(line.label, labelX + 9, labelY + 6);
+ctx.font = "700 10px Inter, sans-serif";
+ctx.fillText(line.priceText, labelX + 9, labelY + 21);
+      });
+      ctx.restore();
+
+      const hoverIndex = state.hoverIndex;
+      if (Number.isInteger(hoverIndex) && buckets[hoverIndex]) {
+        const bucket = buckets[hoverIndex];
+        const x = xForIndex(hoverIndex);
+        const y = yForPrice(bucket.close);
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(237, 244, 255, 0.42)";
+        ctx.setLineDash([4, 5]);
+        ctx.beginPath();
+        ctx.moveTo(x, chartTop);
+        ctx.lineTo(x, volumeBottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#edf4ff";
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#42d7ff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      const visibleStats = visibleTrades.reduce((acc, trade) => {
+        acc.volume += trade.volumeUsd;
+        acc.count += 1;
+        if (trade.side === "buy") acc.buy += trade.volumeUsd;
+        else acc.sell += trade.volumeUsd;
+        return acc;
+      }, { volume: 0, buy: 0, sell: 0, count: 0 });
+
+      const firstBucket = buckets[0];
+      const lastBucket = buckets[buckets.length - 1];
+      if (ui.chartSubtitle) {
+        ui.chartSubtitle.textContent = `${formatDate(firstBucket.timestamp * 1000)} to ${formatDate(lastBucket.timestamp * 1000)}`;
+      }
+      if (ui.chartMeta) {
+        ui.chartMeta.textContent = `${formatCount(visibleStats.count)} swaps | ${formatCompactCurrency(visibleStats.volume)} volume`;
+      }
+      if (ui.legendRow) {
+        ui.legendRow.innerHTML = `
+        <span class="legend-item"><span class="legend-dot"></span>Price close</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High ${formatPrice(priceMaxRaw)}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low ${formatPrice(priceMinRaw)}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price ${formatPrice(currentPrice)}</span>
+        <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
+        <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
+        <span>${formatCount(visibleStats.count)} swaps | ${formatCompactCurrency(visibleStats.volume)} volume</span>
+      `;
+      }
+    }
+
+    function showTooltip(event) {
+      if (state.chartMode === "tv" || !state.plot || !state.buckets.length) return;
+      const rect = ui.canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const { chartLeft, chartRight } = state.plot;
+      if (x < chartLeft || x > chartRight) {
+        hideTooltip();
+        return;
+      }
+
+      const ratio = (x - chartLeft) / Math.max(1, chartRight - chartLeft);
+      const index = Math.max(0, Math.min(state.buckets.length - 1, Math.round(ratio * (state.buckets.length - 1))));
+      const bucket = state.buckets[index];
+      state.hoverIndex = index;
+      renderChart();
+      const patternLabels = state.chartMode === "tv"
+        ? state.patternMarkers.filter((marker) => marker.index === index).map((marker) => marker.label)
+        : [];
+
+      ui.tooltip.innerHTML = state.chartMode === "tv"
+        ? `
+          <div class="tooltip-title">${formatDate(bucket.timestamp * 1000)} · ${formatTimeframeLabel(state.activeTimeframe)}</div>
+          <div class="tooltip-row"><span>Open</span><strong>${formatTvScalePrice(bucket.open)}</strong></div>
+          <div class="tooltip-row"><span>High</span><strong>${formatTvScalePrice(bucket.high)}</strong></div>
+          <div class="tooltip-row"><span>Low</span><strong>${formatTvScalePrice(bucket.low)}</strong></div>
+          <div class="tooltip-row"><span>Close</span><strong>${formatTvScalePrice(bucket.close)}</strong></div>
+          <div class="tooltip-row"><span>Buy volume</span><strong class="tone-buy">${formatCurrency(bucket.buyVolume, bucket.buyVolume < 1 ? 4 : 2)}</strong></div>
+          <div class="tooltip-row"><span>Sell volume</span><strong class="tone-sell">${formatCurrency(bucket.sellVolume, bucket.sellVolume < 1 ? 4 : 2)}</strong></div>
+          <div class="tooltip-row"><span>Patterns</span><strong>${patternLabels.length ? patternLabels.join(", ") : "--"}</strong></div>
+        `
+        : `
+          <div class="tooltip-title">${formatDate(bucket.timestamp * 1000)}</div>
+          <div class="tooltip-row"><span>Close</span><strong>${formatPrice(bucket.close)}</strong></div>
+          <div class="tooltip-row"><span>High / Low</span><strong>${formatPrice(bucket.high)} / ${formatPrice(bucket.low)}</strong></div>
+          <div class="tooltip-row"><span>Buy volume</span><strong class="tone-buy">${formatCurrency(bucket.buyVolume, bucket.buyVolume < 1 ? 4 : 2)}</strong></div>
+          <div class="tooltip-row"><span>Sell volume</span><strong class="tone-sell">${formatCurrency(bucket.sellVolume, bucket.sellVolume < 1 ? 4 : 2)}</strong></div>
+          <div class="tooltip-row"><span>Swaps</span><strong>${formatCount(bucket.tradeCount)}</strong></div>
+        `;
+      ui.tooltip.classList.add("is-visible");
+
+      const tooltipRect = ui.tooltip.getBoundingClientRect();
+      const left = Math.min(window.innerWidth - tooltipRect.width - 12, event.clientX + 16);
+      const top = Math.min(window.innerHeight - tooltipRect.height - 12, event.clientY + 16);
+      ui.tooltip.style.left = Math.max(12, left) + "px";
+      ui.tooltip.style.top = Math.max(12, top) + "px";
+    }
+
+    function hideTooltip() {
+      if (state.chartMode === "tv") {
+        ui.tooltip.classList.remove("is-visible");
+        return;
+      }
+      state.hoverIndex = null;
+      ui.tooltip.classList.remove("is-visible");
+      renderChart();
+    }
+
+    function renderAll() {
+      renderStats();
+      renderLatestTrades();
+      renderChart();
+
+      const latestTrade = state.trades[state.trades.length - 1];
+      ui.latestUpdateValue.textContent = latestTrade
+        ? `Last swap: ${formatDateTime(latestTrade.timestamp * 1000)}`
+        : "Last update: --";
+    }
+
+    async function refreshPairStats() {
+      try {
+        const payload = await fetchJson(CONFIG.dexUrl);
+        state.currentPair = payload?.pair || payload?.pairs?.[0] || null;
+      } catch (error) {
+        console.warn("Could not refresh pair stats", error);
+      }
+    }
+
+    async function loadFullHistory() {
+      setStatus("Loading TCL history from MultiversX...", "loading");
+      const pairReference = getStaticPairReference();
+      const history = await fetchTransferHistory((page) => {
+        setStatus(`Loading TCL history page ${page}/${CONFIG.transferMaxPages}...`, "loading");
+      });
+      const parsedTrades = parseTrades(history.transfers, pairReference);
+      if (!parsedTrades.length) {
+        throw new Error("No TCL swaps were parsed from MultiversX transfers.");
+      }
+      const fullHistory = history.reachedListingStart || history.exhaustedHistory;
+      mergeTrades(parsedTrades);
+      state.hasFullHistory = fullHistory;
+      saveCachedTrades({ fullHistory });
+      return history;
+    }
+
+    async function loadRecentTrades() {
+      const latestTimestamp = state.trades[state.trades.length - 1]?.timestamp;
+      if (!Number.isFinite(latestTimestamp)) {
+        await loadFullHistory();
+        return 0;
+      }
+
+      const pairReference = getStaticPairReference();
+      const history = await fetchRecentTransferHistory(latestTimestamp);
+      const parsedTrades = parseTrades(history.transfers, pairReference);
+      let addedTrades = 0;
+      if (parsedTrades.length) {
+        addedTrades = mergeTrades(parsedTrades);
+        saveCachedTrades({ fullHistory: state.hasFullHistory });
+      }
+      return addedTrades;
+    }
+
+    async function refreshChart(isManual = false) {
+      if (state.isLoading) return;
+      state.isLoading = true;
+      if (ui.refreshButton) ui.refreshButton.disabled = true;
+
+      try {
+        const cached = loadCachedTrades();
+        if (!state.trades.length && applyCachedTrades(cached)) {
+          renderAll();
+          setStatus("Cached real TCL chart loaded. Refreshing data...", "ready");
+        }
+
+        if (isManual || !state.trades.length) {
+          setStatus(isManual ? "Refreshing TCL chart..." : "Loading TCL chart...", "loading");
+        }
+        const snapshot = await fetchCloudflareChartSnapshot(isManual);
+        const applied = applyCloudflareChartSnapshot(snapshot);
+        renderAll();
+
+        const updatedAt = applied.updatedAt ? ` Updated ${formatDateTime(Date.parse(applied.updatedAt))}.` : "";
+        setStatus(`${formatCount(applied.tradeCount)} swaps loaded.${updatedAt}`, "ready");
+        notifyParentReady();
+      } catch (error) {
+        console.error("Failed to load TCL chart", error);
+        if (!state.trades.length) {
+          const cached = loadCachedTrades();
+          if (applyCachedTrades(cached)) {
+            renderAll();
+            setStatus("Data source unavailable. Showing last real cached TCL chart.", "ready");
+            notifyParentReady();
+            return;
+          }
+        }
+        if (state.trades.length) {
+          renderAll();
+          setStatus("Data source unavailable. Showing existing TCL chart data.", "ready");
+          notifyParentReady();
+          return;
+        }
+        renderAll();
+        setStatus(`Chart load failed. ${error.message}`, "error");
+      } finally {
+        state.isLoading = false;
+        if (ui.refreshButton) ui.refreshButton.disabled = false;
+      }
+    }
+
+    function notifyParentReady() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+        } catch (error) {
+          console.warn("Failed to notify parent page ready", error);
+        }
+      }
+    }
+
+    function goBackToTclToken() {
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          return;
+        } catch (error) {
+          console.warn("Back navigation failed", error);
+        }
+      }
+      window.location.href = "index.html#token";
+    }
+
+    function syncChartModeChrome() {
+      document.body.classList.toggle("tv-mode", state.chartMode === "tv");
+      ui.modeButtons.forEach((item) => item.classList.toggle("is-active", item.dataset.chartMode === state.chartMode));
+      syncTimeframeChrome();
+      syncIndicatorChrome();
+      syncChartStyleChrome();
+      syncSettingsChrome();
+      syncToolChrome();
+      if (state.chartMode === "tv") {
+        updateTvLegendHead();
+        requestAnimationFrame(() => resizeTvChart());
+      }
+    }
+
+    function applyTradingViewEntryDefaults() {
+      state.activeTimeframe = "15m";
+      state.chartStyle = "candles";
+      state.indicators.ema20 = false;
+      state.indicators.sma50 = false;
+      state.indicators.bb20 = false;
+      state.indicators.vwap = false;
+      state.indicators.patterns = false;
+      state.tvNeedsFit = true;
+      tvChart.activeStyle = null;
+      destroyTvChart();
+    }
+
+    function ensureTradingViewMode() {
+      if (state.chartMode === "tv") return;
+      applyTradingViewEntryDefaults();
+      state.chartMode = "tv";
+      syncChartModeChrome();
+    }
+
+    function syncTimeframeChrome() {
+      ui.timeframeButtons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.timeframe === state.activeTimeframe);
+      });
+    }
+
+    function syncIndicatorChrome() {
+      ui.indicatorButtons.forEach((button) => {
+        const key = button.dataset.indicator;
+        button.classList.toggle("is-active", Boolean(key && state.indicators[key]));
+      });
+    }
+
+    function syncChartStyleChrome() {
+      ui.chartStyleButtons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.chartStyle === state.chartStyle);
+      });
+      if (ui.chartTypeButton) {
+        ui.chartTypeButton.textContent = CHART_STYLE_LABELS[state.chartStyle] || "Candles";
+      }
+    }
+
+    function syncSettingsChrome() {
+      ui.settingInputs.forEach((input) => {
+        const key = input.dataset.setting;
+        if (!key || !(key in state.settings)) return;
+        input.checked = Boolean(state.settings[key]);
+      });
+      ui.scaleButtons.forEach((button) => {
+        const action = button.dataset.scaleAction;
+        button.classList.toggle(
+          "is-active",
+          (action === "auto" && state.tvNeedsFit) || (action === "log" && state.settings.logScale)
+        );
+      });
+    }
+
+    function syncToolChrome() {
+      ui.toolButtons.forEach((button) => {
+        const tool = button.dataset.tool;
+        const toggleState = {
+          magnet: state.snapToCandle,
+          hide: state.drawingsHidden,
+          keep: state.keepDrawing,
+          lock: state.drawingsLocked
+        };
+        const isActive = Object.prototype.hasOwnProperty.call(toggleState, tool)
+          ? Boolean(toggleState[tool])
+          : tool === state.activeTool;
+        button.classList.toggle("is-active", isActive);
+      });
+      syncTvDrawingCursor();
+      drawTvAnnotations();
+    }
+
+    function getDropdownPanel(dropdown) {
+      return dropdown?.querySelector(".tv-menu, .tv-settings-panel") || null;
+    }
+
+    function resetFloatingDropdown(dropdown) {
+      const panel = getDropdownPanel(dropdown);
+      if (!panel) return;
+      panel.style.top = "";
+      panel.style.left = "";
+      panel.style.right = "";
+      panel.style.maxHeight = "";
+      dropdown.classList.remove("is-floating");
+    }
+
+    function positionFloatingDropdown(dropdown) {
+      const button = dropdown.querySelector("[data-dropdown]");
+      const panel = getDropdownPanel(dropdown);
+      if (!button || !panel) return;
+
+      dropdown.classList.add("is-floating");
+      const gap = 8;
+      const buttonRect = button.getBoundingClientRect();
+      const viewportPadding = 10;
+      const maxHeight = Math.max(180, window.innerHeight - viewportPadding * 2);
+
+      panel.style.maxHeight = `${maxHeight}px`;
+
+      if (panel.classList.contains("tv-settings-panel")) {
+        panel.style.top = `${buttonRect.bottom + gap}px`;
+        panel.style.left = "auto";
+        panel.style.right = `${Math.max(viewportPadding, window.innerWidth - buttonRect.right)}px`;
+      } else {
+        let left = buttonRect.left;
+        panel.style.top = `${buttonRect.bottom + gap}px`;
+        panel.style.left = `${left}px`;
+        panel.style.right = "auto";
+
+        requestAnimationFrame(() => {
+          const panelRect = panel.getBoundingClientRect();
+          if (panelRect.right > window.innerWidth - viewportPadding) {
+            left = Math.max(viewportPadding, window.innerWidth - panelRect.width - viewportPadding);
+            panel.style.left = `${left}px`;
+          }
+          if (panelRect.bottom > window.innerHeight - viewportPadding) {
+            panel.style.top = `${Math.max(viewportPadding, buttonRect.top - panelRect.height - gap)}px`;
+          }
+        });
+      }
+    }
+
+    function syncOpenDropdownPositions() {
+      document.querySelectorAll(".tv-dropdown.is-open").forEach((dropdown) => {
+        positionFloatingDropdown(dropdown);
+      });
+    }
+
+    function closeDropdowns(exceptDropdown = null) {
+      document.querySelectorAll(".tv-dropdown.is-open").forEach((dropdown) => {
+        if (dropdown !== exceptDropdown) {
+          dropdown.classList.remove("is-open");
+          resetFloatingDropdown(dropdown);
+        }
+      });
+    }
+
+    function setDropdownOpen(dropdown, isOpen) {
+      if (!dropdown) return;
+      if (isOpen) {
+        closeDropdowns(dropdown);
+        dropdown.classList.add("is-open");
+        positionFloatingDropdown(dropdown);
+      } else {
+        dropdown.classList.remove("is-open");
+        resetFloatingDropdown(dropdown);
+      }
+    }
+
+    function toggleDropdown(button) {
+      const dropdown = button.closest(".tv-dropdown");
+      if (!dropdown) return;
+      const isOpen = dropdown.classList.contains("is-open");
+      setDropdownOpen(dropdown, !isOpen);
+    }
+
+    function openDropdownById(id) {
+      const button = document.querySelector(`[data-dropdown="${id}"]`);
+      const dropdown = button?.closest(".tv-dropdown");
+      if (!dropdown) return;
+      setDropdownOpen(dropdown, true);
+    }
+
+    function getPointerChartPoint(event) {
+      if (state.chartMode !== "tv" || !state.plot || !state.buckets.length) return null;
+      const rect = ui.canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const { chartLeft, chartRight, chartTop, priceBottom } = state.plot;
+      if (x < chartLeft || x > chartRight || y < chartTop || y > priceBottom) return null;
+
+      const ratio = (x - chartLeft) / Math.max(1, chartRight - chartLeft);
+      const index = Math.max(0, Math.min(state.buckets.length - 1, Math.round(ratio * (state.buckets.length - 1))));
+      const candle = state.buckets[index];
+      const price = state.snapToCandle ? candle.close : state.plot.priceFromY(y);
+      return {
+        index,
+        timestamp: candle.timestamp,
+        price,
+        x: state.plot.xForIndex(index),
+        y: state.plot.yForPrice(price)
+      };
+    }
+
+    function handleCanvasClick(event) {
+      if (state.chartMode !== "tv" || ["crosshair", "magnet"].includes(state.activeTool)) return;
+      const point = getPointerChartPoint(event);
+      if (!point) return;
+
+      if (state.activeTool === "hline") {
+        state.annotations.push({ type: "hline", price: point.price, label: formatPrice(point.price) });
+        state.pendingAnnotation = null;
+      } else if (state.activeTool === "text") {
+        state.annotations.push({ type: "text", point, label: "TCL note" });
+        state.pendingAnnotation = null;
+      } else if (["trend", "ray", "measure", "brush"].includes(state.activeTool)) {
+        if (state.pendingAnnotation?.type === state.activeTool) {
+          state.annotations.push({ type: state.activeTool, points: [state.pendingAnnotation.point, point] });
+          state.pendingAnnotation = null;
+        } else {
+          state.pendingAnnotation = { type: state.activeTool, point };
+        }
+      }
+
+      if (state.annotations.length > 30) {
+        state.annotations = state.annotations.slice(-30);
+      }
+      hideTooltip();
+      renderAll();
+    }
+
+    function initializeControlsFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "tv") {
+        state.chartMode = "tv";
+        applyTradingViewEntryDefaults();
+      }
+
+      const requestedTimeframe = params.get("tf");
+      if (requestedTimeframe && Array.from(ui.timeframeButtons).some((button) => button.dataset.timeframe === requestedTimeframe)) {
+        state.activeTimeframe = requestedTimeframe;
+      }
+
+      const requestedStyle = params.get("style");
+      if (requestedStyle && CHART_STYLE_LABELS[requestedStyle]) {
+        state.chartStyle = requestedStyle;
+        tvChart.activeStyle = null;
+      }
+
+      syncChartModeChrome();
+    }
+
+    ui.refreshButton?.addEventListener("click", () => refreshChart(true));
+    ui.canvas.addEventListener("mousemove", showTooltip);
+    ui.canvas.addEventListener("mouseleave", hideTooltip);
+    ui.canvas.addEventListener("click", handleCanvasClick);
+    if (ui.tvDrawingCanvas) {
+      ui.tvDrawingCanvas.addEventListener("pointerdown", handleTvDrawingPointerDown);
+      ui.tvDrawingCanvas.addEventListener("pointermove", handleTvDrawingPointerMove);
+      ui.tvDrawingCanvas.addEventListener("pointerup", handleTvDrawingPointerUp);
+      ui.tvDrawingCanvas.addEventListener("pointercancel", handleTvDrawingPointerCancel);
+      ui.tvDrawingCanvas.addEventListener("lostpointercapture", handleTvDrawingPointerCancel);
+    }
+    window.addEventListener("resize", () => {
+      if (state.chartMode === "tv") {
+        resizeTvChart();
+      }
+      syncOpenDropdownPositions();
+      renderChart();
+    });
+    document.querySelector(".tv-commandbar-scroll")?.addEventListener("scroll", syncOpenDropdownPositions);
+    window.addEventListener("scroll", syncOpenDropdownPositions, true);
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".tv-dropdown")) closeDropdowns();
+    });
+
+    ui.modeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextMode = button.dataset.chartMode === "tv" ? "tv" : "flow";
+        if (nextMode === "tv" && state.chartMode !== "tv") {
+          applyTradingViewEntryDefaults();
+        } else if (nextMode === "flow") {
+          destroyTvChart();
+        }
+        state.chartMode = nextMode;
+        state.hoverIndex = null;
+        hideTooltip();
+        syncChartModeChrome();
+        renderAll();
+      });
+    });
+
+    ui.timeframeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.activeTimeframe = button.dataset.timeframe || "1d";
+        state.hoverIndex = null;
+        state.tvNeedsFit = true;
+        ensureTradingViewMode();
+        syncTimeframeChrome();
+        closeDropdowns();
+        renderAll();
+      });
+    });
+
+    ui.indicatorButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.indicator;
+        if (!key || !(key in state.indicators)) return;
+        state.indicators[key] = !state.indicators[key];
+        state.hoverIndex = null;
+        ensureTradingViewMode();
+        syncIndicatorChrome();
+        renderAll();
+      });
+    });
+
+    ui.dropdownButtons.forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        ensureTradingViewMode();
+        toggleDropdown(button);
+      });
+    });
+
+    ui.chartStyleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.chartStyle = button.dataset.chartStyle || "candles";
+        tvChart.activeStyle = null;
+        state.hoverIndex = null;
+        ensureTradingViewMode();
+        syncChartStyleChrome();
+        closeDropdowns();
+        renderAll();
+      });
+    });
+
+    ui.zoomButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.zoom;
+        ensureTradingViewMode();
+        if (action === "in") zoomTvChart("in");
+        else if (action === "out") zoomTvChart("out");
+        else if (action === "fit") {
+          state.tvNeedsFit = true;
+          fitTvChartContent();
+        }
+        state.hoverIndex = null;
+        syncSettingsChrome();
+        renderAll();
+      });
+    });
+
+    ui.toolButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const tool = button.dataset.tool;
+        ensureTradingViewMode();
+        if (tool === "magnet") {
+          state.snapToCandle = !state.snapToCandle;
+          syncToolChrome();
+          return;
+        }
+        if (tool === "undo") { undoTvAnnotation(); syncToolChrome(); return; }
+        if (tool === "redo") { redoTvAnnotation(); syncToolChrome(); return; }
+        if (tool === "hide") { state.drawingsHidden = !state.drawingsHidden; drawTvAnnotations(); syncToolChrome(); return; }
+        if (tool === "keep") { state.keepDrawing = !state.keepDrawing; syncToolChrome(); return; }
+        if (tool === "lock") { state.drawingsLocked = !state.drawingsLocked; syncToolChrome(); return; }
+        if (tool === "eraser") {
+          if (state.annotations.length) {
+            pushTvAnnotationHistory();
+          }
+          state.annotations = [];
+          state.pendingAnnotation = null;
+          removeTvUserPriceLines();
+          state.activeTool = "crosshair";
+          syncToolChrome();
+          renderAll();
+          return;
+        }
+        state.activeTool = tool || "crosshair";
+        state.pendingAnnotation = null;
+        syncToolChrome();
+        renderAll();
+      });
+    });
+
+    ui.settingInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        const key = input.dataset.setting;
+        if (!key || !(key in state.settings)) return;
+        state.settings[key] = input.checked;
+        ensureTradingViewMode();
+        syncSettingsChrome();
+        renderAll();
+      });
+    });
+
+    ui.scaleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.scaleAction;
+        ensureTradingViewMode();
+        if (action === "auto") {
+          state.tvNeedsFit = true;
+          fitTvChartContent();
+        } else if (action === "log") {
+          state.settings.logScale = !state.settings.logScale;
+        } else if (action === "settings") {
+          openDropdownById("settingsPanel");
+        }
+        syncSettingsChrome();
+        renderAll();
+      });
+    });
+
+    ui.chartActionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.chartAction === "realtime") {
+          ensureTradingViewMode();
+          scrollTvToRealtime();
+        }
+      });
+    });
+
+    if (ui.tvRealtimeBtn) {
+      ui.tvRealtimeBtn.addEventListener("click", () => {
+        ensureTradingViewMode();
+        scrollTvToRealtime();
+      });
+    }
+
+    document.addEventListener("keydown", handleTvKeydown);
+
+    document.querySelectorAll("[data-range]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.activeRange = button.dataset.range || "all";
+        state.hoverIndex = null;
+        if (state.chartMode === "tv") state.tvNeedsFit = true;
+        document.querySelectorAll("[data-range]").forEach((item) => item.classList.toggle("is-active", item === button));
+        renderAll();
+      });
+    });
+
+    initializeControlsFromUrl();
+    refreshChart(false);
+    state.refreshTimer = window.setInterval(() => refreshChart(false), CONFIG.refreshMs);
+  </script>
+</body>
+</html>
