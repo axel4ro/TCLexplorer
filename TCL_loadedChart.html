@@ -1241,14 +1241,14 @@
         </div>
         <div class="tv-divider" aria-hidden="true"></div>
         <div class="tv-dropdown">
-          <button class="tv-menu-btn" id="chartTypeButton" type="button" data-dropdown="chartTypeMenu">Heikin Ashi</button>
+          <button class="tv-menu-btn" id="chartTypeButton" type="button" data-dropdown="chartTypeMenu">Candles</button>
           <div class="tv-menu" id="chartTypeMenu">
             <div class="tv-menu-section">Chart type</div>
-            <button class="tv-menu-item" type="button" data-chart-style="candles">Candles</button>
+            <button class="tv-menu-item is-active" type="button" data-chart-style="candles">Candles</button>
             <button class="tv-menu-item" type="button" data-chart-style="hollow">Hollow candles</button>
             <button class="tv-menu-item" type="button" data-chart-style="volume">Volume candles</button>
             <button class="tv-menu-item" type="button" data-chart-style="bars">Bars</button>
-            <button class="tv-menu-item is-active" type="button" data-chart-style="heikin">Heikin Ashi</button>
+            <button class="tv-menu-item" type="button" data-chart-style="heikin">Heikin Ashi</button>
             <button class="tv-menu-item" type="button" data-chart-style="line">Line</button>
             <button class="tv-menu-item" type="button" data-chart-style="line-markers">Line with markers</button>
             <button class="tv-menu-item" type="button" data-chart-style="area">Area</button>
@@ -1371,11 +1371,11 @@
             <svg viewBox="0 0 16 16"><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="5" x2="2" y2="11"/><line x1="14" y1="5" x2="14" y2="11"/><line x1="6" y1="6.5" x2="6" y2="9.5"/><line x1="10" y1="6.5" x2="10" y2="9.5"/></svg>
           </button>
           <div class="tv-tool-separator"></div>
-          <button class="tv-tool-btn" type="button" data-tool="undo" title="Undo drawing">↶</button>
-          <button class="tv-tool-btn" type="button" data-tool="redo" title="Redo drawing">↷</button>
-          <button class="tv-tool-btn" type="button" data-tool="hide" title="Hide / show drawings">◉</button>
-          <button class="tv-tool-btn" type="button" data-tool="keep" title="Keep drawing mode">∞</button>
-          <button class="tv-tool-btn" type="button" data-tool="lock" title="Lock drawings">🔒</button>
+          <button class="tv-tool-btn" type="button" data-tool="undo" title="Undo drawing">&#8630;</button>
+          <button class="tv-tool-btn" type="button" data-tool="redo" title="Redo drawing">&#8631;</button>
+          <button class="tv-tool-btn" type="button" data-tool="hide" title="Hide / show drawings">&#9673;</button>
+          <button class="tv-tool-btn" type="button" data-tool="keep" title="Keep drawing mode">&#8734;</button>
+          <button class="tv-tool-btn" type="button" data-tool="lock" title="Lock drawings">&#128274;</button>
           <!-- Magnet -->
           <button class="tv-tool-btn" type="button" data-tool="magnet" title="Magnet">
             <svg viewBox="0 0 16 16"><path d="M4 3 L4 9 Q4 13 8 13 Q12 13 12 9 L12 3"/><line x1="2" y1="3" x2="6" y2="3" stroke-width="2.2"/><line x1="10" y1="3" x2="14" y2="3" stroke-width="2.2"/></svg>
@@ -1392,18 +1392,18 @@
           <div class="tv-chart-legend" id="tvChartLegend" aria-live="polite">
             <div class="tv-legend-head">
               <span id="tvLegendSymbol">TCL/USDC</span>
-              <span class="tv-legend-meta" id="tvLegendMeta">1D · Heikin Ashi</span>
+              <span class="tv-legend-meta" id="tvLegendMeta">15m - Candles</span>
             </div>
             <div class="tv-legend-ohlc" id="tvLegendOhlc">
-              <span>Open <strong id="tvLegO">—</strong></span>
-              <span>High <strong id="tvLegH">—</strong></span>
-              <span>Low <strong id="tvLegL">—</strong></span>
-              <span>Close <strong id="tvLegC">—</strong></span>
-              <span>Volume <strong id="tvLegV">—</strong></span>
-              <span>Change <strong id="tvLegChg">—</strong></span>
+              <span>Open <strong id="tvLegO">&mdash;</strong></span>
+              <span>High <strong id="tvLegH">&mdash;</strong></span>
+              <span>Low <strong id="tvLegL">&mdash;</strong></span>
+              <span>Close <strong id="tvLegC">&mdash;</strong></span>
+              <span>Volume <strong id="tvLegV">&mdash;</strong></span>
+              <span>Change <strong id="tvLegChg">&mdash;</strong></span>
             </div>
           </div>
-          <button class="tv-realtime-btn" id="tvRealtimeBtn" type="button" title="Go to realtime (Alt+R)">▶</button>
+          <button class="tv-realtime-btn" id="tvRealtimeBtn" type="button" title="Go to realtime (Alt+R)">&#9654;</button>
           <div class="chart-empty" id="chartEmpty">No swap data loaded yet.</div>
           <div class="tv-price-badge" id="lastPriceBadge">--</div>
         </div>
@@ -1457,7 +1457,12 @@
 
   <div class="tooltip" id="chartTooltip"></div>
 
-  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="lib/lightweight-charts.standalone.production.js"></script>
+  <script>
+    if (!window.LightweightCharts) {
+      document.write('<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"><\/script>');
+    }
+  </script>
   <script src="js/event-push-config.js?v=20260519-1"></script>
   <script>
     const CONFIG = {
@@ -1552,12 +1557,18 @@
       selectedAnnotationIndex: -1,
       drawingDrag: null,
       isPointerDrawing: false,
+      undoStack: [],
+      redoStack: [],
+      drawingsHidden: false,
+      keepDrawing: false,
+      drawingsLocked: false,
       snapToCandle: false,
       hoverIndex: null,
       buckets: [],
       patternMarkers: [],
       plot: null,
       snapshotMeta: null,
+      localTestMode: false,
       isLoading: false,
       hasFullHistory: false,
       refreshTimer: null
@@ -1756,11 +1767,89 @@
       state.trades = trades;
       state.hasFullHistory = true;
       state.snapshotMeta = snapshot.meta || null;
+      state.localTestMode = false;
       saveCachedTrades({ fullHistory: true });
       return {
         tradeCount: trades.length,
         updatedAt: snapshot.meta?.updatedAt || null,
         sourceLabel: snapshot.meta?.fetchMeta?.sourceLabel || "cloudflare cache"
+      };
+    }
+
+    function createSeededRandom(seed = 7) {
+      let value = Math.max(1, Math.floor(seed)) % 2147483647;
+      return () => {
+        value = (value * 16807) % 2147483647;
+        return (value - 1) / 2147483646;
+      };
+    }
+
+    function buildLocalTestChartSnapshot() {
+      const random = createSeededRandom(459);
+      const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+      const nowTimestamp = Math.floor(Date.now() / 1000);
+      const stepSeconds = 3 * 60 * 60;
+      const trades = [];
+      let price = 0.00034;
+
+      for (let timestamp = listingTimestamp, index = 0; timestamp <= nowTimestamp; timestamp += stepSeconds, index += 1) {
+        const wave = Math.sin(index / 18) * 0.018 + Math.cos(index / 71) * 0.012;
+        const drift = (random() - 0.48) * 0.035;
+        price = Math.max(0.0000001, price * (1 + wave + drift));
+        const volumeUsd = 18 + random() * 940 + (index % 29 === 0 ? random() * 2200 : 0);
+        const side = random() > 0.49 ? "buy" : "sell";
+        trades.push({
+          hash: `local-demo-${timestamp}-${String(index).padStart(5, "0")}`,
+          timestamp,
+          side,
+          price,
+          volumeUsd,
+          tclAmount: volumeUsd / price
+        });
+      }
+
+      const latestTrade = trades[trades.length - 1] || null;
+      const previousDayTrades = trades.filter((trade) => trade.timestamp >= nowTimestamp - DAY_SECONDS);
+      const previousDayVolume = previousDayTrades.reduce((sum, trade) => sum + trade.volumeUsd, 0);
+      const previousDayBuys = previousDayTrades.filter((trade) => trade.side === "buy").length;
+      const previousDaySells = previousDayTrades.length - previousDayBuys;
+      const dayOpen = previousDayTrades[0]?.price || latestTrade?.price || price;
+      const change24h = dayOpen ? (((latestTrade?.price || price) - dayOpen) / dayOpen) * 100 : 0;
+
+      return {
+        ok: true,
+        pair: {
+          priceUsd: String(latestTrade?.price || price),
+          priceChange: { h24: change24h },
+          volume: { h24: previousDayVolume },
+          txns: { h24: { buys: previousDayBuys, sells: previousDaySells } }
+        },
+        trades,
+        meta: {
+          updatedAt: new Date().toISOString(),
+          fetchMeta: { sourceLabel: "local test data" }
+        }
+      };
+    }
+
+    function applyLocalTestChartSnapshot(snapshot) {
+      const trades = (Array.isArray(snapshot?.trades) ? snapshot.trades : [])
+        .filter(hasValidChartTrade)
+        .map(sanitizeTradeForCache)
+        .sort((left, right) => left.timestamp - right.timestamp);
+      if (!trades.length) {
+        throw new Error("Local test snapshot did not produce any TCL swaps.");
+      }
+
+      state.currentPair = snapshot.pair || state.currentPair;
+      state.trades = trades;
+      state.hasFullHistory = true;
+      state.snapshotMeta = snapshot.meta || null;
+      state.localTestMode = true;
+      return {
+        tradeCount: trades.length,
+        updatedAt: snapshot.meta?.updatedAt || null,
+        sourceLabel: snapshot.meta?.fetchMeta?.sourceLabel || "local test data"
       };
     }
 
@@ -2030,6 +2119,7 @@
         )
         .sort((left, right) => left.timestamp - right.timestamp);
       state.hasFullHistory = cached.fullHistory === true;
+      state.localTestMode = false;
       return state.trades.length > 0;
     }
 
@@ -2431,6 +2521,10 @@
       ui.latestTradesBody.innerHTML = latestTrades.map((trade) => {
         const sideClass = trade.side === "buy" ? "buy" : "sell";
         const hashLabel = trade.hash.slice(0, 8) + "..." + trade.hash.slice(-6);
+        const isLocalTestTrade = state.localTestMode || trade.hash.startsWith("local-demo-");
+        const hashCell = isLocalTestTrade
+          ? `<span class="hash-link">${hashLabel}</span>`
+          : `<a class="hash-link" href="https://explorer.multiversx.com/transactions/${trade.hash}" target="_blank" rel="noreferrer">${hashLabel}</a>`;
         return `
           <tr>
             <td>${formatDateTime(trade.timestamp * 1000)}</td>
@@ -2438,7 +2532,7 @@
             <td>${formatPrice(trade.price)}</td>
             <td>${formatCurrency(trade.volumeUsd, trade.volumeUsd < 1 ? 4 : 2)}</td>
             <td>${formatCompactToken(trade.tclAmount)}</td>
-            <td><a class="hash-link" href="https://explorer.multiversx.com/transactions/${trade.hash}" target="_blank" rel="noreferrer">${hashLabel}</a></td>
+            <td>${hashCell}</td>
           </tr>
         `;
       }).join("");
@@ -2832,7 +2926,7 @@
     function updateTvLegendHead() {
       if (!ui.tvLegendSymbol || !ui.tvLegendMeta) return;
       ui.tvLegendSymbol.textContent = "TCLUSDC";
-      ui.tvLegendMeta.textContent = `${formatTimeframeLabel(state.activeTimeframe)} · ${CHART_STYLE_LABELS[state.chartStyle] || "Candles"}`;
+      ui.tvLegendMeta.textContent = `${formatTimeframeLabel(state.activeTimeframe)} - ${CHART_STYLE_LABELS[state.chartStyle] || "Candles"}`;
     }
 
     function updateTvLegend(candle) {
@@ -3085,7 +3179,7 @@
 
     function deleteTvAnnotationAtIndex(index) {
       if (index < 0 || index >= state.annotations.length || state.drawingsLocked) return false;
-      state.undoStack.push(cloneTvAnnotation(state.annotations[index]));
+      pushTvAnnotationHistory();
       state.annotations.splice(index, 1);
       state.selectedAnnotationIndex = -1;
       refreshTvUserPriceLines();
@@ -3408,28 +3502,45 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       return Math.hypot(pa.x - pb.x, pa.y - pb.y);
     }
 
+    function cloneTvAnnotationList(list) {
+      return (Array.isArray(list) ? list : []).map(cloneTvAnnotation);
+    }
+
+    function pushTvAnnotationHistory(snapshot = state.annotations) {
+      state.undoStack.push(cloneTvAnnotationList(snapshot));
+      if (state.undoStack.length > 80) {
+        state.undoStack.shift();
+      }
+      state.redoStack = [];
+    }
+
+    function restoreTvAnnotationSnapshot(snapshot) {
+      state.annotations = cloneTvAnnotationList(snapshot);
+      state.pendingAnnotation = null;
+      state.selectedAnnotationIndex = -1;
+      refreshTvUserPriceLines();
+      drawTvAnnotations();
+    }
+
     function pushTvAnnotation(annotation) {
       if (state.drawingsLocked) return;
+      pushTvAnnotationHistory();
       state.annotations.push(annotation);
-      state.undoStack = [];
       if (state.annotations.length > 160) {
         state.annotations = state.annotations.slice(-160);
       }
     }
 
     function undoTvAnnotation() {
-      if (!state.annotations.length || state.drawingsLocked) return;
-      state.undoStack.push(state.annotations.pop());
-      state.pendingAnnotation = null;
-      refreshTvUserPriceLines();
-      drawTvAnnotations();
+      if (!state.undoStack.length || state.drawingsLocked) return;
+      state.redoStack.push(cloneTvAnnotationList(state.annotations));
+      restoreTvAnnotationSnapshot(state.undoStack.pop());
     }
 
     function redoTvAnnotation() {
-      if (!state.undoStack.length || state.drawingsLocked) return;
-      state.annotations.push(state.undoStack.pop());
-      refreshTvUserPriceLines();
-      drawTvAnnotations();
+      if (!state.redoStack.length || state.drawingsLocked) return;
+      state.undoStack.push(cloneTvAnnotationList(state.annotations));
+      restoreTvAnnotationSnapshot(state.redoStack.pop());
     }
 
     function resetTvActiveToolAfterDrawing() {
@@ -3504,6 +3615,7 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
           lastPoint: point,
           moved: false,
           annotationIndex: hitIndex,
+          historySnapshot: cloneTvAnnotationList(state.annotations),
           originalAnnotation: cloneTvAnnotation(state.annotations[hitIndex]),
           startCandleIndex: getTvCandleIndexByTimestamp(point.timestamp),
           startPrice: point.price
@@ -3618,7 +3730,7 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       const endPoint = getTvPointFromPointerEvent(event) || drag.lastPoint || drag.startPoint;
       if (drag.tool === "move") {
         if (drag.moved && drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
-          state.undoStack.push(cloneTvAnnotation(drag.originalAnnotation));
+          pushTvAnnotationHistory(drag.historySnapshot || []);
           refreshTvUserPriceLines();
         }
       } else if (drag.tool === "brush") {
@@ -3641,6 +3753,10 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
     function handleTvDrawingPointerCancel(event) {
       const drag = state.drawingDrag;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      if (drag.tool === "move" && drag.annotationIndex >= 0 && drag.annotationIndex < state.annotations.length) {
+        state.annotations[drag.annotationIndex] = cloneTvAnnotation(drag.originalAnnotation);
+        refreshTvUserPriceLines();
+      }
       state.pendingAnnotation = null;
       state.drawingDrag = null;
       state.isPointerDrawing = false;
@@ -4706,7 +4822,7 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
         setStatus(`${formatCount(applied.tradeCount)} swaps loaded from Cloudflare.${updatedAt}`, "ready");
         notifyParentReady();
       } catch (error) {
-        console.error("Failed to load TCL chart", error);
+        console.warn("Remote TCL chart load unavailable", error);
         if (!state.trades.length) {
           const cached = loadCachedTrades();
           if (applyCachedTrades(cached)) {
@@ -4715,6 +4831,25 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
             notifyParentReady();
             return;
           }
+
+          const localSnapshot = buildLocalTestChartSnapshot();
+          const applied = applyLocalTestChartSnapshot(localSnapshot);
+          renderAll();
+          setStatus(`${formatCount(applied.tradeCount)} local test swaps loaded. API unavailable, using offline demo data.`, "ready");
+          notifyParentReady();
+          return;
+        }
+        if (state.localTestMode) {
+          renderAll();
+          setStatus("API unavailable. Still showing local test chart data.", "ready");
+          notifyParentReady();
+          return;
+        }
+        if (state.trades.length) {
+          renderAll();
+          setStatus("Cloudflare unavailable. Showing existing TCL chart data.", "ready");
+          notifyParentReady();
+          return;
         }
         renderAll();
         setStatus(`Chart load failed. ${error.message}`, "error");
@@ -4762,7 +4897,7 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
 
     function applyTradingViewEntryDefaults() {
       state.activeTimeframe = "15m";
-      state.chartStyle = "heikin";
+      state.chartStyle = "candles";
       state.indicators.ema20 = false;
       state.indicators.sma50 = false;
       state.indicators.bb20 = false;
@@ -4820,7 +4955,15 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
     function syncToolChrome() {
       ui.toolButtons.forEach((button) => {
         const tool = button.dataset.tool;
-        const isActive = tool === "magnet" ? state.snapToCandle : tool === state.activeTool;
+        const toggleState = {
+          magnet: state.snapToCandle,
+          hide: state.drawingsHidden,
+          keep: state.keepDrawing,
+          lock: state.drawingsLocked
+        };
+        const isActive = Object.prototype.hasOwnProperty.call(toggleState, tool)
+          ? Boolean(toggleState[tool])
+          : tool === state.activeTool;
         button.classList.toggle("is-active", isActive);
       });
       syncTvDrawingCursor();
@@ -5102,6 +5245,9 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
         if (tool === "keep") { state.keepDrawing = !state.keepDrawing; syncToolChrome(); return; }
         if (tool === "lock") { state.drawingsLocked = !state.drawingsLocked; syncToolChrome(); return; }
         if (tool === "eraser") {
+          if (state.annotations.length) {
+            pushTvAnnotationHistory();
+          }
           state.annotations = [];
           state.pendingAnnotation = null;
           removeTvUserPriceLines();
