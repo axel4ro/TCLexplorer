@@ -273,6 +273,7 @@
       <button type="button" class="nav-item" onclick="openLander()" id="btn-Lander">
         <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png" alt=""> Lander
       </button>
+      <button type="button" class="nav-item" onclick="openCreatorDashboardPage()" id="btn-creatorDashboard">🎬 Creator Dashboard</button>
 	  <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
       <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
       <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
@@ -2624,6 +2625,16 @@ const PAGE_PARENT_NAV = {
 };
 
 const INTERNAL_PAGE_ROUTES = {
+  "creator-dashboard": {
+    src: "https://popugames.firstpromoter.com/home",
+    title: "Creator Dashboard",
+    navId: "btn-creatorDashboard",
+    routeKey: "creator-dashboard",
+    loadingTitle: "Loading Creator Dashboard...",
+    loadingSubtitle: "Opening the creator dashboard inside TCL Explorer.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 2500
+  },
   earn: {
     src: "earn.html",
     title: "Play and Earn",
@@ -3517,6 +3528,11 @@ function openTokenStakingPage() {
 
 function openEarnGuidePage() {
   const route = INTERNAL_PAGE_ROUTES.earn;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openCreatorDashboardPage() {
+  const route = INTERNAL_PAGE_ROUTES["creator-dashboard"];
   openInternalPage(route.src, route.title, route);
 }
 
