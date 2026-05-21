@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TCL Chart - TCL Explorer</title>
+  <title>TCL Flow Chart - TCL Explorer</title>
   <meta name="theme-color" content="#070b13">
   <link rel="icon" href="images/tcl_icon.png">
   <style>
@@ -1162,7 +1162,7 @@
   <div class="page-shell">
     <div class="topbar">
       <button class="back-btn" type="button" onclick="goBackToTclToken()">Back to TCL Token</button>
-      <div class="status-pill is-loading" id="statusPill">Loading TCL swaps from Cloudflare...</div>
+      <div class="status-pill is-loading" id="statusPill">Loading TCL swaps...</div>
     </div>
 
     <section class="hero">
@@ -1171,23 +1171,17 @@
           <img src="images/tcl_icon.png" alt="TCL icon">
           <div>
             <span class="eyebrow">TCL / USDC</span>
-            <h1>TCL Chart</h1>
+            <h1>TCL Flow Chart</h1>
           </div>
         </div>
         <p class="hero-copy">All-time TCL swap chart built from MultiversX pair transfers, with live buy and sell flow from the first parsed swap to the latest on-chain update.</p>
-        <div class="hero-actions">
-          <button class="tool-btn primary" id="refreshButton" type="button">Refresh</button>
-          <button class="tool-btn mode-toggle is-active" type="button" data-chart-mode="flow">Flow</button>
-          <a class="tool-btn" href="https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">DexScreener</a>
-          <a class="tool-btn" href="https://explorer.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff" target="_blank" rel="noreferrer">Pair Explorer</a>
-        </div>
       </div>
 
       <div class="hero-stats">
         <div class="stat-card">
           <div class="stat-label">Live Price</div>
           <span class="stat-value" id="livePriceValue">--</span>
-          <div class="stat-note" id="livePriceNote">Cloudflare pair snapshot.</div>
+          <div class="stat-note" id="livePriceNote">Live pair snapshot.</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">24H Volume</div>
@@ -1286,8 +1280,8 @@
       <div class="chart-toolbar">
         <div class="chart-title">
           <h2>Price and Volume</h2>
-          <span id="chartSubtitle">Loading Cloudflare data...</span>
-          <span id="chartMeta">Waiting for Cloudflare swaps...</span>
+          <span id="chartSubtitle">Loading chart data...</span>
+          <span id="chartMeta">Waiting for swaps...</span>
         </div>
         <div class="chart-controls">
           <div class="timeframe-group tv-only" aria-label="TradingView timeframe">
@@ -1427,7 +1421,7 @@
         <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price --</span>
         <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
         <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
-        <span>Waiting for Cloudflare swaps...</span>
+        <span>Waiting for swaps...</span>
       </div>
     </section>
 
@@ -1449,7 +1443,7 @@
             </tr>
           </thead>
           <tbody id="latestTradesBody">
-            <tr><td colspan="6">Loading Cloudflare swaps...</td></tr>
+            <tr><td colspan="6">Loading swaps...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1726,15 +1720,15 @@
         headers: { Accept: "application/json" }
       });
       if (!response.ok) {
-        throw new Error(`Cloudflare chart request failed with status ${response.status}`);
+        throw new Error(`Chart request failed with status ${response.status}`);
       }
 
       const snapshot = await response.json();
       if (snapshot?.ok === false) {
-        throw new Error(snapshot.error || "Cloudflare chart snapshot returned an error.");
+        throw new Error(snapshot.error || "Chart snapshot returned an error.");
       }
       if (!Array.isArray(snapshot?.trades) || !snapshot.trades.length) {
-        throw new Error("Cloudflare chart snapshot did not return swap trades.");
+        throw new Error("Chart snapshot did not return swap trades.");
       }
 
       return snapshot;
@@ -1762,7 +1756,7 @@
         .map(sanitizeTradeForCache)
         .sort((left, right) => left.timestamp - right.timestamp);
       if (!trades.length) {
-        throw new Error("No valid TCL swaps were found in the Cloudflare chart snapshot.");
+        throw new Error("No valid TCL swaps were found in the chart snapshot.");
       }
 
       state.currentPair = snapshot.pair || state.currentPair;
@@ -2420,7 +2414,7 @@
       const sells24h = toNumber(pair?.txns?.h24?.sells, Number.NaN);
 
       ui.livePriceValue.textContent = formatPrice(Number.isFinite(livePrice) ? livePrice : stats.latestTrade?.price);
-      ui.livePriceNote.textContent = Number.isFinite(change24h) ? `24H change: ${formatPercent(change24h)}` : "Cloudflare pair snapshot.";
+      ui.livePriceNote.textContent = Number.isFinite(change24h) ? `24H change: ${formatPercent(change24h)}` : "Live pair snapshot.";
       ui.volume24hValue.textContent = formatCompactCurrency(volume24h);
       ui.txns24hNote.textContent = Number.isFinite(buys24h + sells24h) ? `${formatCount(buys24h)} buys / ${formatCount(sells24h)} sells` : "--";
       ui.totalVolumeValue.textContent = formatFlowCurrency(stats.totalVolume);
@@ -4833,7 +4827,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
         ui.chartSubtitle.textContent = `${formatDate(firstBucket.timestamp * 1000)} to ${formatDate(lastBucket.timestamp * 1000)}`;
       }
       if (ui.chartMeta) {
-        ui.chartMeta.textContent = `${formatCount(visibleStats.count)} swaps visible | ${formatCompactCurrency(visibleStats.volume)} volume`;
+        ui.chartMeta.textContent = `${formatCount(visibleStats.count)} swaps | ${formatCompactCurrency(visibleStats.volume)} volume`;
       }
       if (ui.legendRow) {
         ui.legendRow.innerHTML = `
@@ -4843,7 +4837,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
         <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price ${formatPrice(currentPrice)}</span>
         <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
         <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
-        <span>${formatCount(visibleStats.count)} swaps visible | ${formatCompactCurrency(visibleStats.volume)} volume</span>
+        <span>${formatCount(visibleStats.count)} swaps | ${formatCompactCurrency(visibleStats.volume)} volume</span>
       `;
       }
     }
@@ -4921,7 +4915,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
         const payload = await fetchJson(CONFIG.dexUrl);
         state.currentPair = payload?.pair || payload?.pairs?.[0] || null;
       } catch (error) {
-        console.warn("Could not refresh DexScreener stats", error);
+        console.warn("Could not refresh pair stats", error);
       }
     }
 
@@ -4963,39 +4957,39 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
     async function refreshChart(isManual = false) {
       if (state.isLoading) return;
       state.isLoading = true;
-      ui.refreshButton.disabled = true;
+      if (ui.refreshButton) ui.refreshButton.disabled = true;
 
       try {
         const cached = loadCachedTrades();
         if (!state.trades.length && applyCachedTrades(cached)) {
           renderAll();
-          setStatus("Cached real TCL chart loaded. Refreshing Cloudflare...", "ready");
+          setStatus("Cached real TCL chart loaded. Refreshing data...", "ready");
         }
 
         if (isManual || !state.trades.length) {
-          setStatus(isManual ? "Refreshing TCL chart from Cloudflare..." : "Loading TCL chart from Cloudflare...", "loading");
+          setStatus(isManual ? "Refreshing TCL chart..." : "Loading TCL chart...", "loading");
         }
         const snapshot = await fetchCloudflareChartSnapshot(isManual);
         const applied = applyCloudflareChartSnapshot(snapshot);
         renderAll();
 
         const updatedAt = applied.updatedAt ? ` Updated ${formatDateTime(Date.parse(applied.updatedAt))}.` : "";
-        setStatus(`${formatCount(applied.tradeCount)} swaps loaded from Cloudflare.${updatedAt}`, "ready");
+        setStatus(`${formatCount(applied.tradeCount)} swaps loaded.${updatedAt}`, "ready");
         notifyParentReady();
       } catch (error) {
-        console.error("Failed to load TCL chart from Cloudflare", error);
+        console.error("Failed to load TCL chart", error);
         if (!state.trades.length) {
           const cached = loadCachedTrades();
           if (applyCachedTrades(cached)) {
             renderAll();
-            setStatus("Cloudflare unavailable. Showing last real cached TCL chart.", "ready");
+            setStatus("Data source unavailable. Showing last real cached TCL chart.", "ready");
             notifyParentReady();
             return;
           }
         }
         if (state.trades.length) {
           renderAll();
-          setStatus("Cloudflare unavailable. Showing existing TCL chart data.", "ready");
+          setStatus("Data source unavailable. Showing existing TCL chart data.", "ready");
           notifyParentReady();
           return;
         }
@@ -5003,7 +4997,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
         setStatus(`Chart load failed. ${error.message}`, "error");
       } finally {
         state.isLoading = false;
-        ui.refreshButton.disabled = false;
+        if (ui.refreshButton) ui.refreshButton.disabled = false;
       }
     }
 
@@ -5278,7 +5272,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
       syncChartModeChrome();
     }
 
-    ui.refreshButton.addEventListener("click", () => refreshChart(true));
+    ui.refreshButton?.addEventListener("click", () => refreshChart(true));
     ui.canvas.addEventListener("mousemove", showTooltip);
     ui.canvas.addEventListener("mouseleave", hideTooltip);
     ui.canvas.addEventListener("click", handleCanvasClick);
