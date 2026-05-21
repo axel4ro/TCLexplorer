@@ -107,8 +107,8 @@ Deploy the static site to GitHub Pages as usual.
 Open the Events page on HTTPS, press `Enable`, then press `Test`.
 
 Open the Claim Reminder page on HTTPS, enter the remaining automatic-claim days,
-then press `Save / Update`. Press `Add Days` when the player extends the in-game
-automatic claim period.
+then press `Save / Update`. Use `Save / Update` again whenever the player extends
+the in-game automatic claim period.
 
 Useful endpoints:
 

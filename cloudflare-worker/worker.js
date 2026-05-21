@@ -133,16 +133,16 @@ const CLAIM_COPY = {
   en: {
     defaultLabel: "Automatic claim",
     earlyTitle: "Claim reminder: {days} days left",
-    earlyBody: "{label} expires soon. Add days or prepare your automatic claim.",
+    earlyBody: "{label}: {days} days left.",
     finalTitle: "Claim reminder: last day",
-    finalBody: "{label} is on its final day. Add more days if you want it to continue."
+    finalBody: "{label}: final day."
   },
   ro: {
     defaultLabel: "Revendicare automata",
     earlyTitle: "Reminder claim: mai ai {days} zile",
-    earlyBody: "{label} expira in curand. Adauga zile sau pregateste revendicarea automata.",
+    earlyBody: "{label}: mai ai {days} zile.",
     finalTitle: "Reminder claim: ultima zi",
-    finalBody: "{label} este in ultima zi. Adauga zile daca vrei sa continue."
+    finalBody: "{label}: ultima zi."
   }
 };
 
@@ -584,7 +584,7 @@ async function handleClaimReminderUpsert(request, env) {
     return jsonResponse(request, env, 400, { ok: false, error: "Invalid push subscription" });
   }
 
-  const days = normalizeClaimDays(body.days ?? body.remainingDays ?? body.addDays);
+  const days = normalizeClaimDays(body.days ?? body.remainingDays);
   if (!Number.isFinite(days) || days <= 0) {
     return jsonResponse(request, env, 400, { ok: false, error: "Days must be at least 1" });
   }
@@ -594,12 +594,7 @@ async function handleClaimReminderUpsert(request, env) {
   const existing = await kv.get(key, "json").catch(() => null);
   const nowMs = Date.now();
   const now = new Date(nowMs).toISOString();
-  const action = String(body.action || "set").toLowerCase() === "add" ? "add" : "set";
-  const existingExpiresAt = Number(existing?.expiresAt);
-  const baseMs = action === "add" && Number.isFinite(existingExpiresAt) && existingExpiresAt > nowMs
-    ? existingExpiresAt
-    : nowMs;
-  const expiresAt = baseMs + days * DAY_MS;
+  const expiresAt = nowMs + days * DAY_MS;
   const lang = normalizeLang(body.lang);
   const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
 
@@ -616,7 +611,7 @@ async function handleClaimReminderUpsert(request, env) {
     userAgent: String(body.userAgent || existing?.userAgent || "").slice(0, 500),
     createdAt: existing?.createdAt || now,
     updatedAt: now,
-    lastAction: action,
+    lastAction: "set",
     lastInputDays: days
   };
 
@@ -691,7 +686,7 @@ async function handleClaimReminderTest(request, env) {
   const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
   const payload = body.payload || {
     title: "TCL claim reminder test",
-    body: templates.finalBody.replace("{label}", templates.defaultLabel),
+    body: formatTemplate(templates.finalBody, { label: templates.defaultLabel, days: 0 }),
     url: "index.html#claimReminder",
     tag: "tcl-claim-reminder-test"
   };
@@ -2604,7 +2599,7 @@ function dueClaimRemindersForRecord(record, now, env) {
   const label = normalizeClaimLabel(record.label, templates.defaultLabel);
   const daysLeft = Math.max(0, Math.ceil((expiresAt - nowMs) / DAY_MS));
   const base = {
-    body: templates.earlyBody.replace("{label}", label),
+    body: formatTemplate(templates.earlyBody, { days: daysLeft, label }),
     url: "index.html#claimReminder",
     timestamp: expiresAt
   };
@@ -2618,7 +2613,7 @@ function dueClaimRemindersForRecord(record, now, env) {
       type: "early",
       triggerAt: earlyAt,
       title: formatTemplate(templates.earlyTitle, { days: daysLeft, label }),
-      body: templates.earlyBody.replace("{label}", label)
+      body: formatTemplate(templates.earlyBody, { days: daysLeft, label })
     });
   }
 
@@ -2626,7 +2621,7 @@ function dueClaimRemindersForRecord(record, now, env) {
     type: "final",
     triggerAt: finalAt,
     title: formatTemplate(templates.finalTitle, { days: daysLeft, label }),
-    body: templates.finalBody.replace("{label}", label)
+    body: formatTemplate(templates.finalBody, { days: daysLeft, label })
   });
 
   triggers.forEach((notification) => {

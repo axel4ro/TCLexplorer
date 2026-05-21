@@ -15,14 +15,13 @@
       unsupported: "This browser cannot receive claim reminders.",
       denied: "Notifications are blocked. Enable them from browser settings for this site.",
       ready: "Enter remaining days, then save the reminder on this device.",
-      enabledPush: "Active on this device. Cloudflare will send the 7-day and final-day reminders.",
-      enabledLocal: "Local reminder saved. Cloudflare push is unavailable on this device.",
+      enabledPush: "Active on this device. You will receive a notification {earlyAlert} and on the final day.",
+      enabledLocal: "Local reminder saved. You will receive a notification {earlyAlert} and on the final day.",
       serverMissing: "Cloudflare push is not configured yet. Local reminders only.",
       busy: "Updating claim reminder...",
       saved: "Claim reminder saved.",
       disabled: "Claim reminder disabled.",
       save: "Save / Update",
-      addDays: "Add Days",
       test: "Test",
       disable: "Disable",
       labelLabel: "Reminder name",
@@ -52,14 +51,13 @@
       unsupported: "Browserul acesta nu poate primi reminder-e pentru claim.",
       denied: "Notificarile sunt blocate. Activeaza-le din setarile browserului pentru site.",
       ready: "Introdu zilele ramase, apoi salveaza reminder-ul pe acest device.",
-      enabledPush: "Activ pe acest device. Cloudflare trimite reminder-ul la 7 zile si in ultima zi.",
-      enabledLocal: "Reminder local salvat. Cloudflare push nu este disponibil pe acest device.",
+      enabledPush: "Activ pe acest device. Vei primi notificare cu {earlyAlert} si in ultima zi.",
+      enabledLocal: "Reminder local salvat. Vei primi notificare cu {earlyAlert} si in ultima zi.",
       serverMissing: "Cloudflare push nu este configurat inca. Doar reminder local.",
       busy: "Actualizez claim reminder...",
       saved: "Claim reminder salvat.",
       disabled: "Claim reminder oprit.",
       save: "Salveaza / Update",
-      addDays: "Adauga Zile",
       test: "Test",
       disable: "Opreste",
       labelLabel: "Nume reminder",
@@ -255,23 +253,22 @@
     return Number.isFinite(value) && value >= 1;
   }
 
-  function localUpsert(action, form) {
+  function localUpsert(form) {
     const current = getSettings();
     const now = Date.now();
-    const base = action === "add" && Number(current.expiresAt) > now ? Number(current.expiresAt) : now;
     return {
       enabled: true,
       mode: "local",
       label: form.label,
       earlyDays: form.earlyDays,
-      expiresAt: base + form.days * DAY_MS,
+      expiresAt: now + form.days * DAY_MS,
       id: current.id || "",
-      lastAction: action,
+      lastAction: "set",
       lastInputDays: form.days
     };
   }
 
-  async function upsertReminder(action) {
+  async function upsertReminder() {
     const form = readForm();
     if (!isValidPositiveDays(form.days)) {
       setStatusText("invalidDays");
@@ -294,7 +291,7 @@
       }
 
       const registration = await getServiceWorkerRegistration();
-      let nextSettings = localUpsert(action, form);
+      let nextSettings = localUpsert(form);
 
       try {
         const subscription = await subscribePush(registration);
@@ -302,7 +299,7 @@
           const result = await requestApi("claim/upsert", {
             method: "POST",
             body: JSON.stringify({
-              action,
+              action: "set",
               days: form.days,
               earlyDays: form.earlyDays,
               label: form.label,
@@ -321,7 +318,7 @@
               label: result.reminder.label || form.label,
               earlyDays: Number(result.reminder.earlyDays) || form.earlyDays,
               expiresAt: Number(result.reminder.expiresAt) || nextSettings.expiresAt,
-              lastAction: action,
+              lastAction: "set",
               lastInputDays: form.days
             };
             state.pushServerConfigured = true;
@@ -542,9 +539,21 @@
     return alerts[0] || null;
   }
 
-  function setStatusText(statusKey) {
+  function formatEarlyAlert(earlyDays) {
+    const days = Math.max(1, Math.round(Number(earlyDays) || DEFAULT_EARLY_DAYS));
+    if (getLang() === "ro") return `${days} ${days === 1 ? "zi" : "zile"} inainte`;
+    return `${days} ${days === 1 ? "day" : "days"} before`;
+  }
+
+  function getReminderStatusVars(settings = getSettings()) {
+    return {
+      earlyAlert: formatEarlyAlert(settings.earlyDays)
+    };
+  }
+
+  function setStatusText(statusKey, vars) {
     const status = document.getElementById("claimReminderStatus");
-    if (status) status.textContent = tr(statusKey);
+    if (status) status.textContent = tr(statusKey, vars);
   }
 
   function syncStaticCopy() {
@@ -568,11 +577,9 @@
     if (labelInput) labelInput.setAttribute("placeholder", tr("labelPlaceholder"));
 
     const saveBtn = document.getElementById("saveClaimReminderBtn");
-    const addBtn = document.getElementById("addClaimReminderDaysBtn");
     const testBtn = document.getElementById("testClaimReminderBtn");
     const disableBtn = document.getElementById("disableClaimReminderBtn");
     if (saveBtn) saveBtn.textContent = tr("save");
-    if (addBtn) addBtn.textContent = tr("addDays");
     if (testBtn) testBtn.textContent = tr("test");
     if (disableBtn) disableBtn.textContent = tr("disable");
   }
@@ -625,10 +632,9 @@
   function refreshStatus() {
     const panel = document.getElementById("claimReminderPanel");
     const saveBtn = document.getElementById("saveClaimReminderBtn");
-    const addBtn = document.getElementById("addClaimReminderDaysBtn");
     const testBtn = document.getElementById("testClaimReminderBtn");
     const disableBtn = document.getElementById("disableClaimReminderBtn");
-    if (!panel || !saveBtn || !addBtn || !testBtn || !disableBtn) return;
+    if (!panel || !saveBtn || !testBtn || !disableBtn) return;
 
     syncStaticCopy();
     renderSummary();
@@ -637,7 +643,6 @@
     panel.dataset.state = settings.enabled ? settings.mode : "ready";
 
     saveBtn.disabled = state.busy;
-    addBtn.disabled = state.busy || !settings.enabled;
     testBtn.disabled = state.busy;
     disableBtn.disabled = state.busy;
 
@@ -649,7 +654,6 @@
     if (!supportsNotifications()) {
       setStatusText("unsupported");
       saveBtn.hidden = true;
-      addBtn.hidden = true;
       testBtn.hidden = true;
       disableBtn.hidden = true;
       return;
@@ -658,19 +662,17 @@
     if (Notification.permission === "denied") {
       setStatusText("denied");
       saveBtn.hidden = true;
-      addBtn.hidden = true;
       testBtn.hidden = true;
       disableBtn.hidden = !settings.enabled;
       return;
     }
 
     saveBtn.hidden = false;
-    addBtn.hidden = false;
     testBtn.hidden = !settings.enabled;
     disableBtn.hidden = !settings.enabled;
 
     if (settings.enabled) {
-      setStatusText(settings.mode === "push" ? "enabledPush" : "enabledLocal");
+      setStatusText(settings.mode === "push" ? "enabledPush" : "enabledLocal", getReminderStatusVars(settings));
       return;
     }
 
@@ -679,16 +681,8 @@
 
   function bindControls() {
     document.getElementById("saveClaimReminderBtn")?.addEventListener("click", () => {
-      upsertReminder("set").catch((error) => {
+      upsertReminder().catch((error) => {
         console.error("Claim reminder save failed", error);
-        state.busy = false;
-        refreshStatus();
-      });
-    });
-
-    document.getElementById("addClaimReminderDaysBtn")?.addEventListener("click", () => {
-      upsertReminder("add").catch((error) => {
-        console.error("Claim reminder add days failed", error);
         state.busy = false;
         refreshStatus();
       });
@@ -728,8 +722,7 @@
   }
 
   window.TCLClaimReminder = {
-    save: () => upsertReminder("set"),
-    addDays: () => upsertReminder("add"),
+    save: () => upsertReminder(),
     disable: disableReminder,
     refreshStatus,
     syncLocalSchedule,
