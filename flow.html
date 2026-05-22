@@ -1487,6 +1487,14 @@
     };
 
     const CACHE_KEY = "tcl-chart-trades-v1";
+    const TOKEN_OVERVIEW_CACHE_KEY = "tclExplorer.tokenOverview.v2";
+    const TOKEN_PRICE_EXTREMES_API_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander";
+    const TOKEN_PRICE_EXTREMES_FALLBACK = {
+      high: 0.010077,
+      low: 0.000372,
+      sourceLabel: "TCL token fallback"
+    };
+    const TOKEN_PRICE_EXTREMES_TTL_MS = 12 * 60 * 60 * 1000;
     const CHART_SNAPSHOT_API_URL = resolveChartSnapshotApiUrl();
     const DAY_SECONDS = 24 * 60 * 60;
     const ui = {
@@ -1575,6 +1583,8 @@
       patternMarkers: [],
       plot: null,
       snapshotMeta: null,
+      tokenPriceExtremes: null,
+      tokenPriceExtremesRequest: null,
       isLoading: false,
       hasFullHistory: false,
       refreshTimer: null
@@ -1686,6 +1696,120 @@
     function buildCacheBustedUrl(url) {
       const separator = url.includes("?") ? "&" : "?";
       return `${url}${separator}v=${Date.now()}`;
+    }
+
+    function normalizeTokenPriceExtremes(payload) {
+      const high = Number(payload?.high ?? payload?.ath ?? payload?.athPriceUsd);
+      const low = Number(payload?.low ?? payload?.atl ?? payload?.atlPriceUsd);
+      if (!Number.isFinite(high) || high <= 0 || !Number.isFinite(low) || low <= 0) return null;
+      return {
+        high: Math.max(high, low),
+        low: Math.min(high, low),
+        sourceLabel: payload?.sourceLabel || payload?.source || "TCL token stats",
+        cachedAt: Number.isFinite(Number(payload?.cachedAt)) ? Number(payload.cachedAt) : null
+      };
+    }
+
+    function readTokenPriceExtremesCache() {
+      try {
+        const cache = JSON.parse(localStorage.getItem(TOKEN_OVERVIEW_CACHE_KEY) || "{}");
+        return normalizeTokenPriceExtremes(cache?.gecko);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function writeTokenPriceExtremesCache(extremes) {
+      const normalized = normalizeTokenPriceExtremes(extremes);
+      if (!normalized) return;
+      try {
+        const cache = JSON.parse(localStorage.getItem(TOKEN_OVERVIEW_CACHE_KEY) || "{}");
+        cache.gecko = {
+          ath: normalized.high,
+          atl: normalized.low,
+          cachedAt: Date.now()
+        };
+        localStorage.setItem(TOKEN_OVERVIEW_CACHE_KEY, JSON.stringify(cache));
+      } catch (_) {}
+    }
+
+    function isFreshTokenPriceExtremes(extremes) {
+      if (!extremes || !Number.isFinite(Number(extremes.cachedAt))) return false;
+      const ageMs = Date.now() - Number(extremes.cachedAt);
+      return Number.isFinite(ageMs) && ageMs >= 0 && ageMs < TOKEN_PRICE_EXTREMES_TTL_MS;
+    }
+
+    function applyTokenPriceExtremes(payload) {
+      const normalized = normalizeTokenPriceExtremes(payload);
+      if (!normalized) return null;
+      state.tokenPriceExtremes = normalized;
+      return normalized;
+    }
+
+    function getTokenPriceExtremes() {
+      return state.tokenPriceExtremes
+        || applyTokenPriceExtremes(readTokenPriceExtremesCache())
+        || applyTokenPriceExtremes(TOKEN_PRICE_EXTREMES_FALLBACK);
+    }
+
+    function getTokenHighLowBounds(fallbackHigh = Number.NaN, fallbackLow = Number.NaN) {
+      const tokenExtremes = getTokenPriceExtremes();
+      if (tokenExtremes) {
+        return {
+          high: tokenExtremes.high,
+          low: tokenExtremes.low,
+          sourceLabel: tokenExtremes.sourceLabel
+        };
+      }
+
+      const high = Number(fallbackHigh);
+      const low = Number(fallbackLow);
+      if (!Number.isFinite(high) || high <= 0 || !Number.isFinite(low) || low <= 0) return null;
+      return {
+        high: Math.max(high, low),
+        low: Math.min(high, low),
+        sourceLabel: "chart swaps"
+      };
+    }
+
+    async function refreshTokenPriceExtremes(options = {}) {
+      const cached = readTokenPriceExtremesCache();
+      if (cached) applyTokenPriceExtremes(cached);
+      if (!options.force && isFreshTokenPriceExtremes(cached)) return cached;
+      if (state.tokenPriceExtremesRequest) return state.tokenPriceExtremesRequest;
+
+      state.tokenPriceExtremesRequest = (async () => {
+        try {
+          const response = await fetch(buildCacheBustedUrl(TOKEN_PRICE_EXTREMES_API_URL), {
+            cache: "no-store",
+            headers: { Accept: "application/json" }
+          });
+          if (!response.ok) {
+            throw new Error(`Token price extremes request failed with status ${response.status}`);
+          }
+
+          const payload = await response.json();
+          const market = Array.isArray(payload) ? payload[0] : null;
+          const extremes = applyTokenPriceExtremes({
+            ath: market?.ath,
+            atl: market?.atl,
+            sourceLabel: "TCL token stats"
+          });
+          if (!extremes) {
+            throw new Error("Token price extremes payload did not include ATH/ATL.");
+          }
+
+          writeTokenPriceExtremesCache(extremes);
+          return extremes;
+        } catch (error) {
+          console.warn("Could not refresh TCL token ATH/ATL", error);
+          return getTokenPriceExtremes();
+        } finally {
+          state.tokenPriceExtremesRequest = null;
+        }
+      })();
+
+      return state.tokenPriceExtremesRequest;
     }
 
     async function fetchJson(url) {
@@ -3788,37 +3912,38 @@ Vol ${formatCompactToken(volume)}`, labelX, labelY, {
       }
     }
 
-function applyTvHighLowLines(candles) {
-  removeTvHighLowLines();
-  if (!state.settings.highLowLabels || !tvChart.mainSeries || !candles?.length) return;
+    function applyTvHighLowLines(candles) {
+      removeTvHighLowLines();
+      if (!state.settings.highLowLabels || !tvChart.mainSeries || !candles?.length) return;
 
-  const bounds = findHighLowInCandles(getVisibleCandlesForTv(candles));
-  if (!bounds) return;
+      const candleBounds = findHighLowInCandles(getVisibleCandlesForTv(candles));
+      const bounds = getTokenHighLowBounds(candleBounds?.high, candleBounds?.low);
+      if (!bounds) return;
 
-  const LWC = getLightweightCharts();
-  const lineStyle = LWC?.LineStyle?.Dotted ?? 1;
-  const lineColor = "rgba(120, 123, 134, 0.85)";
+      const LWC = getLightweightCharts();
+      const lineStyle = LWC?.LineStyle?.Dotted ?? 1;
+      const lineColor = "rgba(120, 123, 134, 0.85)";
 
-  // High: eticheta pe linie, sus
-  tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
-    price: bounds.high,
-    color: lineColor,
-    lineWidth: 1,
-    lineStyle,
-    axisLabelVisible: true,
-    title: "High"
-  });
+      // High: eticheta pe linie, sus
+      tvChart.highPriceLine = tvChart.mainSeries.createPriceLine({
+        price: bounds.high,
+        color: lineColor,
+        lineWidth: 1,
+        lineStyle,
+        axisLabelVisible: true,
+        title: "High"
+      });
 
-  // Low: eticheta pe linie, jos
-  tvChart.lowPriceLine = tvChart.mainSeries.createPriceLine({
-    price: bounds.low,
-    color: lineColor,
-    lineWidth: 1,
-    lineStyle,
-    axisLabelVisible: true,
-    title: "Low"
-  });
-}
+      // Low: eticheta pe linie, jos
+      tvChart.lowPriceLine = tvChart.mainSeries.createPriceLine({
+        price: bounds.low,
+        color: lineColor,
+        lineWidth: 1,
+        lineStyle,
+        axisLabelVisible: true,
+        title: "Low"
+      });
+    }
 
     function resizeTvChart() {
       if (!tvChart.chart || !ui.tvContainer) return;
@@ -3872,11 +3997,37 @@ function applyTvHighLowLines(candles) {
       });
     }
 
+    function getTvAutoscaleInfoProvider() {
+      return (baseImplementation) => {
+        const base = typeof baseImplementation === "function" ? baseImplementation() : null;
+        const bounds = getTokenHighLowBounds();
+        if (!bounds) return base;
+
+        const minValue = bounds.low;
+        const maxValue = bounds.high;
+        if (!base?.priceRange) {
+          return { priceRange: { minValue, maxValue } };
+        }
+
+        const baseMin = Number(base.priceRange.minValue);
+        const baseMax = Number(base.priceRange.maxValue);
+        return {
+          ...base,
+          priceRange: {
+            ...base.priceRange,
+            minValue: Number.isFinite(baseMin) ? Math.min(baseMin, minValue) : minValue,
+            maxValue: Number.isFinite(baseMax) ? Math.max(baseMax, maxValue) : maxValue
+          }
+        };
+      };
+    }
+
     function applyTvMainSeriesOptions() {
       if (!tvChart.mainSeries) return;
       tvChart.mainSeries.applyOptions({
         lastValueVisible: false,
-        priceLineVisible: false
+        priceLineVisible: false,
+        autoscaleInfoProvider: getTvAutoscaleInfoProvider()
       });
     }
 
@@ -4009,7 +4160,8 @@ function applyTvHighLowLines(candles) {
       const priceSeriesOptions = {
         priceFormat,
         lastValueVisible: false,
-        priceLineVisible: false
+        priceLineVisible: false,
+        autoscaleInfoProvider: getTvAutoscaleInfoProvider()
       };
 
       if (["line", "line-markers"].includes(style)) {
@@ -4453,11 +4605,16 @@ function applyTvHighLowLines(candles) {
       const currentPrice = Number.isFinite(currentPriceRaw) && currentPriceRaw > 0
         ? currentPriceRaw
         : buckets[buckets.length - 1].close;
+      const tokenBounds = getTokenHighLowBounds(priceMaxRaw, priceMinRaw);
+      const referenceHighPrice = tokenBounds?.high ?? priceMaxRaw;
+      const referenceLowPrice = tokenBounds?.low ?? priceMinRaw;
+      const priceReferenceMinRaw = Math.min(priceMinRaw, referenceLowPrice);
+      const priceReferenceMaxRaw = Math.max(priceMaxRaw, referenceHighPrice);
       const flowReferenceLines = [
         {
           label: "High",
           placement: "above",
-          price: priceMaxRaw,
+          price: referenceHighPrice,
           color: "#f5c663",
           background: "rgba(245, 198, 99, 0.16)",
           border: "rgba(245, 198, 99, 0.52)",
@@ -4475,7 +4632,7 @@ function applyTvHighLowLines(candles) {
         {
           label: "Low",
           placement: "below",
-          price: priceMinRaw,
+          price: referenceLowPrice,
           color: "#ff6672",
           background: "rgba(255, 102, 114, 0.15)",
           border: "rgba(255, 102, 114, 0.52)",
@@ -4507,7 +4664,7 @@ function applyTvHighLowLines(candles) {
       // Measure widest price-axis tick label so the left side has enough room
       // to keep ALL tick labels inside the panel (and not overlap the plot).
       ctx.font = "12px Inter, sans-serif";
-      const tickCandidates = getNiceTicks(priceMinRaw, priceMaxRaw, 5);
+      const tickCandidates = getNiceTicks(priceReferenceMinRaw, priceReferenceMaxRaw, 5);
       const maxTickLabelWidth = Math.max(
         0,
         ...tickCandidates.map((tick) => ctx.measureText(formatPrice(tick)).width)
@@ -4549,12 +4706,13 @@ function applyTvHighLowLines(candles) {
       const volumePlotHeight = volumeBottom - volumeTop;
 
       const priceScaleMinRaw = Number.isFinite(currentPrice)
-        ? Math.min(priceMinRaw, currentPrice)
-        : priceMinRaw;
+        ? Math.min(priceReferenceMinRaw, currentPrice)
+        : priceReferenceMinRaw;
       const priceScaleMaxRaw = Number.isFinite(currentPrice)
-        ? Math.max(priceMaxRaw, currentPrice)
-        : priceMaxRaw;
-const pricePad = Math.max((priceScaleMaxRaw - priceScaleMinRaw) * 0.18, priceScaleMaxRaw * 0.06, 0.0000001);      const priceMin = Math.max(0, priceScaleMinRaw - pricePad);
+        ? Math.max(priceReferenceMaxRaw, currentPrice)
+        : priceReferenceMaxRaw;
+      const pricePad = Math.max((priceScaleMaxRaw - priceScaleMinRaw) * 0.18, priceScaleMaxRaw * 0.06, 0.0000001);
+      const priceMin = Math.max(0, priceScaleMinRaw - pricePad);
       const priceMax = priceScaleMaxRaw + pricePad;
       const maxVolume = Math.max(1, ...buckets.map((bucket) => bucket.buyVolume + bucket.sellVolume));
 
@@ -4842,8 +5000,8 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
       if (ui.legendRow) {
         ui.legendRow.innerHTML = `
         <span class="legend-item"><span class="legend-dot"></span>Price close</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High ${formatPrice(priceMaxRaw)}</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low ${formatPrice(priceMinRaw)}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5c663"></span>High ${formatPrice(referenceHighPrice)}</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff6672"></span>Low ${formatPrice(referenceLowPrice)}</span>
         <span class="legend-item"><span class="legend-dot" style="background:#42d7ff"></span>Current price ${formatPrice(currentPrice)}</span>
         <span class="legend-item"><span class="legend-dot buy"></span>Buy volume</span>
         <span class="legend-item"><span class="legend-dot sell"></span>Sell volume</span>
@@ -5471,6 +5629,10 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
       });
     });
 
+    applyTokenPriceExtremes(readTokenPriceExtremesCache() || TOKEN_PRICE_EXTREMES_FALLBACK);
+    refreshTokenPriceExtremes().then(() => {
+      if (state.trades.length) renderAll();
+    });
     initializeControlsFromUrl();
     refreshChart(false);
     state.refreshTimer = window.setInterval(() => refreshChart(false), CONFIG.refreshMs);
