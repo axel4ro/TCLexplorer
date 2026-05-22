@@ -925,6 +925,29 @@ body.sidebar-desktop .section-page.fullpage {
   align-items: start;
 }
 
+.claim-reminder-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.claim-reminder-heading-copy {
+  min-width: 0;
+}
+
+.claim-reminder-count-card {
+  min-width: 128px;
+  border-color: rgba(251, 191, 36, 0.28);
+  background:
+    linear-gradient(135deg, rgba(30, 26, 18, 0.96), rgba(13, 18, 28, 0.98)),
+    linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(0, 232, 204, 0.06));
+}
+
+.claim-reminder-count-card .event-subscriber-card__unit {
+  font-size: 0.68rem;
+}
+
 .claim-reminder-form,
 .claim-reminder-summary-card {
   border: 1px solid rgba(0, 232, 204, 0.16);
@@ -1021,8 +1044,22 @@ body.sidebar-desktop .section-page.fullpage {
     grid-template-columns: 1fr;
   }
 
+  .claim-reminder-heading-row {
+    align-items: flex-start;
+  }
+
   .claim-reminder-summary-card {
     min-height: 160px;
+  }
+}
+
+@media (max-width: 520px) {
+  .claim-reminder-heading-row {
+    flex-wrap: wrap;
+  }
+
+  .claim-reminder-count-card {
+    margin-left: auto;
   }
 }
 

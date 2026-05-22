@@ -18,7 +18,7 @@
   <link rel="dns-prefetch" href="//dexscreener.com">
   <link rel="preconnect" href="https://dexscreener.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/dashboard.css?v=20260521-1" />
+  <link rel="stylesheet" href="css/dashboard.css?v=20260522-1" />
   <script>
     (() => {
       const ua = navigator.userAgent || "";
@@ -298,7 +298,7 @@
         <img src="https://axel4ro.github.io/TCLexplorer/images/tcl_icon.png" alt=""> TCL Token
       </button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
-      <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
+      <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder" data-i18n="sidebar_claim_reminder">⏰ Claim Reminder</button>
       <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Live Chart</button>
       <button type="button" class="nav-item" onclick="openLander()" id="btn-Lander">
         <img src="https://axel4ro.github.io/TCLexplorer/images/lander.png" alt=""> Lander
@@ -846,8 +846,18 @@
 <!-- Claim Reminder -->
 <div id="claimReminder" class="section-page">
   <div class="page-hero claim-reminder-hero">
-    <h2 id="claimReminderPageTitle">Claim Reminder</h2>
-    <p class="muted" id="claimReminderPageIntro">Keep automatic claim days on a separate notification track from weekly events.</p>
+    <div class="claim-reminder-heading-row">
+      <div class="claim-reminder-heading-copy">
+        <h2 id="claimReminderPageTitle">Claim Reminder</h2>
+        <p class="muted" id="claimReminderPageIntro">Keep automatic claim days on a separate notification track from weekly events.</p>
+      </div>
+      <div class="event-subscriber-card claim-reminder-count-card" id="claimReminderCountCard" aria-live="polite" aria-label="Claim reminders">
+        <span class="event-subscriber-card__count" id="claimReminderCount">--</span>
+        <span class="event-subscriber-card__unit" id="claimReminderCountUnit">Reminders</span>
+        <span class="event-subscriber-card__pulse" aria-hidden="true"></span>
+        <span class="event-subscriber-card__meta" id="claimReminderCountMeta">Live</span>
+      </div>
+    </div>
   </div>
 
   <div class="claim-reminder-layout">
@@ -1080,6 +1090,7 @@
 <script src="lang/exp-table.bundle.js?v=20260515-3"></script>
 <script src="lang/web3.bundle.js?v=20260515-3"></script>
 <script src="lang/token.bundle.js?v=20260515-3"></script>
+<script src="lang/claim-flow.bundle.js?v=20260521-1"></script>
 <script src="lang/wiki-ui.bundle.js?v=20260515-3"></script>
 <script src="lang/wiki.bundle.js?v=20260515-2"></script>
 <script src="lang/page-common.bundle.js?v=20260515-3"></script>
@@ -1089,7 +1100,7 @@
 <script src="js/tcl-realtime.js?v=20260518-1"></script>
 <script src="js/event-push-config.js?v=20260519-1"></script>
 <script src="js/event-notifications.js?v=20260520-1"></script>
-<script src="js/claim-reminder.js?v=20260521-1"></script>
+<script src="js/claim-reminder.js?v=20260522-1"></script>
 <script>
 function openNFTs() {
   const route = INTERNAL_PAGE_ROUTES.nfts;

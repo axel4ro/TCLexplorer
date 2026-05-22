@@ -126,6 +126,55 @@ const EVENT_COPY = {
     midpointTitle: "{name} este la jumatate",
     endTitle: "{name} s-a incheiat",
     defaultBody: "Eveniment saptamanal The Cursed Land"
+  },
+  tr: {
+    reminderTitle: "{name} {minutes} dk icinde basliyor",
+    liveTitle: "{name} simdi aktif",
+    midpointTitle: "{name} yarisina geldi",
+    endTitle: "{name} sona erdi",
+    defaultBody: "The Cursed Land haftalik etkinligi"
+  },
+  de: {
+    reminderTitle: "{name} startet in {minutes} Min.",
+    liveTitle: "{name} ist jetzt live",
+    midpointTitle: "{name} ist zur Halfte vorbei",
+    endTitle: "{name} ist beendet",
+    defaultBody: "The Cursed Land wochentliches Event"
+  },
+  es: {
+    reminderTitle: "{name} empieza en {minutes} min",
+    liveTitle: "{name} esta activo ahora",
+    midpointTitle: "{name} esta a la mitad",
+    endTitle: "{name} ha terminado",
+    defaultBody: "Evento semanal de The Cursed Land"
+  },
+  fr: {
+    reminderTitle: "{name} commence dans {minutes} min",
+    liveTitle: "{name} est actif maintenant",
+    midpointTitle: "{name} est a mi-parcours",
+    endTitle: "{name} est termine",
+    defaultBody: "Evenement hebdomadaire The Cursed Land"
+  },
+  it: {
+    reminderTitle: "{name} inizia tra {minutes} min",
+    liveTitle: "{name} e live ora",
+    midpointTitle: "{name} e a meta",
+    endTitle: "{name} e terminato",
+    defaultBody: "Evento settimanale The Cursed Land"
+  },
+  pl: {
+    reminderTitle: "{name} zaczyna sie za {minutes} min",
+    liveTitle: "{name} jest teraz aktywne",
+    midpointTitle: "{name} jest w polowie",
+    endTitle: "{name} sie zakonczylo",
+    defaultBody: "Wydarzenie tygodniowe The Cursed Land"
+  },
+  pt: {
+    reminderTitle: "{name} comeca em {minutes} min",
+    liveTitle: "{name} esta ativo agora",
+    midpointTitle: "{name} esta na metade",
+    endTitle: "{name} terminou",
+    defaultBody: "Evento semanal The Cursed Land"
   }
 };
 
@@ -143,6 +192,55 @@ const CLAIM_COPY = {
     earlyBody: "{label}: mai ai {days} zile.",
     finalTitle: "Reminder claim: ultima zi",
     finalBody: "{label}: ultima zi."
+  },
+  tr: {
+    defaultLabel: "Otomatik claim",
+    earlyTitle: "Claim hatirlaticisi: {days} gun kaldi",
+    earlyBody: "{label}: {days} gun kaldi.",
+    finalTitle: "Claim hatirlaticisi: son gun",
+    finalBody: "{label}: son gununde."
+  },
+  de: {
+    defaultLabel: "Automatischer Claim",
+    earlyTitle: "Claim-Erinnerung: {days} Tage verbleibend",
+    earlyBody: "{label}: {days} Tage verbleibend.",
+    finalTitle: "Claim-Erinnerung: letzter Tag",
+    finalBody: "{label}: letzter Tag."
+  },
+  es: {
+    defaultLabel: "Claim automatico",
+    earlyTitle: "Recordatorio de claim: quedan {days} dias",
+    earlyBody: "{label}: quedan {days} dias.",
+    finalTitle: "Recordatorio de claim: ultimo dia",
+    finalBody: "{label}: ultimo dia."
+  },
+  fr: {
+    defaultLabel: "Claim automatique",
+    earlyTitle: "Rappel de claim : {days} jours restants",
+    earlyBody: "{label} : {days} jours restants.",
+    finalTitle: "Rappel de claim : dernier jour",
+    finalBody: "{label} : dernier jour."
+  },
+  it: {
+    defaultLabel: "Claim automatico",
+    earlyTitle: "Promemoria claim: {days} giorni rimasti",
+    earlyBody: "{label}: {days} giorni rimasti.",
+    finalTitle: "Promemoria claim: ultimo giorno",
+    finalBody: "{label}: ultimo giorno."
+  },
+  pl: {
+    defaultLabel: "Automatyczny claim",
+    earlyTitle: "Przypomnienie claim: zostalo {days} dni",
+    earlyBody: "{label}: zostalo {days} dni.",
+    finalTitle: "Przypomnienie claim: ostatni dzien",
+    finalBody: "{label}: ostatni dzien."
+  },
+  pt: {
+    defaultLabel: "Claim automatico",
+    earlyTitle: "Lembrete de claim: {days} dias restantes",
+    earlyBody: "{label}: {days} dias restantes.",
+    finalTitle: "Lembrete de claim: ultimo dia",
+    finalBody: "{label}: ultimo dia."
   }
 };
 
@@ -2709,7 +2807,7 @@ function minutesUntil(timestamp, nowMs) {
 
 function normalizeLang(value) {
   const lang = String(value || "en").toLowerCase().split("-")[0];
-  return lang === "ro" ? "ro" : "en";
+  return ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"].includes(lang) ? lang : "en";
 }
 
 function normalizeReminderMinutes(value) {

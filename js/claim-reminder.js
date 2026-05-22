@@ -5,6 +5,7 @@
   const DAY_MS = 24 * 60 * 60 * 1000;
   const MAX_LOCAL_WINDOW_MS = 24 * DAY_MS;
   const STATUS_TICK_MS = 60 * 1000;
+  const STATS_POLL_INTERVAL_MS = 5 * 60 * 1000;
 
   const copy = {
     en: {
@@ -41,7 +42,16 @@
       testTitle: "TCL claim reminder test",
       testBody: "Claim reminders are working on this device.",
       invalidDays: "Enter at least 1 day.",
-      invalidEarly: "Early alert must be at least 1 day."
+      invalidEarly: "Early alert must be at least 1 day.",
+      reminderCountUnit: "Reminders",
+      reminderCountMeta: "Live",
+      reminderCountError: "Unavailable",
+      earlyAlertOne: "1 day before",
+      earlyAlertMany: "{days} days before",
+      localEarlyTitle: "Claim reminder: {days} days left",
+      localEarlyBody: "{label} expires soon.",
+      localFinalTitle: "Claim reminder: last day",
+      localFinalBody: "{label} is on its final day."
     },
     ro: {
       pageTitle: "Claim Reminder",
@@ -77,7 +87,310 @@
       testTitle: "Test claim reminder TCL",
       testBody: "Reminder-ele pentru claim functioneaza pe acest device.",
       invalidDays: "Introdu cel putin 1 zi.",
-      invalidEarly: "Alerta devreme trebuie sa fie de cel putin 1 zi."
+      invalidEarly: "Alerta devreme trebuie sa fie de cel putin 1 zi.",
+      reminderCountUnit: "Remindere",
+      reminderCountMeta: "Live",
+      reminderCountError: "Indisponibil",
+      earlyAlertOne: "1 zi inainte",
+      earlyAlertMany: "{days} zile inainte",
+      localEarlyTitle: "Reminder claim: mai ai {days} zile",
+      localEarlyBody: "{label} expira in curand.",
+      localFinalTitle: "Reminder claim: ultima zi",
+      localFinalBody: "{label} este in ultima zi."
+    },
+    tr: {
+      pageTitle: "Claim Hatirlatici",
+      pageIntro: "Otomatik claim gunlerini haftalik etkinliklerden ayri bir bildirim kanalinda tut.",
+      panelTitle: "Staking claim bildirimleri",
+      checking: "Bildirim destegi kontrol ediliyor...",
+      unsupported: "Bu tarayici claim hatirlaticilari alamaz.",
+      denied: "Bildirimler engellenmis. Bu site icin tarayici ayarlarindan etkinlestir.",
+      ready: "Kalan gunleri gir, sonra bu cihazda hatirlaticiyi kaydet.",
+      enabledPush: "Bu cihazda aktif. {earlyAlert} ve son gunde bildirim alacaksin.",
+      enabledLocal: "Yerel hatirlatici kaydedildi. {earlyAlert} ve son gunde bildirim alacaksin.",
+      serverMissing: "Cloudflare push henuz yapilandirilmadi. Sadece yerel hatirlaticilar.",
+      busy: "Claim hatirlaticisi guncelleniyor...",
+      saved: "Claim hatirlaticisi kaydedildi.",
+      disabled: "Claim hatirlaticisi kapatildi.",
+      save: "Kaydet / Guncelle",
+      test: "Test",
+      disable: "Kapat",
+      labelLabel: "Hatirlatici adi",
+      labelPlaceholder: "Otomatik claim",
+      daysLabel: "Kalan gun",
+      earlyLabel: "Erken uyari",
+      earlySuffix: "gun once",
+      summaryEmpty: "Aktif claim hatirlaticisi yok.",
+      summaryActive: "{days} gun kaldi",
+      summaryExpired: "0 gun kaldi",
+      expiresAt: "{date} civarinda biter",
+      nextAlert: "Sonraki uyari: {date}",
+      noFutureAlert: "Planlanmis gelecek uyari yok.",
+      summaryLabel: "Durum",
+      enabledTitle: "Claim hatirlaticisi aktif",
+      enabledBody: "Bu cihazda claim hatirlaticilari alacaksin.",
+      testTitle: "TCL claim hatirlatici testi",
+      testBody: "Claim hatirlaticilari bu cihazda calisiyor.",
+      invalidDays: "En az 1 gun gir.",
+      invalidEarly: "Erken uyari en az 1 gun olmali.",
+      earlyAlertOne: "1 gun once",
+      earlyAlertMany: "{days} gun once",
+      localEarlyTitle: "Claim hatirlaticisi: {days} gun kaldi",
+      localEarlyBody: "{label} yakinda sona erecek.",
+      localFinalTitle: "Claim hatirlaticisi: son gun",
+      localFinalBody: "{label} son gununde."
+    },
+    de: {
+      pageTitle: "Claim-Erinnerung",
+      pageIntro: "Halte automatische Claim-Tage getrennt von den wochentlichen Event-Benachrichtigungen.",
+      panelTitle: "Staking-Claim-Benachrichtigungen",
+      checking: "Benachrichtigungsunterstutzung wird gepruft...",
+      unsupported: "Dieser Browser kann keine Claim-Erinnerungen empfangen.",
+      denied: "Benachrichtigungen sind blockiert. Aktiviere sie in den Browser-Einstellungen fur diese Website.",
+      ready: "Gib die verbleibenden Tage ein und speichere die Erinnerung auf diesem Gerat.",
+      enabledPush: "Auf diesem Gerat aktiv. Du erhaltst eine Benachrichtigung {earlyAlert} und am letzten Tag.",
+      enabledLocal: "Lokale Erinnerung gespeichert. Du erhaltst eine Benachrichtigung {earlyAlert} und am letzten Tag.",
+      serverMissing: "Cloudflare Push ist noch nicht konfiguriert. Nur lokale Erinnerungen.",
+      busy: "Claim-Erinnerung wird aktualisiert...",
+      saved: "Claim-Erinnerung gespeichert.",
+      disabled: "Claim-Erinnerung deaktiviert.",
+      save: "Speichern / Aktualisieren",
+      test: "Test",
+      disable: "Deaktivieren",
+      labelLabel: "Name der Erinnerung",
+      labelPlaceholder: "Automatischer Claim",
+      daysLabel: "Verbleibende Tage",
+      earlyLabel: "Fruhe Warnung",
+      earlySuffix: "Tage vorher",
+      summaryEmpty: "Keine Claim-Erinnerung ist aktiv.",
+      summaryActive: "{days} Tage verbleibend",
+      summaryExpired: "0 Tage verbleibend",
+      expiresAt: "Endet etwa am {date}",
+      nextAlert: "Nachste Warnung: {date}",
+      noFutureAlert: "Keine zukunftige Warnung geplant.",
+      summaryLabel: "Status",
+      enabledTitle: "Claim-Erinnerung aktiviert",
+      enabledBody: "Du erhaltst Claim-Erinnerungen auf diesem Gerat.",
+      testTitle: "TCL Claim-Erinnerungstest",
+      testBody: "Claim-Erinnerungen funktionieren auf diesem Gerat.",
+      invalidDays: "Gib mindestens 1 Tag ein.",
+      invalidEarly: "Die fruhe Warnung muss mindestens 1 Tag betragen.",
+      earlyAlertOne: "1 Tag vorher",
+      earlyAlertMany: "{days} Tage vorher",
+      localEarlyTitle: "Claim-Erinnerung: {days} Tage verbleibend",
+      localEarlyBody: "{label} endet bald.",
+      localFinalTitle: "Claim-Erinnerung: letzter Tag",
+      localFinalBody: "{label} ist am letzten Tag."
+    },
+    es: {
+      pageTitle: "Recordatorio de Claim",
+      pageIntro: "Mantén los dias de claim automatico separados de las notificaciones de eventos semanales.",
+      panelTitle: "Notificaciones de staking claim",
+      checking: "Comprobando soporte de notificaciones...",
+      unsupported: "Este navegador no puede recibir recordatorios de claim.",
+      denied: "Las notificaciones estan bloqueadas. Activalas desde los ajustes del navegador para este sitio.",
+      ready: "Introduce los dias restantes y guarda el recordatorio en este dispositivo.",
+      enabledPush: "Activo en este dispositivo. Recibiras una notificacion {earlyAlert} y en el ultimo dia.",
+      enabledLocal: "Recordatorio local guardado. Recibiras una notificacion {earlyAlert} y en el ultimo dia.",
+      serverMissing: "Cloudflare push aun no esta configurado. Solo recordatorios locales.",
+      busy: "Actualizando recordatorio de claim...",
+      saved: "Recordatorio de claim guardado.",
+      disabled: "Recordatorio de claim desactivado.",
+      save: "Guardar / Actualizar",
+      test: "Prueba",
+      disable: "Desactivar",
+      labelLabel: "Nombre del recordatorio",
+      labelPlaceholder: "Claim automatico",
+      daysLabel: "Dias restantes",
+      earlyLabel: "Alerta temprana",
+      earlySuffix: "dias antes",
+      summaryEmpty: "No hay ningun recordatorio de claim activo.",
+      summaryActive: "Quedan {days} dias",
+      summaryExpired: "Quedan 0 dias",
+      expiresAt: "Termina alrededor de {date}",
+      nextAlert: "Siguiente alerta: {date}",
+      noFutureAlert: "No hay alertas futuras programadas.",
+      summaryLabel: "Estado",
+      enabledTitle: "Recordatorio de claim activado",
+      enabledBody: "Recibiras recordatorios de claim en este dispositivo.",
+      testTitle: "Prueba de recordatorio claim TCL",
+      testBody: "Los recordatorios de claim funcionan en este dispositivo.",
+      invalidDays: "Introduce al menos 1 dia.",
+      invalidEarly: "La alerta temprana debe ser de al menos 1 dia.",
+      earlyAlertOne: "1 dia antes",
+      earlyAlertMany: "{days} dias antes",
+      localEarlyTitle: "Recordatorio de claim: quedan {days} dias",
+      localEarlyBody: "{label} termina pronto.",
+      localFinalTitle: "Recordatorio de claim: ultimo dia",
+      localFinalBody: "{label} esta en su ultimo dia."
+    },
+    fr: {
+      pageTitle: "Rappel de Claim",
+      pageIntro: "Garde les jours de claim automatique sur une piste de notification separee des evenements hebdomadaires.",
+      panelTitle: "Notifications de staking claim",
+      checking: "Verification du support des notifications...",
+      unsupported: "Ce navigateur ne peut pas recevoir les rappels de claim.",
+      denied: "Les notifications sont bloquees. Active-les dans les reglages du navigateur pour ce site.",
+      ready: "Saisis les jours restants, puis enregistre le rappel sur cet appareil.",
+      enabledPush: "Actif sur cet appareil. Tu recevras une notification {earlyAlert} et le dernier jour.",
+      enabledLocal: "Rappel local enregistre. Tu recevras une notification {earlyAlert} et le dernier jour.",
+      serverMissing: "Cloudflare push n'est pas encore configure. Rappels locaux uniquement.",
+      busy: "Mise a jour du rappel de claim...",
+      saved: "Rappel de claim enregistre.",
+      disabled: "Rappel de claim desactive.",
+      save: "Enregistrer / Mettre a jour",
+      test: "Test",
+      disable: "Desactiver",
+      labelLabel: "Nom du rappel",
+      labelPlaceholder: "Claim automatique",
+      daysLabel: "Jours restants",
+      earlyLabel: "Alerte anticipee",
+      earlySuffix: "jours avant",
+      summaryEmpty: "Aucun rappel de claim actif.",
+      summaryActive: "{days} jours restants",
+      summaryExpired: "0 jour restant",
+      expiresAt: "Se termine vers {date}",
+      nextAlert: "Prochaine alerte : {date}",
+      noFutureAlert: "Aucune alerte future programmee.",
+      summaryLabel: "Statut",
+      enabledTitle: "Rappel de claim active",
+      enabledBody: "Tu recevras des rappels de claim sur cet appareil.",
+      testTitle: "Test de rappel claim TCL",
+      testBody: "Les rappels de claim fonctionnent sur cet appareil.",
+      invalidDays: "Saisis au moins 1 jour.",
+      invalidEarly: "L'alerte anticipee doit etre d'au moins 1 jour.",
+      earlyAlertOne: "1 jour avant",
+      earlyAlertMany: "{days} jours avant",
+      localEarlyTitle: "Rappel de claim : {days} jours restants",
+      localEarlyBody: "{label} expire bientot.",
+      localFinalTitle: "Rappel de claim : dernier jour",
+      localFinalBody: "{label} est dans son dernier jour."
+    },
+    it: {
+      pageTitle: "Promemoria Claim",
+      pageIntro: "Tieni i giorni di claim automatico separati dalle notifiche degli eventi settimanali.",
+      panelTitle: "Notifiche staking claim",
+      checking: "Verifica supporto notifiche...",
+      unsupported: "Questo browser non puo ricevere promemoria claim.",
+      denied: "Le notifiche sono bloccate. Abilitale dalle impostazioni del browser per questo sito.",
+      ready: "Inserisci i giorni restanti e salva il promemoria su questo dispositivo.",
+      enabledPush: "Attivo su questo dispositivo. Riceverai una notifica {earlyAlert} e nell'ultimo giorno.",
+      enabledLocal: "Promemoria locale salvato. Riceverai una notifica {earlyAlert} e nell'ultimo giorno.",
+      serverMissing: "Cloudflare push non e ancora configurato. Solo promemoria locali.",
+      busy: "Aggiornamento promemoria claim...",
+      saved: "Promemoria claim salvato.",
+      disabled: "Promemoria claim disattivato.",
+      save: "Salva / Aggiorna",
+      test: "Test",
+      disable: "Disattiva",
+      labelLabel: "Nome promemoria",
+      labelPlaceholder: "Claim automatico",
+      daysLabel: "Giorni restanti",
+      earlyLabel: "Avviso anticipato",
+      earlySuffix: "giorni prima",
+      summaryEmpty: "Nessun promemoria claim attivo.",
+      summaryActive: "{days} giorni rimasti",
+      summaryExpired: "0 giorni rimasti",
+      expiresAt: "Termina circa il {date}",
+      nextAlert: "Prossimo avviso: {date}",
+      noFutureAlert: "Nessun avviso futuro programmato.",
+      summaryLabel: "Stato",
+      enabledTitle: "Promemoria claim attivato",
+      enabledBody: "Riceverai promemoria claim su questo dispositivo.",
+      testTitle: "Test promemoria claim TCL",
+      testBody: "I promemoria claim funzionano su questo dispositivo.",
+      invalidDays: "Inserisci almeno 1 giorno.",
+      invalidEarly: "L'avviso anticipato deve essere di almeno 1 giorno.",
+      earlyAlertOne: "1 giorno prima",
+      earlyAlertMany: "{days} giorni prima",
+      localEarlyTitle: "Promemoria claim: {days} giorni rimasti",
+      localEarlyBody: "{label} scade presto.",
+      localFinalTitle: "Promemoria claim: ultimo giorno",
+      localFinalBody: "{label} e nell'ultimo giorno."
+    },
+    pl: {
+      pageTitle: "Przypomnienie Claim",
+      pageIntro: "Trzymaj dni automatycznego claim osobno od powiadomien o wydarzeniach tygodniowych.",
+      panelTitle: "Powiadomienia staking claim",
+      checking: "Sprawdzanie obslugi powiadomien...",
+      unsupported: "Ta przegladarka nie moze odbierac przypomnien claim.",
+      denied: "Powiadomienia sa zablokowane. Wlacz je w ustawieniach przegladarki dla tej strony.",
+      ready: "Wpisz pozostale dni, potem zapisz przypomnienie na tym urzadzeniu.",
+      enabledPush: "Aktywne na tym urzadzeniu. Otrzymasz powiadomienie {earlyAlert} i w ostatnim dniu.",
+      enabledLocal: "Lokalne przypomnienie zapisane. Otrzymasz powiadomienie {earlyAlert} i w ostatnim dniu.",
+      serverMissing: "Cloudflare push nie jest jeszcze skonfigurowany. Tylko lokalne przypomnienia.",
+      busy: "Aktualizowanie przypomnienia claim...",
+      saved: "Przypomnienie claim zapisane.",
+      disabled: "Przypomnienie claim wylaczone.",
+      save: "Zapisz / Aktualizuj",
+      test: "Test",
+      disable: "Wylacz",
+      labelLabel: "Nazwa przypomnienia",
+      labelPlaceholder: "Automatyczny claim",
+      daysLabel: "Pozostale dni",
+      earlyLabel: "Wczesny alert",
+      earlySuffix: "dni wczesniej",
+      summaryEmpty: "Brak aktywnego przypomnienia claim.",
+      summaryActive: "Zostalo {days} dni",
+      summaryExpired: "Zostalo 0 dni",
+      expiresAt: "Konczy sie okolo {date}",
+      nextAlert: "Nastepny alert: {date}",
+      noFutureAlert: "Brak zaplanowanego przyszlego alertu.",
+      summaryLabel: "Status",
+      enabledTitle: "Przypomnienie claim wlaczone",
+      enabledBody: "Otrzymasz przypomnienia claim na tym urzadzeniu.",
+      testTitle: "Test przypomnienia claim TCL",
+      testBody: "Przypomnienia claim dzialaja na tym urzadzeniu.",
+      invalidDays: "Wpisz co najmniej 1 dzien.",
+      invalidEarly: "Wczesny alert musi miec co najmniej 1 dzien.",
+      earlyAlertOne: "1 dzien wczesniej",
+      earlyAlertMany: "{days} dni wczesniej",
+      localEarlyTitle: "Przypomnienie claim: zostalo {days} dni",
+      localEarlyBody: "{label} wkrotce wygasa.",
+      localFinalTitle: "Przypomnienie claim: ostatni dzien",
+      localFinalBody: "{label} jest w ostatnim dniu."
+    },
+    pt: {
+      pageTitle: "Lembrete de Claim",
+      pageIntro: "Mantenha os dias de claim automatico em uma trilha separada das notificacoes de eventos semanais.",
+      panelTitle: "Notificacoes de staking claim",
+      checking: "Verificando suporte a notificacoes...",
+      unsupported: "Este navegador nao pode receber lembretes de claim.",
+      denied: "As notificacoes estao bloqueadas. Ative-as nas configuracoes do navegador para este site.",
+      ready: "Digite os dias restantes e salve o lembrete neste dispositivo.",
+      enabledPush: "Ativo neste dispositivo. Voce recebera uma notificacao {earlyAlert} e no ultimo dia.",
+      enabledLocal: "Lembrete local salvo. Voce recebera uma notificacao {earlyAlert} e no ultimo dia.",
+      serverMissing: "Cloudflare push ainda nao esta configurado. Apenas lembretes locais.",
+      busy: "Atualizando lembrete de claim...",
+      saved: "Lembrete de claim salvo.",
+      disabled: "Lembrete de claim desativado.",
+      save: "Salvar / Atualizar",
+      test: "Teste",
+      disable: "Desativar",
+      labelLabel: "Nome do lembrete",
+      labelPlaceholder: "Claim automatico",
+      daysLabel: "Dias restantes",
+      earlyLabel: "Alerta antecipado",
+      earlySuffix: "dias antes",
+      summaryEmpty: "Nenhum lembrete de claim esta ativo.",
+      summaryActive: "{days} dias restantes",
+      summaryExpired: "0 dias restantes",
+      expiresAt: "Termina por volta de {date}",
+      nextAlert: "Proximo alerta: {date}",
+      noFutureAlert: "Nenhum alerta futuro agendado.",
+      summaryLabel: "Status",
+      enabledTitle: "Lembrete de claim ativado",
+      enabledBody: "Voce recebera lembretes de claim neste dispositivo.",
+      testTitle: "Teste de lembrete claim TCL",
+      testBody: "Os lembretes de claim funcionam neste dispositivo.",
+      invalidDays: "Digite pelo menos 1 dia.",
+      invalidEarly: "O alerta antecipado deve ter pelo menos 1 dia.",
+      earlyAlertOne: "1 dia antes",
+      earlyAlertMany: "{days} dias antes",
+      localEarlyTitle: "Lembrete de claim: {days} dias restantes",
+      localEarlyBody: "{label} expira em breve.",
+      localFinalTitle: "Lembrete de claim: ultimo dia",
+      localFinalBody: "{label} esta no ultimo dia."
     }
   };
 
@@ -87,12 +400,15 @@
     publicKey: "",
     pushServerConfigured: null,
     statusTimer: null,
+    statsTimer: null,
+    reminderCount: null,
     lang: "en"
   };
 
   function getLang() {
     const lang = String(window.currentLang || localStorage.getItem("lang") || navigator.language || "en").toLowerCase();
-    return lang.split("-")[0] === "ro" ? "ro" : "en";
+    const base = lang.split("-")[0];
+    return copy[base] ? base : "en";
   }
 
   function tr(key, vars) {
@@ -218,6 +534,57 @@
     }
   }
 
+  function setClaimReminderCountCard(status, count) {
+    const card = document.getElementById("claimReminderCountCard");
+    const countEl = document.getElementById("claimReminderCount");
+    const unit = document.getElementById("claimReminderCountUnit");
+    const meta = document.getElementById("claimReminderCountMeta");
+    if (!card || !countEl || !meta) return;
+
+    card.dataset.state = status || "loading";
+    if (unit) unit.textContent = tr("reminderCountUnit");
+
+    if (Number.isFinite(count)) {
+      state.reminderCount = count;
+      countEl.textContent = String(count);
+      meta.textContent = tr("reminderCountMeta");
+      card.setAttribute("aria-label", `${count} ${tr("reminderCountUnit")} ${tr("reminderCountMeta")}`);
+      return;
+    }
+
+    if (Number.isFinite(state.reminderCount)) {
+      countEl.textContent = String(state.reminderCount);
+    } else {
+      countEl.textContent = "--";
+    }
+    meta.textContent = status === "error" ? tr("reminderCountError") : tr("reminderCountMeta");
+    card.setAttribute("aria-label", `${countEl.textContent} ${tr("reminderCountUnit")} ${meta.textContent}`);
+  }
+
+  async function refreshClaimReminderStats() {
+    setClaimReminderCountCard("loading");
+    try {
+      const stats = await requestApi("claim/stats", { method: "GET" });
+      setClaimReminderCountCard("ready", Number(stats.reminders));
+      return stats;
+    } catch (error) {
+      console.warn("Claim reminder stats refresh failed", error);
+      setClaimReminderCountCard("error");
+      return null;
+    }
+  }
+
+  function startClaimReminderStatsPolling() {
+    if (state.statsTimer) return;
+    refreshClaimReminderStats();
+    state.statsTimer = window.setInterval(refreshClaimReminderStats, STATS_POLL_INTERVAL_MS);
+
+    window.addEventListener("focus", refreshClaimReminderStats);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshClaimReminderStats();
+    });
+  }
+
   async function getServiceWorkerRegistration() {
     if (!supportsNotifications()) return null;
     const swUrl = new URL("sw.js", window.location.href);
@@ -336,6 +703,7 @@
         force: true,
         tag: "tcl-claim-reminder-enabled"
       });
+      await refreshClaimReminderStats();
       setStatusText("saved");
       return saved;
     } finally {
@@ -371,6 +739,7 @@
       await unregisterRemoteReminder(registration);
       await clearLocalSchedule();
       saveSettings({ enabled: false, mode: "off", expiresAt: null });
+      await refreshClaimReminderStats();
       setStatusText("disabled");
     } finally {
       state.busy = false;
@@ -392,19 +761,15 @@
       {
         id: `claim:${expiresAt}:early:${earlyDays}`,
         triggerAt: expiresAt - earlyDays * DAY_MS,
-        title: getLang() === "ro" ? `Reminder claim: mai ai ${daysLeft} zile` : `Claim reminder: ${daysLeft} days left`,
-        titleTemplate: getLang() === "ro" ? "Reminder claim: mai ai {days} zile" : "Claim reminder: {days} days left",
-        body: getLang() === "ro"
-          ? `${label} expira in curand.`
-          : `${label} expires soon.`
+        title: tr("localEarlyTitle", { days: daysLeft, label }),
+        titleTemplate: tr("localEarlyTitle", { days: "{days}", label }),
+        body: tr("localEarlyBody", { label, days: daysLeft })
       },
       {
         id: `claim:${expiresAt}:final`,
         triggerAt: expiresAt - DAY_MS,
-        title: getLang() === "ro" ? "Reminder claim: ultima zi" : "Claim reminder: last day",
-        body: getLang() === "ro"
-          ? `${label} este in ultima zi.`
-          : `${label} is on its final day.`
+        title: tr("localFinalTitle", { days: daysLeft, label }),
+        body: tr("localFinalBody", { label, days: daysLeft })
       }
     ].forEach((item) => {
       if (item.triggerAt < now + 15 * 1000 || item.triggerAt > maxTriggerAt) return;
@@ -541,8 +906,7 @@
 
   function formatEarlyAlert(earlyDays) {
     const days = Math.max(1, Math.round(Number(earlyDays) || DEFAULT_EARLY_DAYS));
-    if (getLang() === "ro") return `${days} ${days === 1 ? "zi" : "zile"} inainte`;
-    return `${days} ${days === 1 ? "day" : "days"} before`;
+    return days === 1 ? tr("earlyAlertOne", { days }) : tr("earlyAlertMany", { days });
   }
 
   function getReminderStatusVars(settings = getSettings()) {
@@ -706,8 +1070,10 @@
     bindControls();
     syncFormFromSettings();
     refreshStatus();
+    setClaimReminderCountCard("loading");
     await getPushConfig();
     refreshStatus();
+    startClaimReminderStatsPolling();
 
     if (getSettings().enabled) {
       await syncLocalSchedule(getSettings());
@@ -725,12 +1091,14 @@
     save: () => upsertReminder(),
     disable: disableReminder,
     refreshStatus,
+    refreshClaimReminderStats,
     syncLocalSchedule,
     setLanguage(lang) {
       state.lang = lang || getLang();
       syncStaticCopy();
       renderSummary();
       refreshStatus();
+      setClaimReminderCountCard("ready", state.reminderCount);
     }
   };
 
