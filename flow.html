@@ -1487,14 +1487,12 @@
     };
 
     const CACHE_KEY = "tcl-chart-trades-v1";
-    const TOKEN_OVERVIEW_CACHE_KEY = "tclExplorer.tokenOverview.v2";
     const TOKEN_PRICE_EXTREMES_API_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander";
     const TOKEN_PRICE_EXTREMES_FALLBACK = {
       high: 0.010077,
       low: 0.000372,
       sourceLabel: "TCL token fallback"
     };
-    const TOKEN_PRICE_EXTREMES_TTL_MS = 12 * 60 * 60 * 1000;
     const CHART_SNAPSHOT_API_URL = resolveChartSnapshotApiUrl();
     const DAY_SECONDS = 24 * 60 * 60;
     const ui = {
@@ -1705,38 +1703,8 @@
       return {
         high: Math.max(high, low),
         low: Math.min(high, low),
-        sourceLabel: payload?.sourceLabel || payload?.source || "TCL token stats",
-        cachedAt: Number.isFinite(Number(payload?.cachedAt)) ? Number(payload.cachedAt) : null
+        sourceLabel: payload?.sourceLabel || payload?.source || "CoinGecko ATH/ATL"
       };
-    }
-
-    function readTokenPriceExtremesCache() {
-      try {
-        const cache = JSON.parse(localStorage.getItem(TOKEN_OVERVIEW_CACHE_KEY) || "{}");
-        return normalizeTokenPriceExtremes(cache?.gecko);
-      } catch (_) {
-        return null;
-      }
-    }
-
-    function writeTokenPriceExtremesCache(extremes) {
-      const normalized = normalizeTokenPriceExtremes(extremes);
-      if (!normalized) return;
-      try {
-        const cache = JSON.parse(localStorage.getItem(TOKEN_OVERVIEW_CACHE_KEY) || "{}");
-        cache.gecko = {
-          ath: normalized.high,
-          atl: normalized.low,
-          cachedAt: Date.now()
-        };
-        localStorage.setItem(TOKEN_OVERVIEW_CACHE_KEY, JSON.stringify(cache));
-      } catch (_) {}
-    }
-
-    function isFreshTokenPriceExtremes(extremes) {
-      if (!extremes || !Number.isFinite(Number(extremes.cachedAt))) return false;
-      const ageMs = Date.now() - Number(extremes.cachedAt);
-      return Number.isFinite(ageMs) && ageMs >= 0 && ageMs < TOKEN_PRICE_EXTREMES_TTL_MS;
     }
 
     function applyTokenPriceExtremes(payload) {
@@ -1748,7 +1716,6 @@
 
     function getTokenPriceExtremes() {
       return state.tokenPriceExtremes
-        || applyTokenPriceExtremes(readTokenPriceExtremesCache())
         || applyTokenPriceExtremes(TOKEN_PRICE_EXTREMES_FALLBACK);
     }
 
@@ -1772,10 +1739,7 @@
       };
     }
 
-    async function refreshTokenPriceExtremes(options = {}) {
-      const cached = readTokenPriceExtremesCache();
-      if (cached) applyTokenPriceExtremes(cached);
-      if (!options.force && isFreshTokenPriceExtremes(cached)) return cached;
+    async function refreshTokenPriceExtremes() {
       if (state.tokenPriceExtremesRequest) return state.tokenPriceExtremesRequest;
 
       state.tokenPriceExtremesRequest = (async () => {
@@ -1793,13 +1757,12 @@
           const extremes = applyTokenPriceExtremes({
             ath: market?.ath,
             atl: market?.atl,
-            sourceLabel: "TCL token stats"
+            sourceLabel: "CoinGecko ATH/ATL"
           });
           if (!extremes) {
             throw new Error("Token price extremes payload did not include ATH/ATL.");
           }
 
-          writeTokenPriceExtremesCache(extremes);
           return extremes;
         } catch (error) {
           console.warn("Could not refresh TCL token ATH/ATL", error);
@@ -5629,7 +5592,7 @@ ctx.fillText(line.priceText, labelX + 9, labelY + 21);
       });
     });
 
-    applyTokenPriceExtremes(readTokenPriceExtremesCache() || TOKEN_PRICE_EXTREMES_FALLBACK);
+    applyTokenPriceExtremes(TOKEN_PRICE_EXTREMES_FALLBACK);
     refreshTokenPriceExtremes().then(() => {
       if (state.trades.length) renderAll();
     });
