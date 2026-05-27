@@ -264,6 +264,7 @@
     }
 
     .chat-powered {
+      position: relative;
       margin: 0;
       text-align: center;
       font-size: 0.72rem;
@@ -275,6 +276,81 @@
       color: var(--accent);
       text-decoration: none;
       opacity: 0.85;
+    }
+
+    .info-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 5px;
+      padding: 0;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--muted);
+      font: italic 700 0.58rem/1 Georgia, serif;
+      cursor: pointer;
+      vertical-align: middle;
+      opacity: 0.55;
+      transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .info-btn:hover,
+    .info-btn:focus-visible {
+      opacity: 1;
+      color: var(--accent);
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .info-popup {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(310px, calc(100vw - 32px));
+      padding: 13px 15px;
+      border: 1px solid rgba(144, 190, 182, 0.28);
+      border-radius: 10px;
+      background: #0d1f22;
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
+      text-align: left;
+      z-index: 40;
+    }
+
+    .info-popup-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 7px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .info-popup-title::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #8af7e7;
+      animation: pulse-dot 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .info-popup-body {
+      margin: 0;
+      font-size: 0.77rem;
+      line-height: 1.55;
+      color: var(--muted);
     }
 
     .chat-input {
@@ -368,7 +444,14 @@
           </svg>
         </button>
       </form>
-      <p class="chat-powered">Powered by <a href="https://axel4ro.github.io/TCLexplorer/" target="_blank" rel="noopener noreferrer">TCLexplorer</a></p>
+      <p class="chat-powered">
+        Powered by <a href="https://axel4ro.github.io/TCLexplorer/" target="_blank" rel="noopener noreferrer">TCLexplorer</a>
+        <button class="info-btn" id="aiInfoBtn" type="button" aria-label="About this AI">i</button>
+        <span class="info-popup" id="aiInfoPopup" hidden>
+          <strong class="info-popup-title" id="aiInfoTitle"></strong>
+          <p class="info-popup-body" id="aiInfoText"></p>
+        </span>
+      </p>
     </div>
   </main>
 
@@ -382,6 +465,10 @@
       const langControl = document.getElementById("chatLangControl");
       const langButton = document.getElementById("currentLang");
       const langMenu = document.getElementById("langMenu");
+      const infoBtn = document.getElementById("aiInfoBtn");
+      const infoPopup = document.getElementById("aiInfoPopup");
+      const infoTitle = document.getElementById("aiInfoTitle");
+      const infoText = document.getElementById("aiInfoText");
 
       const languages = [
         { code: "en", label: "English", flag: "gb" },
@@ -404,63 +491,81 @@
           placeholder: "Ask about The Cursed Land...",
           empty: "Write a question first.",
           error: "The chat service did not answer. Please try again.",
-          send: "Send"
+          send: "Send",
+          disclaimerTitle: "Active Development",
+          disclaimerText: "Companion is continuously evolving. Answers are based on synced data from TCLexplorer and the official Whitepaper, but may occasionally be incomplete, outdated, or inaccurate. Always verify critical game information directly on TCLexplorer."
         },
         ro: {
           hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
           placeholder: "Întreabă despre The Cursed Land...",
           empty: "Scrie mai întâi o întrebare.",
           error: "Serviciul de chat nu a răspuns. Încearcă din nou.",
-          send: "Trimite"
+          send: "Trimite",
+          disclaimerTitle: "În Dezvoltare Activă",
+          disclaimerText: "Companion evoluează continuu. Răspunsurile se bazează pe date sincronizate din TCLexplorer și Whitepaper-ul oficial, dar pot fi uneori incomplete, expirate sau inexacte. Verifică întotdeauna informațiile importante direct pe TCLexplorer."
         },
         tr: {
           hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
           placeholder: "The Cursed Land hakkında sor...",
           empty: "Önce bir soru yaz.",
           error: "Sohbet servisi yanıt vermedi. Lütfen tekrar dene.",
-          send: "Gönder"
+          send: "Gönder",
+          disclaimerTitle: "Aktif Geliştirme",
+          disclaimerText: "Companion sürekli gelişmektedir. Yanıtlar TCLexplorer ve resmi Whitepaper'dan senkronize verilerle üretilir, ancak zaman zaman eksik, güncel olmayan veya yanlış olabilir. Önemli oyun bilgilerini TCLexplorer'da doğrulayın."
         },
         de: {
           hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
           placeholder: "Frag zu The Cursed Land...",
           empty: "Schreib zuerst eine Frage.",
           error: "Der Chatdienst hat nicht geantwortet. Versuch es bitte erneut.",
-          send: "Senden"
+          send: "Senden",
+          disclaimerTitle: "Aktive Entwicklung",
+          disclaimerText: "Companion wird kontinuierlich weiterentwickelt. Antworten basieren auf synchronisierten Daten aus TCLexplorer und dem offiziellen Whitepaper, können aber gelegentlich unvollständig, veraltet oder ungenau sein. Wichtige Spielinformationen direkt auf TCLexplorer prüfen."
         },
         es: {
           hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
           placeholder: "Pregunta sobre The Cursed Land...",
           empty: "Escribe una pregunta primero.",
           error: "El servicio de chat no respondió. Inténtalo de nuevo.",
-          send: "Enviar"
+          send: "Enviar",
+          disclaimerTitle: "Desarrollo Activo",
+          disclaimerText: "Companion evoluciona continuamente. Las respuestas se basan en datos sincronizados de TCLexplorer y el Whitepaper oficial, pero pueden ser ocasionalmente incompletas, desactualizadas o inexactas. Verifica los datos importantes directamente en TCLexplorer."
         },
         fr: {
           hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
           placeholder: "Pose une question sur The Cursed Land...",
           empty: "Écris d'abord une question.",
           error: "Le service de chat n'a pas répondu. Réessaie.",
-          send: "Envoyer"
+          send: "Envoyer",
+          disclaimerTitle: "Développement Actif",
+          disclaimerText: "Companion évolue en permanence. Les réponses sont basées sur des données synchronisées de TCLexplorer et du Whitepaper officiel, mais peuvent être parfois incomplètes, obsolètes ou inexactes. Vérifiez toujours les informations importantes directement sur TCLexplorer."
         },
         it: {
           hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
           placeholder: "Chiedi di The Cursed Land...",
           empty: "Scrivi prima una domanda.",
           error: "Il servizio chat non ha risposto. Riprova.",
-          send: "Invia"
+          send: "Invia",
+          disclaimerTitle: "Sviluppo Attivo",
+          disclaimerText: "Companion è in continua evoluzione. Le risposte si basano su dati sincronizzati da TCLexplorer e dal Whitepaper ufficiale, ma possono essere occasionalmente incomplete, obsolete o imprecise. Verifica sempre le informazioni importanti direttamente su TCLexplorer."
         },
         pl: {
           hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
           placeholder: "Zapytaj o The Cursed Land...",
           empty: "Najpierw wpisz pytanie.",
           error: "Usługa czatu nie odpowiedziała. Spróbuj ponownie.",
-          send: "Wyślij"
+          send: "Wyślij",
+          disclaimerTitle: "Aktywny Rozwój",
+          disclaimerText: "Companion stale się rozwija. Odpowiedzi opierają się na zsynchronizowanych danych z TCLexplorer i oficjalnego Whitepaper, ale mogą być niekiedy niekompletne, nieaktualne lub niedokładne. Weryfikuj ważne informacje bezpośrednio na TCLexplorer."
         },
         pt: {
           hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
           placeholder: "Pergunta sobre The Cursed Land...",
           empty: "Escreve uma pergunta primeiro.",
           error: "O serviço de chat não respondeu. Tenta novamente.",
-          send: "Enviar"
+          send: "Enviar",
+          disclaimerTitle: "Desenvolvimento Ativo",
+          disclaimerText: "Companion está em evolução contínua. As respostas baseiam-se em dados sincronizados do TCLexplorer e do Whitepaper oficial, mas podem ser ocasionalmente incompletas, desatualizadas ou imprecisas. Verifica sempre as informações importantes diretamente no TCLexplorer."
         }
       };
 
@@ -473,12 +578,28 @@
         langButton.setAttribute("aria-expanded", String(isOpen));
       });
 
+      infoBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isHidden = infoPopup.hasAttribute("hidden");
+        if (isHidden) {
+          infoPopup.removeAttribute("hidden");
+        } else {
+          infoPopup.setAttribute("hidden", "");
+        }
+      });
+
       document.addEventListener("click", (event) => {
         if (!langControl.contains(event.target)) closeLanguageMenu();
+        if (!infoBtn.contains(event.target) && !infoPopup.contains(event.target)) {
+          infoPopup.setAttribute("hidden", "");
+        }
       });
 
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeLanguageMenu();
+        if (event.key === "Escape") {
+          closeLanguageMenu();
+          infoPopup.setAttribute("hidden", "");
+        }
       });
 
       form.addEventListener("submit", async (event) => {
@@ -559,6 +680,9 @@
         langMenu.querySelectorAll(".lang-option").forEach((option) => {
           option.classList.toggle("is-active", option.dataset.lang === language);
         });
+
+        infoTitle.textContent = text.disclaimerTitle;
+        infoText.textContent = text.disclaimerText;
 
         try {
           localStorage.setItem("lang", language);
