@@ -306,22 +306,49 @@
     }
 
     .info-popup {
+      display: none;
       position: absolute;
       bottom: calc(100% + 8px);
       left: 50%;
       transform: translateX(-50%);
       width: min(310px, calc(100vw - 32px));
-      padding: 13px 15px;
+      padding: 12px 36px 12px 14px;
       border: 1px solid rgba(144, 190, 182, 0.28);
       border-radius: 10px;
       background: #0d1f22;
       box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
       text-align: left;
       z-index: 40;
-      display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
+
+    .info-popup.is-open {
+      display: flex;
+    }
+
+    .info-popup-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
+    .info-popup-close:hover { opacity: 1; }
 
     .info-popup-title {
       display: flex;
@@ -439,7 +466,8 @@
     <section class="chat-log" id="chatLog" aria-live="polite"></section>
 
     <div class="chat-bottom">
-      <div class="info-popup" id="aiInfoPopup" hidden>
+      <div class="info-popup" id="aiInfoPopup">
+        <button class="info-popup-close" id="aiInfoClose" type="button" aria-label="Close">✕</button>
         <strong class="info-popup-title" id="aiInfoTitle"></strong>
         <span class="info-popup-body" id="aiInfoText"></span>
       </div>
@@ -471,6 +499,7 @@
       const langMenu = document.getElementById("langMenu");
       const infoBtn = document.getElementById("aiInfoBtn");
       const infoPopup = document.getElementById("aiInfoPopup");
+      const infoClose = document.getElementById("aiInfoClose");
       const infoTitle = document.getElementById("aiInfoTitle");
       const infoText = document.getElementById("aiInfoText");
 
@@ -497,7 +526,7 @@
           error: "The chat service did not answer. Please try again.",
           send: "Send",
           disclaimerTitle: "Active Development",
-          disclaimerText: "Companion is continuously evolving. Answers are based on synced data from TCLexplorer and the official Whitepaper, but may occasionally be incomplete, outdated, or inaccurate. Always verify critical game information directly on TCLexplorer."
+          disclaimerText: "Companion can make mistakes. Check important info."
         },
         ro: {
           hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
@@ -506,7 +535,7 @@
           error: "Serviciul de chat nu a răspuns. Încearcă din nou.",
           send: "Trimite",
           disclaimerTitle: "În Dezvoltare Activă",
-          disclaimerText: "Companion evoluează continuu. Răspunsurile se bazează pe date sincronizate din TCLexplorer și Whitepaper-ul oficial, dar pot fi uneori incomplete, expirate sau inexacte. Verifică întotdeauna informațiile importante direct pe TCLexplorer."
+          disclaimerText: "Companion poate face greșeli. Verifică informațiile importante."
         },
         tr: {
           hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
@@ -515,7 +544,7 @@
           error: "Sohbet servisi yanıt vermedi. Lütfen tekrar dene.",
           send: "Gönder",
           disclaimerTitle: "Aktif Geliştirme",
-          disclaimerText: "Companion sürekli gelişmektedir. Yanıtlar TCLexplorer ve resmi Whitepaper'dan senkronize verilerle üretilir, ancak zaman zaman eksik, güncel olmayan veya yanlış olabilir. Önemli oyun bilgilerini TCLexplorer'da doğrulayın."
+          disclaimerText: "Companion hata yapabilir. Önemli bilgileri kontrol edin."
         },
         de: {
           hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
@@ -524,7 +553,7 @@
           error: "Der Chatdienst hat nicht geantwortet. Versuch es bitte erneut.",
           send: "Senden",
           disclaimerTitle: "Aktive Entwicklung",
-          disclaimerText: "Companion wird kontinuierlich weiterentwickelt. Antworten basieren auf synchronisierten Daten aus TCLexplorer und dem offiziellen Whitepaper, können aber gelegentlich unvollständig, veraltet oder ungenau sein. Wichtige Spielinformationen direkt auf TCLexplorer prüfen."
+          disclaimerText: "Companion kann Fehler machen. Wichtige Infos prüfen."
         },
         es: {
           hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
@@ -533,7 +562,7 @@
           error: "El servicio de chat no respondió. Inténtalo de nuevo.",
           send: "Enviar",
           disclaimerTitle: "Desarrollo Activo",
-          disclaimerText: "Companion evoluciona continuamente. Las respuestas se basan en datos sincronizados de TCLexplorer y el Whitepaper oficial, pero pueden ser ocasionalmente incompletas, desactualizadas o inexactas. Verifica los datos importantes directamente en TCLexplorer."
+          disclaimerText: "Companion puede cometer errores. Verifica la información importante."
         },
         fr: {
           hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
@@ -542,7 +571,7 @@
           error: "Le service de chat n'a pas répondu. Réessaie.",
           send: "Envoyer",
           disclaimerTitle: "Développement Actif",
-          disclaimerText: "Companion évolue en permanence. Les réponses sont basées sur des données synchronisées de TCLexplorer et du Whitepaper officiel, mais peuvent être parfois incomplètes, obsolètes ou inexactes. Vérifiez toujours les informations importantes directement sur TCLexplorer."
+          disclaimerText: "Companion peut se tromper. Vérifiez les infos importantes."
         },
         it: {
           hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
@@ -551,7 +580,7 @@
           error: "Il servizio chat non ha risposto. Riprova.",
           send: "Invia",
           disclaimerTitle: "Sviluppo Attivo",
-          disclaimerText: "Companion è in continua evoluzione. Le risposte si basano su dati sincronizzati da TCLexplorer e dal Whitepaper ufficiale, ma possono essere occasionalmente incomplete, obsolete o imprecise. Verifica sempre le informazioni importanti direttamente su TCLexplorer."
+          disclaimerText: "Companion può sbagliare. Controlla le info importanti."
         },
         pl: {
           hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
@@ -560,7 +589,7 @@
           error: "Usługa czatu nie odpowiedziała. Spróbuj ponownie.",
           send: "Wyślij",
           disclaimerTitle: "Aktywny Rozwój",
-          disclaimerText: "Companion stale się rozwija. Odpowiedzi opierają się na zsynchronizowanych danych z TCLexplorer i oficjalnego Whitepaper, ale mogą być niekiedy niekompletne, nieaktualne lub niedokładne. Weryfikuj ważne informacje bezpośrednio na TCLexplorer."
+          disclaimerText: "Companion może się mylić. Sprawdź ważne informacje."
         },
         pt: {
           hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
@@ -569,7 +598,7 @@
           error: "O serviço de chat não respondeu. Tenta novamente.",
           send: "Enviar",
           disclaimerTitle: "Desenvolvimento Ativo",
-          disclaimerText: "Companion está em evolução contínua. As respostas baseiam-se em dados sincronizados do TCLexplorer e do Whitepaper oficial, mas podem ser ocasionalmente incompletas, desatualizadas ou imprecisas. Verifica sempre as informações importantes diretamente no TCLexplorer."
+          disclaimerText: "Companion pode cometer erros. Verifique informações importantes."
         }
       };
 
@@ -584,25 +613,25 @@
 
       infoBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const isHidden = infoPopup.hasAttribute("hidden");
-        if (isHidden) {
-          infoPopup.removeAttribute("hidden");
-        } else {
-          infoPopup.setAttribute("hidden", "");
-        }
+        infoPopup.classList.toggle("is-open");
+      });
+
+      infoClose.addEventListener("click", (e) => {
+        e.stopPropagation();
+        infoPopup.classList.remove("is-open");
       });
 
       document.addEventListener("click", (event) => {
         if (!langControl.contains(event.target)) closeLanguageMenu();
         if (!infoBtn.contains(event.target) && !infoPopup.contains(event.target)) {
-          infoPopup.setAttribute("hidden", "");
+          infoPopup.classList.remove("is-open");
         }
       });
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           closeLanguageMenu();
-          infoPopup.setAttribute("hidden", "");
+          infoPopup.classList.remove("is-open");
         }
       });
 
