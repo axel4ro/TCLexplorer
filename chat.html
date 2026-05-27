@@ -251,6 +251,7 @@
 
     .chat-bottom {
       flex-shrink: 0;
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -264,7 +265,6 @@
     }
 
     .chat-powered {
-      position: relative;
       margin: 0;
       text-align: center;
       font-size: 0.72rem;
@@ -307,7 +307,7 @@
 
     .info-popup {
       position: absolute;
-      bottom: calc(100% + 10px);
+      bottom: calc(100% + 8px);
       left: 50%;
       transform: translateX(-50%);
       width: min(310px, calc(100vw - 32px));
@@ -318,6 +318,9 @@
       box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
       text-align: left;
       z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .info-popup-title {
@@ -347,6 +350,7 @@
     }
 
     .info-popup-body {
+      display: block;
       margin: 0;
       font-size: 0.77rem;
       line-height: 1.55;
@@ -435,6 +439,10 @@
     <section class="chat-log" id="chatLog" aria-live="polite"></section>
 
     <div class="chat-bottom">
+      <div class="info-popup" id="aiInfoPopup" hidden>
+        <strong class="info-popup-title" id="aiInfoTitle"></strong>
+        <span class="info-popup-body" id="aiInfoText"></span>
+      </div>
       <form class="chat-form" id="chatForm">
         <textarea class="chat-input" id="chatInput" maxlength="1000" rows="1" placeholder="Ask about The Cursed Land..."></textarea>
         <button class="chat-send" id="chatSend" type="submit" aria-label="Send">
@@ -444,14 +452,10 @@
           </svg>
         </button>
       </form>
-      <p class="chat-powered">
+      <div class="chat-powered">
         Powered by <a href="https://axel4ro.github.io/TCLexplorer/" target="_blank" rel="noopener noreferrer">TCLexplorer</a>
         <button class="info-btn" id="aiInfoBtn" type="button" aria-label="About this AI">i</button>
-        <span class="info-popup" id="aiInfoPopup" hidden>
-          <strong class="info-popup-title" id="aiInfoTitle"></strong>
-          <p class="info-popup-body" id="aiInfoText"></p>
-        </span>
-      </p>
+      </div>
     </div>
   </main>
 
