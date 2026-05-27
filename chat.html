@@ -61,28 +61,74 @@
       letter-spacing: 0;
     }
 
-    .chat-lang {
-      display: inline-grid;
-      grid-template-columns: 1fr 1fr;
-      padding: 3px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(8, 17, 19, 0.72);
+    .lang-dropdown {
+      position: relative;
+      z-index: 20;
     }
 
-    .chat-lang button {
-      min-width: 44px;
-      min-height: 34px;
-      border: 0;
-      border-radius: 999px;
-      color: var(--muted);
-      background: transparent;
+    .lang-btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      background: rgba(8, 17, 19, 0.82);
       font: inherit;
       font-weight: 700;
       cursor: pointer;
+      white-space: nowrap;
     }
 
-    .chat-lang button.is-active {
+    .lang-btn img,
+    .lang-option img {
+      width: 20px;
+      height: 14px;
+      border-radius: 2px;
+      object-fit: cover;
+      flex: 0 0 auto;
+    }
+
+    .lang-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 180px;
+      max-height: min(320px, 70vh);
+      overflow: auto;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0a1517;
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
+    }
+
+    .lang-dropdown.open .lang-menu {
+      display: block;
+    }
+
+    .lang-option {
+      width: 100%;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--text);
+      background: transparent;
+      font: inherit;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .lang-option:hover,
+    .lang-option.is-active {
       color: #061112;
       background: var(--accent);
     }
@@ -246,9 +292,11 @@
   <main class="chat-page">
     <header class="chat-header">
       <h1 class="chat-title">TCL AI Guide</h1>
-      <div class="chat-lang" aria-label="Language">
-        <button type="button" data-lang="en" class="is-active">EN</button>
-        <button type="button" data-lang="ro">RO</button>
+      <div class="lang-dropdown" id="chatLangControl">
+        <button type="button" class="lang-btn" id="currentLang" aria-haspopup="true" aria-expanded="false" aria-controls="langMenu">
+          <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
+        </button>
+        <div class="lang-menu" id="langMenu" role="menu" aria-label="Language"></div>
       </div>
     </header>
 
@@ -272,36 +320,114 @@
       const form = document.getElementById("chatForm");
       const input = document.getElementById("chatInput");
       const send = document.getElementById("chatSend");
-      const langButtons = document.querySelectorAll("[data-lang]");
-      let language = (navigator.language || "en").toLowerCase().startsWith("ro") ? "ro" : "en";
+      const langControl = document.getElementById("chatLangControl");
+      const langButton = document.getElementById("currentLang");
+      const langMenu = document.getElementById("langMenu");
+
+      const languages = [
+        { code: "en", label: "English", flag: "gb" },
+        { code: "ro", label: "Română", flag: "ro" },
+        { code: "tr", label: "Türkçe", flag: "tr" },
+        { code: "de", label: "Deutsch", flag: "de" },
+        { code: "es", label: "Español", flag: "es" },
+        { code: "fr", label: "Français", flag: "fr" },
+        { code: "it", label: "Italiano", flag: "it" },
+        { code: "pl", label: "Polski", flag: "pl" },
+        { code: "pt", label: "Português", flag: "pt" }
+      ];
+
+      let language = preferredLanguage();
+      let greetingNode = null;
 
       const copy = {
         en: {
           hello: "Ask me about The Cursed Land. I answer using synced information from TCLexplorer and the Whitepaper.",
           placeholder: "Ask about The Cursed Land...",
           empty: "Write a question first.",
-          error: "The chat service did not answer. Please try again."
+          error: "The chat service did not answer. Please try again.",
+          send: "Send"
         },
         ro: {
-          hello: "Intreaba-ma despre The Cursed Land. Raspund folosind informatii sincronizate din TCLexplorer si Whitepaper.",
-          placeholder: "Intreaba despre The Cursed Land...",
-          empty: "Scrie mai intai o intrebare.",
-          error: "Serviciul de chat nu a raspuns. Incearca din nou."
+          hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
+          placeholder: "Întreabă despre The Cursed Land...",
+          empty: "Scrie mai întâi o întrebare.",
+          error: "Serviciul de chat nu a răspuns. Încearcă din nou.",
+          send: "Trimite"
+        },
+        tr: {
+          hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
+          placeholder: "The Cursed Land hakkında sor...",
+          empty: "Önce bir soru yaz.",
+          error: "Sohbet servisi yanıt vermedi. Lütfen tekrar dene.",
+          send: "Gönder"
+        },
+        de: {
+          hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
+          placeholder: "Frag zu The Cursed Land...",
+          empty: "Schreib zuerst eine Frage.",
+          error: "Der Chatdienst hat nicht geantwortet. Versuch es bitte erneut.",
+          send: "Senden"
+        },
+        es: {
+          hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
+          placeholder: "Pregunta sobre The Cursed Land...",
+          empty: "Escribe una pregunta primero.",
+          error: "El servicio de chat no respondió. Inténtalo de nuevo.",
+          send: "Enviar"
+        },
+        fr: {
+          hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
+          placeholder: "Pose une question sur The Cursed Land...",
+          empty: "Écris d'abord une question.",
+          error: "Le service de chat n'a pas répondu. Réessaie.",
+          send: "Envoyer"
+        },
+        it: {
+          hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
+          placeholder: "Chiedi di The Cursed Land...",
+          empty: "Scrivi prima una domanda.",
+          error: "Il servizio chat non ha risposto. Riprova.",
+          send: "Invia"
+        },
+        pl: {
+          hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
+          placeholder: "Zapytaj o The Cursed Land...",
+          empty: "Najpierw wpisz pytanie.",
+          error: "Usługa czatu nie odpowiedziała. Spróbuj ponownie.",
+          send: "Wyślij"
+        },
+        pt: {
+          hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
+          placeholder: "Pergunta sobre The Cursed Land...",
+          empty: "Escreve uma pergunta primeiro.",
+          error: "O serviço de chat não respondeu. Tenta novamente.",
+          send: "Enviar"
         }
       };
 
+      buildLanguageMenu();
       setLanguage(language);
-      addMessage("bot", copy[language].hello);
+      greetingNode = addMessage("bot", activeCopy().hello);
 
-      langButtons.forEach((button) => {
-        button.addEventListener("click", () => setLanguage(button.dataset.lang));
+      langButton.addEventListener("click", () => {
+        const isOpen = langControl.classList.toggle("open");
+        langButton.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!langControl.contains(event.target)) closeLanguageMenu();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeLanguageMenu();
       });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const message = input.value.trim();
+        const text = activeCopy();
         if (!message) {
-          addMessage("bot error", copy[language].empty);
+          addMessage("bot error", text.empty);
           return;
         }
 
@@ -320,7 +446,7 @@
           loading.remove();
 
           if (!response.ok || !payload.ok) {
-            addMessage("bot error", payload.error || copy[language].error);
+            addMessage("bot error", payload.error || activeCopy().error);
             return;
           }
 
@@ -329,7 +455,7 @@
           addSources(Array.isArray(payload.sources) ? payload.sources : []);
         } catch {
           loading.remove();
-          addMessage("bot error", copy[language].error);
+          addMessage("bot error", activeCopy().error);
         } finally {
           setBusy(false);
           input.focus();
@@ -343,13 +469,85 @@
         }
       });
 
-      function setLanguage(value) {
-        language = value === "ro" ? "ro" : "en";
-        document.documentElement.lang = language;
-        input.placeholder = copy[language].placeholder;
-        langButtons.forEach((button) => {
-          button.classList.toggle("is-active", button.dataset.lang === language);
+      function buildLanguageMenu() {
+        langMenu.innerHTML = "";
+        languages.forEach((lang) => {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.className = "lang-option";
+          option.dataset.lang = lang.code;
+          option.setAttribute("role", "menuitem");
+          option.innerHTML = `<img src="${flagUrl(lang.flag)}" alt=""> <span>${lang.label}</span>`;
+          option.addEventListener("click", () => {
+            setLanguage(lang.code);
+            closeLanguageMenu();
+            input.focus();
+          });
+          langMenu.appendChild(option);
         });
+      }
+
+      function setLanguage(value) {
+        language = normalizeLanguage(value) || "en";
+        const meta = languageMeta(language);
+        const text = activeCopy();
+
+        document.documentElement.lang = language;
+        input.placeholder = text.placeholder;
+        send.setAttribute("aria-label", text.send);
+        langButton.innerHTML = `<img src="${flagUrl(meta.flag)}" alt="${language.toUpperCase()}"> ${meta.label}`;
+
+        langMenu.querySelectorAll(".lang-option").forEach((option) => {
+          option.classList.toggle("is-active", option.dataset.lang === language);
+        });
+
+        try {
+          localStorage.setItem("lang", language);
+        } catch {
+          // localStorage can be unavailable in private browser modes.
+        }
+
+        if (greetingNode && log.childElementCount === 1) {
+          greetingNode.textContent = text.hello;
+        }
+      }
+
+      function closeLanguageMenu() {
+        langControl.classList.remove("open");
+        langButton.setAttribute("aria-expanded", "false");
+      }
+
+      function preferredLanguage() {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = normalizeLanguage(params.get("lang"));
+        if (fromUrl) return fromUrl;
+
+        try {
+          const stored = normalizeLanguage(localStorage.getItem("lang"));
+          if (stored) return stored;
+        } catch {
+          // Ignore storage access errors.
+        }
+
+        const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language];
+        return browserLanguages.map(normalizeLanguage).find(Boolean) || "en";
+      }
+
+      function normalizeLanguage(value) {
+        const code = String(value || "").toLowerCase().split(/[-_]/)[0];
+        return languages.some((lang) => lang.code === code) ? code : "";
+      }
+
+      function activeCopy() {
+        return copy[language] || copy.en;
+      }
+
+      function languageMeta(code) {
+        return languages.find((lang) => lang.code === code) || languages[0];
+      }
+
+      function flagUrl(flag) {
+        return `https://flagcdn.com/w20/${flag}.png`;
       }
 
       function setBusy(value) {
