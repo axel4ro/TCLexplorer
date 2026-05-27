@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TCL AI Guide</title>
+  <meta name="theme-color" content="#081113">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071011;
+      --panel: #0b1719;
+      --panel-2: #102225;
+      --line: rgba(144, 190, 182, 0.22);
+      --text: #f3faf8;
+      --muted: #91bdb5;
+      --accent: #8af7e7;
+      --danger: #ffb49f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(87, 235, 207, 0.16), transparent 34rem),
+        linear-gradient(180deg, #081214 0%, #05090a 100%);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .chat-page {
+      width: min(960px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .chat-title {
+      margin: 0;
+      font-family: Orbitron, Inter, sans-serif;
+      font-size: clamp(1.15rem, 2.8vw, 1.75rem);
+      letter-spacing: 0;
+    }
+
+    .chat-lang {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(8, 17, 19, 0.72);
+    }
+
+    .chat-lang button {
+      min-width: 44px;
+      min-height: 34px;
+      border: 0;
+      border-radius: 999px;
+      color: var(--muted);
+      background: transparent;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .chat-lang button.is-active {
+      color: #061112;
+      background: var(--accent);
+    }
+
+    .chat-log {
+      min-height: 360px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(7, 16, 17, 0.74);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      width: fit-content;
+      max-width: min(760px, 92%);
+      padding: 12px 14px;
+      border-radius: 8px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .msg.bot {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      color: #061112;
+      background: var(--accent);
+    }
+
+    .msg.error {
+      color: #ffe8df;
+      background: #2a1410;
+      border-color: rgba(255, 142, 108, 0.32);
+    }
+
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: -4px;
+    }
+
+    .sources a {
+      max-width: 100%;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #b8f4eb;
+      background: var(--panel);
+      font-size: 0.78rem;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+
+    .chat-input {
+      min-height: 52px;
+      max-height: 150px;
+      width: 100%;
+      resize: vertical;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(8, 17, 19, 0.92);
+      font: inherit;
+      line-height: 1.35;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: rgba(138, 247, 231, 0.72);
+      box-shadow: 0 0 0 3px rgba(138, 247, 231, 0.12);
+    }
+
+    .chat-send {
+      width: 52px;
+      height: 52px;
+      border: 1px solid rgba(138, 247, 231, 0.42);
+      border-radius: 50%;
+      color: #061112;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .chat-send:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .chat-send svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    @media (max-width: 620px) {
+      .chat-page {
+        padding: 14px;
+      }
+
+      .chat-log {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="chat-page">
+    <header class="chat-header">
+      <h1 class="chat-title">TCL AI Guide</h1>
+      <div class="chat-lang" aria-label="Language">
+        <button type="button" data-lang="en" class="is-active">EN</button>
+        <button type="button" data-lang="ro">RO</button>
+      </div>
+    </header>
+
+    <section class="chat-log" id="chatLog" aria-live="polite"></section>
+
+    <form class="chat-form" id="chatForm">
+      <textarea class="chat-input" id="chatInput" maxlength="1000" rows="1" placeholder="Ask about The Cursed Land..."></textarea>
+      <button class="chat-send" id="chatSend" type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
+          <path d="M22 2 11 13"></path>
+        </svg>
+      </button>
+    </form>
+  </main>
+
+  <script>
+    (() => {
+      const workerUrl = "https://tcl-ai-chat.axel4ro.workers.dev";
+      const log = document.getElementById("chatLog");
+      const form = document.getElementById("chatForm");
+      const input = document.getElementById("chatInput");
+      const send = document.getElementById("chatSend");
+      const langButtons = document.querySelectorAll("[data-lang]");
+      let language = (navigator.language || "en").toLowerCase().startsWith("ro") ? "ro" : "en";
+
+      const copy = {
+        en: {
+          hello: "Ask me about TCLexplorer, The Cursed Land, or the whitepaper.",
+          placeholder: "Ask about The Cursed Land...",
+          empty: "Write a question first.",
+          error: "The chat service did not answer. Please try again."
+        },
+        ro: {
+          hello: "Intreaba-ma despre TCLexplorer, The Cursed Land sau whitepaper.",
+          placeholder: "Intreaba despre The Cursed Land...",
+          empty: "Scrie mai intai o intrebare.",
+          error: "Serviciul de chat nu a raspuns. Incearca din nou."
+        }
+      };
+
+      setLanguage(language);
+      addMessage("bot", copy[language].hello);
+
+      langButtons.forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.lang));
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const message = input.value.trim();
+        if (!message) {
+          addMessage("bot error", copy[language].empty);
+          return;
+        }
+
+        input.value = "";
+        addMessage("user", message);
+        const loading = addMessage("bot", "...");
+        setBusy(true);
+
+        try {
+          const response = await fetch(`${workerUrl}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message, language })
+          });
+          const payload = await response.json().catch(() => ({}));
+          loading.remove();
+
+          if (!response.ok || !payload.ok) {
+            addMessage("bot error", payload.error || copy[language].error);
+            return;
+          }
+
+          addMessage("bot", payload.answer || "");
+          addSources(Array.isArray(payload.sources) ? payload.sources : []);
+        } catch {
+          loading.remove();
+          addMessage("bot error", copy[language].error);
+        } finally {
+          setBusy(false);
+          input.focus();
+        }
+      });
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      function setLanguage(value) {
+        language = value === "ro" ? "ro" : "en";
+        document.documentElement.lang = language;
+        input.placeholder = copy[language].placeholder;
+        langButtons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.lang === language);
+        });
+      }
+
+      function setBusy(value) {
+        input.disabled = value;
+        send.disabled = value;
+      }
+
+      function addMessage(type, text) {
+        const node = document.createElement("div");
+        node.className = `msg ${type}`;
+        node.textContent = text;
+        log.appendChild(node);
+        log.scrollTop = log.scrollHeight;
+        return node;
+      }
+
+      function addSources(sources) {
+        const seen = new Set();
+        const unique = sources.filter((source) => {
+          if (!source || !source.url || seen.has(source.url)) return false;
+          seen.add(source.url);
+          return true;
+        }).slice(0, 4);
+
+        if (!unique.length) return;
+
+        const wrap = document.createElement("div");
+        wrap.className = "sources";
+        unique.forEach((source, index) => {
+          const link = document.createElement("a");
+          link.href = source.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = source.title || `Source ${index + 1}`;
+          wrap.appendChild(link);
+        });
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+      }
+    })();
+  </script>
+</body>
+</html>
