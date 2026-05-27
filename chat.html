@@ -350,6 +350,51 @@
 
     .info-popup-close:hover { opacity: 1; }
 
+    .new-chat-notice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(138, 247, 231, 0.22);
+      border-radius: 8px;
+      background: rgba(138, 247, 231, 0.05);
+      font-size: 0.8rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .new-chat-notice span { flex: 1; min-width: 0; }
+
+    .new-chat-notice-btn {
+      flex-shrink: 0;
+      padding: 5px 13px;
+      border: 1px solid rgba(138, 247, 231, 0.42);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--accent);
+      font: 700 0.78rem/1 inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .new-chat-notice-close {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      opacity: 0.5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .new-chat-notice-close:hover { opacity: 1; }
+
     .info-popup-title {
       display: flex;
       align-items: center;
@@ -518,6 +563,11 @@
       let language = preferredLanguage();
       let greetingNode = null;
 
+      const STORAGE_KEY = "tcl_companion_history";
+      const MAX_HISTORY = 80;
+      const NEW_CHAT_THRESHOLD = 40;
+      let chatHistory = [];
+
       const copy = {
         en: {
           hello: "Ask me about The Cursed Land. I answer using synced information from TCLexplorer and the Whitepaper.",
@@ -526,7 +576,9 @@
           error: "The chat service did not answer. Please try again.",
           send: "Send",
           disclaimerTitle: "Active Development",
-          disclaimerText: "Companion can make mistakes. Check important info."
+          disclaimerText: "Companion can make mistakes. Check important info.",
+          newChatNotice: "Chat is getting long. Start fresh to keep it fast.",
+          newChatBtn: "New Chat"
         },
         ro: {
           hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
@@ -535,7 +587,9 @@
           error: "Serviciul de chat nu a răspuns. Încearcă din nou.",
           send: "Trimite",
           disclaimerTitle: "În Dezvoltare Activă",
-          disclaimerText: "Companion poate face greșeli. Verifică informațiile importante."
+          disclaimerText: "Companion poate face greșeli. Verifică informațiile importante.",
+          newChatNotice: "Chatul devine lung. Începe o conversație nouă.",
+          newChatBtn: "Chat Nou"
         },
         tr: {
           hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
@@ -544,7 +598,9 @@
           error: "Sohbet servisi yanıt vermedi. Lütfen tekrar dene.",
           send: "Gönder",
           disclaimerTitle: "Aktif Geliştirme",
-          disclaimerText: "Companion hata yapabilir. Önemli bilgileri kontrol edin."
+          disclaimerText: "Companion hata yapabilir. Önemli bilgileri kontrol edin.",
+          newChatNotice: "Sohbet uzuyor. Hızlı kalmak için yeni başlayın.",
+          newChatBtn: "Yeni Sohbet"
         },
         de: {
           hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
@@ -553,7 +609,9 @@
           error: "Der Chatdienst hat nicht geantwortet. Versuch es bitte erneut.",
           send: "Senden",
           disclaimerTitle: "Aktive Entwicklung",
-          disclaimerText: "Companion kann Fehler machen. Wichtige Infos prüfen."
+          disclaimerText: "Companion kann Fehler machen. Wichtige Infos prüfen.",
+          newChatNotice: "Chat wird lang. Neu starten für bessere Performance.",
+          newChatBtn: "Neuer Chat"
         },
         es: {
           hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
@@ -562,7 +620,9 @@
           error: "El servicio de chat no respondió. Inténtalo de nuevo.",
           send: "Enviar",
           disclaimerTitle: "Desarrollo Activo",
-          disclaimerText: "Companion puede cometer errores. Verifica la información importante."
+          disclaimerText: "Companion puede cometer errores. Verifica la información importante.",
+          newChatNotice: "El chat se alarga. Empieza uno nuevo para ir más rápido.",
+          newChatBtn: "Nuevo Chat"
         },
         fr: {
           hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
@@ -571,7 +631,9 @@
           error: "Le service de chat n'a pas répondu. Réessaie.",
           send: "Envoyer",
           disclaimerTitle: "Développement Actif",
-          disclaimerText: "Companion peut se tromper. Vérifiez les infos importantes."
+          disclaimerText: "Companion peut se tromper. Vérifiez les infos importantes.",
+          newChatNotice: "Le chat devient long. Démarre une nouvelle conversation.",
+          newChatBtn: "Nouveau Chat"
         },
         it: {
           hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
@@ -580,7 +642,9 @@
           error: "Il servizio chat non ha risposto. Riprova.",
           send: "Invia",
           disclaimerTitle: "Sviluppo Attivo",
-          disclaimerText: "Companion può sbagliare. Controlla le info importanti."
+          disclaimerText: "Companion può sbagliare. Controlla le info importanti.",
+          newChatNotice: "La chat si allunga. Inizia una nuova per rimanere veloce.",
+          newChatBtn: "Nuova Chat"
         },
         pl: {
           hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
@@ -589,7 +653,9 @@
           error: "Usługa czatu nie odpowiedziała. Spróbuj ponownie.",
           send: "Wyślij",
           disclaimerTitle: "Aktywny Rozwój",
-          disclaimerText: "Companion może się mylić. Sprawdź ważne informacje."
+          disclaimerText: "Companion może się mylić. Sprawdź ważne informacje.",
+          newChatNotice: "Czat robi się długi. Zacznij nowy dla lepszej wydajności.",
+          newChatBtn: "Nowy Czat"
         },
         pt: {
           hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
@@ -598,13 +664,21 @@
           error: "O serviço de chat não respondeu. Tenta novamente.",
           send: "Enviar",
           disclaimerTitle: "Desenvolvimento Ativo",
-          disclaimerText: "Companion pode cometer erros. Verifique informações importantes."
+          disclaimerText: "Companion pode cometer erros. Verifique informações importantes.",
+          newChatNotice: "O chat está ficando longo. Inicie um novo para mais velocidade.",
+          newChatBtn: "Novo Chat"
         }
       };
 
       buildLanguageMenu();
       setLanguage(language);
-      greetingNode = addMessage("bot", activeCopy().hello);
+      if (!historyLoad()) {
+        greetingNode = addMessage("bot", activeCopy().hello);
+        historyPush({ kind: "msg", type: "bot", text: activeCopy().hello });
+      } else {
+        greetingNode = log.querySelector(".msg.bot");
+        checkNewChatThreshold();
+      }
 
       langButton.addEventListener("click", () => {
         const isOpen = langControl.classList.toggle("open");
@@ -646,6 +720,7 @@
 
         input.value = "";
         addMessage("user", message);
+        historyPush({ kind: "msg", type: "user", text: message });
         const loading = addMessage("bot", "...");
         setBusy(true);
 
@@ -659,16 +734,26 @@
           loading.remove();
 
           if (!response.ok || !payload.ok) {
-            addMessage("bot error", payload.error || activeCopy().error);
+            const errText = payload.error || activeCopy().error;
+            addMessage("bot error", errText);
+            historyPush({ kind: "msg", type: "bot error", text: errText });
             return;
           }
 
-          addMessage("bot", payload.answer || "");
-          addActions(Array.isArray(payload.actions) ? payload.actions : []);
-          addSources(Array.isArray(payload.sources) ? payload.sources : []);
+          const answer = payload.answer || "";
+          const acts = Array.isArray(payload.actions) ? payload.actions : [];
+          const srcs = Array.isArray(payload.sources) ? payload.sources : [];
+          addMessage("bot", answer);
+          historyPush({ kind: "msg", type: "bot", text: answer });
+          addActions(acts);
+          if (acts.length) historyPush({ kind: "actions", items: acts });
+          addSources(srcs);
+          if (srcs.length) historyPush({ kind: "sources", items: srcs });
         } catch {
           loading.remove();
-          addMessage("bot error", activeCopy().error);
+          const errText = activeCopy().error;
+          addMessage("bot error", errText);
+          historyPush({ kind: "msg", type: "bot error", text: errText });
         } finally {
           setBusy(false);
           input.focus();
@@ -827,6 +912,71 @@
         });
         log.appendChild(wrap);
         log.scrollTop = log.scrollHeight;
+      }
+
+      function historyPush(item) {
+        chatHistory.push(item);
+        if (chatHistory.length > MAX_HISTORY) chatHistory = chatHistory.slice(-MAX_HISTORY);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory)); } catch {}
+        checkNewChatThreshold();
+      }
+
+      function historyLoad() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          const items = JSON.parse(raw);
+          if (!Array.isArray(items) || !items.length) return false;
+          for (const item of items) {
+            if (item.kind === "msg") addMessage(item.type, item.text);
+            else if (item.kind === "sources") addSources(item.items || []);
+            else if (item.kind === "actions") addActions(item.items || []);
+          }
+          chatHistory = items;
+          return true;
+        } catch { return false; }
+      }
+
+      function historyClear() {
+        chatHistory = [];
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      }
+
+      function checkNewChatThreshold() {
+        const msgCount = chatHistory.filter(h => h.kind === "msg").length;
+        if (msgCount >= NEW_CHAT_THRESHOLD && !document.getElementById("newChatNotice")) {
+          showNewChatNotice();
+        }
+      }
+
+      function showNewChatNotice() {
+        const t = activeCopy();
+        const el = document.createElement("div");
+        el.id = "newChatNotice";
+        el.className = "new-chat-notice";
+        const span = document.createElement("span");
+        span.textContent = t.newChatNotice;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "new-chat-notice-btn";
+        btn.textContent = t.newChatBtn;
+        btn.addEventListener("click", startNewChat);
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "new-chat-notice-close";
+        close.setAttribute("aria-label", "Dismiss");
+        close.textContent = "✕";
+        close.addEventListener("click", () => el.remove());
+        el.append(span, btn, close);
+        log.appendChild(el);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function startNewChat() {
+        historyClear();
+        log.innerHTML = "";
+        greetingNode = addMessage("bot", activeCopy().hello);
+        historyPush({ kind: "msg", type: "bot", text: activeCopy().hello });
       }
     })();
   </script>
