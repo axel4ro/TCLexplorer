@@ -841,7 +841,7 @@ async function crawlSite(sourceUrl, options = {}) {
     }
 
     if (isJson) {
-      const text = jsonToSearchText(raw);
+      const text = /\/data\/drop\.json/i.test(current) ? dropJsonToSearchText(raw) : jsonToSearchText(raw);
       if (text.length >= 40) pages.push({ url: current, title, text });
       continue;
     }
@@ -945,6 +945,95 @@ function htmlToText(html) {
     .replace(/<[^>]+>/g, " ");
 
   return normalizeWhitespace(decodeHtmlEntities(withoutNoise));
+}
+
+// Chest item → loot table ID for its contents (from MANUAL_LOOT in loot.html)
+const DROP_JSON_MANUAL_LOOT = {
+  1517: 228,  // Clam
+  1211: 51,   // Moonlight Treasure Chest
+  1213: 53,   // Crystals Chest
+  1422: 168,  // Gold Treasure Chest
+  1212: 52,   // Flowers Chest
+  1509: 262,  // Christmas Chest
+  1773: 295,  // Gold Treasure Chest+
+  1775: 326   // Spider Queen Box
+};
+
+const DROP_JSON_EXCLUDED_MOBS = new Set([99, 100, 121, 117, 118, 120, 115, 116, 113, 114, 119, 122]);
+
+function dropJsonToSearchText(raw) {
+  try {
+    const data = JSON.parse(raw);
+    const itemMap = {};
+    const mobMap = {};
+    (data.itemTemplates || []).forEach((i) => { itemMap[i.id] = i.name; });
+    (data.mobTemplates || []).forEach((m) => { mobMap[m.id] = m.name; });
+    const ltMap = {};
+    (data.lootTables || []).forEach((lt) => { ltMap[lt.id] = lt; });
+
+    const lines = [];
+
+    // 1. Chest / item contents from MANUAL_LOOT
+    for (const [itemIdStr, ltId] of Object.entries(DROP_JSON_MANUAL_LOOT)) {
+      const itemId = Number(itemIdStr);
+      const itemName = itemMap[itemId];
+      const lt = ltMap[ltId];
+      if (!itemName || !lt) continue;
+
+      const sorted = [...(lt.items || [])].sort((a, b) => a.chance - b.chance);
+      let prev = 0;
+      const contents = sorted.map((it) => {
+        const rate = Math.round((it.chance - prev) * 100) / 100;
+        prev = it.chance;
+        const name = itemMap[it.item] || `item${it.item}`;
+        return `${name} (${rate}%)`;
+      }).filter((s) => s).join(", ");
+      lines.push(`${itemName} contains: ${contents}`);
+    }
+
+    // 2. Mob drops — one line per mob listing notable drops
+    const mobLoot = data.mobLoot || {};
+    for (const [mobIdStr, drops] of Object.entries(mobLoot)) {
+      const mobId = Number(mobIdStr);
+      if (DROP_JSON_EXCLUDED_MOBS.has(mobId)) continue;
+      const mobName = mobMap[mobId];
+      if (!mobName) continue;
+      const validDrops = (Array.isArray(drops) ? drops : []).filter((d) => d.dropChance > 0);
+      if (!validDrops.length) continue;
+
+      const dropTexts = [];
+      for (const d of validDrops) {
+        const lt = ltMap[d.lootTable];
+        if (!lt) continue;
+        if (lt.items.length === 1) {
+          const name = itemMap[lt.items[0].item];
+          if (name) dropTexts.push(`${name} (${d.dropChance}%)`);
+        } else {
+          const sorted = [...lt.items].sort((a, b) => a.chance - b.chance);
+          let prev = 0;
+          for (const it of sorted) {
+            const tableRate = Math.round((it.chance - prev) * 100) / 100;
+            prev = it.chance;
+            if (tableRate > 0) {
+              const name = itemMap[it.item];
+              if (name) {
+                const effective = Math.round(tableRate * d.dropChance / 100 * 100) / 100;
+                dropTexts.push(`${name} (${effective}%)`);
+              }
+            }
+          }
+        }
+      }
+
+      if (dropTexts.length) {
+        lines.push(`${mobName} drops: ${dropTexts.slice(0, 20).join(", ")}`);
+      }
+    }
+
+    return lines.join("\n");
+  } catch {
+    return "";
+  }
 }
 
 function jsonToSearchText(raw) {
