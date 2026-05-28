@@ -62,6 +62,7 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 3000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
+const CACHE_VERSION = "v3";
 const RESPONSE_CACHE_TTL_MS = 60 * 60 * 1000;
 const CF_CACHE_TTL_S = 3 * 60 * 60;
 const SUPPORTED_LANGUAGES = {
@@ -405,7 +406,7 @@ async function handleChat(request, env, ctx) {
 
   const language = normalizeLanguage(body.language || detectLanguage(question));
 
-  const cacheKey = `${language}:${normalizeQuestionForCache(question)}`;
+  const cacheKey = `${CACHE_VERSION}:${language}:${normalizeQuestionForCache(question)}`;
   const memCached = getCachedAnswer(cacheKey);
   if (memCached) return jsonResponse(request, env, 200, memCached);
 
@@ -665,7 +666,7 @@ function tokenizeForSearch(value) {
 async function generateAnswer(env, question, matches, language) {
   const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
-  const systemText = `You are TCLexplorer AI for The Cursed Land players. Answer ONLY from the RAG context. If context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown symbols. Concise complete sentences. For broad Events questions, mention the live Events page instead of listing the schedule.`;
+  const systemText = `You are TCLexplorer AI for The Cursed Land players. Answer ONLY from the RAG context. If context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown symbols, no raw URLs. Concise complete sentences. For Events questions refer to the TCLexplorer Events page by name, never paste a URL. For broad Events questions, say to open the live Events page for schedule and local times.`;
 
   const prompt = [
     `Player language: ${language}`,
