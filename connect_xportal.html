@@ -955,7 +955,7 @@
         pnlPageSize: 50,
         pnlMaxPages: 220,
         pnlPairMaxPages: 20,
-        pnlFunctionMaxPages: 10,
+        pnlFunctionMaxPages: 80,
         pnlSwapMaxPages: 80,
         pnlTokenScanPageSize: 1000,
         pnlTokenScanMaxPages: 12,
@@ -1936,9 +1936,15 @@
         let hitPageLimit = false;
         let oldestTimestamp = null;
         let completedSources = 0;
+        const swapFunctionSources = CONFIG.pnlSwapFunctions.map((functionName) => ({
+          label: `metoda ${functionName}`,
+          maxPages: CONFIG.pnlSwapMaxPages,
+          params: { function: functionName }
+        }));
         const sources = [
+          ...swapFunctionSources,
           {
-            label: "transferurile TCL",
+            label: "transferurile TCL fallback",
             maxPages: CONFIG.pnlMaxPages,
             params: { token: CONFIG.tokens.tcl.identifier }
           },
@@ -1986,15 +1992,15 @@
 
             if (pageTimestamps.length) {
               const pageOldest = Math.min(...pageTimestamps);
+              const pageNewest = Math.max(...pageTimestamps);
               oldestTimestamp = oldestTimestamp == null ? pageOldest : Math.min(oldestTimestamp, pageOldest);
+              if (pageOldest <= listingTimestamp) reachedListingStart = true;
+              if (pageNewest <= listingTimestamp) {
+                return true;
+              }
             }
 
             dom.pnlStatus.textContent = `Se citesc ${source.label}... ${transactionHashes.size.toLocaleString("ro-RO")} tranzactii verificate`;
-
-            if (pageTimestamps.length && Math.min(...pageTimestamps) <= listingTimestamp) {
-              reachedListingStart = true;
-              return true;
-            }
 
             if (page.length < CONFIG.pnlPageSize) {
               return true;
@@ -2256,63 +2262,124 @@
         const seenTransfers = new Set();
         const pageSize = Math.max(1, Number(CONFIG.pnlTokenScanPageSize) || 1000);
         const maxPages = Math.max(1, Number(CONFIG.pnlTokenScanMaxPages) || 12);
+        const functionPageSize = Math.max(1, Number(CONFIG.pnlTokenScanPageSize) || 1000);
+        const functionMaxPages = Math.max(1, Number(CONFIG.pnlFunctionMaxPages) || 80);
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        const methodMatchedRootHashes = new Set();
 
-        for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
-          dom.pnlStatus.textContent = `Se citesc recompensele TCL primite... pag ${pageIndex + 1}`;
+        function addEarnedTransfer(rootHash, transferKey, amount) {
+          if (!rootHash || seenTransfers.has(transferKey)) return;
+          seenTransfers.add(transferKey);
 
-          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-            from: pageIndex * pageSize,
-            size: pageSize,
-            status: "success",
-            order: "desc",
-            token: CONFIG.tokens.tcl.identifier,
-            sender: gameContract
-          }), {
-            retries: CONFIG.pnlMaxRetries,
-            retryDelayMs: CONFIG.pnlRetryDelayMs,
-            timeoutMs: CONFIG.pnlRequestTimeoutMs
-          });
-
-          if (!Array.isArray(page) || !page.length) break;
-
-          for (const entry of page) {
-            if (String(entry?.sender || "") !== gameContract) continue;
-            if (String(entry?.receiver || "") !== walletAddress) continue;
-
-            const rootHash = getPnlRootHash(entry);
-            if (!rootHash) continue;
-
-            const transferList = entry?.action?.arguments?.transfers;
-            const firstTransfer = Array.isArray(transferList) ? transferList[0] : null;
-            const tokenId = String(firstTransfer?.token || firstTransfer?.identifier || entry?.identifier || entry?.token || "");
-            if (tokenId !== CONFIG.tokens.tcl.identifier) continue;
-
-            const value = firstTransfer?.value != null ? firstTransfer.value : entry?.value;
-            const norm = normalizePnlTradeTransfer({ token: CONFIG.tokens.tcl.identifier, value });
-            if (!norm) continue;
-
-            const transferKey = [
-              rootHash,
-              entry?.txHash || "",
-              value || ""
-            ].join("|");
-            if (seenTransfers.has(transferKey)) continue;
-            seenTransfers.add(transferKey);
-
-            let group = transferGroups.get(rootHash);
-            if (!group) {
-              group = { amount: 0, count: 0 };
-              transferGroups.set(rootHash, group);
-            }
-            group.amount += norm.amount;
-            group.count += 1;
+          let group = transferGroups.get(rootHash);
+          if (!group) {
+            group = { amount: 0, count: 0 };
+            transferGroups.set(rootHash, group);
           }
+          group.amount += amount;
+          group.count += 1;
+        }
 
-          const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
-          if (timestamps.length && Math.min(...timestamps) <= listingTimestamp) break;
-          if (page.length < pageSize) break;
-          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
+        function collectEarnedEntry(entry) {
+          if (String(entry?.sender || "") !== gameContract) return;
+          if (String(entry?.receiver || "") !== walletAddress) return;
+
+          const rootHash = getPnlRootHash(entry);
+          if (!rootHash || methodMatchedRootHashes.has(rootHash)) return;
+
+          const transferList = entry?.action?.arguments?.transfers;
+          const firstTransfer = Array.isArray(transferList) ? transferList[0] : null;
+          const tokenId = String(firstTransfer?.token || firstTransfer?.identifier || entry?.identifier || entry?.token || "");
+          if (tokenId !== CONFIG.tokens.tcl.identifier) return;
+
+          const value = firstTransfer?.value != null ? firstTransfer.value : entry?.value;
+          const norm = normalizePnlTradeTransfer({ token: CONFIG.tokens.tcl.identifier, value });
+          if (!norm) return;
+
+          addEarnedTransfer(rootHash, [
+            rootHash,
+            entry?.txHash || "",
+            value || ""
+          ].join("|"), norm.amount);
+        }
+
+        function collectEarnedOperations(entry) {
+          const rootHash = getPnlRootHash(entry);
+          if (!rootHash) return;
+
+          methodMatchedRootHashes.add(rootHash);
+          if (!Array.isArray(entry?.operations)) return;
+
+          for (const rawOperation of entry.operations) {
+            const operation = normalizePnlOperation(rawOperation);
+            if (!operation) continue;
+            if (operation.token !== CONFIG.tokens.tcl.identifier) continue;
+            if (operation.sender !== gameContract) continue;
+            if (operation.receiver !== walletAddress) continue;
+
+            addEarnedTransfer(rootHash, `${rootHash}|${operation.key}`, operation.amount);
+          }
+        }
+
+        async function scanEarnedSource(source) {
+          for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex++) {
+            dom.pnlStatus.textContent = `Se citesc recompensele TCL (${source.label})... pag ${pageIndex + 1}`;
+
+            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+              from: pageIndex * source.pageSize,
+              size: source.pageSize,
+              status: "success",
+              order: "desc",
+              withOperations: source.withOperations ? "true" : undefined,
+              ...source.params
+            }), {
+              retries: CONFIG.pnlMaxRetries,
+              retryDelayMs: CONFIG.pnlRetryDelayMs,
+              timeoutMs: CONFIG.pnlRequestTimeoutMs
+            });
+
+            if (!Array.isArray(page) || !page.length) return;
+
+            for (const entry of page) {
+              if (source.collectOperations) {
+                collectEarnedOperations(entry);
+              } else {
+                collectEarnedEntry(entry);
+              }
+            }
+
+            const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
+            if (timestamps.length && Math.max(...timestamps) <= listingTimestamp) return;
+            if (page.length < source.pageSize) return;
+            if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
+          }
+        }
+
+        const earnedSources = [
+          ...Array.from(earnFunctions).map((functionName) => ({
+            label: `metoda ${functionName}`,
+            pageSize: functionPageSize,
+            maxPages: functionMaxPages,
+            withOperations: true,
+            collectOperations: true,
+            params: { function: functionName }
+          })),
+          {
+            label: "transferuri TCL fallback",
+            pageSize,
+            maxPages,
+            withOperations: false,
+            collectOperations: false,
+            params: {
+              token: CONFIG.tokens.tcl.identifier,
+              sender: gameContract
+            }
+          }
+        ];
+
+        for (const source of earnedSources) {
+          await scanEarnedSource(source);
+          if (CONFIG.pnlSourcePauseMs > 0) await wait(CONFIG.pnlSourcePauseMs);
         }
 
         const rootHashes = Array.from(transferGroups.keys());
