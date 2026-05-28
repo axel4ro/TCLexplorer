@@ -953,14 +953,14 @@
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
         pnlPageSize: 50,
-        pnlMaxPages: 0,
-        pnlPairMaxPages: 80,
+        pnlMaxPages: 220,
+        pnlPairMaxPages: 20,
         pnlFunctionMaxPages: 80,
-        pnlSwapMaxPages: 200,
+        pnlSwapMaxPages: 80,
         pnlTokenScanPageSize: 1000,
-        pnlTokenScanMaxPages: 20,
-        pnlPagePauseMs: 150,
-        pnlSourcePauseMs: 300,
+        pnlTokenScanMaxPages: 12,
+        pnlPagePauseMs: 300,
+        pnlSourcePauseMs: 400,
         pnlMaxRetries: 6,
         pnlRetryDelayMs: 4000,
         pnlRequestTimeoutMs: 35000,
@@ -1942,16 +1942,12 @@
           params: { function: functionName }
         }));
         const sources = [
-          // First: large-page scan (size=1000, no operations) for deep history back to listing date
+          ...swapFunctionSources,
           {
-            label: "istoric TCL complet",
-            maxPages: CONFIG.pnlTokenScanMaxPages,
-            pageSize: CONFIG.pnlTokenScanPageSize,
-            withOperations: false,
+            label: "transferurile TCL fallback",
+            maxPages: CONFIG.pnlMaxPages,
             params: { token: CONFIG.tokens.tcl.identifier }
           },
-          // Swap function sources (with operations) — overwrite matching entries with ops data
-          ...swapFunctionSources,
           {
             label: "wallet -> pool TCL/USDC",
             maxPages: CONFIG.pnlPairMaxPages,
@@ -1965,20 +1961,15 @@
         ].filter((source) => source.maxPages > 0);
 
         async function scanSource(source) {
-          const pageSize = source.pageSize || CONFIG.pnlPageSize;
-          const useOperations = source.withOperations !== false;
-
           for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex += 1) {
-            const apiParams = {
-              from: pageIndex * pageSize,
-              size: pageSize,
+            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+              from: pageIndex * CONFIG.pnlPageSize,
+              size: CONFIG.pnlPageSize,
               status: "success",
               order: "desc",
+              withOperations: "true",
               ...source.params
-            };
-            if (useOperations) apiParams.withOperations = "true";
-
-            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, apiParams), {
+            }), {
               retries: CONFIG.pnlMaxRetries,
               retryDelayMs: CONFIG.pnlRetryDelayMs,
               timeoutMs: CONFIG.pnlRequestTimeoutMs
@@ -1990,15 +1981,7 @@
 
             page.forEach((entry, index) => {
               const entryHash = String(entry?.txHash || `${getPnlRootHash(entry)}:${entry?.type || "entry"}:${entry?.timestamp || 0}:${index}`);
-              if (entryHash) {
-                // Don't overwrite an entry that already has operations data
-                const existing = transferMap.get(entryHash);
-                if (!useOperations && existing && Array.isArray(existing.operations)) {
-                  // keep existing entry with operations intact
-                } else {
-                  transferMap.set(entryHash, entry);
-                }
-              }
+              if (entryHash) transferMap.set(entryHash, entry);
               const rootHash = getPnlRootHash(entry);
               if (rootHash) transactionHashes.add(rootHash);
             });
@@ -2019,7 +2002,7 @@
 
             dom.pnlStatus.textContent = `Se citesc ${source.label}... ${transactionHashes.size.toLocaleString("ro-RO")} tranzactii verificate`;
 
-            if (page.length < pageSize) {
+            if (page.length < CONFIG.pnlPageSize) {
               return true;
             }
 
