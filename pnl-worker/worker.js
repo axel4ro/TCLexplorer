@@ -13,7 +13,7 @@
 // ============================================================
 
 const PAGE_SIZE = 50;       // max cu withOperations=true
-const PAGES_PER_CRON = 4;   // 4 pagini × 50 = 200 intrari per run (safe pentru free tier)
+const PAGES_PER_CRON = 10;  // 10 pagini × 50 = 500 intrari per run (max safe: ~46/50 subrequests)
 const UPSERT_CHUNK = 200;   // cate randuri upsertam odata in Supabase
 
 // ── CORS ────────────────────────────────────────────────────
