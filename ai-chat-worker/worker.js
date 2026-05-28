@@ -62,7 +62,7 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 let cachedDropData = null;
 let cachedDropDataTs = 0;
 const DROP_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -530,8 +530,10 @@ async function handleChat(request, env, ctx) {
   const sources = buildPublicSources(matches);
   const actions = buildActions(resolvedQuestion, language, sources);
 
-  const guided = guidedPageResponse(resolvedQuestion, language, actions) ||
-    guidedTokenResponse(resolvedQuestion, language) ||
+  // When the question is a follow-up (used context), skip rigid guided page/token responses
+  // and let the LLM answer naturally using history. Only loot contents remains (fact-based).
+  const guided = (usedContext ? "" : guidedPageResponse(resolvedQuestion, language, actions)) ||
+    (usedContext ? "" : guidedTokenResponse(resolvedQuestion, language)) ||
     await guidedLootContentsResponse(resolvedQuestion, language);
   if (guided) {
     const payload = { ok: true, answer: guided, sources, actions, language };
@@ -795,7 +797,7 @@ function tokenizeForSearch(value) {
 async function generateAnswer(env, question, matches, language, history = []) {
   const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
-  const systemText = `You are Companion, the TCLexplorer AI assistant for The Cursed Land players. Answer ONLY from the RAG context provided. You have recent conversation history for context — use it to understand follow-up questions naturally. If the context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown symbols, no raw URLs. Concise complete sentences. For Events questions refer to the TCLexplorer Events page by name, never paste a URL.`;
+  const systemText = `You are Companion, a friendly AI assistant for The Cursed Land players on TCLexplorer. Be natural and conversational — for yes/no questions start with "Da" or "Nu" (or "Yes"/"No" in English), then give the answer. Use conversation history to understand follow-up questions and refer back to what was discussed. Answer ONLY from the RAG context provided. If context lacks the answer, say you don't know in a natural way. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown, no raw URLs. Keep answers concise. For Events schedule questions refer to the TCLexplorer Events page by name.`;
 
   const prompt = [
     `Player language: ${language}`,
