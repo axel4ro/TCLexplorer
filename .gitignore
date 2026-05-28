@@ -1,5 +1,7 @@
 cloudflare-worker/.dev.vars
 cloudflare-worker/.wrangler/
+ai-chat-worker/.dev.vars
+ai-chat-worker/.wrangler/
 .env
 .env.*
 *.log

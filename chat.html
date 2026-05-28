@@ -477,6 +477,17 @@
       stroke-linejoin: round;
     }
 
+    .send-cd {
+      display: none;
+      font-family: Inter, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .chat-send.counting svg { display: none; }
+    .chat-send.counting .send-cd { display: block; }
+
     @media (max-width: 620px) {
       .chat-page {
         padding: 12px;
@@ -523,6 +534,7 @@
             <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
             <path d="M22 2 11 13"></path>
           </svg>
+          <span class="send-cd" aria-hidden="true"></span>
         </button>
       </form>
       <div class="chat-powered">
@@ -569,6 +581,7 @@
       let chatHistory = [];
 
       const MIN_WORDS = 3;
+      const SEND_COOLDOWN_S = 15; // RATE_LIMIT_MAX=4 per 60s → 60/4=15s
 
       const copy = {
         en: {
@@ -681,12 +694,40 @@
         }
       };
 
+      const sendCd = send.querySelector(".send-cd");
+      let cooldownTimer = null;
+      let cooldownRemaining = 0;
+
       function wordCount(value) {
         return String(value || "").trim().split(/\s+/).filter((w) => w.length > 0).length;
       }
 
       function updateSendState() {
+        if (cooldownRemaining > 0 || input.disabled) {
+          send.disabled = true;
+          return;
+        }
         send.disabled = wordCount(input.value) < MIN_WORDS;
+      }
+
+      function startCooldown() {
+        cooldownRemaining = SEND_COOLDOWN_S;
+        send.classList.add("counting");
+        sendCd.textContent = cooldownRemaining;
+        send.disabled = true;
+        clearInterval(cooldownTimer);
+        cooldownTimer = setInterval(() => {
+          cooldownRemaining--;
+          if (cooldownRemaining <= 0) {
+            clearInterval(cooldownTimer);
+            cooldownTimer = null;
+            cooldownRemaining = 0;
+            send.classList.remove("counting");
+            updateSendState();
+          } else {
+            sendCd.textContent = cooldownRemaining;
+          }
+        }, 1000);
       }
 
       input.addEventListener("input", updateSendState);
@@ -749,6 +790,7 @@
         historyPush({ kind: "msg", type: "user", text: message });
         const loading = addMessage("bot", "...");
         setBusy(true);
+        startCooldown();
 
         try {
           const response = await fetch(`${workerUrl}/chat`, {
