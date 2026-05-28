@@ -13,7 +13,7 @@
 // ============================================================
 
 const PAGE_SIZE = 50;       // max cu withOperations=true
-const PAGES_PER_CRON = 50;  // cate pagini facem per run de cron (50*50=2500 intrari)
+const PAGES_PER_CRON = 4;   // 4 pagini × 50 = 200 intrari per run (safe pentru free tier)
 const UPSERT_CHUNK = 200;   // cate randuri upsertam odata in Supabase
 
 // ── CORS ────────────────────────────────────────────────────
@@ -95,7 +95,10 @@ async function supabaseGetState(env, key) {
 
 async function mvxFetch(env, path, params = {}) {
   const url = new URL(`${env.MVX_API}${path}`);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  // Sari peste valorile undefined/null
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null) url.searchParams.set(k, v);
+  }
 
   let lastErr;
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -133,8 +136,10 @@ function entryToRow(entry) {
     ts: Number(entry.timestamp) || 0,
     function: entry.function || null,
     status: entry.status || "success",
-    action_transfers: entry.action?.arguments?.transfers ?? null,
-    operations: entry.operations ?? null,
+    action_transfers: Array.isArray(entry.action?.arguments?.transfers)
+      ? entry.action.arguments.transfers
+      : null,
+    operations: Array.isArray(entry.operations) ? entry.operations : null,
   };
 }
 
@@ -151,7 +156,7 @@ async function syncIncremental(env, log) {
   let totalNew = 0;
   let newNewestTs = newestTs;
 
-  for (let page = 0; page < 100; page++) {
+  for (let page = 0; page < PAGES_PER_CRON; page++) {
     const entries = await mvxFetch(
       env,
       `/tokens/${env.TCL_TOKEN}/transfers`,
@@ -215,7 +220,7 @@ async function syncBackfill(env, log) {
       {
         size: String(PAGE_SIZE),
         from: String(offset),
-        order: "asc",
+        order: "desc",          // cel mai recent primul — date utile rapide
         status: "success",
         withOperations: "true",
       }
@@ -231,10 +236,9 @@ async function syncBackfill(env, log) {
     totalSynced += rows.length;
     offset += PAGE_SIZE;
 
-    // Verifica daca am trecut de listing date
-    const pageMax = Math.max(...entries.map((e) => Number(e.timestamp) || 0));
-    if (pageMax >= Date.now() / 1000 - 3600) {
-      // Aproape de prezent — backfill complet
+    // Verifica daca am ajuns la sau inainte de listing date
+    const pageMin = Math.min(...entries.map((e) => Number(e.timestamp) || Infinity));
+    if (pageMin <= listingTs) {
       reachedListing = true;
       break;
     }
@@ -259,54 +263,60 @@ async function syncBackfill(env, log) {
 }
 
 // Run complet (incremental + backfill)
-async function runSync(env) {
+async function runSync(env, debug = false) {
   const log = (...args) => {
     if (env.DEBUG_ERRORS === "true") console.log(...args);
   };
 
   let newCount = 0;
   let backfillCount = 0;
+  const errors = [];
 
   try {
     newCount = await syncIncremental(env, log);
   } catch (err) {
     log("[incremental] eroare:", err.message);
+    if (debug) errors.push({ phase: "incremental", error: err.message, stack: err.stack });
   }
 
   try {
     backfillCount = await syncBackfill(env, log);
   } catch (err) {
     log("[backfill] eroare:", err.message);
+    if (debug) errors.push({ phase: "backfill", error: err.message, stack: err.stack });
   }
 
-  return { newCount, backfillCount };
+  return debug
+    ? { newCount, backfillCount, errors }
+    : { newCount, backfillCount };
 }
 
 // ── HTTP handlers ─────────────────────────────────────────────
 
 async function handleStatus(request, env) {
+  // Citeste starea din tcl_sync_state
   const [newestTs, backfillOffset, backfillDone] = await Promise.all([
-    supabaseGetState(env, "newest_ts"),
-    supabaseGetState(env, "backfill_offset"),
-    supabaseGetState(env, "backfill_done"),
+    supabaseGetState(env, "newest_ts").catch(() => null),
+    supabaseGetState(env, "backfill_offset").catch(() => null),
+    supabaseGetState(env, "backfill_done").catch(() => null),
   ]);
 
-  // Count rows
-  const rows = await supabaseGet(env, "tcl_transfers", {
-    select: "tx_hash",
-    limit: "1",
-  }).catch(() => []);
-
-  const countRes = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/tcl_transfers?select=tx_hash&head=true`,
-    {
-      headers: {
-        ...supabaseHeaders(env),
-        Prefer: "count=exact",
-      },
-    }
-  );
-  const total = parseInt(countRes.headers.get("Content-Range")?.split("/")[1] || "0", 10);
+  // Numara randuri din tcl_transfers (cu Prefer: count=exact)
+  let total = 0;
+  try {
+    const countRes = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/tcl_transfers?select=tx_hash`,
+      {
+        headers: {
+          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: "count=exact",
+        },
+      }
+    );
+    const rangeHeader = countRes.headers.get("Content-Range") || "";
+    total = parseInt(rangeHeader.split("/")[1] || "0", 10) || 0;
+  } catch (_) { /* ignore */ }
 
   return {
     backfill_done: backfillDone === "true",
@@ -377,11 +387,22 @@ export default {
 
     // POST /api/sync?secret=XXX  (trigger manual)
     if (path === "/api/sync" && request.method === "POST") {
-      const secret = url.searchParams.get("secret");
-      if (!secret || secret !== env.SYNC_SECRET) {
+      const secret = (url.searchParams.get("secret") || "").trim();
+      const storedSecret = (env.SYNC_SECRET || "").trim();
+      if (!secret || secret !== storedSecret) {
         return json({ error: "unauthorized" }, 401, env, request);
       }
-      // Ruleaza sync in background, returneaza imediat
+      const debug = url.searchParams.get("debug") === "1";
+      if (debug) {
+        // Mod debug: ruleaza sincron si returneaza rezultatul complet
+        try {
+          const result = await runSync(env, true);
+          return json({ ok: true, debug: true, result }, 200, env, request);
+        } catch (err) {
+          return json({ ok: false, debug: true, error: err.message, stack: err.stack }, 500, env, request);
+        }
+      }
+      // Mod normal: ruleaza in background, returneaza imediat
       ctx.waitUntil(runSync(env));
       return json({ ok: true, message: "sync pornit in background" }, 202, env, request);
     }
