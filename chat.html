@@ -810,13 +810,10 @@
 
           const answer = payload.answer || "";
           const acts = Array.isArray(payload.actions) ? payload.actions : [];
-          const srcs = Array.isArray(payload.sources) ? payload.sources : [];
           addMessage("bot", answer);
           historyPush({ kind: "msg", type: "bot", text: answer });
           addActions(acts);
           if (acts.length) historyPush({ kind: "actions", items: acts });
-          addSources(srcs);
-          if (srcs.length) historyPush({ kind: "sources", items: srcs });
         } catch {
           loading.remove();
           const errText = activeCopy().error;
@@ -1001,7 +998,6 @@
           if (!Array.isArray(items) || !items.length) return false;
           for (const item of items) {
             if (item.kind === "msg") addMessage(item.type, item.text);
-            else if (item.kind === "sources") addSources(item.items || []);
             else if (item.kind === "actions") addActions(item.items || []);
           }
           chatHistory = items;

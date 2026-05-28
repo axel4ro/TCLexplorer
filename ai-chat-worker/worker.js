@@ -296,15 +296,6 @@ function buildActions(question, language, sources = []) {
     add(t({ en: "TCL Trades", ro: "Tranzacții TCL", tr: "TCL İşlemleri", de: "TCL Trades", es: "Trades TCL", fr: "Trades TCL", it: "Trade TCL", pl: "Transakcje TCL", pt: "Trades TCL" }), "https://axel4ro.github.io/TCLexplorer/TCL_trades.html");
   }
 
-  sources.slice(0, 2).forEach((source) => {
-    if (!source.url) return;
-    const isTCL = source.url.includes("axel4ro.github.io/TCLexplorer/");
-    const isWP = source.url.includes("whitepaper.thecursedland.com");
-    if (!isTCL && !isWP) return;
-    const title = source.title || (isTCL ? "TCLexplorer" : "Whitepaper");
-    add(title, source.url);
-  });
-
   return actions.slice(0, 4);
 }
 
@@ -328,7 +319,7 @@ function guidedPageResponse(question, language, actions) {
 }
 
 function isEventsIntent(question) {
-  return /\b(events?|event|weekly|schedule|calendar|program|evenimente?|eveniment|saptamanal|săptămânal|calendar)\b/i.test(question);
+  return /\b(events?|event|weekly|schedule|calendar|program|eveniment\w*|saptamanal|săptămânal)\b/i.test(question);
 }
 
 function isBroadEventsIntent(question) {
