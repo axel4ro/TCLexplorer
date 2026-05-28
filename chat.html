@@ -803,7 +803,11 @@
           const response = await fetch(`${workerUrl}/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, language, history: conversationContext })
+            body: JSON.stringify({
+              message, language, history: conversationContext,
+              clientTime: new Date().toISOString(),
+              utcOffsetMinutes: -new Date().getTimezoneOffset()
+            })
           });
           const payload = await response.json().catch(() => ({}));
           loading.remove();

@@ -62,10 +62,14 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 let cachedDropData = null;
 let cachedDropDataTs = 0;
 const DROP_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
+let cachedEventsData = null;
+let cachedEventsDataTs = 0;
+const EVENTS_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
+const WEEK_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 const RESPONSE_CACHE_TTL_MS = 60 * 60 * 1000;
 const CF_CACHE_TTL_S = 3 * 60 * 60;
 const SUPPORTED_LANGUAGES = {
@@ -416,6 +420,83 @@ async function fetchDropData() {
   }
 }
 
+async function fetchEventsData() {
+  const now = Date.now();
+  if (cachedEventsData && now - cachedEventsDataTs < EVENTS_DATA_CACHE_TTL_MS) return cachedEventsData;
+  try {
+    const resp = await fetch("https://axel4ro.github.io/TCLexplorer/weekly_events.json",
+      { cf: { cacheTtl: 1800, cacheEverything: true } });
+    if (!resp.ok) return null;
+    cachedEventsData = await resp.json();
+    cachedEventsDataTs = now;
+    return cachedEventsData;
+  } catch {
+    return null;
+  }
+}
+
+function buildEventStatusContext(eventsData, clientTimeIso, utcOffsetMinutes) {
+  if (!eventsData || !clientTimeIso) return "";
+  try {
+    const now = new Date(clientTimeIso);
+    const offset = Number(utcOffsetMinutes) || 0;
+    const localMs = now.getTime() + offset * 60000;
+    const localNow = new Date(localMs);
+
+    // Events use UTC times; day index: 0=Monday..6=Sunday (matching event-notifications.js)
+    const todayIndex = (now.getUTCDay() + 6) % 7;
+    const todayKey = WEEK_DAYS[todayIndex];
+
+    const absOff = Math.abs(offset);
+    const sign = offset >= 0 ? "+" : "-";
+    const offsetStr = `UTC${sign}${Math.floor(absOff / 60)}${absOff % 60 ? ":" + String(absOff % 60).padStart(2, "0") : ""}`;
+    const localTimeStr = `${WEEK_DAYS[todayIndex]} ${String(localNow.getUTCHours()).padStart(2, "0")}:${String(localNow.getUTCMinutes()).padStart(2, "0")} ${offsetStr}`;
+
+    const lines = [`Player current local time: ${localTimeStr}`];
+    const allLines = [];
+
+    // Process all days to find today's events and next occurrences
+    for (let d = 0; d < 7; d++) {
+      const dayIdx = (todayIndex + d) % 7;
+      const dayKey = WEEK_DAYS[dayIdx];
+      const dayEvents = eventsData[dayKey] || [];
+      for (const ev of dayEvents) {
+        const [sH, sM] = ev.start.split(":").map(Number);
+        const [eH, eM] = ev.end.split(":").map(Number);
+        const startUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + d, sH, sM));
+        const endUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + d, eH, eM));
+        const localStart = new Date(startUtc.getTime() + offset * 60000);
+        const localEnd = new Date(endUtc.getTime() + offset * 60000);
+        const lsStr = `${String(localStart.getUTCHours()).padStart(2, "0")}:${String(localStart.getUTCMinutes()).padStart(2, "0")}`;
+        const leStr = `${String(localEnd.getUTCHours()).padStart(2, "0")}:${String(localEnd.getUTCMinutes()).padStart(2, "0")}`;
+
+        let status;
+        if (now < startUtc) {
+          const mins = Math.round((startUtc - now) / 60000);
+          const h = Math.floor(mins / 60), m = mins % 60;
+          status = d === 0
+            ? `upcoming today in ${h > 0 ? h + "h " : ""}${m > 0 ? m + "m" : ""}`.trim()
+            : `next on ${dayKey} in ${d} day${d > 1 ? "s" : ""}`;
+        } else if (now >= startUtc && now < endUtc) {
+          const mLeft = Math.round((endUtc - now) / 60000);
+          status = `ACTIVE NOW — ends in ${mLeft} min`;
+        } else if (d === 0) {
+          continue; // already ended today, skip — will appear as "next" from d>0 iteration
+        } else {
+          continue;
+        }
+
+        allLines.push(`${ev.name}: ${d === 0 ? "today" : dayKey} local ${lsStr}-${leStr} [${status}]`);
+      }
+    }
+
+    if (allLines.length) lines.push("Event schedule:", ...allLines);
+    return lines.join("\n");
+  } catch {
+    return "";
+  }
+}
+
 async function guidedLootContentsResponse(question, language) {
   if (!isLootContentsIntent(question)) return "";
   const itemId = detectChestFromQuestion(question);
@@ -498,6 +579,10 @@ async function handleChat(request, env, ctx) {
     });
   }
 
+  // Parse player time info for event-aware answers
+  const clientTimeIso = typeof body.clientTime === "string" ? body.clientTime : "";
+  const utcOffsetMinutes = Number(body.utcOffsetMinutes) || 0;
+
   // Parse and sanitize conversation history (last 6 messages from frontend)
   const rawHistory = Array.isArray(body.history) ? body.history : [];
   const history = rawHistory
@@ -549,9 +634,20 @@ async function handleChat(request, env, ctx) {
     return jsonResponse(request, env, 200, payload);
   }
 
+  // Build live event context if question is event/time-sensitive
+  const needsEventContext = clientTimeIso && (
+    isEventsIntent(resolvedQuestion) ||
+    /\b(moonlight|clam|crystal|treasure|cufar|forge|experience|fishing|crystals.frenzy|cand|când|azi|astazi|azi|acum|now|today|active|activ|urmeaza|urmează|next)\b/i.test(resolvedQuestion)
+  );
+  const eventContext = needsEventContext
+    ? await fetchEventsData().then((data) => buildEventStatusContext(data, clientTimeIso, utcOffsetMinutes))
+    : "";
+  // Never cache time-sensitive event responses
+  const usesEventContext = eventContext.length > 0;
+
   let answer;
   try {
-    answer = await generateAnswer(env, resolvedQuestion, matches, language, history);
+    answer = await generateAnswer(env, resolvedQuestion, matches, language, history, eventContext);
   } catch (e) {
     if (e?.code === "GEMINI_QUOTA") {
       return jsonResponse(request, env, 200, {
@@ -567,8 +663,8 @@ async function handleChat(request, env, ctx) {
 
   const payload = { ok: true, answer, sources, actions, language };
   const isMissingAnswer = answer === missingKnowledgeAnswer(language);
-  if (!isMissingAnswer && !usedContext) {
-    // Only cache non-context-dependent answers (reusable by other players)
+  if (!isMissingAnswer && !usedContext && !usesEventContext) {
+    // Only cache non-context-dependent, non-time-sensitive answers (reusable by other players)
     const cacheHash = await sha256Hex(cacheKey);
     setCachedAnswer(cacheKey, payload);
     ctx.waitUntil(Promise.all([
@@ -794,20 +890,17 @@ function tokenizeForSearch(value) {
     .filter((token) => token.length >= 3 && !stop.has(token));
 }
 
-async function generateAnswer(env, question, matches, language, history = []) {
+async function generateAnswer(env, question, matches, language, history = [], eventContext = "") {
   const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
-  const systemText = `You are Companion, a friendly AI assistant for The Cursed Land players on TCLexplorer. Be natural and conversational — for yes/no questions start with "Da" or "Nu" (or "Yes"/"No" in English), then give the answer. Use conversation history to understand follow-up questions and refer back to what was discussed. Answer ONLY from the RAG context provided. If context lacks the answer, say you don't know in a natural way. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown, no raw URLs. Keep answers concise. For Events schedule questions refer to the TCLexplorer Events page by name.`;
+  const systemText = `You are Companion, a friendly AI assistant for The Cursed Land players on TCLexplorer. Be natural and conversational — for yes/no questions start with "Da" or "Nu" (or "Yes"/"No" in English), then give the answer. Use conversation history to understand follow-up questions and refer back to what was discussed. Answer ONLY from the RAG context provided. If context lacks the answer, say you don't know in a natural way. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown, no raw URLs. Keep answers concise. When live event status is provided, use it to tell the player if the event is active, upcoming, or when the next occurrence is — always in their local time.`;
 
-  const prompt = [
-    `Player language: ${language}`,
-    "",
-    "RAG context:",
-    context,
-    "",
-    "Player question:",
-    question
-  ].join("\n");
+  const parts = [`Player language: ${language}`];
+  if (eventContext) {
+    parts.push("", "Live event status (use this for time-aware answers):", eventContext);
+  }
+  parts.push("", "RAG context:", context, "", "Player question:", question);
+  const prompt = parts.join("\n");
 
   // Include last 4 history messages for natural conversation context
   const historyMessages = history.slice(-4).map((h) => ({
