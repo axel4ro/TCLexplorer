@@ -195,8 +195,7 @@ async function syncIncremental(env, log) {
   return totalNew;
 }
 
-// Faza 2 – backfill: pagineaza din trecut (order=asc, from offset)
-// Opreste cand ajunge la LISTING_TIMESTAMP sau epuizeaza PAGES_PER_CRON pagini
+// Faza 2 – backfill: pagineaza cu cursor timestamp (evita limita MVX from+size<=10000)
 async function syncBackfill(env, log) {
   const done = await supabaseGetState(env, "backfill_done");
   if (done === "true") {
@@ -204,30 +203,45 @@ async function syncBackfill(env, log) {
     return 0;
   }
 
-  const listingTs = parseInt(env.LISTING_TIMESTAMP || "1718236800", 10);
-  const offsetStr = await supabaseGetState(env, "backfill_offset");
-  let offset = offsetStr ? parseInt(offsetStr, 10) : 0;
+  const listingTs   = parseInt(env.LISTING_TIMESTAMP || "1718236800", 10);
+  const MAX_WINDOW  = 10000;
+  const offsetStr   = await supabaseGetState(env, "backfill_offset");
+  const cursorTsStr = await supabaseGetState(env, "backfill_cursor_ts");
+  let offset   = offsetStr   ? parseInt(offsetStr, 10)   : 0;
+  let cursorTs = cursorTsStr ? parseInt(cursorTsStr, 10) : null;
 
-  log(`[backfill] start offset=${offset}`);
+  log(`[backfill] start offset=${offset} cursor_ts=${cursorTs}`);
 
-  let totalSynced = 0;
+  let totalSynced  = 0;
   let reachedListing = false;
+  let windowMin    = Infinity;
 
   for (let page = 0; page < PAGES_PER_CRON; page++) {
+    // Daca atingem limita ferestrei MVX, trece la urmatoarea fereastra cu cursor
+    if (offset + PAGE_SIZE > MAX_WINDOW) {
+      cursorTs = windowMin < Infinity ? windowMin : cursorTs;
+      offset   = 0;
+      windowMin = Infinity;
+      await supabaseSet(env, "backfill_cursor_ts", cursorTs);
+      await supabaseSet(env, "backfill_offset", 0);
+      log(`[backfill] fereastra noua, cursor_ts=${cursorTs}`);
+    }
+
     const entries = await mvxFetch(
       env,
       `/tokens/${env.TCL_TOKEN}/transfers`,
       {
-        size: String(PAGE_SIZE),
-        from: String(offset),
-        order: "desc",          // cel mai recent primul — date utile rapide
-        status: "success",
+        size:           String(PAGE_SIZE),
+        from:           String(offset),
+        order:          "desc",
+        status:         "success",
         withOperations: "true",
+        before:         cursorTs,   // null = ignorat de mvxFetch la prima fereastra
       }
     );
 
     if (!Array.isArray(entries) || !entries.length) {
-      reachedListing = true; // epuizat istoricul
+      reachedListing = true;
       break;
     }
 
@@ -236,8 +250,9 @@ async function syncBackfill(env, log) {
     totalSynced += rows.length;
     offset += PAGE_SIZE;
 
-    // Verifica daca am ajuns la sau inainte de listing date
     const pageMin = Math.min(...entries.map((e) => Number(e.timestamp) || Infinity));
+    if (pageMin < windowMin) windowMin = pageMin;
+
     if (pageMin <= listingTs) {
       reachedListing = true;
       break;
@@ -252,11 +267,12 @@ async function syncBackfill(env, log) {
   }
 
   await supabaseSet(env, "backfill_offset", offset);
+  if (cursorTs) await supabaseSet(env, "backfill_cursor_ts", cursorTs);
   if (reachedListing) {
     await supabaseSet(env, "backfill_done", "true");
     log("[backfill] COMPLET");
   } else {
-    log(`[backfill] offset avansat la ${offset}, ${totalSynced} intrari`);
+    log(`[backfill] offset=${offset} cursor_ts=${cursorTs}, ${totalSynced} intrari`);
   }
 
   return totalSynced;
