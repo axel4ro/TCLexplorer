@@ -2019,8 +2019,22 @@
           }
         }
 
+        // Compute TCL earned from game contract (rewards, claims, upgrades, etc.)
+        let earnedTcl = 0;
+        if (CONFIG.pnlGameContract) {
+          for (const entry of transferMap.values()) {
+            const tokenId = String(entry?.identifier || entry?.token || "");
+            if (tokenId !== CONFIG.tokens.tcl.identifier) continue;
+            if (String(entry?.sender || "") !== CONFIG.pnlGameContract) continue;
+            if (String(entry?.receiver || "") !== walletAddress) continue;
+            const norm = normalizePnlTradeTransfer({ token: tokenId, value: entry.value });
+            if (norm) earnedTcl += norm.amount;
+          }
+        }
+
         return {
           transfers: Array.from(transferMap.values()),
+          earnedTcl,
           checkedTransactions: transactionHashes.size,
           reachedListingStart,
           hitPageLimit,
@@ -2029,8 +2043,7 @@
         };
       }
 
-      // Scans all transfers for a single token identifier (no withOperations needed).
-      // Returns a Map keyed by originalTxHash → array of transfer entries.
+      // Dead code kept for reference — no longer called
       async function scanTokenTransfers(walletAddress, tokenId, labelShort) {
         const txMap = new Map();
         const pageSize = CONFIG.pnlTokenScanPageSize || 1000;
@@ -2280,12 +2293,13 @@
         dom.pnlStatus.textContent = "Se porneste scanarea PNL...";
 
         try {
-          const swapData = await fetchSwapTransactions(walletAddress);
-          const totals = aggregatePnlTrades(swapData.trades);
-          renderPnlResult(totals, swapData);
+          const historyData = await fetchWalletTransferHistory(walletAddress);
+          const trades = parsePnlTrades(historyData.transfers, walletAddress);
+          const totals = aggregatePnlTrades(trades);
+          renderPnlResult(totals, historyData);
 
-          if (!swapData.trades.length) {
-            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${swapData.checkedTransactions.toLocaleString("ro-RO")}.`;
+          if (!trades.length) {
+            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${historyData.checkedTransactions.toLocaleString("ro-RO")}.`;
           }
         } catch (error) {
           console.error(error);
