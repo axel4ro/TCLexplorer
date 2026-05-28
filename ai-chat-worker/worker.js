@@ -62,7 +62,10 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
+let cachedDropData = null;
+let cachedDropDataTs = 0;
+const DROP_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
 const RESPONSE_CACHE_TTL_MS = 60 * 60 * 1000;
 const CF_CACHE_TTL_S = 3 * 60 * 60;
 const SUPPORTED_LANGUAGES = {
@@ -269,6 +272,7 @@ function buildActions(question, language, sources = []) {
   }
   if (/\b(loot|drop|drops?|clam|moonlight|cufere?|scoici|chest|treasure)\b/i.test(question)) {
     add(t({ en: "Open Loot", ro: "Deschide Loot", tr: "Loot'u Aç", de: "Loot öffnen", es: "Abrir Loot", fr: "Ouvrir Loot", it: "Apri Loot", pl: "Otwórz Loot", pt: "Abrir Loot" }), "https://axel4ro.github.io/TCLexplorer/loot.html", "primary");
+    add(t({ en: "Open Events", ro: "Deschide Evenimente", tr: "Etkinlikleri Aç", de: "Events öffnen", es: "Abrir Eventos", fr: "Ouvrir les événements", it: "Apri Eventi", pl: "Otwórz Wydarzenia", pt: "Abrir Eventos" }), "https://axel4ro.github.io/TCLexplorer/#events");
   }
   if (isRequirementsIntent(question)) {
     add(t({ en: "Can I Run It", ro: "Pot Rula Jocul", tr: "Çalıştırabilir miyim", de: "Kann ich es spielen", es: "¿Puedo correrlo?", fr: "Puis-je le lancer", it: "Posso eseguirlo", pl: "Czy uruchomię grę", pt: "Consigo rodar" }), "https://axel4ro.github.io/TCLexplorer/CanIrunIt.html", "primary");
@@ -364,6 +368,84 @@ function guidedTokenResponse(question, language) {
   return msgs[language] || msgs.en;
 }
 
+function isLootContentsIntent(question) {
+  const q = String(question || "").toLowerCase();
+  return (
+    /\b(contine|contains|inside|ce.*in|what.*in|what.*inside|drops?|drop)\b/i.test(q) &&
+    /\b(chest|clam|moonlight|cufar|comori|treasure|box|crystal|gold.*chest|christmas|spider|flower)\b/i.test(q)
+  );
+}
+
+function detectChestFromQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  if (/spider/i.test(q)) return 1775;
+  if (/gold.*\+|gold.*plus|gold.*chest.*\+/i.test(q)) return 1773;
+  if (/christmas/i.test(q)) return 1509;
+  if (/flower/i.test(q)) return 1212;
+  if (/crystal/i.test(q)) return 1213;
+  if (/clam/i.test(q)) return 1517;
+  if (/gold.*(chest|cufar|comori)/i.test(q) || /(chest|cufar|comori).*gold/i.test(q)) return 1422;
+  if (/moonlight/i.test(q)) return 1211;
+  return null;
+}
+
+async function fetchDropData() {
+  const now = Date.now();
+  if (cachedDropData && now - cachedDropDataTs < DROP_DATA_CACHE_TTL_MS) return cachedDropData;
+  try {
+    const resp = await fetch("https://axel4ro.github.io/TCLexplorer/data/drop.json",
+      { cf: { cacheTtl: 1800, cacheEverything: true } });
+    if (!resp.ok) return null;
+    cachedDropData = await resp.json();
+    cachedDropDataTs = now;
+    return cachedDropData;
+  } catch {
+    return null;
+  }
+}
+
+async function guidedLootContentsResponse(question, language) {
+  if (!isLootContentsIntent(question)) return "";
+  const itemId = detectChestFromQuestion(question);
+  if (!itemId) return "";
+
+  const data = await fetchDropData();
+  if (!data) return "";
+
+  const itemMap = {};
+  (data.itemTemplates || []).forEach((i) => { itemMap[i.id] = i.name; });
+  const ltMap = {};
+  (data.lootTables || []).forEach((lt) => { ltMap[lt.id] = lt; });
+
+  const chestName = itemMap[itemId];
+  const ltId = DROP_JSON_MANUAL_LOOT[itemId];
+  const lt = ltMap[ltId];
+  if (!chestName || !lt) return "";
+
+  const sorted = [...(lt.items || [])].sort((a, b) => a.chance - b.chance);
+  let prev = 0;
+  const contents = sorted.map((it) => {
+    const rate = Math.round((it.chance - prev) * 100) / 100;
+    prev = it.chance;
+    const name = itemMap[it.item] || `item#${it.item}`;
+    return `${name} (${rate}%)`;
+  }).filter(Boolean);
+
+  const intro = {
+    en: `${chestName} can contain:`,
+    ro: `${chestName} poate conține:`,
+    tr: `${chestName} şunları içerebilir:`,
+    de: `${chestName} kann enthalten:`,
+    es: `${chestName} puede contener:`,
+    fr: `${chestName} peut contenir :`,
+    it: `${chestName} può contenere:`,
+    pl: `${chestName} może zawierać:`,
+    pt: `${chestName} pode conter:`
+  };
+
+  return `${intro[language] || intro.en} ${contents.join(", ")}.`;
+}
+
 function handleOptions(request, env) {
   const cors = getCorsHeaders(request, env);
   return new Response(null, {
@@ -421,7 +503,9 @@ async function handleChat(request, env, ctx) {
   const sources = buildPublicSources(matches);
   const actions = buildActions(question, language, sources);
 
-  const guided = guidedPageResponse(question, language, actions) || guidedTokenResponse(question, language);
+  const guided = guidedPageResponse(question, language, actions) ||
+    guidedTokenResponse(question, language) ||
+    await guidedLootContentsResponse(question, language);
   if (guided) {
     const payload = { ok: true, answer: guided, sources, actions, language };
     setCachedAnswer(cacheKey, payload);
