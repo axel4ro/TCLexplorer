@@ -2019,22 +2019,8 @@
           }
         }
 
-        // Compute TCL earned from game contract (rewards, claims, upgrades, etc.)
-        let earnedTcl = 0;
-        if (CONFIG.pnlGameContract) {
-          for (const entry of transferMap.values()) {
-            const tokenId = String(entry?.identifier || entry?.token || "");
-            if (tokenId !== CONFIG.tokens.tcl.identifier) continue;
-            if (String(entry?.sender || "") !== CONFIG.pnlGameContract) continue;
-            if (String(entry?.receiver || "") !== walletAddress) continue;
-            const norm = normalizePnlTradeTransfer({ token: tokenId, value: entry.value });
-            if (norm) earnedTcl += norm.amount;
-          }
-        }
-
         return {
           transfers: Array.from(transferMap.values()),
-          earnedTcl,
           checkedTransactions: transactionHashes.size,
           reachedListingStart,
           hitPageLimit,
@@ -2249,7 +2235,68 @@
         };
       }
 
-      function renderPnlResult(totals, historyMeta) {
+      // Scans TCL transfers received by walletAddress FROM the game contract only.
+      // Uses sender= filter directly in the API so no extra ops parsing is needed.
+      async function fetchEarnedTcl(walletAddress) {
+        const gameContract = CONFIG.pnlGameContract;
+        if (!gameContract) return 0;
+
+        let earnedTcl = 0;
+        const pageSize = CONFIG.pnlTokenScanPageSize || 1000;
+        const maxPages = CONFIG.pnlTokenScanMaxPages || 12;
+        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+
+        for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+          dom.pnlStatus.textContent = `Se citesc recompensele TCL... pag ${pageIndex + 1}`;
+
+          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+            from: pageIndex * pageSize,
+            size: pageSize,
+            status: "success",
+            order: "desc",
+            token: CONFIG.tokens.tcl.identifier,
+            sender: gameContract
+          }), {
+            retries: CONFIG.pnlMaxRetries,
+            retryDelayMs: CONFIG.pnlRetryDelayMs,
+            timeoutMs: CONFIG.pnlRequestTimeoutMs
+          });
+
+          if (!Array.isArray(page) || !page.length) break;
+
+          for (const entry of page) {
+            // Safety double-check even though API already filters by sender
+            if (String(entry?.sender || "") !== gameContract) continue;
+            if (String(entry?.receiver || "") !== walletAddress) continue;
+
+            // TCL amount lives in action.arguments.transfers[0] for SCR-type entries,
+            // or at the top-level identifier/value for ESDTTransfer-type entries.
+            const transferList = entry?.action?.arguments?.transfers;
+            const firstTx = Array.isArray(transferList) ? transferList[0] : null;
+            const tokenId = String(
+              firstTx?.token || firstTx?.identifier ||
+              entry?.identifier || entry?.token || ""
+            );
+            if (tokenId && tokenId !== CONFIG.tokens.tcl.identifier) continue;
+
+            const value = firstTx?.value != null ? firstTx.value : entry?.value;
+            const norm = normalizePnlTradeTransfer({ token: CONFIG.tokens.tcl.identifier, value });
+            if (norm) earnedTcl += norm.amount;
+          }
+
+          const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
+          if (timestamps.length) {
+            const oldest = Math.min(...timestamps);
+            if (oldest <= listingTimestamp) break;
+          }
+          if (page.length < pageSize) break;
+          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
+        }
+
+        return earnedTcl;
+      }
+
+      function renderPnlResult(totals, historyMeta, earnedTcl = 0) {
         const pnlUsd = totals.sellUsd - totals.buyUsd;
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
         dom.pnlBoughtUsd.textContent = `Cost: ${formatUsd(totals.buyUsd)} USDC`;
@@ -2260,9 +2307,9 @@
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
         dom.pnlTradeCount.textContent = `Trades: ${totals.tradeCount.toLocaleString("ro-RO")} (${totals.buyCount} buy / ${totals.sellCount} sell)`;
 
-        const earnedTcl = readNumber(historyMeta.earnedTcl, 0);
-        const earnedUsd = earnedTcl * readNumber(state.prices.tcl, 0);
-        dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedTcl)} TCL`;
+        const earnedAmount = readNumber(earnedTcl, 0);
+        const earnedUsd = earnedAmount * readNumber(state.prices.tcl, 0);
+        dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
         dom.pnlEarnedUsd.textContent = `Value: ${formatUsd(earnedUsd)} USDC`;
 
         const coverage = historyMeta.hitPageLimit
@@ -2296,7 +2343,8 @@
           const historyData = await fetchWalletTransferHistory(walletAddress);
           const trades = parsePnlTrades(historyData.transfers, walletAddress);
           const totals = aggregatePnlTrades(trades);
-          renderPnlResult(totals, historyData);
+          const earnedTcl = await fetchEarnedTcl(walletAddress);
+          renderPnlResult(totals, historyData, earnedTcl);
 
           if (!trades.length) {
             dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${historyData.checkedTransactions.toLocaleString("ro-RO")}.`;
