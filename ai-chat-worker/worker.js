@@ -206,7 +206,8 @@ function publicSourceUrl(value) {
         "item-upgrade": "Item_Upgrade_Requirements.html",
         "can-i-run-it": "CanIrunIt.html",
         "apr-rewards": "TCL_apr_rewards_calculator.html",
-        "web3": "connect_xportal.html"
+        "web3": "connect_xportal.html",
+        "token": "TCL_trades.html"
       };
       const name = (url.pathname.match(/\/lang\/([^/]+)\.bundle\.js$/i) || [])[1]?.toLowerCase();
       const page = name && BUNDLE_PAGES[name];
@@ -262,11 +263,37 @@ function buildActions(question, language, sources = []) {
   if (isEventsIntent(question)) {
     add(t({ en: "Open Events", ro: "Deschide Evenimente", tr: "Etkinlikleri Aç", de: "Events öffnen", es: "Abrir Eventos", fr: "Ouvrir les événements", it: "Apri Eventi", pl: "Otwórz Wydarzenia", pt: "Abrir Eventos" }), "https://axel4ro.github.io/TCLexplorer/#events", "primary");
   }
-  if (/\b(wiki|iteme?|items?|obiecte?|requirements?|cerinte|blacksmith|upgrade|plusat)\b/i.test(question)) {
+  if (/\b(wiki|iteme?|items?\b|obiecte?|blacksmith|upgrade|plusat)\b/i.test(question)) {
     add(t({ en: "Open Wiki", ro: "Deschide Wiki", tr: "Wiki'yi Aç", de: "Wiki öffnen", es: "Abrir Wiki", fr: "Ouvrir Wiki", it: "Apri Wiki", pl: "Otwórz Wiki", pt: "Abrir Wiki" }), "https://axel4ro.github.io/TCLexplorer/#wiki", "primary");
   }
-  if (/\b(loot|drop|drops?|clam|moonlight|cufere?|scoici)\b/i.test(question)) {
+  if (/\b(loot|drop|drops?|clam|moonlight|cufere?|scoici|chest|treasure)\b/i.test(question)) {
     add(t({ en: "Open Loot", ro: "Deschide Loot", tr: "Loot'u Aç", de: "Loot öffnen", es: "Abrir Loot", fr: "Ouvrir Loot", it: "Apri Loot", pl: "Otwórz Loot", pt: "Abrir Loot" }), "https://axel4ro.github.io/TCLexplorer/loot.html", "primary");
+  }
+  if (isRequirementsIntent(question)) {
+    add(t({ en: "Can I Run It", ro: "Pot Rula Jocul", tr: "Çalıştırabilir miyim", de: "Kann ich es spielen", es: "¿Puedo correrlo?", fr: "Puis-je le lancer", it: "Posso eseguirlo", pl: "Czy uruchomię grę", pt: "Consigo rodar" }), "https://axel4ro.github.io/TCLexplorer/CanIrunIt.html", "primary");
+    add(t({ en: "Game Requirements", ro: "Cerințe Sistem", tr: "Oyun Gereksinimleri", de: "Systemanforderungen", es: "Requisitos del juego", fr: "Config. requise", it: "Requisiti di sistema", pl: "Wymagania systemowe", pt: "Requisitos do jogo" }), "https://axel4ro.github.io/TCLexplorer/Game_Requirements.html");
+  }
+  if (isBuyTokenIntent(question) || isTokenInfoIntent(question)) {
+    add("xExchange", "https://xexchange.com/", "primary");
+    add("xPortal", "https://xportal.com/");
+  }
+  if (/\b(nfts?)\b/i.test(question)) {
+    add(t({ en: "Open NFTs", ro: "Deschide NFT-uri", tr: "NFT'leri Aç", de: "NFTs öffnen", es: "Abrir NFTs", fr: "Ouvrir NFTs", it: "Apri NFTs", pl: "Otwórz NFTs", pt: "Abrir NFTs" }), "https://axel4ro.github.io/TCLexplorer/NFTs.html", "primary");
+  }
+  if (/\b(earn|staking|apr\b|reward|recompens|castig|câștig)\b/i.test(question)) {
+    add(t({ en: "Open Earn", ro: "Deschide Earn", tr: "Earn'i Aç", de: "Earn öffnen", es: "Abrir Earn", fr: "Ouvrir Earn", it: "Apri Earn", pl: "Otwórz Earn", pt: "Abrir Earn" }), "https://axel4ro.github.io/TCLexplorer/earn.html", "primary");
+  }
+  if (/\b(xportal|portofel|wallet|connect|conectare|web3)\b/i.test(question) && !isBuyTokenIntent(question)) {
+    add(t({ en: "Connect xPortal", ro: "Conectează xPortal", tr: "xPortal Bağla", de: "xPortal verbinden", es: "Conectar xPortal", fr: "Connecter xPortal", it: "Connetti xPortal", pl: "Połącz xPortal", pt: "Conectar xPortal" }), "https://axel4ro.github.io/TCLexplorer/connect_xportal.html");
+  }
+  if (/\b(analytics|statistic|statistici)\b/i.test(question)) {
+    add(t({ en: "Open Analytics", ro: "Deschide Analytics", tr: "Analitikleri Aç", de: "Analytics öffnen", es: "Abrir Analytics", fr: "Ouvrir Analytics", it: "Apri Analytics", pl: "Otwórz Analytics", pt: "Abrir Analytics" }), "https://axel4ro.github.io/TCLexplorer/analytics.html");
+  }
+  if (/\b(technicals?|technical.analysis|analiz[aă].tehnic)\b/i.test(question)) {
+    add(t({ en: "Open Technicals", ro: "Analiză Tehnică", tr: "Teknik Analiz", de: "Technicals öffnen", es: "Análisis técnico", fr: "Analyse technique", it: "Analisi tecnica", pl: "Analiza techniczna", pt: "Análise técnica" }), "https://axel4ro.github.io/TCLexplorer/Technicals.html");
+  }
+  if (/\b(trade[sd]?|tranzact|volum\b|volume\b)\b/i.test(question) && !isBuyTokenIntent(question)) {
+    add(t({ en: "TCL Trades", ro: "Tranzacții TCL", tr: "TCL İşlemleri", de: "TCL Trades", es: "Trades TCL", fr: "Trades TCL", it: "Trade TCL", pl: "Transakcje TCL", pt: "Trades TCL" }), "https://axel4ro.github.io/TCLexplorer/TCL_trades.html");
   }
 
   sources.slice(0, 2).forEach((source) => {
@@ -278,7 +305,7 @@ function buildActions(question, language, sources = []) {
     add(title, source.url);
   });
 
-  return actions.slice(0, 3);
+  return actions.slice(0, 4);
 }
 
 function guidedPageResponse(question, language, actions) {
@@ -311,6 +338,38 @@ function isBroadEventsIntent(question) {
     return false;
   }
   return text.split(/\s+/).length <= 8 || /\b(what events|events list|ce evenimente|lista.*evenimente)\b/i.test(text);
+}
+
+function isRequirementsIntent(question) {
+  return /\b(game.?req|system.?req|can.?i.?run|pot.?rula|hardware|pc.?spec|minimum.?req|cerinte.?joc|cerinte.?sistem|configuratie|configurație|specificat|specs?)\b/i.test(question)
+    || /\b(requirements?|cerinte|cerință|cerințe)\b/i.test(question) && !/\b(item|upgrade|wiki|plus)\b/i.test(question);
+}
+
+function isBuyTokenIntent(question) {
+  const q = String(question || "").toLowerCase();
+  return /\b(buy|cumpara|cumpăr|purchase|achizit|unde cumpar|how to get|how to buy|get tcl|exchange|swap|schimb|sell|vinde)\b/i.test(q)
+    && /\b(tcl|token)\b/i.test(q);
+}
+
+function isTokenInfoIntent(question) {
+  const q = String(question || "").toLowerCase();
+  return /\b(ce.?este.?tcl|what.?is.?tcl|about.?tcl|despre.?tcl|tcl.?token|token.?tcl|tcl.?coin|crypto.?tcl|tcl.?price|pret.?tcl|preț.?tcl)\b/i.test(q);
+}
+
+function guidedTokenResponse(question, language) {
+  if (!isBuyTokenIntent(question)) return "";
+  const msgs = {
+    en: "TCL can be bought on xExchange (MultiversX) using EGLD or USDC — xExchange is the recommended option. In the xPortal app, tap the globe icon at the bottom right to open xExchange and swap for TCL.",
+    ro: "TCL se poate cumpăra pe xExchange (MultiversX) cu EGLD sau USDC — xExchange este varianta recomandată. În aplicația xPortal, apasă iconița glob din dreapta jos pentru a deschide xExchange și face swap pe TCL.",
+    tr: "TCL, xExchange (MultiversX) üzerinden EGLD veya USDC ile satın alınabilir — xExchange önerilen seçenektir. xPortal uygulamasında sağ alttaki küre ikonuna tıklayarak xExchange'i açıp TCL için swap yapabilirsiniz.",
+    de: "TCL kann auf xExchange (MultiversX) mit EGLD oder USDC gekauft werden — xExchange ist die empfohlene Option. In der xPortal-App kannst du das Globus-Symbol rechts unten antippen, um xExchange zu öffnen und TCL zu swappen.",
+    es: "TCL se puede comprar en xExchange (MultiversX) usando EGLD o USDC — xExchange es la opción recomendada. En la app xPortal, toca el ícono del globo abajo a la derecha para abrir xExchange y hacer swap por TCL.",
+    fr: "TCL peut être acheté sur xExchange (MultiversX) avec EGLD ou USDC — xExchange est l'option recommandée. Dans l'app xPortal, appuie sur l'icône globe en bas à droite pour ouvrir xExchange et faire un swap pour TCL.",
+    it: "TCL può essere acquistato su xExchange (MultiversX) usando EGLD o USDC — xExchange è l'opzione consigliata. Nell'app xPortal, tocca l'icona del globo in basso a destra per aprire xExchange e fare swap per TCL.",
+    pl: "TCL można kupić na xExchange (MultiversX) za EGLD lub USDC — xExchange jest rekomendowaną opcją. W aplikacji xPortal dotknij ikony globusa w prawym dolnym rogu, aby otworzyć xExchange i wymienić na TCL.",
+    pt: "TCL pode ser comprado no xExchange (MultiversX) usando EGLD ou USDC — xExchange é a opção recomendada. No app xPortal, toque no ícone de globo no canto inferior direito para abrir o xExchange e trocar por TCL."
+  };
+  return msgs[language] || msgs.en;
 }
 
 function handleOptions(request, env) {
@@ -370,7 +429,7 @@ async function handleChat(request, env, ctx) {
   const sources = buildPublicSources(matches);
   const actions = buildActions(question, language, sources);
 
-  const guided = guidedPageResponse(question, language, actions);
+  const guided = guidedPageResponse(question, language, actions) || guidedTokenResponse(question, language);
   if (guided) {
     const payload = { ok: true, answer: guided, sources, actions, language };
     setCachedAnswer(cacheKey, payload);
@@ -537,6 +596,18 @@ function expandKnowledgeQuery(question) {
 
   if (isEventsIntent(text)) {
     return `${text} weekly events evenimente saptamanale events_title events_desc events_local_time Item Drop Experience Fishing Clam Moonlight Treasure Forge Boost Crystals Frenzy`;
+  }
+
+  if (/\b(moonlight|clam|treasure.?chest|cufar.?lunar|cufar.?comori|chest.?content|what.*chest|what.*drop)\b/i.test(text)) {
+    return `${text} loot drop chest contents reward items moonlight clam treasure event`;
+  }
+
+  if (isBuyTokenIntent(text) || isTokenInfoIntent(text)) {
+    return `${text} TCL token MultiversX xExchange xPortal EGLD USDC buy purchase`;
+  }
+
+  if (isRequirementsIntent(text)) {
+    return `${text} system requirements minimum PC hardware specs can i run game requirements`;
   }
 
   return text;

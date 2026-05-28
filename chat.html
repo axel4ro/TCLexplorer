@@ -568,11 +568,14 @@
       const NEW_CHAT_THRESHOLD = 40;
       let chatHistory = [];
 
+      const MIN_WORDS = 3;
+
       const copy = {
         en: {
           hello: "Ask me about The Cursed Land. I answer using synced information from TCLexplorer and the Whitepaper.",
-          placeholder: "Ask about The Cursed Land...",
+          placeholder: "Ask about The Cursed Land... (min. 3 words)",
           empty: "Write a question first.",
+          tooShort: "Please write at least 3 words so I can understand better.",
           error: "The chat service did not answer. Please try again.",
           send: "Send",
           disclaimerTitle: "Active Development",
@@ -582,8 +585,9 @@
         },
         ro: {
           hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
-          placeholder: "Întreabă despre The Cursed Land...",
+          placeholder: "Întreabă despre The Cursed Land... (min. 3 cuvinte)",
           empty: "Scrie mai întâi o întrebare.",
+          tooShort: "Scrie cel puțin 3 cuvinte ca să înțeleg mai bine.",
           error: "Serviciul de chat nu a răspuns. Încearcă din nou.",
           send: "Trimite",
           disclaimerTitle: "În Dezvoltare Activă",
@@ -593,8 +597,9 @@
         },
         tr: {
           hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
-          placeholder: "The Cursed Land hakkında sor...",
+          placeholder: "The Cursed Land hakkında sor... (min. 3 kelime)",
           empty: "Önce bir soru yaz.",
+          tooShort: "Daha iyi anlayabilmem için en az 3 kelime yaz.",
           error: "Sohbet servisi yanıt vermedi. Lütfen tekrar dene.",
           send: "Gönder",
           disclaimerTitle: "Aktif Geliştirme",
@@ -604,8 +609,9 @@
         },
         de: {
           hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
-          placeholder: "Frag zu The Cursed Land...",
+          placeholder: "Frag zu The Cursed Land... (min. 3 Wörter)",
           empty: "Schreib zuerst eine Frage.",
+          tooShort: "Bitte mindestens 3 Wörter schreiben, damit ich besser verstehe.",
           error: "Der Chatdienst hat nicht geantwortet. Versuch es bitte erneut.",
           send: "Senden",
           disclaimerTitle: "Aktive Entwicklung",
@@ -615,8 +621,9 @@
         },
         es: {
           hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
-          placeholder: "Pregunta sobre The Cursed Land...",
+          placeholder: "Pregunta sobre The Cursed Land... (mín. 3 palabras)",
           empty: "Escribe una pregunta primero.",
+          tooShort: "Escribe al menos 3 palabras para que pueda entender mejor.",
           error: "El servicio de chat no respondió. Inténtalo de nuevo.",
           send: "Enviar",
           disclaimerTitle: "Desarrollo Activo",
@@ -626,8 +633,9 @@
         },
         fr: {
           hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
-          placeholder: "Pose une question sur The Cursed Land...",
+          placeholder: "Pose une question sur The Cursed Land... (min. 3 mots)",
           empty: "Écris d'abord une question.",
+          tooShort: "Écris au moins 3 mots pour que je comprenne mieux.",
           error: "Le service de chat n'a pas répondu. Réessaie.",
           send: "Envoyer",
           disclaimerTitle: "Développement Actif",
@@ -637,8 +645,9 @@
         },
         it: {
           hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
-          placeholder: "Chiedi di The Cursed Land...",
+          placeholder: "Chiedi di The Cursed Land... (min. 3 parole)",
           empty: "Scrivi prima una domanda.",
+          tooShort: "Scrivi almeno 3 parole per farmi capire meglio.",
           error: "Il servizio chat non ha risposto. Riprova.",
           send: "Invia",
           disclaimerTitle: "Sviluppo Attivo",
@@ -648,8 +657,9 @@
         },
         pl: {
           hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
-          placeholder: "Zapytaj o The Cursed Land...",
+          placeholder: "Zapytaj o The Cursed Land... (min. 3 słowa)",
           empty: "Najpierw wpisz pytanie.",
+          tooShort: "Wpisz co najmniej 3 słowa, żebym lepiej zrozumiał.",
           error: "Usługa czatu nie odpowiedziała. Spróbuj ponownie.",
           send: "Wyślij",
           disclaimerTitle: "Aktywny Rozwój",
@@ -659,8 +669,9 @@
         },
         pt: {
           hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
-          placeholder: "Pergunta sobre The Cursed Land...",
+          placeholder: "Pergunta sobre The Cursed Land... (mín. 3 palavras)",
           empty: "Escreve uma pergunta primeiro.",
+          tooShort: "Escreve pelo menos 3 palavras para eu entender melhor.",
           error: "O serviço de chat não respondeu. Tenta novamente.",
           send: "Enviar",
           disclaimerTitle: "Desenvolvimento Ativo",
@@ -670,8 +681,19 @@
         }
       };
 
+      function wordCount(value) {
+        return String(value || "").trim().split(/\s+/).filter((w) => w.length > 0).length;
+      }
+
+      function updateSendState() {
+        send.disabled = wordCount(input.value) < MIN_WORDS;
+      }
+
+      input.addEventListener("input", updateSendState);
+
       buildLanguageMenu();
       setLanguage(language);
+      updateSendState();
       if (!historyLoad()) {
         greetingNode = addMessage("bot", activeCopy().hello);
         historyPush({ kind: "msg", type: "bot", text: activeCopy().hello });
@@ -715,6 +737,10 @@
         const text = activeCopy();
         if (!message) {
           addMessage("bot error", text.empty);
+          return;
+        }
+        if (wordCount(message) < MIN_WORDS) {
+          addMessage("bot error", text.tooShort);
           return;
         }
 
@@ -853,7 +879,11 @@
 
       function setBusy(value) {
         input.disabled = value;
-        send.disabled = value;
+        if (value) {
+          send.disabled = true;
+        } else {
+          updateSendState();
+        }
       }
 
       function addMessage(type, text) {
