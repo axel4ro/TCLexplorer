@@ -2235,82 +2235,122 @@
         };
       }
 
-      // Scans only direct earning calls made by this wallet to the game contract.
-      // The older sender=gameContract scan also counted collateral/refund returns.
+      // Scans TCL received from the game contract, then validates the root transaction.
+      // This catches manager-triggered claims while excluding collateral/refund returns.
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
         if (!gameContract) return 0;
 
-        const earnFunctions = [
+        const earnFunctions = new Set([
           "claimRewards", "claimBorrowingRewards", "claimInfinityRewards", "claimLendingRewards",
           "withdrawBalancePrivateShop", "buyCoins", "buySft",
           "addBonus", "changeBonus", "addSocket", "addRefinement",
           "addCrystal", "changeCrystal", "upgradeNft"
-        ];
+        ]);
 
-        let earnedTcl = 0;
-        const seenOps = new Set();
-        const pageSize = Math.min(50, Math.max(1, Number(CONFIG.pnlPageSize) || 50));
-        const maxPagesPerFn = Math.max(1, Number(CONFIG.pnlFunctionMaxPages) || 10);
+        const transferGroups = new Map();
+        const seenTransfers = new Set();
+        const pageSize = Math.max(1, Number(CONFIG.pnlTokenScanPageSize) || 1000);
+        const maxPages = Math.max(1, Number(CONFIG.pnlTokenScanMaxPages) || 12);
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
 
-        for (let fnIdx = 0; fnIdx < earnFunctions.length; fnIdx++) {
-          const fn = earnFunctions[fnIdx];
-          dom.pnlStatus.textContent = `Se citesc recompensele TCL: ${fn} (${fnIdx + 1}/${earnFunctions.length})...`;
+        for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+          dom.pnlStatus.textContent = `Se citesc recompensele TCL primite... pag ${pageIndex + 1}`;
 
-          for (let pageIndex = 0; pageIndex < maxPagesPerFn; pageIndex++) {
-            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-              from: pageIndex * pageSize,
-              size: pageSize,
-              status: "success",
-              order: "desc",
-              receiver: gameContract,
-              function: fn,
-              withOperations: "true"
-            }), {
-              retries: CONFIG.pnlMaxRetries,
-              retryDelayMs: CONFIG.pnlRetryDelayMs,
-              timeoutMs: CONFIG.pnlRequestTimeoutMs
-            });
+          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+            from: pageIndex * pageSize,
+            size: pageSize,
+            status: "success",
+            order: "desc",
+            token: CONFIG.tokens.tcl.identifier,
+            sender: gameContract
+          }), {
+            retries: CONFIG.pnlMaxRetries,
+            retryDelayMs: CONFIG.pnlRetryDelayMs,
+            timeoutMs: CONFIG.pnlRequestTimeoutMs
+          });
 
-            if (!Array.isArray(page) || !page.length) break;
+          if (!Array.isArray(page) || !page.length) break;
 
-            for (const entry of page) {
-              if (!Array.isArray(entry.operations)) continue;
-              const rootHash = getPnlRootHash(entry);
+          for (const entry of page) {
+            if (String(entry?.sender || "") !== gameContract) continue;
+            if (String(entry?.receiver || "") !== walletAddress) continue;
 
-              for (const op of entry.operations) {
-                const opToken = String(op?.identifier || op?.token || "");
-                if (opToken !== CONFIG.tokens.tcl.identifier) continue;
-                if (String(op?.sender || "") !== gameContract) continue;
-                if (String(op?.receiver || "") !== walletAddress) continue;
-                if (op?.action && op.action !== "transfer") continue;
+            const rootHash = getPnlRootHash(entry);
+            if (!rootHash) continue;
 
-                const key = [
-                  rootHash,
-                  op.id || "",
-                  opToken,
-                  op.sender || "",
-                  op.receiver || "",
-                  op.value || ""
-                ].join("|");
-                if (seenOps.has(key)) continue;
-                seenOps.add(key);
+            const transferList = entry?.action?.arguments?.transfers;
+            const firstTransfer = Array.isArray(transferList) ? transferList[0] : null;
+            const tokenId = String(firstTransfer?.token || firstTransfer?.identifier || entry?.identifier || entry?.token || "");
+            if (tokenId !== CONFIG.tokens.tcl.identifier) continue;
 
-                const norm = normalizePnlTradeTransfer({ token: opToken, value: op.value });
-                if (norm) earnedTcl += norm.amount;
-              }
+            const value = firstTransfer?.value != null ? firstTransfer.value : entry?.value;
+            const norm = normalizePnlTradeTransfer({ token: CONFIG.tokens.tcl.identifier, value });
+            if (!norm) continue;
+
+            const transferKey = [
+              rootHash,
+              entry?.txHash || "",
+              value || ""
+            ].join("|");
+            if (seenTransfers.has(transferKey)) continue;
+            seenTransfers.add(transferKey);
+
+            let group = transferGroups.get(rootHash);
+            if (!group) {
+              group = { amount: 0, count: 0 };
+              transferGroups.set(rootHash, group);
             }
-
-            const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
-            if (timestamps.length && Math.min(...timestamps) <= listingTimestamp) break;
-            if (page.length < pageSize) break;
-            if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
+            group.amount += norm.amount;
+            group.count += 1;
           }
 
-          if (fnIdx < earnFunctions.length - 1 && CONFIG.pnlSourcePauseMs > 0) {
-            await wait(CONFIG.pnlSourcePauseMs);
+          const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
+          if (timestamps.length && Math.min(...timestamps) <= listingTimestamp) break;
+          if (page.length < pageSize) break;
+          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
+        }
+
+        const rootHashes = Array.from(transferGroups.keys());
+        const rootTransactions = new Map();
+        const batchSize = 50;
+
+        for (let index = 0; index < rootHashes.length; index += batchSize) {
+          const batch = rootHashes.slice(index, index + batchSize);
+          dom.pnlStatus.textContent = `Se valideaza sursa recompenselor TCL... ${Math.min(index + batch.length, rootHashes.length)}/${rootHashes.length}`;
+
+          const transactions = await fetchJson(buildApiUrl("/transactions", {
+            hashes: batch.join(","),
+            size: batch.length
+          }), {
+            retries: CONFIG.pnlMaxRetries,
+            retryDelayMs: CONFIG.pnlRetryDelayMs,
+            timeoutMs: CONFIG.pnlRequestTimeoutMs
+          });
+
+          if (Array.isArray(transactions)) {
+            transactions.forEach((transaction) => {
+              const hash = String(transaction?.txHash || transaction?.hash || "");
+              if (hash) rootTransactions.set(hash, transaction);
+            });
           }
+
+          if (index + batchSize < rootHashes.length && CONFIG.pnlPagePauseMs > 0) {
+            await wait(CONFIG.pnlPagePauseMs);
+          }
+        }
+
+        let earnedTcl = 0;
+        for (const [rootHash, group] of transferGroups.entries()) {
+          const rootTransaction = rootTransactions.get(rootHash);
+          if (!rootTransaction) continue;
+
+          const rootFunction = String(rootTransaction?.function || rootTransaction?.action?.name || "");
+          if (!earnFunctions.has(rootFunction)) continue;
+          if (String(rootTransaction?.receiver || "") !== gameContract) continue;
+          if (rootTransaction?.status && rootTransaction.status !== "success") continue;
+
+          earnedTcl += group.amount;
         }
 
         return earnedTcl;
