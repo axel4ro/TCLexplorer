@@ -2262,8 +2262,8 @@
         const seenTransfers = new Set();
         const pageSize = Math.max(1, Number(CONFIG.pnlTokenScanPageSize) || 1000);
         const maxPages = Math.max(1, Number(CONFIG.pnlTokenScanMaxPages) || 12);
-        const functionPageSize = Math.max(1, Number(CONFIG.pnlTokenScanPageSize) || 1000);
-        const functionMaxPages = Math.max(1, Number(CONFIG.pnlFunctionMaxPages) || 80);
+        const functionPageSize = 50;   // max allowed with withOperations=true
+        const functionMaxPages = 20;   // 20 * 50 = 1000 entries per function max
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         const methodMatchedRootHashes = new Set();
 
