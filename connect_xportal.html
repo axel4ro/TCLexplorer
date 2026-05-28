@@ -566,7 +566,7 @@
 
     .pnl-results {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
       margin-bottom: 12px;
     }
@@ -694,9 +694,12 @@
       .qr-panel,
       .summary-grid,
       .token-grid,
-      .pnl-form,
-      .pnl-results {
+      .pnl-form {
         grid-template-columns: 1fr;
+      }
+
+      .pnl-results {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .hero {
@@ -924,6 +927,11 @@
           <p class="pnl-value" id="pnlNetUsd">--</p>
           <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
         </article>
+        <article class="pnl-card">
+          <p class="pnl-label">Earned TCL $</p>
+          <p class="pnl-value" id="pnlEarnedTcl">--</p>
+          <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
+        </article>
       </div>
       <p class="pnl-status" id="pnlStatus">Conecteaza xPortal pentru PNL Check.</p>
     </section>
@@ -943,6 +951,7 @@
         pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
         pnlPageSize: 50,
         pnlMaxPages: 220,
         pnlPairMaxPages: 20,
@@ -1027,6 +1036,8 @@
         pnlSoldUsd: document.getElementById("pnlSoldUsd"),
         pnlNetUsd: document.getElementById("pnlNetUsd"),
         pnlTradeCount: document.getElementById("pnlTradeCount"),
+        pnlEarnedTcl: document.getElementById("pnlEarnedTcl"),
+        pnlEarnedUsd: document.getElementById("pnlEarnedUsd"),
         pnlStatus: document.getElementById("pnlStatus")
       };
 
@@ -1536,6 +1547,8 @@
         dom.pnlNetUsd.textContent = "--";
         dom.pnlNetUsd.classList.remove("is-positive", "is-negative");
         dom.pnlTradeCount.textContent = "Trades: --";
+        dom.pnlEarnedTcl.textContent = "--";
+        dom.pnlEarnedUsd.textContent = "Value: --";
       }
 
       function getTokenByIdentifier(tokens, identifier) {
@@ -2134,11 +2147,24 @@
 
         trades.sort((a, b) => a.timestamp - b.timestamp);
 
+        // Compute TCL earned from game contract (rewards, claims, upgrades, etc.)
+        let earnedTcl = 0;
+        const gameContract = CONFIG.pnlGameContract;
+        for (const entries of tclScan.txMap.values()) {
+          for (const e of entries) {
+            if (String(e.sender || "") !== gameContract) continue;
+            if (String(e.receiver || "") !== walletAddress) continue;
+            const norm = normalizePnlTradeTransfer({ token: e.identifier || e.token, value: e.value });
+            if (norm) earnedTcl += norm.amount;
+          }
+        }
+
         const hitPageLimit = tclScan.hitPageLimit || usdcScan.hitPageLimit;
         const oldest = Math.min(tclScan.oldestTimestamp ?? Infinity, usdcScan.oldestTimestamp ?? Infinity);
 
         return {
           trades,
+          earnedTcl,
           checkedTransactions: allHashes.size,
           reachedListingStart: Number.isFinite(oldest) && oldest <= listingTimestamp,
           hitPageLimit,
@@ -2220,6 +2246,11 @@
         dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
         dom.pnlTradeCount.textContent = `Trades: ${totals.tradeCount.toLocaleString("ro-RO")} (${totals.buyCount} buy / ${totals.sellCount} sell)`;
+
+        const earnedTcl = readNumber(historyMeta.earnedTcl, 0);
+        const earnedUsd = earnedTcl * readNumber(state.prices.tcl, 0);
+        dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedTcl)} TCL`;
+        dom.pnlEarnedUsd.textContent = `Value: ${formatUsd(earnedUsd)} USDC`;
 
         const coverage = historyMeta.hitPageLimit
           ? "Limita de scanare a fost atinsa; rezultatul poate fi partial."
