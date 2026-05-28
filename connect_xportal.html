@@ -2242,10 +2242,11 @@
         if (!gameContract) return 0;
 
         const earnFunctions = new Set([
-          "claimRewards", "claimBorrowingRewards", "claimInfinityRewards", "claimLendingRewards",
-          "withdrawBalancePrivateShop", "buyCoins", "buySft",
+          "claimRewards", "claimInfinityRewards", "claimLendingRewards",
+          "withdrawBalancePrivateShop", "buyCoins", "buySft", "mintNft",
           "addBonus", "changeBonus", "addSocket", "addRefinement",
-          "addCrystal", "changeCrystal", "upgradeNft"
+          "addCrystal", "changeCrystal", "upgradeNft", "addStorage",
+          "distributeTokenPurchases"
         ]);
 
         const transferGroups = new Map();
@@ -2347,7 +2348,6 @@
 
           const rootFunction = String(rootTransaction?.function || rootTransaction?.action?.name || "");
           if (!earnFunctions.has(rootFunction)) continue;
-          if (String(rootTransaction?.receiver || "") !== gameContract) continue;
           if (rootTransaction?.status && rootTransaction.status !== "success") continue;
 
           earnedTcl += group.amount;
