@@ -948,8 +948,10 @@
         pnlPairMaxPages: 20,
         pnlFunctionMaxPages: 0,
         pnlSwapMaxPages: 80,
+        pnlTokenScanPageSize: 1000,
+        pnlTokenScanMaxPages: 12,
         pnlPagePauseMs: 300,
-        pnlSourcePauseMs: 600,
+        pnlSourcePauseMs: 400,
         pnlMaxRetries: 6,
         pnlRetryDelayMs: 4000,
         pnlRequestTimeoutMs: 35000,
@@ -2014,109 +2016,134 @@
         };
       }
 
-      async function fetchSwapTransactions(walletAddress) {
-        const transferMap = new Map();
-        const transactionHashes = new Set();
+      // Scans all transfers for a single token identifier (no withOperations needed).
+      // Returns a Map keyed by originalTxHash → array of transfer entries.
+      async function scanTokenTransfers(walletAddress, tokenId, labelShort) {
+        const txMap = new Map();
+        const pageSize = CONFIG.pnlTokenScanPageSize || 1000;
+        const maxPages = CONFIG.pnlTokenScanMaxPages || 12;
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-        let reachedListingStart = false;
         let hitPageLimit = false;
         let oldestTimestamp = null;
-        let completedSources = 0;
 
-        // Two focused sources:
-        // 1. All TCL token transfers (catches direct AND aggregated swaps regardless of router)
-        // 2. All transfers FROM the pair to the wallet (catches pair output side for fallback parser)
-        const sources = [
-          {
-            label: "transferurile TCL",
-            maxPages: CONFIG.pnlSwapMaxPages || 50,
-            params: { token: CONFIG.tokens.tcl.identifier }
-          },
-          {
-            label: "pool TCL/USDC -> wallet",
-            maxPages: CONFIG.pnlPairMaxPages || 20,
-            params: { sender: CONFIG.pnlPairAddress }
-          }
-        ];
+        for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+          dom.pnlStatus.textContent = `Se citesc transferurile ${labelShort}... ${txMap.size.toLocaleString("ro-RO")} tranzactii`;
 
-        async function scanSource(source) {
-          for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex += 1) {
-            dom.pnlStatus.textContent = `Se citesc ${source.label}... ${transactionHashes.size.toLocaleString("ro-RO")} tranzactii verificate`;
+          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+            from: pageIndex * pageSize,
+            size: pageSize,
+            status: "success",
+            order: "desc",
+            token: tokenId
+          }), {
+            retries: CONFIG.pnlMaxRetries,
+            retryDelayMs: CONFIG.pnlRetryDelayMs,
+            timeoutMs: CONFIG.pnlRequestTimeoutMs
+          });
 
-            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-              from: pageIndex * CONFIG.pnlPageSize,
-              size: CONFIG.pnlPageSize,
-              status: "success",
-              order: "desc",
-              withOperations: "true",
-              ...source.params
-            }), {
-              retries: CONFIG.pnlMaxRetries,
-              retryDelayMs: CONFIG.pnlRetryDelayMs,
-              timeoutMs: CONFIG.pnlRequestTimeoutMs
-            });
+          if (!Array.isArray(page) || !page.length) break;
 
-            if (!Array.isArray(page) || !page.length) {
-              return true;
-            }
+          page.forEach((entry) => {
+            const hash = getPnlRootHash(entry);
+            if (!hash) return;
+            if (!txMap.has(hash)) txMap.set(hash, []);
+            txMap.get(hash).push(entry);
+          });
 
-            page.forEach((entry, index) => {
-              const entryHash = String(entry?.txHash || `${getPnlRootHash(entry)}:${entry?.type || "entry"}:${entry?.timestamp || 0}:${index}`);
-              if (entryHash) transferMap.set(entryHash, entry);
-              const rootHash = getPnlRootHash(entry);
-              if (rootHash) transactionHashes.add(rootHash);
-            });
+          const timestamps = page
+            .map((e) => Number(e?.timestamp))
+            .filter((t) => Number.isFinite(t));
 
-            const pageTimestamps = page
-              .map((item) => Number(item?.timestamp))
-              .filter((timestamp) => Number.isFinite(timestamp));
-
-            if (pageTimestamps.length) {
-              const pageOldest = Math.min(...pageTimestamps);
-              oldestTimestamp = oldestTimestamp == null ? pageOldest : Math.min(oldestTimestamp, pageOldest);
-            }
-
-            dom.pnlStatus.textContent = `Se citesc ${source.label}... ${transactionHashes.size.toLocaleString("ro-RO")} tranzactii verificate`;
-
-            if (pageTimestamps.length && Math.min(...pageTimestamps) <= listingTimestamp) {
-              reachedListingStart = true;
-              return true;
-            }
-
-            if (page.length < CONFIG.pnlPageSize) {
-              return true;
-            }
-
-            if (pageIndex === source.maxPages - 1) {
-              hitPageLimit = true;
-              return false;
-            }
-
-            if (CONFIG.pnlPagePauseMs > 0) {
-              await wait(CONFIG.pnlPagePauseMs);
-            }
+          if (timestamps.length) {
+            const oldest = Math.min(...timestamps);
+            oldestTimestamp = oldestTimestamp == null ? oldest : Math.min(oldestTimestamp, oldest);
+            if (oldest <= listingTimestamp) break;
           }
 
-          hitPageLimit = true;
-          return false;
+          if (page.length < pageSize) break;
+
+          if (pageIndex === maxPages - 1) {
+            hitPageLimit = true;
+            break;
+          }
+
+          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
         }
 
-        for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex += 1) {
-          const source = sources[sourceIndex];
-          const completed = await scanSource(source);
-          if (completed) completedSources += 1;
-          if (sourceIndex < sources.length - 1 && CONFIG.pnlSourcePauseMs > 0) {
-            await wait(CONFIG.pnlSourcePauseMs);
+        return { txMap, hitPageLimit, oldestTimestamp };
+      }
+
+      async function fetchSwapTransactions(walletAddress) {
+        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+
+        // Phase 1: scan TCL transfers
+        const tclScan = await scanTokenTransfers(walletAddress, CONFIG.tokens.tcl.identifier, "TCL");
+
+        if (CONFIG.pnlSourcePauseMs > 0) await wait(CONFIG.pnlSourcePauseMs);
+
+        // Phase 2: scan USDC transfers
+        const usdcScan = await scanTokenTransfers(walletAddress, CONFIG.tokens.usdc.identifier, "USDC");
+
+        // Merge: only transactions that have BOTH TCL and USDC movements = swaps
+        const trades = [];
+        const allHashes = new Set([...tclScan.txMap.keys(), ...usdcScan.txMap.keys()]);
+
+        for (const hash of tclScan.txMap.keys()) {
+          const usdcEntries = usdcScan.txMap.get(hash);
+          if (!usdcEntries || !usdcEntries.length) continue; // no USDC in same tx → not a TCL/USDC swap
+
+          const tclEntries = tclScan.txMap.get(hash);
+          let tclReceived = 0, tclSent = 0, usdcReceived = 0, usdcSent = 0;
+          let txTimestamp = 0;
+
+          for (const e of tclEntries) {
+            const norm = normalizePnlTradeTransfer({ token: e.identifier || e.token, value: e.value });
+            if (!norm) continue;
+            if (String(e.receiver || "") === walletAddress) tclReceived += norm.amount;
+            if (String(e.sender || "") === walletAddress) tclSent += norm.amount;
+            if (!txTimestamp) txTimestamp = Number(e.timestamp) || 0;
           }
+
+          for (const e of usdcEntries) {
+            const norm = normalizePnlTradeTransfer({ token: e.identifier || e.token, value: e.value });
+            if (!norm) continue;
+            if (String(e.receiver || "") === walletAddress) usdcReceived += norm.amount;
+            if (String(e.sender || "") === walletAddress) usdcSent += norm.amount;
+            if (!txTimestamp) txTimestamp = Number(e.timestamp) || 0;
+          }
+
+          let side, tclAmount, volumeUsd;
+
+          if (tclReceived > 0 && usdcSent > 0) {
+            side = "buy";
+            tclAmount = tclReceived;
+            volumeUsd = usdcSent;
+          } else if (tclSent > 0 && usdcReceived > 0) {
+            side = "sell";
+            tclAmount = tclSent;
+            volumeUsd = usdcReceived;
+          } else {
+            continue;
+          }
+
+          const price = volumeUsd / tclAmount;
+          if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+
+          trades.push({ hash, timestamp: txTimestamp, side, tclAmount, volumeUsd, price, description: "Swap TCL" });
         }
+
+        trades.sort((a, b) => a.timestamp - b.timestamp);
+
+        const hitPageLimit = tclScan.hitPageLimit || usdcScan.hitPageLimit;
+        const oldest = Math.min(tclScan.oldestTimestamp ?? Infinity, usdcScan.oldestTimestamp ?? Infinity);
 
         return {
-          transfers: Array.from(transferMap.values()),
-          checkedTransactions: transactionHashes.size,
-          reachedListingStart,
+          trades,
+          checkedTransactions: allHashes.size,
+          reachedListingStart: Number.isFinite(oldest) && oldest <= listingTimestamp,
           hitPageLimit,
-          exhaustedHistory: completedSources === sources.length,
-          oldestTimestamp
+          exhaustedHistory: !hitPageLimit,
+          oldestTimestamp: Number.isFinite(oldest) ? oldest : null
         };
       }
 
@@ -2223,13 +2250,11 @@
 
         try {
           const swapData = await fetchSwapTransactions(walletAddress);
-          const trades = parsePnlTrades(swapData.transfers, walletAddress);
-          const totals = aggregatePnlTrades(trades);
+          const totals = aggregatePnlTrades(swapData.trades);
           renderPnlResult(totals, swapData);
 
-          if (!trades.length) {
-            const checkedCount = Number(swapData.checkedTransactions) || swapData.transfers.length;
-            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
+          if (!swapData.trades.length) {
+            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${swapData.checkedTransactions.toLocaleString("ro-RO")}.`;
           }
         } catch (error) {
           console.error(error);
