@@ -62,7 +62,7 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 let cachedDropData = null;
 let cachedDropDataTs = 0;
 const DROP_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -893,11 +893,16 @@ function tokenizeForSearch(value) {
 async function generateAnswer(env, question, matches, language, history = [], eventContext = "") {
   const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
-  const systemText = `You are Companion, a friendly AI assistant for The Cursed Land players on TCLexplorer. Be natural and conversational — for yes/no questions start with "Da" or "Nu" (or "Yes"/"No" in English), then give the answer. Use conversation history to understand follow-up questions and refer back to what was discussed. Answer ONLY from the RAG context provided. If context lacks the answer, say you don't know in a natural way. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown, no raw URLs. Keep answers concise. When live event status is provided, use it to tell the player if the event is active, upcoming, or when the next occurrence is — always in their local time.`;
+  const systemText = `You are Companion, a friendly AI assistant for The Cursed Land players on TCLexplorer. Be natural and conversational — for yes/no questions start with "Da" or "Nu" (or "Yes"/"No" in English). Use conversation history to understand follow-up questions. Answer from the RAG context provided. If context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown, no raw URLs. Keep answers concise.${eventContext ? " IMPORTANT: The LIVE EVENT STATUS block contains real-time data computed from the player's actual local time — it overrides any specific days/times mentioned in the RAG context. Always use live status to answer timing questions (active now / upcoming in X hours / next on day at HH:MM local time)." : ""}`;
 
   const parts = [`Player language: ${language}`];
   if (eventContext) {
-    parts.push("", "Live event status (use this for time-aware answers):", eventContext);
+    parts.push(
+      "",
+      "*** LIVE EVENT STATUS — authoritative, use for all timing/schedule answers ***",
+      eventContext,
+      "*** End live status. RAG context below is for general info only — ignore its specific days/times for events ***"
+    );
   }
   parts.push("", "RAG context:", context, "", "Player question:", question);
   const prompt = parts.join("\n");
