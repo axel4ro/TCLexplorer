@@ -62,7 +62,7 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 3000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const RESPONSE_CACHE_TTL_MS = 60 * 60 * 1000;
 const CF_CACHE_TTL_S = 3 * 60 * 60;
 const SUPPORTED_LANGUAGES = {
@@ -432,7 +432,7 @@ async function handleChat(request, env, ctx) {
   if (!matches.length) {
     const answer = missingKnowledgeAnswer(language);
     const payload = { ok: true, answer, sources: [], actions, language };
-    setCachedAnswer(cacheKey, payload);
+    // Never cache "I don't know" — sync may add new knowledge later
     ctx.waitUntil(logChat(env, request, { question, answer, language, matched_sources: sources }));
     return jsonResponse(request, env, 200, payload);
   }
@@ -454,12 +454,18 @@ async function handleChat(request, env, ctx) {
   }
 
   const payload = { ok: true, answer, sources, actions, language };
-  setCachedAnswer(cacheKey, payload);
-  ctx.waitUntil(Promise.all([
-    putCfCachedAnswer(cacheHash, payload),
-    logChat(env, request, { question, answer, language, matched_sources: sources }),
-    storePlayerQA(env, question, answer)
-  ]));
+  const isMissingAnswer = answer === missingKnowledgeAnswer(language);
+  if (!isMissingAnswer) {
+    setCachedAnswer(cacheKey, payload);
+    ctx.waitUntil(Promise.all([
+      putCfCachedAnswer(cacheHash, payload),
+      logChat(env, request, { question, answer, language, matched_sources: sources }),
+      storePlayerQA(env, question, answer)
+    ]));
+  } else {
+    // Don't cache: LLM said "I don't know" — next sync may have the answer
+    ctx.waitUntil(logChat(env, request, { question, answer, language, matched_sources: sources }));
+  }
   return jsonResponse(request, env, 200, payload);
 }
 
