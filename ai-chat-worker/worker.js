@@ -62,7 +62,7 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v11";
+const CACHE_VERSION = "v12";
 let cachedDropData = null;
 let cachedDropDataTs = 0;
 const DROP_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -893,7 +893,14 @@ function tokenizeForSearch(value) {
 async function generateAnswer(env, question, matches, language, history = [], eventContext = "") {
   const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
-  const systemText = `You are Companion, a friendly AI assistant for The Cursed Land players on TCLexplorer. Be natural and conversational — for yes/no questions start with "Da" or "Nu" (or "Yes"/"No" in English). Use conversation history to understand follow-up questions. Answer from the RAG context provided. If context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown, no raw URLs. Keep answers concise.${eventContext ? " IMPORTANT: The LIVE EVENT STATUS block contains real-time data computed from the player's actual local time — it overrides any specific days/times mentioned in the RAG context. Always use live status to answer timing questions (active now / upcoming in X hours / next on day at HH:MM local time)." : ""}`;
+  const systemText = `You are Companion, a friendly assistant for The Cursed Land players on TCLexplorer. Rules:
+- Reply in ${languageName(language)} with correct, natural grammar. For Romanian: use proper diacritics (ă â î ș ț), correct verb forms (e.g. "îmi amintesc" not "amintesc"), natural phrasing — avoid word-for-word translation from English.
+- Be conversational. For yes/no questions start with "Da," or "Nu,".
+- Answer ONLY what was asked. Do NOT mix information from unrelated game mechanics. If RAG context contains multiple topics, use only the part relevant to the question.
+- If conversation history contains a player correction ("nu e corect", "nu aia", etc.), treat that correction as ground truth and update your understanding accordingly.
+- If context lacks the answer, say you don't know simply — do not speculate.
+- Never invent mechanics, stats, percentages, or dates not found in context.
+- Plain text only, no markdown, no raw URLs. Keep answers concise (2-4 sentences max).${eventContext ? "\n- IMPORTANT: Use LIVE EVENT STATUS for all timing/schedule answers — it overrides any days/times in RAG context." : ""}`;
 
   const parts = [`Player language: ${language}`];
   if (eventContext) {
