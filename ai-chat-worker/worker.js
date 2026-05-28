@@ -59,10 +59,10 @@ const TCL_EXPLORER_PATHS = [
 
 const DEFAULT_MODEL = "llama-3.1-8b-instant";
 const MAX_QUESTION_CHARS = 1000;
-const MAX_CONTEXT_CHARS = 3000;
+const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const RESPONSE_CACHE_TTL_MS = 60 * 60 * 1000;
 const CF_CACHE_TTL_S = 3 * 60 * 60;
 const SUPPORTED_LANGUAGES = {
@@ -596,8 +596,13 @@ function expandKnowledgeQuery(question) {
     return `${text} weekly events evenimente saptamanale events_title events_desc events_local_time Item Drop Experience Fishing Clam Moonlight Treasure Forge Boost Crystals Frenzy`;
   }
 
+  if (/\b(contine|contains|inside|ce.*in|what.*in|what.*inside)\b/i.test(normalized) &&
+      /\b(chest|clam|moonlight|cufar|comori|treasure|box|crystal)\b/i.test(normalized)) {
+    return `${text} contains drop loot items reward`;
+  }
+
   if (/\b(moonlight|clam|treasure.?chest|cufar.?lunar|cufar.?comori|chest.?content|what.*chest|what.*drop)\b/i.test(text)) {
-    return `${text} loot drop chest contents reward items moonlight clam treasure event`;
+    return `${text} loot drop chest contents reward items moonlight clam treasure`;
   }
 
   if (isBuyTokenIntent(text) || isTokenInfoIntent(text)) {
@@ -639,6 +644,9 @@ function rerankKnowledge(question, rows, limit) {
       if (/whitepaper\.thecursedland\.com/i.test(url)) score += 0.08;
       if (/axel4ro\.github\.io\/TCLexplorer/i.test(url)) score += 0.04;
       if (isEventsIntent(question) && /weekly_events\.json|events\.bundle\.js/i.test(url)) score += 0.75;
+      if (/\b(contine|contains|inside|ce.*in|what.*in|what.*inside)\b/i.test(question) &&
+          /\b(chest|clam|moonlight|cufar|comori|treasure|box|crystal)\b/i.test(question) &&
+          /\/data\/drop\.json/i.test(url)) score += 0.80;
       if (!legalIntent && /\b(eula|privacy|terms|conditions|policy)\b/i.test(`${title} ${url}`)) score -= 0.45;
       if (/^player_qa:\/\//i.test(url)) score -= 0.20;
 
