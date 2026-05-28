@@ -971,7 +971,6 @@
           "multiPairSwapTokensFixedInput",
           "swap",
           "aggregateEsdt",
-          "buySwap",
           "xo"
         ],
         storageKey: "tclExplorer.xportal.address.v1",
@@ -1749,14 +1748,19 @@
           const pairInvolved = group.entries
             .some((entry) => entry.sender === CONFIG.pnlPairAddress || entry.receiver === CONFIG.pnlPairAddress)
             || operations.some((operation) => operation.sender === CONFIG.pnlPairAddress || operation.receiver === CONFIG.pnlPairAddress);
+          const groupFunctions = group.entries
+            .map((entry) => String(entry?.function || entry?.action?.name || ""))
+            .filter(Boolean);
+          const hasKnownSwapFunction = groupFunctions
+            .some((name) => CONFIG.pnlSwapFunctions.includes(name) || /^swap/i.test(name));
 
           let side = "";
           let tclAmount = 0;
           let volumeUsd = 0;
           const netTcl = tclReceived - tclSent;
           const netUsd = usdReceived - usdSent;
-          const buyFallbackUsd = (hasNonTclSent || pairInvolved) && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
-          const sellFallbackUsd = (hasNonTclReceived || pairInvolved) && tclSentUsd > 0 ? tclSentUsd : 0;
+          const buyFallbackUsd = hasKnownSwapFunction && (hasNonTclSent || pairInvolved) && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
+          const sellFallbackUsd = hasKnownSwapFunction && (hasNonTclReceived || pairInvolved) && tclSentUsd > 0 ? tclSentUsd : 0;
 
           if (netTcl > 0 && netUsd < 0) {
             side = "buy";
