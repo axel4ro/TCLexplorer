@@ -164,7 +164,7 @@
 
     .hero,
     .balances-panel,
-    .market-panel {
+    .pnl-panel {
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius);
       background: linear-gradient(180deg, rgba(20, 24, 36, 0.95), rgba(12, 15, 23, 0.96));
@@ -381,7 +381,7 @@
     }
 
     .balances-panel,
-    .market-panel {
+    .pnl-panel {
       padding: 18px;
       margin-bottom: 18px;
     }
@@ -515,25 +515,32 @@
       overflow-wrap: anywhere;
     }
 
-    .market-panel[hidden] {
+    .pnl-panel[hidden] {
       display: none;
     }
 
-    .market-layout {
+    .pnl-form {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-      gap: 14px;
-      align-items: start;
-    }
-
-    .market-toolbar {
-      display: flex;
-      align-items: center;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
-      margin-bottom: 12px;
+      align-items: end;
+      margin-bottom: 14px;
     }
 
-    .market-input {
+    .pnl-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .pnl-field label {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .pnl-input {
       width: 100%;
       min-height: 42px;
       padding: 10px 12px;
@@ -542,163 +549,70 @@
       background: rgba(4, 6, 10, 0.64);
       color: var(--text);
       outline: none;
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      overflow-wrap: anywhere;
     }
 
-    .market-input:focus {
+    .pnl-input:focus {
       border-color: var(--border-strong);
       box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
     }
 
-    .nft-grid {
+    .pnl-results {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
-      max-height: 620px;
-      overflow: auto;
-      padding-right: 4px;
+      margin-bottom: 12px;
     }
 
-    .listing-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .nft-card {
-      display: grid;
-      gap: 10px;
-      min-width: 0;
-      padding: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.035);
-      color: var(--text);
-      text-align: left;
-    }
-
-    .nft-card.is-selected {
-      border-color: var(--border-strong);
-      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
-    }
-
-    .nft-media,
-    .selected-media {
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius);
-      background: rgba(0, 0, 0, 0.24);
-    }
-
-    .nft-media {
-      aspect-ratio: 1;
-    }
-
-    .nft-media img,
-    .selected-media img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .nft-placeholder {
-      color: var(--text-soft);
-      font-family: var(--font-display);
-      font-size: 0.9rem;
-    }
-
-    .nft-title {
-      margin: 0;
-      color: var(--text);
-      font-size: 0.94rem;
-      font-weight: 800;
-      overflow-wrap: anywhere;
-    }
-
-    .nft-id {
-      margin: 3px 0 0;
-      color: var(--text-soft);
-      font-size: 0.78rem;
-      overflow-wrap: anywhere;
-    }
-
-    .nft-badge {
-      width: fit-content;
-      padding: 4px 7px;
-      border: 1px solid rgba(0, 232, 204, 0.18);
-      border-radius: 999px;
-      color: var(--accent-strong);
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-
-    .nft-empty {
-      grid-column: 1 / -1;
-      padding: 18px;
-      border: 1px dashed rgba(139, 149, 168, 0.25);
-      border-radius: var(--radius);
-      color: var(--text-muted);
-      text-align: center;
-    }
-
-    .transfer-panel {
-      display: grid;
-      gap: 14px;
-      padding: 16px;
+    .pnl-card {
+      min-height: 122px;
+      padding: 14px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius);
       background: rgba(255, 255, 255, 0.035);
     }
 
-    .selected-nft {
-      display: grid;
-      grid-template-columns: 78px minmax(0, 1fr);
-      gap: 12px;
-      align-items: center;
-      min-width: 0;
-    }
-
-    .selected-media {
-      width: 78px;
-      height: 78px;
-    }
-
-    .transfer-form {
-      display: grid;
-      gap: 12px;
-    }
-
-    .form-field {
-      display: grid;
-      gap: 6px;
-    }
-
-    .form-field label {
-      color: var(--text-muted);
-      font-size: 0.78rem;
+    .pnl-label {
+      margin: 0 0 8px;
+      color: var(--text-soft);
+      font-size: 0.76rem;
       font-weight: 800;
       text-transform: uppercase;
     }
 
-    .send-status {
-      min-height: 20px;
+    .pnl-value {
       margin: 0;
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      line-height: 1.5;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.18rem, 2.5vw, 1.75rem);
+      line-height: 1.15;
       overflow-wrap: anywhere;
     }
 
-    .tx-link[hidden] {
-      display: none;
+    .pnl-value.is-positive {
+      color: var(--success);
     }
 
-    .market-section {
-      margin-bottom: 18px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    .pnl-value.is-negative {
+      color: var(--danger);
+    }
+
+    .pnl-meta {
+      margin: 7px 0 0;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .pnl-status {
+      min-height: 22px;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
     }
 
     .small-note {
@@ -774,9 +688,8 @@
       .qr-panel,
       .summary-grid,
       .token-grid,
-      .market-layout,
-      .listing-grid,
-      .nft-grid {
+      .pnl-form,
+      .pnl-results {
         grid-template-columns: 1fr;
       }
 
@@ -970,78 +883,40 @@
       </div>
     </section>
 
-    <section class="market-panel" id="nftMarketPanel" aria-labelledby="nftMarketTitle" hidden>
+    <section class="pnl-panel" id="pnlPanel" aria-labelledby="pnlTitle" hidden>
       <div class="panel-head">
         <div>
-          <h2 class="panel-title" id="nftMarketTitle">NFT Marketplace</h2>
-          <p class="panel-subtitle">Cumpara si vinde NFT-uri cu TCL</p>
+          <h2 class="panel-title" id="pnlTitle">PNL Check</h2>
+          <p class="panel-subtitle">Swapuri TCL evaluate in USDC $ pentru walletul selectat.</p>
         </div>
       </div>
 
-      <div class="market-section">
-        <div class="panel-head">
-          <div>
-            <h3 class="panel-title">De vanzare</h3>
-            <p class="panel-subtitle">Listari active in TCL</p>
-          </div>
+      <form class="pnl-form" id="pnlForm">
+        <div class="pnl-field">
+          <label for="pnlAddressInput">Wallet</label>
+          <input class="pnl-input" id="pnlAddressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
         </div>
-        <div class="listing-grid" id="marketListingsGrid" aria-live="polite">
-          <div class="nft-empty">Nu exista listari active.</div>
-        </div>
-        <p class="send-status" id="marketStatus"></p>
+        <button class="btn btn-primary" id="pnlRunBtn" type="submit">Run</button>
+      </form>
+
+      <div class="pnl-results" aria-live="polite">
+        <article class="pnl-card">
+          <p class="pnl-label">TCL bought</p>
+          <p class="pnl-value" id="pnlBoughtTcl">--</p>
+          <p class="pnl-meta" id="pnlBoughtUsd">Cost: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">TCL sold</p>
+          <p class="pnl-value" id="pnlSoldTcl">--</p>
+          <p class="pnl-meta" id="pnlSoldUsd">Received: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">PNL $ USDC</p>
+          <p class="pnl-value" id="pnlNetUsd">--</p>
+          <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
+        </article>
       </div>
-
-      <div class="market-layout">
-        <div>
-          <div class="panel-head">
-            <div>
-              <h3 class="panel-title">NFT-urile tale</h3>
-              <p class="panel-subtitle"><span id="nftCount">0</span> NFT-uri in wallet</p>
-            </div>
-          </div>
-          <div class="market-toolbar">
-            <input class="market-input" id="nftSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Cauta NFT..." aria-label="Cauta NFT">
-          </div>
-          <div class="nft-grid" id="nftGrid" aria-live="polite">
-            <div class="nft-empty">Conecteaza xPortal pentru NFT-uri.</div>
-          </div>
-        </div>
-
-        <aside class="transfer-panel" aria-label="Transfer NFT P2P">
-          <div>
-            <h3 class="panel-title">Vinde sau trimite</h3>
-            <p class="panel-subtitle">NFT selectat</p>
-          </div>
-          <div class="selected-nft">
-            <div class="selected-media" id="selectedNftMedia">
-              <span class="nft-placeholder">NFT</span>
-            </div>
-            <div>
-              <p class="nft-title" id="selectedNftName">Nimic selectat</p>
-              <p class="nft-id" id="selectedNftId">--</p>
-            </div>
-          </div>
-
-          <form class="transfer-form" id="nftTransferForm">
-            <div class="form-field">
-              <label for="nftRecipientInput">Destinatar</label>
-              <input class="market-input" id="nftRecipientInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
-            </div>
-            <div class="form-field">
-              <label for="nftQuantityInput">Cantitate</label>
-              <input class="market-input" id="nftQuantityInput" type="number" min="1" step="1" value="1" required>
-            </div>
-            <button class="btn btn-primary" id="nftSendBtn" type="submit" disabled>Trimite NFT</button>
-          </form>
-          <div class="form-field">
-            <label for="nftPriceInput">Pret TCL</label>
-            <input class="market-input" id="nftPriceInput" type="number" min="0" step="0.0001" placeholder="0.00">
-          </div>
-          <button class="btn btn-primary" id="nftListBtn" type="button" disabled>Listeaza la vanzare</button>
-          <p class="send-status" id="nftSendStatus">Selecteaza un NFT.</p>
-          <a class="btn tx-link" id="nftTxLink" href="#" target="_blank" rel="noreferrer" hidden>Vezi tranzactia</a>
-        </aside>
-      </div>
+      <p class="pnl-status" id="pnlStatus">Conecteaza xPortal pentru PNL Check.</p>
     </section>
 
   </main>
@@ -1055,22 +930,22 @@
       const CONFIG = {
         walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
         apiBase: "https://api.multiversx.com",
-        gatewayBase: "https://gateway.multiversx.com",
         dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
-        marketplaceContractAddress: "",
-        marketplaceListingsUrl: "",
+        listingDate: "2024-06-13T00:00:00Z",
+        pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        pnlPageSize: 50,
+        pnlMaxPages: 80,
+        pnlSwapFunctions: [
+          "swapTokensFixedInput",
+          "swapTokensFixedOutput",
+          "multiPairSwap",
+          "multiPairSwapTokensFixedInput"
+        ],
         storageKey: "tclExplorer.xportal.address.v1",
         sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
         relayUrl: "wss://relay.walletconnect.com",
         chainId: "mvx:1",
-        chainID: "1",
-        gasPrice: 1000000000,
-        nftPageSize: 1000,
-        nftTransferGasBase: 1000000,
-        nftTransferGasPerByte: 1500,
         walletConnectMethods: [
-          "mvx_signTransaction",
-          "mvx_signTransactions",
           "mvx_signMessage",
           "mvx_signLoginToken"
         ],
@@ -1090,14 +965,9 @@
         signClientProjectId: "",
         connectionRunId: 0,
         prices: { egld: 0, usdc: 1, tcl: 0 },
-        nfts: [],
-        filteredNfts: [],
-        marketListings: [],
-        selectedNft: null,
         connecting: false,
         balanceLoading: false,
-        nftLoading: false,
-        nftSending: false,
+        pnlLoading: false,
         loading: false
       };
 
@@ -1122,23 +992,17 @@
         tclPrice: document.getElementById("tclPrice"),
         updatedAt: document.getElementById("updatedAt"),
         usdcIcon: document.getElementById("usdcIcon"),
-        nftMarketPanel: document.getElementById("nftMarketPanel"),
-        nftCount: document.getElementById("nftCount"),
-        marketListingsGrid: document.getElementById("marketListingsGrid"),
-        marketStatus: document.getElementById("marketStatus"),
-        nftSearch: document.getElementById("nftSearch"),
-        nftGrid: document.getElementById("nftGrid"),
-        selectedNftMedia: document.getElementById("selectedNftMedia"),
-        selectedNftName: document.getElementById("selectedNftName"),
-        selectedNftId: document.getElementById("selectedNftId"),
-        nftTransferForm: document.getElementById("nftTransferForm"),
-        nftRecipientInput: document.getElementById("nftRecipientInput"),
-        nftQuantityInput: document.getElementById("nftQuantityInput"),
-        nftSendBtn: document.getElementById("nftSendBtn"),
-        nftPriceInput: document.getElementById("nftPriceInput"),
-        nftListBtn: document.getElementById("nftListBtn"),
-        nftSendStatus: document.getElementById("nftSendStatus"),
-        nftTxLink: document.getElementById("nftTxLink")
+        pnlPanel: document.getElementById("pnlPanel"),
+        pnlForm: document.getElementById("pnlForm"),
+        pnlAddressInput: document.getElementById("pnlAddressInput"),
+        pnlRunBtn: document.getElementById("pnlRunBtn"),
+        pnlBoughtTcl: document.getElementById("pnlBoughtTcl"),
+        pnlBoughtUsd: document.getElementById("pnlBoughtUsd"),
+        pnlSoldTcl: document.getElementById("pnlSoldTcl"),
+        pnlSoldUsd: document.getElementById("pnlSoldUsd"),
+        pnlNetUsd: document.getElementById("pnlNetUsd"),
+        pnlTradeCount: document.getElementById("pnlTradeCount"),
+        pnlStatus: document.getElementById("pnlStatus")
       };
 
       function setStatus(kind, message) {
@@ -1147,13 +1011,12 @@
       }
 
       function syncLoadingState() {
-        const isLoading = state.connecting || state.balanceLoading || state.nftSending;
+        const isLoading = state.connecting || state.balanceLoading || state.pnlLoading;
         state.loading = isLoading;
         if (dom.refreshBtn) dom.refreshBtn.disabled = isLoading || !state.address;
         dom.connectBtn.disabled = isLoading;
         dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
-        dom.nftSendBtn.disabled = isLoading || !state.address || !state.selectedNft;
-        dom.nftListBtn.disabled = isLoading || !state.address || !state.selectedNft || !getMarketplaceContract();
+        dom.pnlRunBtn.disabled = isLoading || !state.address || !isAddress(dom.pnlAddressInput.value);
       }
 
       function setConnectionLoading(isLoading) {
@@ -1167,16 +1030,15 @@
         syncLoadingState();
       }
 
-      function setNftSending(isSending) {
-        state.nftSending = Boolean(isSending);
+      function setPnlLoading(isLoading) {
+        state.pnlLoading = Boolean(isLoading);
         syncPageOverlay();
         syncLoadingState();
       }
 
       function syncPageOverlay() {
-        const isActive = state.balanceLoading || state.nftSending;
-        const message = state.nftSending ? "Se trimite NFT-ul..." : "Se actualizeaza balanta...";
-        dom.pageOverlayText.textContent = message;
+        const isActive = state.balanceLoading || state.pnlLoading;
+        dom.pageOverlayText.textContent = state.pnlLoading ? "Se calculeaza PNL..." : "Se actualizeaza balanta...";
         dom.balanceOverlay.classList.toggle("is-active", isActive);
         dom.balanceOverlay.setAttribute("aria-hidden", String(!isActive));
         document.body.classList.toggle("is-balance-loading", isActive);
@@ -1188,11 +1050,6 @@
 
       function getConfiguredProjectId() {
         return String(CONFIG.walletConnectProjectId || "").trim();
-      }
-
-      function getMarketplaceContract() {
-        const address = String(CONFIG.marketplaceContractAddress || "").trim();
-        return isAddress(address) ? address : "";
       }
 
       function getWalletConnectGlobal() {
@@ -1237,19 +1094,14 @@
         state.signClient.on("session_delete", () => {
           setConnectionLoading(false);
           setBalanceLoading(false);
-          setNftSending(false);
+          setPnlLoading(false);
           state.sessionTopic = "";
           state.address = "";
-          state.nfts = [];
-          state.filteredNfts = [];
-          state.marketListings = [];
-          state.selectedNft = null;
           window.localStorage.removeItem(CONFIG.sessionTopicKey);
           window.localStorage.removeItem(CONFIG.storageKey);
           renderAddress();
           renderEmptyBalances();
-          renderNftMarketplace();
-          renderMarketplaceListings();
+          renderEmptyPnl();
           setStatus("idle", "Sesiunea xPortal a fost inchisa.");
         });
         return state.signClient;
@@ -1356,8 +1208,6 @@
           setConnectionLoading(false);
           setStatus("loading", `Conectat prin xPortal. Se actualizeaza balanta pentru ${truncateAddress(address)}...`);
           await loadBalances();
-          await loadWalletNfts();
-          await loadMarketplaceListings();
         } catch (error) {
           console.error(error);
           if (runId === state.connectionRunId) {
@@ -1386,20 +1236,15 @@
         state.connectionRunId++;
         setConnectionLoading(false);
         setBalanceLoading(false);
-        setNftSending(false);
+        setPnlLoading(false);
         state.address = "";
         state.sessionTopic = "";
-        state.nfts = [];
-        state.filteredNfts = [];
-        state.marketListings = [];
-        state.selectedNft = null;
         window.localStorage.removeItem(CONFIG.storageKey);
         window.localStorage.removeItem(CONFIG.sessionTopicKey);
         hideQrPanel();
         renderAddress();
         renderEmptyBalances();
-        renderNftMarketplace();
-        renderMarketplaceListings();
+        renderEmptyPnl();
         setStatus("idle", "Neconectat");
       }
 
@@ -1421,11 +1266,21 @@
         dom.copyBtn.disabled = !address;
         dom.disconnectBtn.disabled = !address;
         dom.disconnectBtn.hidden = !address;
-        dom.nftMarketPanel.hidden = !address;
+        dom.pnlPanel.hidden = !address;
+        if (address && (dom.pnlAddressInput.dataset.mode !== "manual" || !dom.pnlAddressInput.value.trim())) {
+          dom.pnlAddressInput.value = address;
+          dom.pnlAddressInput.dataset.mode = "auto";
+        }
+        if (!address) {
+          dom.pnlAddressInput.value = "";
+          dom.pnlAddressInput.dataset.mode = "auto";
+          dom.pnlStatus.textContent = "Conecteaza xPortal pentru PNL Check.";
+        }
         if (dom.refreshBtn) dom.refreshBtn.disabled = !address || state.loading;
         dom.explorerLink.href = address
           ? `https://explorer.multiversx.com/accounts/${address}`
           : "https://explorer.multiversx.com/";
+        syncLoadingState();
       }
 
       async function copyAddress() {
@@ -1554,6 +1409,23 @@
         }).format(amount);
       }
 
+      function formatTokenAmount(value) {
+        const amount = readNumber(value, 0);
+        const decimals = Math.abs(amount) < 1000 && amount !== 0 ? 4 : 2;
+        return new Intl.NumberFormat("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: decimals
+        }).format(amount);
+      }
+
+      function formatSignedUsd(value) {
+        const amount = readNumber(value, 0);
+        const text = formatUsd(Math.abs(amount));
+        if (amount > 0) return `+${text}`;
+        if (amount < 0) return `-${text}`;
+        return text;
+      }
+
       function setTokenRender(key, amount, usdValue, price) {
         const amountEl = document.querySelector(`[data-token-amount="${key}"]`);
         const usdEl = document.querySelector(`[data-token-usd="${key}"]`);
@@ -1576,6 +1448,16 @@
         dom.totalUsd.textContent = "--";
         dom.tclPrice.textContent = "--";
         dom.updatedAt.textContent = "--";
+      }
+
+      function renderEmptyPnl() {
+        dom.pnlBoughtTcl.textContent = "--";
+        dom.pnlBoughtUsd.textContent = "Cost: --";
+        dom.pnlSoldTcl.textContent = "--";
+        dom.pnlSoldUsd.textContent = "Received: --";
+        dom.pnlNetUsd.textContent = "--";
+        dom.pnlNetUsd.classList.remove("is-positive", "is-negative");
+        dom.pnlTradeCount.textContent = "Trades: --";
       }
 
       function getTokenByIdentifier(tokens, identifier) {
@@ -1639,631 +1521,383 @@
         }
       }
 
-      function escapeHtml(value) {
-        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
-        }[char]));
+      function decimalStringToNumber(value, decimals) {
+        const raw = String(value || "").replace(/[^\d]/g, "");
+        if (!raw) return Number.NaN;
+        const precision = Math.max(0, Number(decimals) || 0);
+        if (!precision) return Number(raw);
+        const padded = raw.padStart(precision + 1, "0");
+        const whole = padded.slice(0, -precision);
+        const fraction = padded.slice(-precision);
+        const amount = Number(`${whole}.${fraction}`);
+        return Number.isFinite(amount) ? amount : Number.NaN;
       }
 
-      function getNftCollection(nft) {
-        if (nft?.collection) return String(nft.collection);
-        const identifier = String(nft?.identifier || "");
-        return identifier.split("-").slice(0, -1).join("-");
+      function normalizePnlTradeTransfer(transfer) {
+        const token = transfer?.token || transfer?.identifier || "";
+        if (!token || !transfer?.value) return null;
+        const decimals = Number(transfer.decimals ?? (
+          token === CONFIG.tokens.usdc.identifier
+            ? CONFIG.tokens.usdc.decimals
+            : CONFIG.tokens.tcl.decimals
+        ));
+        const amount = decimalStringToNumber(transfer.value, decimals);
+        if (!Number.isFinite(amount) || amount <= 0) return null;
+        return { token, amount };
       }
 
-      function getNftName(nft) {
-        return nft?.name || nft?.metadata?.name || nft?.identifier || "NFT";
+      function normalizePnlOperation(operation) {
+        const token = operation?.identifier || operation?.token || "";
+        if (!token || !operation?.value) return null;
+        const decimals = Number(operation.decimals ?? (
+          token === CONFIG.tokens.usdc.identifier
+            ? CONFIG.tokens.usdc.decimals
+            : CONFIG.tokens.tcl.decimals
+        ));
+        const amount = decimalStringToNumber(operation.value, decimals);
+        if (!Number.isFinite(amount) || amount <= 0) return null;
+
+        const valueUsd = token === CONFIG.tokens.usdc.identifier
+          ? amount
+          : readNumber(operation.valueUSD, Number.NaN);
+
+        return {
+          token,
+          amount,
+          valueUsd,
+          sender: operation.sender || "",
+          receiver: operation.receiver || ""
+        };
       }
 
-      function getNftImage(nft) {
-        return nft?.media?.[0]?.thumbnailUrl ||
-          nft?.media?.[0]?.url ||
-          nft?.assets?.pngUrl ||
-          nft?.assets?.svgUrl ||
-          nft?.url ||
-          "";
-      }
+      function parsePnlTradesFromOperations(transfers, walletAddress) {
+        const trades = [];
+        const seenHashes = new Set();
 
-      function getNftBalance(nft) {
-        const raw = String(nft?.balance || nft?.supply || "1").replace(/[^\d]/g, "");
-        try {
-          return BigInt(raw || "1");
-        } catch (_) {
-          return 1n;
-        }
-      }
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+          const hash = String(entry.txHash || entry.originalTxHash || "");
+          if (!hash || seenHashes.has(hash)) continue;
+          const isSwap = /^swap/i.test(String(entry.function || "")) || entry?.action?.name === "swap";
+          if (!isSwap || !Array.isArray(entry.operations)) continue;
 
-      function displayNftBalance(nft) {
-        const balance = getNftBalance(nft);
-        return balance > 1n ? `x${balance.toString()}` : "NFT";
-      }
+          const operations = entry.operations
+            .map(normalizePnlOperation)
+            .filter(Boolean);
+          if (!operations.length) continue;
 
-      function formatTclAmount(rawAmount) {
-        return `${rawToDisplay(String(rawAmount || "0"), CONFIG.tokens.tcl.decimals, 4)} TCL`;
-      }
+          const tclSent = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.sender === walletAddress)
+            .reduce((sum, operation) => sum + operation.amount, 0);
+          const tclReceived = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress)
+            .reduce((sum, operation) => sum + operation.amount, 0);
+          const usdSent = operations
+            .filter((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.sender === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const usdReceived = operations
+            .filter((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
 
-      function renderNftMarketplace() {
-        dom.nftMarketPanel.hidden = !state.address;
-        dom.nftCount.textContent = state.nfts.length.toLocaleString("ro-RO");
+          let side = "";
+          let tclAmount = 0;
+          let volumeUsd = 0;
 
-        if (!state.address) {
-          state.filteredNfts = [];
-          state.selectedNft = null;
-          renderSelectedNft();
-          dom.nftGrid.innerHTML = `<div class="nft-empty">Conecteaza xPortal pentru NFT-uri.</div>`;
-          return;
-        }
+          if (tclReceived > 0 && usdSent > 0) {
+            side = "buy";
+            tclAmount = tclReceived;
+            volumeUsd = usdSent;
+          } else if (tclSent > 0 && usdReceived > 0) {
+            side = "sell";
+            tclAmount = tclSent;
+            volumeUsd = usdReceived;
+          }
 
-        if (state.nftLoading) {
-          dom.nftGrid.innerHTML = `<div class="nft-empty">Se incarca NFT-urile...</div>`;
-          renderSelectedNft();
-          return;
-        }
-
-        const term = dom.nftSearch.value.trim().toLowerCase();
-        state.filteredNfts = term
-          ? state.nfts.filter((nft) => {
-            const haystack = `${getNftName(nft)} ${nft.identifier || ""} ${getNftCollection(nft)}`.toLowerCase();
-            return haystack.includes(term);
-          })
-          : state.nfts.slice();
-
-        if (state.selectedNft && !state.nfts.some((nft) => nft.identifier === state.selectedNft.identifier)) {
-          state.selectedNft = null;
-        }
-        if (!state.selectedNft && state.filteredNfts.length) {
-          state.selectedNft = state.filteredNfts[0];
-        }
-
-        if (!state.filteredNfts.length) {
-          dom.nftGrid.innerHTML = `<div class="nft-empty">${state.nfts.length ? "Niciun NFT gasit." : "Nu exista NFT-uri in wallet."}</div>`;
-        } else {
-          dom.nftGrid.innerHTML = state.filteredNfts.map(renderNftCard).join("");
-          dom.nftGrid.querySelectorAll("[data-nft-id]").forEach((card) => {
-            card.addEventListener("click", () => selectNft(card.dataset.nftId));
+          if (!side || !Number.isFinite(tclAmount) || tclAmount <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+          seenHashes.add(hash);
+          trades.push({
+            hash,
+            timestamp: Number(entry.timestamp) || 0,
+            side,
+            tclAmount,
+            volumeUsd,
+            price: volumeUsd / tclAmount,
+            description: entry?.action?.description || entry.function || "Swap"
           });
         }
 
-        renderSelectedNft();
+        return trades;
       }
 
-      function renderMarketplaceListings() {
-        const contract = getMarketplaceContract();
-        if (!contract) {
-          dom.marketListingsGrid.innerHTML = `<div class="nft-empty">Marketplace-ul va fi activat dupa conectarea contractului escrow.</div>`;
-          dom.marketStatus.textContent = "Vanzarea si cumpararea cu TCL sunt blocate pana exista contractul marketplace.";
-          syncLoadingState();
-          return;
+      function parsePnlTradesFromPairTransfers(transfers, walletAddress) {
+        const groupedSwaps = new Map();
+
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+
+          const transferList = entry?.action?.arguments?.transfers;
+          if (!Array.isArray(transferList) || !transferList.length) continue;
+
+          const primaryTransfer = normalizePnlTradeTransfer(transferList[0]);
+          if (!primaryTransfer) continue;
+
+          const timestamp = Number(entry.timestamp);
+          if (!Number.isFinite(timestamp)) continue;
+
+          const groupHash = String(entry.originalTxHash || entry.txHash || "");
+          if (!groupHash) continue;
+
+          let groupedSwap = groupedSwaps.get(groupHash);
+          if (!groupedSwap) {
+            groupedSwap = {
+              hash: groupHash,
+              timestamp,
+              inputToken: null,
+              inputAmount: 0,
+              outputToken: null,
+              outputAmount: 0,
+              description: "",
+              invalid: false
+            };
+            groupedSwaps.set(groupHash, groupedSwap);
+          } else if (timestamp < groupedSwap.timestamp) {
+            groupedSwap.timestamp = timestamp;
+          }
+
+          const description = String(entry?.action?.description || "");
+          if (description && (!groupedSwap.description || groupedSwap.description === "Transfer" || description !== "Transfer")) {
+            groupedSwap.description = description;
+          }
+
+          const isSwapInput =
+            entry.sender === walletAddress &&
+            entry.receiver === CONFIG.pnlPairAddress &&
+            (/^swap/i.test(String(entry.function || "")) || entry?.action?.name === "swap");
+
+          if (isSwapInput) {
+            if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+              groupedSwap.invalid = true;
+              continue;
+            }
+            groupedSwap.inputToken = primaryTransfer.token;
+            groupedSwap.inputAmount += primaryTransfer.amount;
+            continue;
+          }
+
+          const isPairOutput =
+            entry.sender === CONFIG.pnlPairAddress &&
+            entry.receiver === walletAddress &&
+            entry.function !== "depositSwapFees" &&
+            (primaryTransfer.token === CONFIG.tokens.tcl.identifier || primaryTransfer.token === CONFIG.tokens.usdc.identifier);
+
+          if (!isPairOutput) continue;
+
+          if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+            groupedSwap.invalid = true;
+            continue;
+          }
+
+          groupedSwap.outputToken = primaryTransfer.token;
+          groupedSwap.outputAmount += primaryTransfer.amount;
         }
 
-        if (!state.marketListings.length) {
-          dom.marketListingsGrid.innerHTML = `<div class="nft-empty">Nu exista listari active.</div>`;
-          dom.marketStatus.textContent = "";
-          return;
-        }
+        const trades = [];
+        for (const groupedSwap of groupedSwaps.values()) {
+          if (groupedSwap.invalid) continue;
+          if (!groupedSwap.inputToken || !groupedSwap.outputToken || groupedSwap.inputAmount <= 0 || groupedSwap.outputAmount <= 0) continue;
 
-        dom.marketListingsGrid.innerHTML = state.marketListings.map((listing) => {
-          const image = listing.image ? `<img src="${escapeHtml(listing.image)}" alt="">` : `<span class="nft-placeholder">NFT</span>`;
-          return `
-            <article class="nft-card">
-              <div class="nft-media">${image}</div>
-              <div>
-                <p class="nft-title">${escapeHtml(listing.name || listing.identifier || "NFT")}</p>
-                <p class="nft-id">${escapeHtml(listing.identifier || "")}</p>
-              </div>
-              <span class="nft-badge">${escapeHtml(formatTclAmount(listing.priceRaw))}</span>
-              <button class="btn btn-primary" type="button" data-buy-listing="${escapeHtml(listing.id)}">Cumpara</button>
-            </article>
-          `;
-        }).join("");
+          let side = "";
+          let tclAmount = 0;
+          let volumeUsd = 0;
 
-        dom.marketListingsGrid.querySelectorAll("[data-buy-listing]").forEach((button) => {
-          button.addEventListener("click", () => buyMarketplaceListing(button.dataset.buyListing));
-        });
-        dom.marketStatus.textContent = "";
-      }
+          if (groupedSwap.inputToken === CONFIG.tokens.usdc.identifier && groupedSwap.outputToken === CONFIG.tokens.tcl.identifier) {
+            side = "buy";
+            tclAmount = groupedSwap.outputAmount;
+            volumeUsd = groupedSwap.inputAmount;
+          } else if (groupedSwap.inputToken === CONFIG.tokens.tcl.identifier && groupedSwap.outputToken === CONFIG.tokens.usdc.identifier) {
+            side = "sell";
+            tclAmount = groupedSwap.inputAmount;
+            volumeUsd = groupedSwap.outputAmount;
+          } else {
+            continue;
+          }
 
-      function renderNftCard(nft) {
-        const image = getNftImage(nft);
-        const name = getNftName(nft);
-        const collection = getNftCollection(nft);
-        const identifier = nft.identifier || "";
-        const isSelected = state.selectedNft?.identifier === identifier;
-        const media = image
-          ? `<img src="${escapeHtml(image)}" alt="">`
-          : `<span class="nft-placeholder">NFT</span>`;
+          const price = volumeUsd / tclAmount;
+          if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
 
-        return `
-          <button class="nft-card${isSelected ? " is-selected" : ""}" type="button" data-nft-id="${escapeHtml(identifier)}">
-            <div class="nft-media">${media}</div>
-            <div>
-              <p class="nft-title">${escapeHtml(name)}</p>
-              <p class="nft-id">${escapeHtml(identifier)}</p>
-            </div>
-            <span class="nft-badge">${escapeHtml(collection)} ${escapeHtml(displayNftBalance(nft))}</span>
-          </button>
-        `;
-      }
-
-      function renderSelectedNft() {
-        const nft = state.selectedNft;
-        if (!nft) {
-          dom.selectedNftMedia.innerHTML = `<span class="nft-placeholder">NFT</span>`;
-          dom.selectedNftName.textContent = "Nimic selectat";
-          dom.selectedNftId.textContent = "--";
-          dom.nftQuantityInput.value = "1";
-          dom.nftQuantityInput.max = "1";
-          dom.nftSendStatus.textContent = state.address ? "Selecteaza un NFT." : "Conecteaza xPortal.";
-          dom.nftTxLink.hidden = true;
-          syncLoadingState();
-          return;
-        }
-
-        const image = getNftImage(nft);
-        const balance = getNftBalance(nft);
-        dom.selectedNftMedia.innerHTML = image
-          ? `<img src="${escapeHtml(image)}" alt="">`
-          : `<span class="nft-placeholder">NFT</span>`;
-        dom.selectedNftName.textContent = getNftName(nft);
-        dom.selectedNftId.textContent = nft.identifier || "--";
-        dom.nftQuantityInput.max = balance.toString();
-        let currentQuantity = 1n;
-        try {
-          currentQuantity = BigInt(String(dom.nftQuantityInput.value || "1").replace(/[^\d]/g, "") || "1");
-        } catch (_) {
-          currentQuantity = 1n;
-        }
-        if (currentQuantity > balance) {
-          dom.nftQuantityInput.value = balance.toString();
-        }
-        dom.nftQuantityInput.disabled = balance <= 1n;
-        dom.nftSendStatus.textContent = "Gata de transfer.";
-        dom.nftTxLink.hidden = true;
-        syncLoadingState();
-      }
-
-      function selectNft(identifier) {
-        state.selectedNft = state.nfts.find((nft) => nft.identifier === identifier) || null;
-        renderNftMarketplace();
-      }
-
-      async function loadWalletNfts() {
-        if (!state.address || state.nftLoading) return;
-
-        state.nftLoading = true;
-        renderNftMarketplace();
-
-        try {
-          const url = buildApiUrl(`/accounts/${state.address}/nfts`, {
-            from: 0,
-            size: CONFIG.nftPageSize
+          trades.push({
+            hash: groupedSwap.hash,
+            timestamp: groupedSwap.timestamp,
+            side,
+            tclAmount,
+            volumeUsd,
+            price,
+            description: groupedSwap.description
           });
-          const payload = await fetchJson(url);
-          state.nfts = (Array.isArray(payload) ? payload : [])
-            .filter((nft) => nft?.identifier && getNftBalance(nft) > 0n)
-            .sort((a, b) => String(getNftName(a)).localeCompare(String(getNftName(b))));
-          state.selectedNft = state.nfts[0] || null;
-        } catch (error) {
-          console.error(error);
-          state.nfts = [];
-          state.selectedNft = null;
-          dom.nftSendStatus.textContent = "Nu am putut incarca NFT-urile.";
-        } finally {
-          state.nftLoading = false;
-          renderNftMarketplace();
-        }
-      }
-
-      async function loadMarketplaceListings() {
-        if (!getMarketplaceContract() || !CONFIG.marketplaceListingsUrl) {
-          state.marketListings = [];
-          renderMarketplaceListings();
-          return;
         }
 
-        try {
-          const payload = await fetchJson(CONFIG.marketplaceListingsUrl);
-          state.marketListings = Array.isArray(payload?.listings)
-            ? payload.listings
-            : (Array.isArray(payload) ? payload : []);
-        } catch (error) {
-          console.error(error);
-          state.marketListings = [];
-          dom.marketStatus.textContent = "Nu am putut incarca listarile marketplace.";
-        } finally {
-          renderMarketplaceListings();
-        }
+        return trades.sort((left, right) => left.timestamp - right.timestamp);
       }
 
-      function textToHex(value) {
-        return Array.from(new TextEncoder().encode(String(value)))
-          .map((byte) => byte.toString(16).padStart(2, "0"))
-          .join("");
+      function parsePnlTrades(transfers, walletAddress) {
+        const operationTrades = parsePnlTradesFromOperations(transfers, walletAddress);
+        const fallbackTrades = parsePnlTradesFromPairTransfers(transfers, walletAddress);
+        const merged = new Map();
+
+        fallbackTrades.forEach((trade) => {
+          merged.set(trade.hash, trade);
+        });
+        operationTrades.forEach((trade) => {
+          merged.set(trade.hash, trade);
+        });
+
+        return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
       }
 
-      function normalizeEvenHex(hex) {
-        const clean = String(hex || "").replace(/^0x/i, "").toLowerCase();
-        return clean.length % 2 ? `0${clean}` : clean;
-      }
+      async function fetchWalletTransferHistory(walletAddress) {
+        const transferMap = new Map();
+        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        let reachedListingStart = false;
+        let hitPageLimit = false;
+        let exhaustedHistory = false;
+        let oldestTimestamp = null;
 
-      function bigintToEvenHex(value) {
-        const amount = BigInt(value);
-        return normalizeEvenHex(amount.toString(16));
-      }
+        for (const functionName of CONFIG.pnlSwapFunctions) {
+          let functionExhausted = false;
 
-      function getNftNonceHex(nft) {
-        const collection = getNftCollection(nft);
-        const identifier = String(nft?.identifier || "");
-        const suffix = identifier.startsWith(`${collection}-`)
-          ? identifier.slice(collection.length + 1)
-          : "";
-        if (/^[0-9a-fA-F]+$/.test(suffix)) {
-          return normalizeEvenHex(suffix);
-        }
-        return bigintToEvenHex(BigInt(nft?.nonce || 0));
-      }
+          for (let pageIndex = 0; pageIndex < CONFIG.pnlMaxPages; pageIndex += 1) {
+            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+              from: pageIndex * CONFIG.pnlPageSize,
+              size: CONFIG.pnlPageSize,
+              status: "success",
+              order: "desc",
+              function: functionName,
+              withOperations: "true"
+            }));
 
-      function bech32Polymod(values) {
-        const generators = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-        let checksum = 1;
-        values.forEach((value) => {
-          const top = checksum >> 25;
-          checksum = ((checksum & 0x1ffffff) << 5) ^ value;
-          for (let index = 0; index < generators.length; index += 1) {
-            if ((top >> index) & 1) {
-              checksum ^= generators[index];
+            if (!Array.isArray(page) || !page.length) {
+              functionExhausted = true;
+              break;
+            }
+
+            page.forEach((entry) => {
+              const hash = String(entry?.txHash || entry?.originalTxHash || "");
+              if (hash) transferMap.set(hash, entry);
+            });
+
+            const pageTimestamps = page
+              .map((item) => Number(item?.timestamp))
+              .filter((timestamp) => Number.isFinite(timestamp));
+
+            if (pageTimestamps.length) {
+              const pageOldest = Math.min(...pageTimestamps);
+              oldestTimestamp = oldestTimestamp == null ? pageOldest : Math.min(oldestTimestamp, pageOldest);
+            }
+
+            dom.pnlStatus.textContent = `Se citesc swapurile... ${transferMap.size.toLocaleString("ro-RO")} verificate`;
+
+            if (pageTimestamps.length && Math.min(...pageTimestamps) <= listingTimestamp) {
+              reachedListingStart = true;
+              functionExhausted = true;
+              break;
+            }
+
+            if (page.length < CONFIG.pnlPageSize) {
+              functionExhausted = true;
+              break;
+            }
+
+            if (pageIndex === CONFIG.pnlMaxPages - 1) {
+              hitPageLimit = true;
             }
           }
-        });
-        return checksum;
-      }
 
-      function bech32HrpExpand(hrp) {
-        const high = Array.from(hrp).map((char) => char.charCodeAt(0) >> 5);
-        const low = Array.from(hrp).map((char) => char.charCodeAt(0) & 31);
-        return high.concat([0], low);
-      }
-
-      function convertBits(data, fromBits, toBits, pad) {
-        let acc = 0;
-        let bits = 0;
-        const result = [];
-        const maxv = (1 << toBits) - 1;
-        data.forEach((value) => {
-          if (value < 0 || value >> fromBits) {
-            throw new Error("Adresa destinatarului nu este valida.");
-          }
-          acc = (acc << fromBits) | value;
-          bits += fromBits;
-          while (bits >= toBits) {
-            bits -= toBits;
-            result.push((acc >> bits) & maxv);
-          }
-        });
-        if (pad) {
-          if (bits > 0) {
-            result.push((acc << (toBits - bits)) & maxv);
-          }
-        } else if (bits >= fromBits || ((acc << (toBits - bits)) & maxv)) {
-          throw new Error("Adresa destinatarului nu este valida.");
-        }
-        return result;
-      }
-
-      function bech32AddressToHex(address) {
-        const charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-        const raw = String(address || "").trim();
-        if (raw !== raw.toLowerCase() && raw !== raw.toUpperCase()) {
-          throw new Error("Adresa destinatarului nu este valida.");
-        }
-        const value = raw.toLowerCase();
-        const separator = value.lastIndexOf("1");
-        if (separator < 1 || separator + 7 > value.length) {
-          throw new Error("Adresa destinatarului nu este valida.");
-        }
-        const hrp = value.slice(0, separator);
-        const data = Array.from(value.slice(separator + 1)).map((char) => charset.indexOf(char));
-        if (hrp !== "erd" || data.some((part) => part < 0)) {
-          throw new Error("Adresa destinatarului nu este valida.");
-        }
-        if (bech32Polymod(bech32HrpExpand(hrp).concat(data)) !== 1) {
-          throw new Error("Adresa destinatarului nu este valida.");
-        }
-        const bytes = convertBits(data.slice(0, -6), 5, 8, false);
-        if (bytes.length !== 32) {
-          throw new Error("Adresa destinatarului nu este valida.");
-        }
-        return bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
-      }
-
-      function buildNftTransferData(nft, recipient, quantity) {
-        const collectionHex = textToHex(getNftCollection(nft));
-        const nonceHex = getNftNonceHex(nft);
-        const quantityHex = bigintToEvenHex(quantity);
-        const recipientHex = bech32AddressToHex(recipient);
-        return `ESDTNFTTransfer@${collectionHex}@${nonceHex}@${quantityHex}@${recipientHex}`;
-      }
-
-      function buildNftMarketplaceListData(nft, contractAddress, quantity, priceRaw) {
-        const collectionHex = textToHex(getNftCollection(nft));
-        const nonceHex = getNftNonceHex(nft);
-        const quantityHex = bigintToEvenHex(quantity);
-        const contractHex = bech32AddressToHex(contractAddress);
-        const methodHex = textToHex("list");
-        return `ESDTNFTTransfer@${collectionHex}@${nonceHex}@${quantityHex}@${contractHex}@${methodHex}@${bigintToEvenHex(priceRaw)}`;
-      }
-
-      function buildTclBuyData(priceRaw, listingId) {
-        const tokenHex = textToHex(CONFIG.tokens.tcl.identifier);
-        const amountHex = bigintToEvenHex(priceRaw);
-        const methodHex = textToHex("buy");
-        const listingHex = typeof listingId === "string" && /^[0-9a-fA-F]+$/.test(listingId)
-          ? normalizeEvenHex(listingId)
-          : textToHex(String(listingId || ""));
-        return `ESDTTransfer@${tokenHex}@${amountHex}@${methodHex}@${listingHex}`;
-      }
-
-      function getActiveSession(client) {
-        const savedTopic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
-        if (savedTopic) {
-          try {
-            const session = client.session.get(savedTopic);
-            if (extractAddressFromSession(session) === state.address) {
-              state.sessionTopic = savedTopic;
-              return session;
-            }
-          } catch (_) {}
-        }
-
-        const sessions = typeof client.session.getAll === "function" ? client.session.getAll() : [];
-        const session = sessions.find((item) => extractAddressFromSession(item) === state.address);
-        if (session?.topic) {
-          state.sessionTopic = session.topic;
-          window.localStorage.setItem(CONFIG.sessionTopicKey, session.topic);
-          return session;
-        }
-        return null;
-      }
-
-      async function buildNftTransferTransaction(nft, recipient, quantity) {
-        const account = await fetchJson(buildApiUrl(`/accounts/${state.address}`));
-        const data = buildNftTransferData(nft, recipient, quantity);
-        const dataBase64 = btoa(data);
-        const gasLimit = CONFIG.nftTransferGasBase + (new TextEncoder().encode(data).length * CONFIG.nftTransferGasPerByte);
-
-        return {
-          nonce: Number(account?.nonce || 0),
-          value: "0",
-          receiver: state.address,
-          sender: state.address,
-          gasPrice: CONFIG.gasPrice,
-          gasLimit,
-          data: dataBase64,
-          chainID: CONFIG.chainID,
-          version: 1
-        };
-      }
-
-      async function buildMarketplaceListTransaction(nft, quantity, priceRaw) {
-        const contractAddress = getMarketplaceContract();
-        if (!contractAddress) {
-          throw new Error("Marketplace-ul nu are contract escrow configurat.");
-        }
-        const account = await fetchJson(buildApiUrl(`/accounts/${state.address}`));
-        const data = buildNftMarketplaceListData(nft, contractAddress, quantity, priceRaw);
-        const gasLimit = CONFIG.nftTransferGasBase + (new TextEncoder().encode(data).length * CONFIG.nftTransferGasPerByte) + 4000000;
-
-        return {
-          nonce: Number(account?.nonce || 0),
-          value: "0",
-          receiver: state.address,
-          sender: state.address,
-          gasPrice: CONFIG.gasPrice,
-          gasLimit,
-          data: btoa(data),
-          chainID: CONFIG.chainID,
-          version: 1
-        };
-      }
-
-      async function buildMarketplaceBuyTransaction(listing) {
-        const contractAddress = getMarketplaceContract();
-        if (!contractAddress) {
-          throw new Error("Marketplace-ul nu are contract escrow configurat.");
-        }
-        const account = await fetchJson(buildApiUrl(`/accounts/${state.address}`));
-        const priceRaw = BigInt(String(listing.priceRaw || "0").replace(/[^\d]/g, "") || "0");
-        if (priceRaw <= 0n) {
-          throw new Error("Listarea nu are pret TCL valid.");
-        }
-        const data = buildTclBuyData(priceRaw, listing.id);
-        const gasLimit = 1000000 + (new TextEncoder().encode(data).length * CONFIG.nftTransferGasPerByte) + 5000000;
-
-        return {
-          nonce: Number(account?.nonce || 0),
-          value: "0",
-          receiver: contractAddress,
-          sender: state.address,
-          gasPrice: CONFIG.gasPrice,
-          gasLimit,
-          data: btoa(data),
-          chainID: CONFIG.chainID,
-          version: 1
-        };
-      }
-
-      async function signNftTransaction(transaction) {
-        const client = await getSignClient();
-        const session = getActiveSession(client);
-        if (!session?.topic) {
-          throw new Error("Reconecteaza xPortal pentru semnarea transferului.");
-        }
-
-        const result = await client.request({
-          topic: session.topic,
-          chainId: CONFIG.chainId,
-          request: {
-            method: "mvx_signTransaction",
-            params: { transaction }
-          }
-        });
-
-        const signaturePayload = result?.signature ? result : result?.result;
-        if (!signaturePayload?.signature) {
-          throw new Error("xPortal nu a returnat semnatura tranzactiei.");
+          exhaustedHistory = exhaustedHistory || functionExhausted;
         }
 
         return {
-          ...transaction,
-          ...signaturePayload
+          transfers: Array.from(transferMap.values()),
+          reachedListingStart,
+          hitPageLimit,
+          exhaustedHistory,
+          oldestTimestamp
         };
       }
 
-      async function broadcastTransaction(transaction) {
-        const response = await fetch(`${CONFIG.gatewayBase}/transaction/send`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(transaction)
+      function aggregatePnlTrades(trades) {
+        return trades.reduce((totals, trade) => {
+          if (trade.side === "buy") {
+            totals.buyCount += 1;
+            totals.buyTcl += trade.tclAmount;
+            totals.buyUsd += trade.volumeUsd;
+          } else if (trade.side === "sell") {
+            totals.sellCount += 1;
+            totals.sellTcl += trade.tclAmount;
+            totals.sellUsd += trade.volumeUsd;
+          }
+          totals.tradeCount += 1;
+          return totals;
+        }, {
+          tradeCount: 0,
+          buyCount: 0,
+          sellCount: 0,
+          buyTcl: 0,
+          sellTcl: 0,
+          buyUsd: 0,
+          sellUsd: 0
         });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || (payload.code && payload.code !== "successful")) {
-          throw new Error(payload.error || `Tranzactia nu a fost trimisa. HTTP ${response.status}`);
-        }
-        return payload?.data?.txHash || payload?.data?.hash || payload?.txHash || "";
       }
 
-      async function signAndBroadcastTransaction(transaction) {
-        const signedTransaction = await signNftTransaction(transaction);
-        return broadcastTransaction(signedTransaction);
+      function renderPnlResult(totals, historyMeta) {
+        const pnlUsd = totals.sellUsd - totals.buyUsd;
+        dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
+        dom.pnlBoughtUsd.textContent = `Cost: ${formatUsd(totals.buyUsd)} USDC`;
+        dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
+        dom.pnlSoldUsd.textContent = `Received: ${formatUsd(totals.sellUsd)} USDC`;
+        dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
+        dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
+        dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
+        dom.pnlTradeCount.textContent = `Trades: ${totals.tradeCount.toLocaleString("ro-RO")} (${totals.buyCount} buy / ${totals.sellCount} sell)`;
+
+        const coverage = historyMeta.hitPageLimit
+          ? "Limita de scanare a fost atinsa; rezultatul poate fi partial."
+          : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
+            ? "Istoric scanat complet pentru perioada TCL."
+            : "Istoric scanat pana la limita API.");
+        dom.pnlStatus.textContent = `${coverage} Swapuri verificate: ${historyMeta.transfers.length.toLocaleString("ro-RO")}.`;
       }
 
-      function readTransferQuantity(nft) {
-        const balance = getNftBalance(nft);
-        const raw = String(dom.nftQuantityInput.value || "1").replace(/[^\d]/g, "");
-        const quantity = BigInt(raw || "1");
-        if (quantity < 1n || quantity > balance) {
-          throw new Error(`Cantitatea trebuie sa fie intre 1 si ${balance.toString()}.`);
-        }
-        return quantity;
-      }
-
-      function readTclPriceRaw() {
-        const value = String(dom.nftPriceInput.value || "").trim().replace(",", ".");
-        if (!/^\d+(\.\d{1,18})?$/.test(value)) {
-          throw new Error("Pretul TCL nu este valid.");
-        }
-        const [whole, fraction = ""] = value.split(".");
-        const raw = BigInt(whole || "0") * (10n ** BigInt(CONFIG.tokens.tcl.decimals)) +
-          BigInt(fraction.padEnd(CONFIG.tokens.tcl.decimals, "0"));
-        if (raw <= 0n) {
-          throw new Error("Pretul TCL trebuie sa fie mai mare decat 0.");
-        }
-        return raw;
-      }
-
-      async function listSelectedNftForSale() {
-        if (!state.address || !state.selectedNft) return;
-
-        try {
-          const quantity = readTransferQuantity(state.selectedNft);
-          const priceRaw = readTclPriceRaw();
-          setNftSending(true);
-          dom.nftSendStatus.textContent = "Aproba listarea in xPortal.";
-          dom.nftTxLink.hidden = true;
-
-          const transaction = await buildMarketplaceListTransaction(state.selectedNft, quantity, priceRaw);
-          const txHash = await signAndBroadcastTransaction(transaction);
-
-          dom.nftSendStatus.textContent = "NFT listat la vanzare.";
-          if (txHash) {
-            dom.nftTxLink.href = `https://explorer.multiversx.com/transactions/${txHash}`;
-            dom.nftTxLink.hidden = false;
-          }
-          setStatus("ready", "Listarea NFT a fost trimisa.");
-          await loadBalances();
-          await loadWalletNfts();
-          await loadMarketplaceListings();
-        } catch (error) {
-          console.error(error);
-          dom.nftSendStatus.textContent = error?.message || "Listarea NFT a esuat.";
-          setStatus("error", error?.message || "Listarea NFT a esuat.");
-        } finally {
-          setNftSending(false);
-        }
-      }
-
-      async function buyMarketplaceListing(listingId) {
-        const listing = state.marketListings.find((item) => String(item.id) === String(listingId));
-        if (!listing) return;
-
-        try {
-          setNftSending(true);
-          dom.marketStatus.textContent = "Aproba plata TCL in xPortal.";
-          const transaction = await buildMarketplaceBuyTransaction(listing);
-          const txHash = await signAndBroadcastTransaction(transaction);
-          dom.marketStatus.textContent = "Cumpararea a fost trimisa.";
-          if (txHash) {
-            dom.nftTxLink.href = `https://explorer.multiversx.com/transactions/${txHash}`;
-            dom.nftTxLink.hidden = false;
-          }
-          setStatus("ready", "Cumpararea NFT a fost trimisa.");
-          await loadBalances();
-          await loadWalletNfts();
-          await loadMarketplaceListings();
-        } catch (error) {
-          console.error(error);
-          dom.marketStatus.textContent = error?.message || "Cumpararea NFT a esuat.";
-          setStatus("error", error?.message || "Cumpararea NFT a esuat.");
-        } finally {
-          setNftSending(false);
-        }
-      }
-
-      async function sendSelectedNft(event) {
+      async function runPnlCheck(event) {
         event.preventDefault();
-        if (!state.address || !state.selectedNft) return;
+        const walletAddress = dom.pnlAddressInput.value.trim();
 
-        const recipient = dom.nftRecipientInput.value.trim();
-        if (!isAddress(recipient)) {
-          dom.nftSendStatus.textContent = "Adresa destinatarului nu este valida.";
+        if (!isAddress(walletAddress)) {
+          renderEmptyPnl();
+          dom.pnlStatus.textContent = "Adresa walletului nu este valida.";
+          syncLoadingState();
           return;
         }
-        if (recipient === state.address) {
-          dom.nftSendStatus.textContent = "Destinatarul trebuie sa fie diferit de walletul conectat.";
-          return;
-        }
+
+        setPnlLoading(true);
+        renderEmptyPnl();
+        dom.pnlStatus.textContent = "Se porneste scanarea PNL...";
 
         try {
-          const quantity = readTransferQuantity(state.selectedNft);
-          setNftSending(true);
-          dom.nftSendStatus.textContent = "Aproba transferul in xPortal.";
-          dom.nftTxLink.hidden = true;
+          const history = await fetchWalletTransferHistory(walletAddress);
+          const trades = parsePnlTrades(history.transfers, walletAddress);
+          const totals = aggregatePnlTrades(trades);
+          renderPnlResult(totals, history);
 
-          const transaction = await buildNftTransferTransaction(state.selectedNft, recipient, quantity);
-          const txHash = await signAndBroadcastTransaction(transaction);
-
-          dom.nftSendStatus.textContent = "Transfer trimis.";
-          if (txHash) {
-            dom.nftTxLink.href = `https://explorer.multiversx.com/transactions/${txHash}`;
-            dom.nftTxLink.hidden = false;
+          if (!trades.length) {
+            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL evaluate in USD pentru walletul verificat. Swapuri verificate: ${history.transfers.length.toLocaleString("ro-RO")}.`;
           }
-          setStatus("ready", "Transfer NFT trimis.");
-          setNftSending(false);
-          await loadBalances();
-          await loadWalletNfts();
         } catch (error) {
           console.error(error);
-          dom.nftSendStatus.textContent = error?.message || "Transferul NFT a esuat.";
-          setStatus("error", error?.message || "Transferul NFT a esuat.");
+          renderEmptyPnl();
+          dom.pnlStatus.textContent = error?.message || "PNL Check a esuat.";
+          setStatus("error", "PNL Check a esuat. Incearca din nou.");
         } finally {
-          setNftSending(false);
+          setPnlLoading(false);
         }
       }
 
@@ -2288,12 +1922,11 @@
         state.address = getInitialAddress();
         renderAddress();
         renderEmptyBalances();
+        renderEmptyPnl();
 
         if (state.address) {
           setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
           loadBalances();
-          loadWalletNfts();
-          loadMarketplaceListings();
         }
 
         dom.connectBtn.addEventListener("click", connectWallet);
@@ -2302,12 +1935,11 @@
         dom.copyBtn.addEventListener("click", copyAddress);
         dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
         dom.cancelPairingBtn.addEventListener("click", cancelPairing);
-        dom.nftSearch.addEventListener("input", renderNftMarketplace);
-        dom.nftTransferForm.addEventListener("submit", sendSelectedNft);
-        dom.nftListBtn.addEventListener("click", listSelectedNftForSale);
-        dom.nftQuantityInput.addEventListener("input", syncLoadingState);
-        dom.nftPriceInput.addEventListener("input", syncLoadingState);
-        renderMarketplaceListings();
+        dom.pnlForm.addEventListener("submit", runPnlCheck);
+        dom.pnlAddressInput.addEventListener("input", () => {
+          dom.pnlAddressInput.dataset.mode = "manual";
+          syncLoadingState();
+        });
       }
 
       boot();
