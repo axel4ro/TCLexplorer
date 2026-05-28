@@ -369,6 +369,17 @@ function guidedTokenResponse(question, language) {
   return msgs[language] || msgs.en;
 }
 
+function resolveQuestionWithHistory(question, history) {
+  if (!history.length) return question;
+  const words = question.trim().split(/\s+/).length;
+  const hasContextPronoun = /\b(el|ea|it|acesta|aceasta|asta|ăsta|ala|ăla|acela|aceea|dânsul|dânsa|lui|ei|this|that|they|them|its)\b/i.test(question);
+  const isVeryShort = words <= 4;
+  if (!hasContextPronoun && !isVeryShort) return question;
+  const lastUser = [...history].reverse().find((h) => h.role === "user");
+  if (lastUser) return `${lastUser.content} ${question}`.trim();
+  return question;
+}
+
 function isLootContentsIntent(question) {
   const q = String(question || "").toLowerCase();
   return (
@@ -487,44 +498,58 @@ async function handleChat(request, env, ctx) {
     });
   }
 
+  // Parse and sanitize conversation history (last 6 messages from frontend)
+  const rawHistory = Array.isArray(body.history) ? body.history : [];
+  const history = rawHistory
+    .filter((h) => h && (h.role === "user" || h.role === "assistant") && typeof h.content === "string" && h.content.length > 0)
+    .slice(-6)
+    .map((h) => ({ role: h.role, content: String(h.content).slice(0, 600) }));
+
+  // Resolve pronouns/short follow-up questions using conversation context
+  const resolvedQuestion = resolveQuestionWithHistory(question, history);
+  const usedContext = resolvedQuestion !== question;
+
   const language = normalizeLanguage(body.language || detectLanguage(question));
 
-  const cacheKey = `${CACHE_VERSION}:${language}:${normalizeQuestionForCache(question)}`;
-  const memCached = getCachedAnswer(cacheKey);
-  if (memCached) return jsonResponse(request, env, 200, memCached);
+  // Cache key: use resolvedQuestion so answers benefit future players who ask directly
+  // But skip cache entirely if response depends on context (too specific to this conversation)
+  const cacheKey = `${CACHE_VERSION}:${language}:${normalizeQuestionForCache(usedContext ? resolvedQuestion : question)}`;
+  if (!usedContext) {
+    const memCached = getCachedAnswer(cacheKey);
+    if (memCached) return jsonResponse(request, env, 200, memCached);
 
-  const cacheHash = await sha256Hex(cacheKey);
-  const cfCached = await getCfCachedAnswer(cacheHash);
-  if (cfCached) {
-    setCachedAnswer(cacheKey, cfCached);
-    return jsonResponse(request, env, 200, cfCached);
+    const cacheHash = await sha256Hex(cacheKey);
+    const cfCached = await getCfCachedAnswer(cacheHash);
+    if (cfCached) {
+      setCachedAnswer(cacheKey, cfCached);
+      return jsonResponse(request, env, 200, cfCached);
+    }
   }
 
-  const matches = await searchKnowledge(env, question);
+  const matches = await searchKnowledge(env, resolvedQuestion);
   const sources = buildPublicSources(matches);
-  const actions = buildActions(question, language, sources);
+  const actions = buildActions(resolvedQuestion, language, sources);
 
-  const guided = guidedPageResponse(question, language, actions) ||
-    guidedTokenResponse(question, language) ||
-    await guidedLootContentsResponse(question, language);
+  const guided = guidedPageResponse(resolvedQuestion, language, actions) ||
+    guidedTokenResponse(resolvedQuestion, language) ||
+    await guidedLootContentsResponse(resolvedQuestion, language);
   if (guided) {
     const payload = { ok: true, answer: guided, sources, actions, language };
-    setCachedAnswer(cacheKey, payload);
-    ctx.waitUntil(logChat(env, request, { question, answer: guided, language, matched_sources: sources }));
+    if (!usedContext) setCachedAnswer(cacheKey, payload);
+    ctx.waitUntil(logChat(env, request, { question: resolvedQuestion, answer: guided, language, matched_sources: sources }));
     return jsonResponse(request, env, 200, payload);
   }
 
   if (!matches.length) {
     const answer = missingKnowledgeAnswer(language);
     const payload = { ok: true, answer, sources: [], actions, language };
-    // Never cache "I don't know" — sync may add new knowledge later
-    ctx.waitUntil(logChat(env, request, { question, answer, language, matched_sources: sources }));
+    ctx.waitUntil(logChat(env, request, { question: resolvedQuestion, answer, language, matched_sources: sources }));
     return jsonResponse(request, env, 200, payload);
   }
 
   let answer;
   try {
-    answer = await generateAnswer(env, question, matches, language);
+    answer = await generateAnswer(env, resolvedQuestion, matches, language, history);
   } catch (e) {
     if (e?.code === "GEMINI_QUOTA") {
       return jsonResponse(request, env, 200, {
@@ -540,16 +565,17 @@ async function handleChat(request, env, ctx) {
 
   const payload = { ok: true, answer, sources, actions, language };
   const isMissingAnswer = answer === missingKnowledgeAnswer(language);
-  if (!isMissingAnswer) {
+  if (!isMissingAnswer && !usedContext) {
+    // Only cache non-context-dependent answers (reusable by other players)
+    const cacheHash = await sha256Hex(cacheKey);
     setCachedAnswer(cacheKey, payload);
     ctx.waitUntil(Promise.all([
       putCfCachedAnswer(cacheHash, payload),
-      logChat(env, request, { question, answer, language, matched_sources: sources }),
-      storePlayerQA(env, question, answer)
+      logChat(env, request, { question: resolvedQuestion, answer, language, matched_sources: sources }),
+      storePlayerQA(env, resolvedQuestion, answer)
     ]));
   } else {
-    // Don't cache: LLM said "I don't know" — next sync may have the answer
-    ctx.waitUntil(logChat(env, request, { question, answer, language, matched_sources: sources }));
+    ctx.waitUntil(logChat(env, request, { question: resolvedQuestion, answer, language, matched_sources: sources }));
   }
   return jsonResponse(request, env, 200, payload);
 }
@@ -766,10 +792,10 @@ function tokenizeForSearch(value) {
     .filter((token) => token.length >= 3 && !stop.has(token));
 }
 
-async function generateAnswer(env, question, matches, language) {
+async function generateAnswer(env, question, matches, language, history = []) {
   const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
-  const systemText = `You are TCLexplorer AI for The Cursed Land players. Answer ONLY from the RAG context. If context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown symbols, no raw URLs. Concise complete sentences. For Events questions refer to the TCLexplorer Events page by name, never paste a URL. For broad Events questions, say to open the live Events page for schedule and local times.`;
+  const systemText = `You are Companion, the TCLexplorer AI assistant for The Cursed Land players. Answer ONLY from the RAG context provided. You have recent conversation history for context — use it to understand follow-up questions naturally. If the context lacks the answer, say you don't know. Never invent stats, rates, dates, or mechanics. Reply in ${languageName(language)}. Plain text only, no markdown symbols, no raw URLs. Concise complete sentences. For Events questions refer to the TCLexplorer Events page by name, never paste a URL.`;
 
   const prompt = [
     `Player language: ${language}`,
@@ -781,6 +807,12 @@ async function generateAnswer(env, question, matches, language) {
     question
   ].join("\n");
 
+  // Include last 4 history messages for natural conversation context
+  const historyMessages = history.slice(-4).map((h) => ({
+    role: h.role,
+    content: h.content
+  }));
+
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -791,10 +823,11 @@ async function generateAnswer(env, question, matches, language) {
       model,
       messages: [
         { role: "system", content: systemText },
+        ...historyMessages,
         { role: "user", content: prompt }
       ],
-      temperature: 0.2,
-      max_tokens: 220
+      temperature: 0.25,
+      max_tokens: 260
     })
   });
 

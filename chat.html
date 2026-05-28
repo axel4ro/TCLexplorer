@@ -793,10 +793,15 @@
         startCooldown();
 
         try {
+          const conversationContext = chatHistory
+            .filter(h => h.kind === "msg" && (h.type === "user" || h.type === "bot") && h.text && h.text !== "...")
+            .slice(-6)
+            .map(h => ({ role: h.type === "user" ? "user" : "assistant", content: h.text }));
+
           const response = await fetch(`${workerUrl}/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, language })
+            body: JSON.stringify({ message, language, history: conversationContext })
           });
           const payload = await response.json().catch(() => ({}));
           loading.remove();
