@@ -785,6 +785,12 @@
           return;
         }
 
+        // Build context BEFORE pushing current message, so history = previous exchanges only
+        const conversationContext = chatHistory
+          .filter(h => h.kind === "msg" && (h.type === "user" || h.type === "bot") && h.text && h.text !== "...")
+          .slice(-6)
+          .map(h => ({ role: h.type === "user" ? "user" : "assistant", content: h.text }));
+
         input.value = "";
         addMessage("user", message);
         historyPush({ kind: "msg", type: "user", text: message });
@@ -793,10 +799,6 @@
         startCooldown();
 
         try {
-          const conversationContext = chatHistory
-            .filter(h => h.kind === "msg" && (h.type === "user" || h.type === "bot") && h.text && h.text !== "...")
-            .slice(-6)
-            .map(h => ({ role: h.type === "user" ? "user" : "assistant", content: h.text }));
 
           const response = await fetch(`${workerUrl}/chat`, {
             method: "POST",
