@@ -934,12 +934,20 @@
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlPageSize: 50,
-        pnlMaxPages: 80,
+        pnlMaxPages: 200,
+        pnlFunctionMaxPages: 120,
+        pnlPagePauseMs: 120,
+        pnlMaxRetries: 5,
+        pnlRetryDelayMs: 2500,
         pnlSwapFunctions: [
           "swapTokensFixedInput",
           "swapTokensFixedOutput",
           "multiPairSwap",
-          "multiPairSwapTokensFixedInput"
+          "multiPairSwapTokensFixedInput",
+          "swap",
+          "aggregateEsdt",
+          "buySwap",
+          "xo"
         ],
         storageKey: "tclExplorer.xportal.address.v1",
         sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
@@ -1303,22 +1311,50 @@
         return url.toString();
       }
 
-      async function fetchJson(url) {
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
-        try {
-          const response = await fetch(url, {
-            cache: "no-store",
-            headers: { Accept: "application/json" },
-            signal: controller.signal
-          });
-          if (!response.ok) {
+      function wait(ms) {
+        return new Promise((resolve) => window.setTimeout(resolve, ms));
+      }
+
+      async function fetchJson(url, options = {}) {
+        const maxRetries = Math.max(0, Number(options.retries) || 0);
+        const retryDelayMs = Math.max(0, Number(options.retryDelayMs ?? CONFIG.pnlRetryDelayMs) || 0);
+
+        for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+          const controller = new AbortController();
+          const timer = window.setTimeout(() => controller.abort(), CONFIG.requestTimeoutMs);
+
+          try {
+            const response = await fetch(url, {
+              cache: "no-store",
+              headers: { Accept: "application/json" },
+              signal: controller.signal
+            });
+
+            if (response.ok) {
+              return response.json();
+            }
+
+            const retryableStatus = [429, 500, 502, 503, 504].includes(response.status);
+            if (retryableStatus && attempt < maxRetries) {
+              const retryAfter = Number(response.headers.get("Retry-After"));
+              const delay = Number.isFinite(retryAfter) && retryAfter > 0
+                ? retryAfter * 1000
+                : retryDelayMs * (attempt + 1);
+              await wait(delay);
+              continue;
+            }
+
             throw new Error(`HTTP ${response.status}`);
+          } catch (error) {
+            const canRetry = attempt < maxRetries && error?.name !== "AbortError";
+            if (!canRetry) throw error;
+            await wait(retryDelayMs * (attempt + 1));
+          } finally {
+            window.clearTimeout(timer);
           }
-          return response.json();
-        } finally {
-          window.clearTimeout(timer);
         }
+
+        throw new Error("Cererea API a esuat dupa retry.");
       }
 
       function readNumber(value, fallback = 0) {
@@ -1547,12 +1583,14 @@
       }
 
       function normalizePnlOperation(operation) {
-        const token = operation?.identifier || operation?.token || "";
+        if (operation?.action && operation.action !== "transfer") return null;
+        const token = operation?.identifier || operation?.token || (operation?.type === "egld" ? "EGLD" : "");
         if (!token || !operation?.value) return null;
+        if (operation?.esdtType && operation.esdtType !== "FungibleESDT") return null;
         const decimals = Number(operation.decimals ?? (
           token === CONFIG.tokens.usdc.identifier
             ? CONFIG.tokens.usdc.decimals
-            : CONFIG.tokens.tcl.decimals
+            : (token === "EGLD" ? CONFIG.tokens.egld.decimals : CONFIG.tokens.tcl.decimals)
         ));
         const amount = decimalStringToNumber(operation.value, decimals);
         if (!Number.isFinite(amount) || amount <= 0) return null;
@@ -1566,24 +1604,74 @@
           amount,
           valueUsd,
           sender: operation.sender || "",
-          receiver: operation.receiver || ""
+          receiver: operation.receiver || "",
+          key: [
+            operation.id || "",
+            operation.action || "",
+            operation.type || "",
+            token,
+            operation.sender || "",
+            operation.receiver || "",
+            String(operation.value || "")
+          ].join("|")
         };
+      }
+
+      function getPnlRootHash(entry) {
+        return String(entry?.originalTxHash || entry?.txHash || "");
+      }
+
+      function groupPnlTransfers(transfers) {
+        const groups = new Map();
+
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+          const rootHash = getPnlRootHash(entry);
+          if (!rootHash) continue;
+
+          let group = groups.get(rootHash);
+          const timestamp = Number(entry.timestamp) || 0;
+          if (!group) {
+            group = {
+              hash: rootHash,
+              timestamp,
+              entries: []
+            };
+            groups.set(rootHash, group);
+          } else if (timestamp && (!group.timestamp || timestamp < group.timestamp)) {
+            group.timestamp = timestamp;
+          }
+
+          group.entries.push(entry);
+        }
+
+        return groups;
+      }
+
+      function getNativeEgldAmount(entry) {
+        const amount = decimalStringToNumber(entry?.value || "0", CONFIG.tokens.egld.decimals);
+        return Number.isFinite(amount) ? amount : 0;
       }
 
       function parsePnlTradesFromOperations(transfers, walletAddress) {
         const trades = [];
-        const seenHashes = new Set();
+        const transferGroups = groupPnlTransfers(transfers);
 
-        for (const entry of Array.isArray(transfers) ? transfers : []) {
-          if (entry?.status !== "success") continue;
-          const hash = String(entry.txHash || entry.originalTxHash || "");
-          if (!hash || seenHashes.has(hash)) continue;
-          const isSwap = /^swap/i.test(String(entry.function || "")) || entry?.action?.name === "swap";
-          if (!isSwap || !Array.isArray(entry.operations)) continue;
+        for (const group of transferGroups.values()) {
+          const seenOperations = new Set();
+          const operations = [];
 
-          const operations = entry.operations
-            .map(normalizePnlOperation)
-            .filter(Boolean);
+          for (const entry of group.entries) {
+            if (!Array.isArray(entry.operations)) continue;
+
+            for (const rawOperation of entry.operations) {
+              const operation = normalizePnlOperation(rawOperation);
+              if (!operation || seenOperations.has(operation.key)) continue;
+              seenOperations.add(operation.key);
+              operations.push(operation);
+            }
+          }
+
           if (!operations.length) continue;
 
           const tclSent = operations
@@ -1598,12 +1686,46 @@
           const usdReceived = operations
             .filter((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress && Number.isFinite(operation.valueUsd))
             .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const tclSentUsd = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.sender === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const tclReceivedUsd = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const hasNonTclSent = operations
+            .some((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.sender === walletAddress);
+          const hasNonTclReceived = operations
+            .some((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress);
+          const nativeSent = group.entries
+            .some((entry) => entry.sender === walletAddress && getNativeEgldAmount(entry) > 0);
+          const nativeReceived = group.entries
+            .some((entry) => entry.receiver === walletAddress && getNativeEgldAmount(entry) > 0);
 
           let side = "";
           let tclAmount = 0;
           let volumeUsd = 0;
+          const netTcl = tclReceived - tclSent;
+          const netUsd = usdReceived - usdSent;
+          const buyFallbackUsd = (hasNonTclSent || nativeSent) && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
+          const sellFallbackUsd = (hasNonTclReceived || nativeReceived) && tclSentUsd > 0 ? tclSentUsd : 0;
 
-          if (tclReceived > 0 && usdSent > 0) {
+          if (netTcl > 0 && netUsd < 0) {
+            side = "buy";
+            tclAmount = netTcl;
+            volumeUsd = Math.abs(netUsd);
+          } else if (netTcl < 0 && netUsd > 0) {
+            side = "sell";
+            tclAmount = Math.abs(netTcl);
+            volumeUsd = netUsd;
+          } else if (netTcl > 0 && buyFallbackUsd > 0) {
+            side = "buy";
+            tclAmount = netTcl;
+            volumeUsd = buyFallbackUsd;
+          } else if (netTcl < 0 && sellFallbackUsd > 0) {
+            side = "sell";
+            tclAmount = Math.abs(netTcl);
+            volumeUsd = sellFallbackUsd;
+          } else if (tclReceived > 0 && usdSent > 0) {
             side = "buy";
             tclAmount = tclReceived;
             volumeUsd = usdSent;
@@ -1614,15 +1736,14 @@
           }
 
           if (!side || !Number.isFinite(tclAmount) || tclAmount <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
-          seenHashes.add(hash);
           trades.push({
-            hash,
-            timestamp: Number(entry.timestamp) || 0,
+            hash: group.hash,
+            timestamp: group.timestamp,
             side,
             tclAmount,
             volumeUsd,
             price: volumeUsd / tclAmount,
-            description: entry?.action?.description || entry.function || "Swap"
+            description: "Swap TCL"
           });
         }
 
@@ -1644,7 +1765,7 @@
           const timestamp = Number(entry.timestamp);
           if (!Number.isFinite(timestamp)) continue;
 
-          const groupHash = String(entry.originalTxHash || entry.txHash || "");
+          const groupHash = getPnlRootHash(entry);
           if (!groupHash) continue;
 
           let groupedSwap = groupedSwaps.get(groupHash);
@@ -1756,33 +1877,48 @@
 
       async function fetchWalletTransferHistory(walletAddress) {
         const transferMap = new Map();
+        const transactionHashes = new Set();
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         let reachedListingStart = false;
         let hitPageLimit = false;
-        let exhaustedHistory = false;
         let oldestTimestamp = null;
+        let completedSources = 0;
+        const sources = [
+          {
+            label: "transferurile TCL",
+            maxPages: CONFIG.pnlMaxPages,
+            params: { token: CONFIG.tokens.tcl.identifier }
+          },
+          ...CONFIG.pnlSwapFunctions.map((functionName) => ({
+            label: `swapurile ${functionName}`,
+            maxPages: CONFIG.pnlFunctionMaxPages,
+            params: { function: functionName }
+          }))
+        ];
 
-        for (const functionName of CONFIG.pnlSwapFunctions) {
-          let functionExhausted = false;
-
-          for (let pageIndex = 0; pageIndex < CONFIG.pnlMaxPages; pageIndex += 1) {
+        async function scanSource(source) {
+          for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex += 1) {
             const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
               from: pageIndex * CONFIG.pnlPageSize,
               size: CONFIG.pnlPageSize,
               status: "success",
               order: "desc",
-              function: functionName,
-              withOperations: "true"
-            }));
+              withOperations: "true",
+              ...source.params
+            }), {
+              retries: CONFIG.pnlMaxRetries,
+              retryDelayMs: CONFIG.pnlRetryDelayMs
+            });
 
             if (!Array.isArray(page) || !page.length) {
-              functionExhausted = true;
-              break;
+              return true;
             }
 
-            page.forEach((entry) => {
-              const hash = String(entry?.txHash || entry?.originalTxHash || "");
-              if (hash) transferMap.set(hash, entry);
+            page.forEach((entry, index) => {
+              const entryHash = String(entry?.txHash || `${getPnlRootHash(entry)}:${entry?.type || "entry"}:${entry?.timestamp || 0}:${index}`);
+              if (entryHash) transferMap.set(entryHash, entry);
+              const rootHash = getPnlRootHash(entry);
+              if (rootHash) transactionHashes.add(rootHash);
             });
 
             const pageTimestamps = page
@@ -1794,32 +1930,42 @@
               oldestTimestamp = oldestTimestamp == null ? pageOldest : Math.min(oldestTimestamp, pageOldest);
             }
 
-            dom.pnlStatus.textContent = `Se citesc swapurile... ${transferMap.size.toLocaleString("ro-RO")} verificate`;
+            dom.pnlStatus.textContent = `Se citesc ${source.label}... ${transactionHashes.size.toLocaleString("ro-RO")} tranzactii verificate`;
 
             if (pageTimestamps.length && Math.min(...pageTimestamps) <= listingTimestamp) {
               reachedListingStart = true;
-              functionExhausted = true;
-              break;
+              return true;
             }
 
             if (page.length < CONFIG.pnlPageSize) {
-              functionExhausted = true;
-              break;
+              return true;
             }
 
-            if (pageIndex === CONFIG.pnlMaxPages - 1) {
+            if (pageIndex === source.maxPages - 1) {
               hitPageLimit = true;
+              return false;
+            }
+
+            if (CONFIG.pnlPagePauseMs > 0) {
+              await wait(CONFIG.pnlPagePauseMs);
             }
           }
 
-          exhaustedHistory = exhaustedHistory || functionExhausted;
+          hitPageLimit = true;
+          return false;
+        }
+
+        for (const source of sources) {
+          const completed = await scanSource(source);
+          if (completed) completedSources += 1;
         }
 
         return {
           transfers: Array.from(transferMap.values()),
+          checkedTransactions: transactionHashes.size,
           reachedListingStart,
           hitPageLimit,
-          exhaustedHistory,
+          exhaustedHistory: completedSources === sources.length,
           oldestTimestamp
         };
       }
@@ -1864,7 +2010,8 @@
           : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
             ? "Istoric scanat complet pentru perioada TCL."
             : "Istoric scanat pana la limita API.");
-        dom.pnlStatus.textContent = `${coverage} Swapuri verificate: ${historyMeta.transfers.length.toLocaleString("ro-RO")}.`;
+        const checkedCount = Number(historyMeta.checkedTransactions) || historyMeta.transfers.length;
+        dom.pnlStatus.textContent = `${coverage} Tranzactii TCL verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
       }
 
       async function runPnlCheck(event) {
@@ -1889,7 +2036,8 @@
           renderPnlResult(totals, history);
 
           if (!trades.length) {
-            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL evaluate in USD pentru walletul verificat. Swapuri verificate: ${history.transfers.length.toLocaleString("ro-RO")}.`;
+            const checkedCount = Number(history.checkedTransactions) || history.transfers.length;
+            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL evaluate in USD pentru walletul verificat. Tranzactii TCL verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
           }
         } catch (error) {
           console.error(error);
