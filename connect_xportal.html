@@ -527,6 +527,12 @@
       margin-bottom: 14px;
     }
 
+    .pnl-btns {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
     .pnl-field {
       display: grid;
       gap: 6px;
@@ -896,7 +902,10 @@
           <label for="pnlAddressInput">Wallet</label>
           <input class="pnl-input" id="pnlAddressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
         </div>
-        <button class="btn btn-primary" id="pnlRunBtn" type="submit">Run</button>
+        <div class="pnl-btns">
+          <button class="btn btn-primary" id="pnlRunBtn" type="submit">Run</button>
+          <a class="btn" id="pnlFilterBtn" target="_blank" rel="noreferrer noopener" href="#" tabindex="0">Filter</a>
+        </div>
       </form>
 
       <div class="pnl-results" aria-live="polite">
@@ -938,6 +947,7 @@
         pnlMaxPages: 220,
         pnlPairMaxPages: 40,
         pnlFunctionMaxPages: 0,
+        pnlSwapMaxPages: 60,
         pnlPagePauseMs: 750,
         pnlSourcePauseMs: 2000,
         pnlMaxRetries: 6,
@@ -1008,6 +1018,7 @@
         pnlForm: document.getElementById("pnlForm"),
         pnlAddressInput: document.getElementById("pnlAddressInput"),
         pnlRunBtn: document.getElementById("pnlRunBtn"),
+        pnlFilterBtn: document.getElementById("pnlFilterBtn"),
         pnlBoughtTcl: document.getElementById("pnlBoughtTcl"),
         pnlBoughtUsd: document.getElementById("pnlBoughtUsd"),
         pnlSoldTcl: document.getElementById("pnlSoldTcl"),
@@ -1022,6 +1033,23 @@
         dom.statusText.textContent = message;
       }
 
+      function updatePnlFilterHref(address) {
+        const valid = isAddress(String(address || "").trim());
+        if (dom.pnlFilterBtn) {
+          if (valid) {
+            dom.pnlFilterBtn.href = `https://dexscreener.com/multiversx/${CONFIG.pnlPairAddress}?maker=${String(address).trim()}`;
+            dom.pnlFilterBtn.removeAttribute("aria-disabled");
+            dom.pnlFilterBtn.style.opacity = "";
+            dom.pnlFilterBtn.style.pointerEvents = "";
+          } else {
+            dom.pnlFilterBtn.href = "#";
+            dom.pnlFilterBtn.setAttribute("aria-disabled", "true");
+            dom.pnlFilterBtn.style.opacity = "0.45";
+            dom.pnlFilterBtn.style.pointerEvents = "none";
+          }
+        }
+      }
+
       function syncLoadingState() {
         const isLoading = state.connecting || state.balanceLoading || state.pnlLoading;
         state.loading = isLoading;
@@ -1029,6 +1057,7 @@
         dom.connectBtn.disabled = isLoading;
         dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
         dom.pnlRunBtn.disabled = isLoading || !state.address || !isAddress(dom.pnlAddressInput.value);
+        updatePnlFilterHref(dom.pnlAddressInput.value);
       }
 
       function setConnectionLoading(isLoading) {
@@ -1985,6 +2014,140 @@
         };
       }
 
+      async function fetchSwapTransactions(walletAddress) {
+        const txMap = new Map();
+        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        const maxPages = CONFIG.pnlSwapMaxPages || 60;
+        let hitPageLimit = false;
+        let oldestTimestamp = null;
+
+        for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+          dom.pnlStatus.textContent = `Se citesc swap-urile cu pool-ul TCL... ${txMap.size.toLocaleString("ro-RO")} gasite`;
+
+          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transactions`, {
+            sender: walletAddress,
+            receiver: CONFIG.pnlPairAddress,
+            status: "success",
+            withOperations: "true",
+            size: CONFIG.pnlPageSize,
+            from: pageIndex * CONFIG.pnlPageSize,
+            order: "desc"
+          }), {
+            retries: CONFIG.pnlMaxRetries,
+            retryDelayMs: CONFIG.pnlRetryDelayMs,
+            timeoutMs: CONFIG.pnlRequestTimeoutMs
+          });
+
+          if (!Array.isArray(page) || !page.length) break;
+
+          page.forEach((tx) => {
+            if (tx?.txHash) txMap.set(tx.txHash, tx);
+          });
+
+          const timestamps = page
+            .map((tx) => Number(tx?.timestamp))
+            .filter((t) => Number.isFinite(t));
+
+          if (timestamps.length) {
+            const pageOldest = Math.min(...timestamps);
+            oldestTimestamp = oldestTimestamp == null ? pageOldest : Math.min(oldestTimestamp, pageOldest);
+            if (pageOldest <= listingTimestamp) break;
+          }
+
+          if (page.length < CONFIG.pnlPageSize) break;
+
+          if (pageIndex === maxPages - 1) {
+            hitPageLimit = true;
+            break;
+          }
+
+          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
+        }
+
+        return {
+          transactions: Array.from(txMap.values()),
+          checkedTransactions: txMap.size,
+          reachedListingStart: oldestTimestamp != null && oldestTimestamp <= listingTimestamp,
+          hitPageLimit,
+          exhaustedHistory: !hitPageLimit,
+          oldestTimestamp
+        };
+      }
+
+      function parsePnlTradesFromTransactions(transactions, walletAddress) {
+        const trades = [];
+
+        for (const tx of (Array.isArray(transactions) ? transactions : [])) {
+          if (tx?.status !== "success") continue;
+          if (String(tx.sender || "") !== walletAddress) continue;
+          if (String(tx.receiver || "") !== CONFIG.pnlPairAddress) continue;
+
+          const txHash = String(tx?.txHash || "");
+          if (!txHash) continue;
+
+          const timestamp = Number(tx.timestamp);
+          if (!Number.isFinite(timestamp)) continue;
+
+          // Input token: what the wallet sent to the pair
+          const inputTransfers = tx?.action?.arguments?.transfers;
+          if (!Array.isArray(inputTransfers) || !inputTransfers.length) continue;
+          const inputTransfer = normalizePnlTradeTransfer(inputTransfers[0]);
+          if (!inputTransfer) continue;
+
+          const inputToken = inputTransfer.token;
+          const inputAmount = inputTransfer.amount;
+
+          // Output token: what the pair sent back to the wallet (from operations)
+          const ops = Array.isArray(tx.operations) ? tx.operations : [];
+          const outputOps = ops.filter((op) =>
+            String(op.sender || "") === CONFIG.pnlPairAddress &&
+            String(op.receiver || "") === walletAddress &&
+            op.function !== "depositSwapFees" &&
+            (op.identifier === CONFIG.tokens.tcl.identifier || op.identifier === CONFIG.tokens.usdc.identifier)
+          );
+
+          if (!outputOps.length) continue;
+
+          const outputTokenId = outputOps[0].identifier;
+          let outputAmount = 0;
+          for (const op of outputOps) {
+            if (op.identifier !== outputTokenId) continue;
+            const norm = normalizePnlOperation(op);
+            if (norm) outputAmount += norm.amount;
+          }
+          if (outputAmount <= 0) continue;
+
+          let side, tclAmount, volumeUsd;
+
+          if (inputToken === CONFIG.tokens.usdc.identifier && outputTokenId === CONFIG.tokens.tcl.identifier) {
+            side = "buy";
+            tclAmount = outputAmount;
+            volumeUsd = inputAmount;
+          } else if (inputToken === CONFIG.tokens.tcl.identifier && outputTokenId === CONFIG.tokens.usdc.identifier) {
+            side = "sell";
+            tclAmount = inputAmount;
+            volumeUsd = outputAmount;
+          } else {
+            continue;
+          }
+
+          const price = volumeUsd / tclAmount;
+          if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+
+          trades.push({
+            hash: txHash,
+            timestamp,
+            side,
+            tclAmount,
+            volumeUsd,
+            price,
+            description: String(tx?.action?.description || "Swap TCL")
+          });
+        }
+
+        return trades.sort((a, b) => a.timestamp - b.timestamp);
+      }
+
       function aggregatePnlTrades(trades) {
         return trades.reduce((totals, trade) => {
           if (trade.side === "buy") {
@@ -2087,41 +2250,13 @@
         dom.pnlStatus.textContent = "Se porneste scanarea PNL...";
 
         try {
-          let fastError = null;
-          let fastPartial = false;
-
-          try {
-            dom.pnlStatus.textContent = "Se verifica endpointul rapid PNL pentru walletul selectat...";
-            const fastResult = await fetchFastPnl(walletAddress);
-            if (fastResult?.totals?.tradeCount > 0) {
-              if (!fastResult.meta?.hitPageLimit) {
-                renderPnlResult(fastResult.totals, fastResult.meta);
-                return;
-              }
-              renderPnlResult(fastResult.totals, fastResult.meta);
-              dom.pnlStatus.textContent = "Endpointul rapid a gasit rezultat partial. Continui scanarea completa cu pauze intre requesturi...";
-              fastPartial = true;
-            }
-          } catch (error) {
-            fastError = error;
-            console.warn("Fast PNL fallback:", error);
-          }
-
-          if (!fastPartial) {
-            dom.pnlStatus.textContent = fastError
-              ? "Endpointul rapid nu a raspuns complet. Trec pe scanarea MultiversX cu pauze intre requesturi..."
-              : "Endpointul rapid nu a gasit swapuri. Verific si istoricul MultiversX...";
-          }
-          await wait(1000);
-
-          const history = await fetchWalletTransferHistory(walletAddress);
-          const trades = parsePnlTrades(history.transfers, walletAddress);
+          const swapData = await fetchSwapTransactions(walletAddress);
+          const trades = parsePnlTradesFromTransactions(swapData.transactions, walletAddress);
           const totals = aggregatePnlTrades(trades);
-          renderPnlResult(totals, history);
+          renderPnlResult(totals, swapData);
 
           if (!trades.length) {
-            const checkedCount = Number(history.checkedTransactions) || history.transfers.length;
-            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL evaluate in USD pentru walletul verificat. Tranzactii TCL verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
+            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${swapData.checkedTransactions.toLocaleString("ro-RO")}.`;
           }
         } catch (error) {
           console.error(error);
