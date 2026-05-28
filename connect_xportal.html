@@ -949,6 +949,11 @@
         apiBase: "https://api.multiversx.com",
         dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
+        // Worker Supabase sync — seteaza dupa deploy
+        pnlSyncWorkerUrl: "https://tcl-pnl-sync.axel4ro.workers.dev",
+        pnlSupabaseUrl: "https://phhzrfzhwwooeqsdztee.supabase.co",
+        // Gaseste cheia in Supabase Dashboard → Project Settings → API → "anon public"
+        pnlSupabaseAnonKey: "SUPABASE_ANON_KEY_HERE",
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
@@ -1928,6 +1933,62 @@
         return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
       }
 
+      // ── Supabase: citeste transferurile unui wallet din cache global ──────────
+      async function fetchTransfersFromSupabase(walletAddress) {
+        const anonKey = CONFIG.pnlSupabaseAnonKey;
+        if (!anonKey || anonKey === "SUPABASE_ANON_KEY_HERE") return null;
+
+        const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
+        url.searchParams.set("or", `(sender.eq.${walletAddress},receiver.eq.${walletAddress})`);
+        url.searchParams.set("order", "ts.desc");
+        url.searchParams.set("limit", "100000");
+        url.searchParams.set("select", "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations");
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            Accept: "application/json"
+          },
+          signal: AbortSignal.timeout(15000)
+        }).catch(() => null);
+
+        if (!res || !res.ok) return null;
+        const rows = await res.json().catch(() => null);
+        if (!Array.isArray(rows)) return null;
+
+        // Transforma randurile Supabase in formatul MultiversX API
+        return rows.map((row) => ({
+          txHash: row.tx_hash,
+          originalTxHash: row.original_tx_hash || undefined,
+          type: row.type || undefined,
+          sender: row.sender,
+          receiver: row.receiver,
+          timestamp: row.ts,
+          function: row.function || undefined,
+          status: row.status || "success",
+          action: row.action_transfers
+            ? { arguments: { transfers: row.action_transfers } }
+            : undefined,
+          operations: row.operations || undefined
+        }));
+      }
+
+      // Verifica starea sync-ului in worker
+      async function fetchSyncStatus() {
+        const workerUrl = CONFIG.pnlSyncWorkerUrl;
+        if (!workerUrl || workerUrl.includes("workers.dev") === false) return null;
+        try {
+          const res = await fetch(`${workerUrl}/api/status`, {
+            signal: AbortSignal.timeout(5000)
+          });
+          if (!res.ok) return null;
+          return res.json();
+        } catch {
+          return null;
+        }
+      }
+
       async function fetchWalletTransferHistory(walletAddress) {
         const transferMap = new Map();
         const transactionHashes = new Set();
@@ -1936,6 +1997,44 @@
         let hitPageLimit = false;
         let oldestTimestamp = null;
         let completedSources = 0;
+
+        // ── Incearca Supabase mai intai ───────────────────────────────────────────
+        dom.pnlStatus.textContent = "Se cauta date in cache Supabase...";
+        const supabaseEntries = await fetchTransfersFromSupabase(walletAddress);
+
+        if (Array.isArray(supabaseEntries) && supabaseEntries.length > 0) {
+          // Populam map-ul din Supabase
+          supabaseEntries.forEach((entry, index) => {
+            const entryHash = String(entry?.txHash || `${entry?.originalTxHash}:supabase:${index}`);
+            if (entryHash) transferMap.set(entryHash, entry);
+            const rootHash = String(entry?.originalTxHash || entry?.txHash || "");
+            if (rootHash) transactionHashes.add(rootHash);
+          });
+
+          const timestamps = supabaseEntries
+            .map((e) => Number(e.timestamp))
+            .filter(Number.isFinite);
+          if (timestamps.length) {
+            oldestTimestamp = Math.min(...timestamps);
+            if (oldestTimestamp <= listingTimestamp) reachedListingStart = true;
+          }
+
+          dom.pnlStatus.textContent = `Supabase: ${supabaseEntries.length.toLocaleString("ro-RO")} transferuri incarcate`;
+
+          return {
+            transfers: Array.from(transferMap.values()),
+            checkedTransactions: transactionHashes.size,
+            reachedListingStart,
+            hitPageLimit: !reachedListingStart,
+            exhaustedHistory: reachedListingStart,
+            oldestTimestamp,
+            source: "supabase"
+          };
+        }
+
+        // ── Fallback: scan direct MultiversX API ──────────────────────────────────
+        dom.pnlStatus.textContent = "Supabase gol — se scaneaza MultiversX API...";
+
         const swapFunctionSources = CONFIG.pnlSwapFunctions.map((functionName) => ({
           label: `metoda ${functionName}`,
           maxPages: CONFIG.pnlSwapMaxPages,
@@ -2035,7 +2134,8 @@
           reachedListingStart,
           hitPageLimit,
           exhaustedHistory: completedSources === sources.length,
-          oldestTimestamp
+          oldestTimestamp,
+          source: "api"
         };
       }
 
@@ -2442,16 +2542,20 @@
         dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
         dom.pnlEarnedUsd.textContent = `Value: ${formatUsd(earnedUsd)} USDC`;
 
-        const coverage = historyMeta.hitPageLimit
-          ? "Limita de scanare a fost atinsa; rezultatul poate fi partial."
-          : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
-            ? "Istoric scanat complet pentru perioada TCL."
-            : "Istoric scanat pana la limita API.");
+        const isSupabase = historyMeta.source === "supabase";
+        const coverage = isSupabase
+          ? (historyMeta.reachedListingStart
+              ? "Cache Supabase — istoric complet de la listing."
+              : "Cache Supabase — sync in curs (backfill partial).")
+          : (historyMeta.hitPageLimit
+              ? "Limita de scanare MultiversX atinsa; rezultatul poate fi partial."
+              : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
+                  ? "MultiversX scan complet pentru perioada TCL."
+                  : "MultiversX scan pana la limita API."));
         const checkedCount = Number(historyMeta.checkedTransactions)
           || Number(historyMeta.checkedLogs)
           || (Array.isArray(historyMeta.transfers) ? historyMeta.transfers.length : 0);
-        const sourceLabel = historyMeta.sourceLabel ? `Sursa: ${historyMeta.sourceLabel}. ` : "";
-        dom.pnlStatus.textContent = `${sourceLabel}${coverage} Tranzactii TCL verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
+        dom.pnlStatus.textContent = `${coverage} Tranzactii TCL: ${checkedCount.toLocaleString("ro-RO")}.`;
       }
 
       async function runPnlCheck(event) {
