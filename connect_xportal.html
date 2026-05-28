@@ -955,7 +955,7 @@
         pnlPageSize: 50,
         pnlMaxPages: 220,
         pnlPairMaxPages: 20,
-        pnlFunctionMaxPages: 0,
+        pnlFunctionMaxPages: 10,
         pnlSwapMaxPages: 80,
         pnlTokenScanPageSize: 1000,
         pnlTokenScanMaxPages: 12,
@@ -2235,62 +2235,82 @@
         };
       }
 
-      // Scans TCL transfers received by walletAddress FROM the game contract only.
-      // Uses sender= filter directly in the API so no extra ops parsing is needed.
+      // Scans only direct earning calls made by this wallet to the game contract.
+      // The older sender=gameContract scan also counted collateral/refund returns.
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
         if (!gameContract) return 0;
 
+        const earnFunctions = [
+          "claimRewards", "claimBorrowingRewards", "claimInfinityRewards", "claimLendingRewards",
+          "withdrawBalancePrivateShop", "buyCoins", "buySft",
+          "addBonus", "changeBonus", "addSocket", "addRefinement",
+          "addCrystal", "changeCrystal", "upgradeNft"
+        ];
+
         let earnedTcl = 0;
-        const pageSize = CONFIG.pnlTokenScanPageSize || 1000;
-        const maxPages = CONFIG.pnlTokenScanMaxPages || 12;
+        const seenOps = new Set();
+        const pageSize = Math.min(50, Math.max(1, Number(CONFIG.pnlPageSize) || 50));
+        const maxPagesPerFn = Math.max(1, Number(CONFIG.pnlFunctionMaxPages) || 10);
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
 
-        for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
-          dom.pnlStatus.textContent = `Se citesc recompensele TCL... pag ${pageIndex + 1}`;
+        for (let fnIdx = 0; fnIdx < earnFunctions.length; fnIdx++) {
+          const fn = earnFunctions[fnIdx];
+          dom.pnlStatus.textContent = `Se citesc recompensele TCL: ${fn} (${fnIdx + 1}/${earnFunctions.length})...`;
 
-          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-            from: pageIndex * pageSize,
-            size: pageSize,
-            status: "success",
-            order: "desc",
-            token: CONFIG.tokens.tcl.identifier,
-            sender: gameContract
-          }), {
-            retries: CONFIG.pnlMaxRetries,
-            retryDelayMs: CONFIG.pnlRetryDelayMs,
-            timeoutMs: CONFIG.pnlRequestTimeoutMs
-          });
+          for (let pageIndex = 0; pageIndex < maxPagesPerFn; pageIndex++) {
+            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+              from: pageIndex * pageSize,
+              size: pageSize,
+              status: "success",
+              order: "desc",
+              receiver: gameContract,
+              function: fn,
+              withOperations: "true"
+            }), {
+              retries: CONFIG.pnlMaxRetries,
+              retryDelayMs: CONFIG.pnlRetryDelayMs,
+              timeoutMs: CONFIG.pnlRequestTimeoutMs
+            });
 
-          if (!Array.isArray(page) || !page.length) break;
+            if (!Array.isArray(page) || !page.length) break;
 
-          for (const entry of page) {
-            // Safety double-check even though API already filters by sender
-            if (String(entry?.sender || "") !== gameContract) continue;
-            if (String(entry?.receiver || "") !== walletAddress) continue;
+            for (const entry of page) {
+              if (!Array.isArray(entry.operations)) continue;
+              const rootHash = getPnlRootHash(entry);
 
-            // TCL amount lives in action.arguments.transfers[0] for SCR-type entries,
-            // or at the top-level identifier/value for ESDTTransfer-type entries.
-            const transferList = entry?.action?.arguments?.transfers;
-            const firstTx = Array.isArray(transferList) ? transferList[0] : null;
-            const tokenId = String(
-              firstTx?.token || firstTx?.identifier ||
-              entry?.identifier || entry?.token || ""
-            );
-            if (tokenId && tokenId !== CONFIG.tokens.tcl.identifier) continue;
+              for (const op of entry.operations) {
+                const opToken = String(op?.identifier || op?.token || "");
+                if (opToken !== CONFIG.tokens.tcl.identifier) continue;
+                if (String(op?.sender || "") !== gameContract) continue;
+                if (String(op?.receiver || "") !== walletAddress) continue;
+                if (op?.action && op.action !== "transfer") continue;
 
-            const value = firstTx?.value != null ? firstTx.value : entry?.value;
-            const norm = normalizePnlTradeTransfer({ token: CONFIG.tokens.tcl.identifier, value });
-            if (norm) earnedTcl += norm.amount;
+                const key = [
+                  rootHash,
+                  op.id || "",
+                  opToken,
+                  op.sender || "",
+                  op.receiver || "",
+                  op.value || ""
+                ].join("|");
+                if (seenOps.has(key)) continue;
+                seenOps.add(key);
+
+                const norm = normalizePnlTradeTransfer({ token: opToken, value: op.value });
+                if (norm) earnedTcl += norm.amount;
+              }
+            }
+
+            const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
+            if (timestamps.length && Math.min(...timestamps) <= listingTimestamp) break;
+            if (page.length < pageSize) break;
+            if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
           }
 
-          const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
-          if (timestamps.length) {
-            const oldest = Math.min(...timestamps);
-            if (oldest <= listingTimestamp) break;
+          if (fnIdx < earnFunctions.length - 1 && CONFIG.pnlSourcePauseMs > 0) {
+            await wait(CONFIG.pnlSourcePauseMs);
           }
-          if (page.length < pageSize) break;
-          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
         }
 
         return earnedTcl;
