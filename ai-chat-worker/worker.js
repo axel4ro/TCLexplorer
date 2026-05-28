@@ -62,7 +62,7 @@ const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
 const responseCache = new Map();
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 let cachedDropData = null;
 let cachedDropDataTs = 0;
 const DROP_DATA_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -285,7 +285,7 @@ function buildActions(question, language, sources = []) {
   if (/\b(nfts?)\b/i.test(question)) {
     add(t({ en: "Open NFTs", ro: "Deschide NFT-uri", tr: "NFT'leri Aç", de: "NFTs öffnen", es: "Abrir NFTs", fr: "Ouvrir NFTs", it: "Apri NFTs", pl: "Otwórz NFTs", pt: "Abrir NFTs" }), "https://axel4ro.github.io/TCLexplorer/NFTs.html", "primary");
   }
-  if (/\b(earn|staking|apr\b|reward|recompens|castig|câștig)\b/i.test(question)) {
+  if (/\b(earn|staking|apr\b|reward|recompens|castig|câștig|creator|referral|afiliat|bani|procent|percent|comision|commission|program.creator|creator.program)\b/i.test(question)) {
     add(t({ en: "Open Earn", ro: "Deschide Earn", tr: "Earn'i Aç", de: "Earn öffnen", es: "Abrir Earn", fr: "Ouvrir Earn", it: "Apri Earn", pl: "Otwórz Earn", pt: "Abrir Earn" }), "https://axel4ro.github.io/TCLexplorer/earn.html", "primary");
   }
   if (/\b(xportal|portofel|wallet|connect|conectare|web3)\b/i.test(question) && !isBuyTokenIntent(question)) {
@@ -324,7 +324,8 @@ function guidedPageResponse(question, language, actions) {
 }
 
 function isEventsIntent(question) {
-  return /\b(events?|event|weekly|schedule|calendar|program|eveniment\w*|saptamanal|săptămânal)\b/i.test(question);
+  return /\b(events?|event|weekly|schedule|calendar|eveniment\w*|saptamanal|săptămânal)\b/i.test(question) ||
+    /\b(program(ul)?)\b/i.test(question) && !/\b(creator|referral|afiliat|earn|staking|reward)\b/i.test(question);
 }
 
 function isBroadEventsIntent(question) {
@@ -695,6 +696,10 @@ function expandKnowledgeQuery(question) {
 
   if (isRequirementsIntent(text)) {
     return `${text} system requirements minimum PC hardware specs can i run game requirements`;
+  }
+
+  if (/\b(earn|staking|apr\b|reward|recompens|castig|câștig|creator|referral|afiliat|bani|procent|percent|comision|commission)\b/i.test(text)) {
+    return `${text} earn staking APR rewards creator program referral affiliate commission percent TCL`;
   }
 
   return text;
