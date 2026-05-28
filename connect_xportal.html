@@ -2242,11 +2242,10 @@
         if (!gameContract) return 0;
 
         const earnFunctions = new Set([
-          "claimRewards", "claimInfinityRewards", "claimLendingRewards",
-          "withdrawBalancePrivateShop", "buyCoins", "buySft", "mintNft",
+          "claimRewards", "claimBorrowingRewards", "claimInfinityRewards", "claimLendingRewards",
+          "withdrawBalancePrivateShop", "buyCoins", "buySft",
           "addBonus", "changeBonus", "addSocket", "addRefinement",
-          "addCrystal", "changeCrystal", "upgradeNft", "addStorage",
-          "distributeTokenPurchases"
+          "addCrystal", "changeCrystal", "upgradeNft"
         ]);
 
         const transferGroups = new Map();
