@@ -7,6 +7,7 @@ Public endpoints:
 - `GET /api/analytics`
 - `GET /api/volume`
 - `GET /api/technicals`
+- `GET /api/pnl?wallet=erd1...`
 - `GET /api/push/config`
 - `GET /api/push/stats`
 - `POST /api/push/subscribe`

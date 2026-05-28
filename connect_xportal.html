@@ -931,11 +931,13 @@
         walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
         apiBase: "https://api.multiversx.com",
         dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlPageSize: 50,
-        pnlMaxPages: 200,
-        pnlFunctionMaxPages: 120,
+        pnlMaxPages: 220,
+        pnlPairMaxPages: 40,
+        pnlFunctionMaxPages: 0,
         pnlPagePauseMs: 750,
         pnlSourcePauseMs: 2000,
         pnlMaxRetries: 6,
@@ -1321,6 +1323,7 @@
         const maxRetries = Math.max(0, Number(options.retries) || 0);
         const retryDelayMs = Math.max(0, Number(options.retryDelayMs ?? CONFIG.pnlRetryDelayMs) || 0);
         const timeoutMs = Math.max(1000, Number(options.timeoutMs ?? CONFIG.requestTimeoutMs) || CONFIG.requestTimeoutMs);
+        const timeoutMessage = options.timeoutMessage || "API timeout. Am asteptat prea mult raspunsul.";
 
         for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
           const controller = new AbortController();
@@ -1352,7 +1355,7 @@
             const canRetry = attempt < maxRetries;
             if (!canRetry) {
               if (error?.name === "AbortError") {
-                throw new Error("API timeout. Am asteptat prea mult raspunsul MultiversX.");
+                throw new Error(timeoutMessage);
               }
               throw error;
             }
@@ -1656,11 +1659,6 @@
         return groups;
       }
 
-      function getNativeEgldAmount(entry) {
-        const amount = decimalStringToNumber(entry?.value || "0", CONFIG.tokens.egld.decimals);
-        return Number.isFinite(amount) ? amount : 0;
-      }
-
       function parsePnlTradesFromOperations(transfers, walletAddress) {
         const trades = [];
         const transferGroups = groupPnlTransfers(transfers);
@@ -1704,18 +1702,17 @@
             .some((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.sender === walletAddress);
           const hasNonTclReceived = operations
             .some((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress);
-          const nativeSent = group.entries
-            .some((entry) => entry.sender === walletAddress && getNativeEgldAmount(entry) > 0);
-          const nativeReceived = group.entries
-            .some((entry) => entry.receiver === walletAddress && getNativeEgldAmount(entry) > 0);
+          const pairInvolved = group.entries
+            .some((entry) => entry.sender === CONFIG.pnlPairAddress || entry.receiver === CONFIG.pnlPairAddress)
+            || operations.some((operation) => operation.sender === CONFIG.pnlPairAddress || operation.receiver === CONFIG.pnlPairAddress);
 
           let side = "";
           let tclAmount = 0;
           let volumeUsd = 0;
           const netTcl = tclReceived - tclSent;
           const netUsd = usdReceived - usdSent;
-          const buyFallbackUsd = (hasNonTclSent || nativeSent) && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
-          const sellFallbackUsd = (hasNonTclReceived || nativeReceived) && tclSentUsd > 0 ? tclSentUsd : 0;
+          const buyFallbackUsd = (hasNonTclSent || pairInvolved) && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
+          const sellFallbackUsd = (hasNonTclReceived || pairInvolved) && tclSentUsd > 0 ? tclSentUsd : 0;
 
           if (netTcl > 0 && netUsd < 0) {
             side = "buy";
@@ -1897,12 +1894,17 @@
             maxPages: CONFIG.pnlMaxPages,
             params: { token: CONFIG.tokens.tcl.identifier }
           },
-          ...CONFIG.pnlSwapFunctions.map((functionName) => ({
-            label: `swapurile ${functionName}`,
-            maxPages: CONFIG.pnlFunctionMaxPages,
-            params: { function: functionName }
-          }))
-        ];
+          {
+            label: "wallet -> pool TCL/USDC",
+            maxPages: CONFIG.pnlPairMaxPages,
+            params: { receiver: CONFIG.pnlPairAddress }
+          },
+          {
+            label: "pool TCL/USDC -> wallet",
+            maxPages: CONFIG.pnlPairMaxPages,
+            params: { sender: CONFIG.pnlPairAddress }
+          }
+        ].filter((source) => source.maxPages > 0);
 
         async function scanSource(source) {
           for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex += 1) {
@@ -2007,6 +2009,45 @@
         });
       }
 
+      function normalizePnlTotals(totals) {
+        return {
+          tradeCount: Math.max(0, Math.floor(readNumber(totals?.tradeCount, 0))),
+          buyCount: Math.max(0, Math.floor(readNumber(totals?.buyCount, 0))),
+          sellCount: Math.max(0, Math.floor(readNumber(totals?.sellCount, 0))),
+          buyTcl: readNumber(totals?.buyTcl, 0),
+          sellTcl: readNumber(totals?.sellTcl, 0),
+          buyUsd: readNumber(totals?.buyUsd, 0),
+          sellUsd: readNumber(totals?.sellUsd, 0)
+        };
+      }
+
+      async function fetchFastPnl(walletAddress) {
+        if (!CONFIG.pnlFastUrl) return null;
+
+        const url = new URL(CONFIG.pnlFastUrl);
+        url.searchParams.set("wallet", walletAddress);
+
+        const payload = await fetchJson(url.toString(), {
+          retries: 1,
+          retryDelayMs: 1500,
+          timeoutMs: 60000,
+          timeoutMessage: "Endpointul PNL rapid a depasit timpul de raspuns."
+        });
+
+        if (!payload?.ok) {
+          throw new Error(payload?.error || "Endpointul PNL rapid este indisponibil.");
+        }
+
+        return {
+          totals: normalizePnlTotals(payload.totals),
+          meta: {
+            ...(payload.meta || {}),
+            sourceLabel: payload.meta?.sourceLabel || "DexScreener",
+            transfers: []
+          }
+        };
+      }
+
       function renderPnlResult(totals, historyMeta) {
         const pnlUsd = totals.sellUsd - totals.buyUsd;
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
@@ -2023,8 +2064,11 @@
           : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
             ? "Istoric scanat complet pentru perioada TCL."
             : "Istoric scanat pana la limita API.");
-        const checkedCount = Number(historyMeta.checkedTransactions) || historyMeta.transfers.length;
-        dom.pnlStatus.textContent = `${coverage} Tranzactii TCL verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
+        const checkedCount = Number(historyMeta.checkedTransactions)
+          || Number(historyMeta.checkedLogs)
+          || (Array.isArray(historyMeta.transfers) ? historyMeta.transfers.length : 0);
+        const sourceLabel = historyMeta.sourceLabel ? `Sursa: ${historyMeta.sourceLabel}. ` : "";
+        dom.pnlStatus.textContent = `${sourceLabel}${coverage} Tranzactii TCL verificate: ${checkedCount.toLocaleString("ro-RO")}.`;
       }
 
       async function runPnlCheck(event) {
@@ -2043,6 +2087,33 @@
         dom.pnlStatus.textContent = "Se porneste scanarea PNL...";
 
         try {
+          let fastError = null;
+          let fastPartial = false;
+
+          try {
+            dom.pnlStatus.textContent = "Se verifica endpointul rapid PNL pentru walletul selectat...";
+            const fastResult = await fetchFastPnl(walletAddress);
+            if (fastResult?.totals?.tradeCount > 0) {
+              if (!fastResult.meta?.hitPageLimit) {
+                renderPnlResult(fastResult.totals, fastResult.meta);
+                return;
+              }
+              renderPnlResult(fastResult.totals, fastResult.meta);
+              dom.pnlStatus.textContent = "Endpointul rapid a gasit rezultat partial. Continui scanarea completa cu pauze intre requesturi...";
+              fastPartial = true;
+            }
+          } catch (error) {
+            fastError = error;
+            console.warn("Fast PNL fallback:", error);
+          }
+
+          if (!fastPartial) {
+            dom.pnlStatus.textContent = fastError
+              ? "Endpointul rapid nu a raspuns complet. Trec pe scanarea MultiversX cu pauze intre requesturi..."
+              : "Endpointul rapid nu a gasit swapuri. Verific si istoricul MultiversX...";
+          }
+          await wait(1000);
+
           const history = await fetchWalletTransferHistory(walletAddress);
           const trades = parsePnlTrades(history.transfers, walletAddress);
           const totals = aggregatePnlTrades(trades);

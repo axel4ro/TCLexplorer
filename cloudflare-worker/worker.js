@@ -32,6 +32,26 @@ const TECHNICALS_SNAPSHOT_KEY = "technicals:snapshot";
 const TECHNICALS_REFRESH_LOCK_KEY = "technicals:refresh-lock";
 const TECHNICALS_REFRESH_LOCK_TTL_SECONDS = 4 * 60;
 const DEFAULT_TECHNICALS_REFRESH_INTERVAL_MINUTES = 5;
+const PNL_DEXSCREENER_CACHE_PREFIX = "pnl:dexscreener:";
+const PNL_DEXSCREENER_CACHE_TTL_SECONDS = 10 * 60;
+const PNL_DEXSCREENER_CONFIG = {
+  chainId: "multiversx",
+  ammId: "xexchange",
+  pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+  quoteTokenAddress: "USDC-c76f1f",
+  logsBaseUrl: "https://io.dexscreener.com/dex/log/amm/v4",
+  pagePauseMs: 300,
+  maxPages: 80,
+  maxAttempts: 3
+};
+const PNL_MVX_CONFIG = {
+  apiBase: "https://api.multiversx.com",
+  pageSize: 50,
+  tokenMaxPages: 10,
+  pairMaxPages: 5,
+  pagePauseMs: 80,
+  maxAttempts: 3
+};
 const VOLUME_CONFIG = {
   listingDate: "2024-06-13T00:00:00Z",
   pairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
@@ -223,6 +243,10 @@ async function handleRequest(request, env, ctx) {
       return handleTechnicals(request, env, ctx);
     }
 
+    if (path.endsWith("/api/pnl") || path.endsWith("/api/pnl/dexscreener")) {
+      return handlePnlDexScreener(request, env);
+    }
+
     if (path.endsWith("/api/volume/refresh")) {
       return handleVolumeRefresh(request, env);
     }
@@ -383,6 +407,71 @@ function handleConfig(request, env) {
     configured: Boolean(env.VAPID_PUBLIC_KEY),
     publicKey: env.VAPID_PUBLIC_KEY || ""
   });
+}
+
+async function handlePnlDexScreener(request, env) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  const url = new URL(request.url);
+  const wallet = String(url.searchParams.get("wallet") || "").trim().toLowerCase();
+  const refresh = url.searchParams.get("refresh") === "1";
+
+  if (!isMultiversXAddress(wallet)) {
+    return jsonResponse(request, env, 400, { ok: false, error: "Invalid wallet address" });
+  }
+
+  const kv = env.TCL_EVENT_PUSH_KV;
+  const cacheKey = `${PNL_DEXSCREENER_CACHE_PREFIX}${wallet}`;
+  if (kv && !refresh) {
+    const cached = await kv.get(cacheKey, "json").catch(() => null);
+    if (cached?.ok && cached?.wallet === wallet) {
+      return jsonResponse(request, env, 200, {
+        ...cached,
+        meta: {
+          ...(cached.meta || {}),
+          cached: true
+        }
+      }, {
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300"
+      });
+    }
+  }
+
+  try {
+    const warnings = [];
+    let result = null;
+
+    if (env.PNL_DEXSCREENER_ENABLED === "1") {
+      try {
+        result = await fetchDexScreenerPnl(wallet);
+      } catch (error) {
+        warnings.push(`DexScreener unavailable: ${error?.message || "unknown error"}`);
+      }
+    }
+
+    if (!result || !result.totals?.tradeCount) {
+      result = await fetchMultiversXFilteredPnl(wallet, warnings);
+    }
+
+    if (kv) {
+      await kv.put(cacheKey, JSON.stringify(result), {
+        expirationTtl: PNL_DEXSCREENER_CACHE_TTL_SECONDS
+      }).catch(() => {});
+    }
+
+    return jsonResponse(request, env, 200, result, {
+      "Cache-Control": "public, max-age=30, stale-while-revalidate=120"
+    });
+  } catch (error) {
+    return jsonResponse(request, env, 502, {
+      ok: false,
+      source: "pnl",
+      wallet,
+      error: error?.message || "PNL unavailable"
+    });
+  }
 }
 
 async function handleSubscribe(request, env) {
@@ -1642,6 +1731,639 @@ function parseVolumeTrades(transfers, pair) {
   }
 
   return tradeList.sort((left, right) => left.timestamp - right.timestamp);
+}
+
+function isMultiversXAddress(value) {
+  return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(value || "").trim());
+}
+
+function buildDexScreenerPnlUrl(wallet, beforeBlockNumber = null) {
+  const config = PNL_DEXSCREENER_CONFIG;
+  const url = new URL(`${config.logsBaseUrl}/${config.ammId}/all/${config.chainId}/${encodeURIComponent(config.pairAddress)}`);
+  url.searchParams.set("q", config.quoteTokenAddress);
+  url.searchParams.set("m", wallet);
+  url.searchParams.set("c", "1");
+  if (Number.isFinite(beforeBlockNumber) && beforeBlockNumber > 0) {
+    url.searchParams.set("bbn", String(Math.floor(beforeBlockNumber)));
+  }
+  return url.toString();
+}
+
+async function fetchDexScreenerJson(url) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= PNL_DEXSCREENER_CONFIG.maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          Referer: "https://dexscreener.com/"
+        },
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`DexScreener HTTP ${response.status}${text ? `: ${text.slice(0, 80)}` : ""}`);
+      }
+
+      const payload = await response.json();
+      if (!payload || !Array.isArray(payload.logs)) {
+        throw new Error("DexScreener response did not contain logs");
+      }
+
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= PNL_DEXSCREENER_CONFIG.maxAttempts) break;
+      await sleep(800 * attempt);
+    }
+  }
+
+  throw new Error(lastError?.message || "DexScreener logs unavailable");
+}
+
+function normalizeDexTimestamp(value) {
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
+  return timestamp > 10000000000 ? Math.floor(timestamp / 1000) : Math.floor(timestamp);
+}
+
+function normalizeDexNumber(value) {
+  const number = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function parseDexScreenerPnlTrade(log) {
+  if (!log || log.logType !== "swap") return null;
+  if (log.txnType !== "buy" && log.txnType !== "sell") return null;
+
+  const tclAmount = normalizeDexNumber(log.amount0);
+  const quoteAmount = normalizeDexNumber(log.amount1);
+  const volumeUsd = normalizeDexNumber(log.volumeUsd) || quoteAmount;
+  const timestamp = normalizeDexTimestamp(log.blockTimestamp);
+  const blockNumber = Number(log.blockNumber);
+  const logIndex = Number(log.logIndex);
+  const hash = String(log.txnHash || "");
+
+  if (!hash || !timestamp || !Number.isFinite(blockNumber) || blockNumber <= 0) return null;
+  if (!Number.isFinite(tclAmount) || tclAmount <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) return null;
+
+  return {
+    hash,
+    key: `${hash}:${Number.isFinite(logIndex) ? logIndex : 0}`,
+    timestamp,
+    blockNumber,
+    side: log.txnType,
+    price: normalizeDexNumber(log.priceUsd) || (volumeUsd / tclAmount),
+    volumeUsd,
+    tclAmount,
+    description: "DexScreener TCL/USDC swap"
+  };
+}
+
+function aggregatePnlDexTrades(trades) {
+  return trades.reduce((totals, trade) => {
+    if (trade.side === "buy") {
+      totals.buyCount += 1;
+      totals.buyTcl += trade.tclAmount;
+      totals.buyUsd += trade.volumeUsd;
+    } else if (trade.side === "sell") {
+      totals.sellCount += 1;
+      totals.sellTcl += trade.tclAmount;
+      totals.sellUsd += trade.volumeUsd;
+    }
+    totals.tradeCount += 1;
+    return totals;
+  }, {
+    tradeCount: 0,
+    buyCount: 0,
+    sellCount: 0,
+    buyTcl: 0,
+    sellTcl: 0,
+    buyUsd: 0,
+    sellUsd: 0
+  });
+}
+
+async function fetchDexScreenerPnl(wallet) {
+  const tradeMap = new Map();
+  let beforeBlockNumber = null;
+  let oldestBlockNumber = null;
+  let newestBlockNumber = null;
+  let oldestTimestamp = null;
+  let pageCount = 0;
+  let checkedLogs = 0;
+  let exhaustedHistory = false;
+  let hitPageLimit = false;
+
+  for (let pageIndex = 0; pageIndex < PNL_DEXSCREENER_CONFIG.maxPages; pageIndex += 1) {
+    const payload = await fetchDexScreenerJson(buildDexScreenerPnlUrl(wallet, beforeBlockNumber));
+    const logs = Array.isArray(payload.logs) ? payload.logs : [];
+
+    if (!logs.length) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    pageCount += 1;
+    checkedLogs += logs.length;
+
+    const blockNumbers = [];
+    for (const log of logs) {
+      const blockNumber = Number(log?.blockNumber);
+      if (Number.isFinite(blockNumber) && blockNumber > 0) blockNumbers.push(blockNumber);
+
+      const timestamp = normalizeDexTimestamp(log?.blockTimestamp);
+      if (timestamp) {
+        oldestTimestamp = oldestTimestamp == null ? timestamp : Math.min(oldestTimestamp, timestamp);
+      }
+
+      const maker = String(log?.maker || "").toLowerCase();
+      if (maker && maker !== wallet) continue;
+
+      const trade = parseDexScreenerPnlTrade(log);
+      if (trade) tradeMap.set(trade.key, trade);
+    }
+
+    if (!blockNumbers.length) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    const pageOldestBlock = Math.min(...blockNumbers);
+    const pageNewestBlock = Math.max(...blockNumbers);
+    oldestBlockNumber = oldestBlockNumber == null ? pageOldestBlock : Math.min(oldestBlockNumber, pageOldestBlock);
+    newestBlockNumber = newestBlockNumber == null ? pageNewestBlock : Math.max(newestBlockNumber, pageNewestBlock);
+
+    if (beforeBlockNumber != null && pageOldestBlock >= beforeBlockNumber) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    beforeBlockNumber = pageOldestBlock;
+
+    if (logs.length < 100) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    if (pageIndex === PNL_DEXSCREENER_CONFIG.maxPages - 1) {
+      hitPageLimit = true;
+      break;
+    }
+
+    if (PNL_DEXSCREENER_CONFIG.pagePauseMs > 0) {
+      await sleep(PNL_DEXSCREENER_CONFIG.pagePauseMs);
+    }
+  }
+
+  const trades = Array.from(tradeMap.values()).sort((left, right) => left.timestamp - right.timestamp);
+  const totals = aggregatePnlDexTrades(trades);
+
+  return {
+    ok: true,
+    source: "dexscreener",
+    wallet,
+    totals,
+    trades,
+    meta: {
+      sourceLabel: "DexScreener",
+      checkedTransactions: tradeMap.size,
+      checkedLogs,
+      pageCount,
+      reachedListingStart: exhaustedHistory,
+      exhaustedHistory,
+      hitPageLimit,
+      oldestTimestamp,
+      oldestBlockNumber,
+      newestBlockNumber,
+      cached: false,
+      updatedAt: new Date().toISOString()
+    }
+  };
+}
+
+function buildMvxPnlTransfersUrl(account, pageIndex, params = {}) {
+  const url = new URL(`${PNL_MVX_CONFIG.apiBase}/accounts/${account}/transfers`);
+  url.searchParams.set("from", String(pageIndex * PNL_MVX_CONFIG.pageSize));
+  url.searchParams.set("size", String(PNL_MVX_CONFIG.pageSize));
+  url.searchParams.set("status", "success");
+  url.searchParams.set("withOperations", "true");
+  url.searchParams.set("order", "desc");
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  }
+
+  return url.toString();
+}
+
+async function fetchMvxPnlSource(account, params, maxPages) {
+  const transfers = [];
+  let hitPageLimit = false;
+  let exhaustedHistory = false;
+  let oldestTimestamp = null;
+
+  for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+    const page = await fetchAnalyticsJson(buildMvxPnlTransfersUrl(account, pageIndex, params), PNL_MVX_CONFIG.maxAttempts);
+    if (!Array.isArray(page) || !page.length) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    transfers.push(...page);
+
+    const pageTimestamps = page
+      .map((item) => Number(item?.timestamp))
+      .filter((timestamp) => Number.isFinite(timestamp));
+    if (pageTimestamps.length) {
+      oldestTimestamp = oldestTimestamp == null
+        ? Math.min(...pageTimestamps)
+        : Math.min(oldestTimestamp, ...pageTimestamps);
+    }
+
+    if (page.length < PNL_MVX_CONFIG.pageSize) {
+      exhaustedHistory = true;
+      break;
+    }
+
+    if (pageIndex === maxPages - 1) {
+      hitPageLimit = true;
+      break;
+    }
+
+    if (PNL_MVX_CONFIG.pagePauseMs > 0) {
+      await sleep(PNL_MVX_CONFIG.pagePauseMs);
+    }
+  }
+
+  return {
+    transfers,
+    hitPageLimit,
+    exhaustedHistory,
+    oldestTimestamp
+  };
+}
+
+function normalizePnlOperation(operation) {
+  if (operation?.action && operation.action !== "transfer") return null;
+  const token = operation?.identifier || operation?.token || (operation?.type === "egld" ? "EGLD" : "");
+  if (!token || !operation?.value) return null;
+  if (operation?.esdtType && operation.esdtType !== "FungibleESDT") return null;
+
+  const decimals = Number(operation.decimals ?? (
+    token === VOLUME_CONFIG.quoteTokenAddress ? 6 : 18
+  ));
+  const amount = decimalStringToNumber(String(operation.value), decimals);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const valueUsd = token === VOLUME_CONFIG.quoteTokenAddress
+    ? amount
+    : Number(operation.valueUSD);
+
+  return {
+    token,
+    amount,
+    valueUsd,
+    sender: operation.sender || "",
+    receiver: operation.receiver || "",
+    key: [
+      operation.id || "",
+      operation.action || "",
+      operation.type || "",
+      token,
+      operation.sender || "",
+      operation.receiver || "",
+      String(operation.value || "")
+    ].join("|")
+  };
+}
+
+function groupPnlTransfers(transfers) {
+  const groups = new Map();
+
+  for (const entry of Array.isArray(transfers) ? transfers : []) {
+    if (entry?.status && entry.status !== "success") continue;
+    const hash = String(entry?.originalTxHash || entry?.txHash || "");
+    if (!hash) continue;
+
+    let group = groups.get(hash);
+    const timestamp = Number(entry.timestamp) || 0;
+    if (!group) {
+      group = {
+        hash,
+        timestamp,
+        entries: []
+      };
+      groups.set(hash, group);
+    } else if (timestamp && (!group.timestamp || timestamp < group.timestamp)) {
+      group.timestamp = timestamp;
+    }
+
+    group.entries.push(entry);
+  }
+
+  return groups;
+}
+
+function normalizePnlTradeTransfer(transfer) {
+  const token = transfer?.token || transfer?.identifier || "";
+  if (!token || !transfer?.value) return null;
+  const decimals = Number(transfer.decimals ?? (
+    token === VOLUME_CONFIG.quoteTokenAddress ? 6 : 18
+  ));
+  const amount = decimalStringToNumber(String(transfer.value), decimals);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return { token, amount };
+}
+
+function parsePnlPairActionTrades(transfers, wallet) {
+  const groupedSwaps = new Map();
+
+  for (const entry of Array.isArray(transfers) ? transfers : []) {
+    if (entry?.status && entry.status !== "success") continue;
+
+    const transferList = entry?.action?.arguments?.transfers;
+    if (!Array.isArray(transferList) || !transferList.length) continue;
+
+    const primaryTransfer = normalizePnlTradeTransfer(transferList[0]);
+    if (!primaryTransfer) continue;
+
+    const timestamp = Number(entry.timestamp);
+    if (!Number.isFinite(timestamp)) continue;
+
+    const hash = String(entry.originalTxHash || entry.txHash || "");
+    if (!hash) continue;
+
+    let groupedSwap = groupedSwaps.get(hash);
+    if (!groupedSwap) {
+      groupedSwap = {
+        hash,
+        timestamp,
+        inputToken: null,
+        inputAmount: 0,
+        outputToken: null,
+        outputAmount: 0,
+        invalid: false
+      };
+      groupedSwaps.set(hash, groupedSwap);
+    } else if (timestamp < groupedSwap.timestamp) {
+      groupedSwap.timestamp = timestamp;
+    }
+
+    const isSwapInput =
+      entry.sender === wallet &&
+      entry.receiver === VOLUME_CONFIG.pairAddress &&
+      (/^swap/i.test(String(entry.function || "")) || entry?.action?.name === "swap");
+
+    if (isSwapInput) {
+      if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+        groupedSwap.invalid = true;
+        continue;
+      }
+      groupedSwap.inputToken = primaryTransfer.token;
+      groupedSwap.inputAmount += primaryTransfer.amount;
+      continue;
+    }
+
+    const isPairOutput =
+      entry.sender === VOLUME_CONFIG.pairAddress &&
+      entry.receiver === wallet &&
+      entry.function !== "depositSwapFees" &&
+      (primaryTransfer.token === VOLUME_CONFIG.baseTokenAddress || primaryTransfer.token === VOLUME_CONFIG.quoteTokenAddress);
+
+    if (!isPairOutput) continue;
+
+    if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+      groupedSwap.invalid = true;
+      continue;
+    }
+
+    groupedSwap.outputToken = primaryTransfer.token;
+    groupedSwap.outputAmount += primaryTransfer.amount;
+  }
+
+  const trades = [];
+  for (const groupedSwap of groupedSwaps.values()) {
+    if (groupedSwap.invalid) continue;
+    if (!groupedSwap.inputToken || !groupedSwap.outputToken || groupedSwap.inputAmount <= 0 || groupedSwap.outputAmount <= 0) continue;
+
+    let side = "";
+    let tclAmount = 0;
+    let volumeUsd = 0;
+
+    if (groupedSwap.inputToken === VOLUME_CONFIG.quoteTokenAddress && groupedSwap.outputToken === VOLUME_CONFIG.baseTokenAddress) {
+      side = "buy";
+      tclAmount = groupedSwap.outputAmount;
+      volumeUsd = groupedSwap.inputAmount;
+    } else if (groupedSwap.inputToken === VOLUME_CONFIG.baseTokenAddress && groupedSwap.outputToken === VOLUME_CONFIG.quoteTokenAddress) {
+      side = "sell";
+      tclAmount = groupedSwap.inputAmount;
+      volumeUsd = groupedSwap.outputAmount;
+    }
+
+    if (!side || !Number.isFinite(tclAmount) || tclAmount <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+    trades.push({
+      hash: groupedSwap.hash,
+      timestamp: groupedSwap.timestamp,
+      side,
+      tclAmount,
+      volumeUsd,
+      price: volumeUsd / tclAmount,
+      description: "MultiversX pair transfer"
+    });
+  }
+
+  return trades;
+}
+
+function parsePnlOperationTrades(transfers, wallet) {
+  const trades = [];
+
+  for (const group of groupPnlTransfers(transfers).values()) {
+    const seenOperations = new Set();
+    const operations = [];
+
+    for (const entry of group.entries) {
+      if (!Array.isArray(entry.operations)) continue;
+      for (const rawOperation of entry.operations) {
+        const operation = normalizePnlOperation(rawOperation);
+        if (!operation || seenOperations.has(operation.key)) continue;
+        seenOperations.add(operation.key);
+        operations.push(operation);
+      }
+    }
+
+    if (!operations.length) continue;
+
+    const tclSent = operations
+      .filter((operation) => operation.token === VOLUME_CONFIG.baseTokenAddress && operation.sender === wallet)
+      .reduce((sum, operation) => sum + operation.amount, 0);
+    const tclReceived = operations
+      .filter((operation) => operation.token === VOLUME_CONFIG.baseTokenAddress && operation.receiver === wallet)
+      .reduce((sum, operation) => sum + operation.amount, 0);
+    const usdSent = operations
+      .filter((operation) => operation.token !== VOLUME_CONFIG.baseTokenAddress && operation.sender === wallet && Number.isFinite(operation.valueUsd))
+      .reduce((sum, operation) => sum + operation.valueUsd, 0);
+    const usdReceived = operations
+      .filter((operation) => operation.token !== VOLUME_CONFIG.baseTokenAddress && operation.receiver === wallet && Number.isFinite(operation.valueUsd))
+      .reduce((sum, operation) => sum + operation.valueUsd, 0);
+    const tclSentUsd = operations
+      .filter((operation) => operation.token === VOLUME_CONFIG.baseTokenAddress && operation.sender === wallet && Number.isFinite(operation.valueUsd))
+      .reduce((sum, operation) => sum + operation.valueUsd, 0);
+    const tclReceivedUsd = operations
+      .filter((operation) => operation.token === VOLUME_CONFIG.baseTokenAddress && operation.receiver === wallet && Number.isFinite(operation.valueUsd))
+      .reduce((sum, operation) => sum + operation.valueUsd, 0);
+    const hasNonTclSent = operations
+      .some((operation) => operation.token !== VOLUME_CONFIG.baseTokenAddress && operation.sender === wallet);
+    const hasNonTclReceived = operations
+      .some((operation) => operation.token !== VOLUME_CONFIG.baseTokenAddress && operation.receiver === wallet);
+    const pairInvolved = group.entries
+      .some((entry) => entry.sender === VOLUME_CONFIG.pairAddress || entry.receiver === VOLUME_CONFIG.pairAddress)
+      || operations.some((operation) => operation.sender === VOLUME_CONFIG.pairAddress || operation.receiver === VOLUME_CONFIG.pairAddress);
+
+    const netTcl = tclReceived - tclSent;
+    const netUsd = usdReceived - usdSent;
+    const buyFallbackUsd = (hasNonTclSent || pairInvolved) && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
+    const sellFallbackUsd = (hasNonTclReceived || pairInvolved) && tclSentUsd > 0 ? tclSentUsd : 0;
+    let side = "";
+    let tclAmount = 0;
+    let volumeUsd = 0;
+
+    if (netTcl > 0 && netUsd < 0) {
+      side = "buy";
+      tclAmount = netTcl;
+      volumeUsd = Math.abs(netUsd);
+    } else if (netTcl < 0 && netUsd > 0) {
+      side = "sell";
+      tclAmount = Math.abs(netTcl);
+      volumeUsd = netUsd;
+    } else if (netTcl > 0 && buyFallbackUsd > 0) {
+      side = "buy";
+      tclAmount = netTcl;
+      volumeUsd = buyFallbackUsd;
+    } else if (netTcl < 0 && sellFallbackUsd > 0) {
+      side = "sell";
+      tclAmount = Math.abs(netTcl);
+      volumeUsd = sellFallbackUsd;
+    } else if (tclReceived > 0 && usdSent > 0) {
+      side = "buy";
+      tclAmount = tclReceived;
+      volumeUsd = usdSent;
+    } else if (tclSent > 0 && usdReceived > 0) {
+      side = "sell";
+      tclAmount = tclSent;
+      volumeUsd = usdReceived;
+    }
+
+    if (!side || !Number.isFinite(tclAmount) || tclAmount <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+    trades.push({
+      hash: group.hash,
+      timestamp: group.timestamp,
+      side,
+      tclAmount,
+      volumeUsd,
+      price: volumeUsd / tclAmount,
+      description: "MultiversX wallet operations"
+    });
+  }
+
+  return trades;
+}
+
+function parseFilteredPnlTrades(transfers, wallet) {
+  const merged = new Map();
+  for (const trade of parsePnlPairActionTrades(transfers, wallet)) {
+    merged.set(trade.hash, trade);
+  }
+  for (const trade of parsePnlOperationTrades(transfers, wallet)) {
+    merged.set(trade.hash, trade);
+  }
+  return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
+}
+
+async function fetchMultiversXFilteredPnl(wallet, warnings = []) {
+  const sources = [
+    {
+      label: "TCL wallet transfers",
+      account: wallet,
+      params: { token: VOLUME_CONFIG.baseTokenAddress },
+      maxPages: PNL_MVX_CONFIG.tokenMaxPages
+    },
+    {
+      label: "wallet to TCL/USDC pair",
+      account: wallet,
+      params: { receiver: VOLUME_CONFIG.pairAddress },
+      maxPages: PNL_MVX_CONFIG.pairMaxPages
+    },
+    {
+      label: "TCL/USDC pair to wallet",
+      account: wallet,
+      params: { sender: VOLUME_CONFIG.pairAddress },
+      maxPages: PNL_MVX_CONFIG.pairMaxPages
+    }
+  ];
+  const transferMap = new Map();
+  let hitPageLimit = false;
+  let exhaustedHistory = true;
+  let oldestTimestamp = null;
+  const sourceMeta = [];
+
+  for (const source of sources) {
+    const result = await fetchMvxPnlSource(source.account, source.params, source.maxPages);
+    sourceMeta.push({
+      label: source.label,
+      transfers: result.transfers.length,
+      hitPageLimit: result.hitPageLimit,
+      exhaustedHistory: result.exhaustedHistory,
+      oldestTimestamp: result.oldestTimestamp
+    });
+    hitPageLimit = hitPageLimit || result.hitPageLimit;
+    exhaustedHistory = exhaustedHistory && result.exhaustedHistory;
+    if (result.oldestTimestamp != null) {
+      oldestTimestamp = oldestTimestamp == null
+        ? result.oldestTimestamp
+        : Math.min(oldestTimestamp, result.oldestTimestamp);
+    }
+
+    result.transfers.forEach((entry, index) => {
+      const key = [
+        entry?.txHash || entry?.originalTxHash || index,
+        entry?.type || "",
+        entry?.sender || "",
+        entry?.receiver || "",
+        entry?.timestamp || ""
+      ].join("|");
+      transferMap.set(key, entry);
+    });
+  }
+
+  const transfers = Array.from(transferMap.values());
+  const trades = parseFilteredPnlTrades(transfers, wallet);
+  const totals = aggregatePnlDexTrades(trades);
+
+  return {
+    ok: true,
+    source: "multiversx-filtered",
+    wallet,
+    totals,
+    meta: {
+      sourceLabel: "MultiversX filtered",
+      checkedTransactions: trades.length,
+      checkedTransfers: transfers.length,
+      sourceMeta,
+      reachedListingStart: !hitPageLimit,
+      exhaustedHistory,
+      hitPageLimit,
+      oldestTimestamp,
+      cached: false,
+      warnings,
+      updatedAt: new Date().toISOString()
+    }
+  };
 }
 
 function isVolumeCoveredMonth(year, monthIndex, startDate, endDate) {
