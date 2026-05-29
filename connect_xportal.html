@@ -1939,6 +1939,7 @@
         const PAGE = 1000;
         const all  = [];
         let offset = 0;
+        let fetched = false;
         while (true) {
           const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/${path}`);
           for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
@@ -1949,13 +1950,14 @@
             signal: AbortSignal.timeout(15000)
           }).catch(() => null);
           if (!res || !res.ok) break;
+          fetched = true;
           const rows = await res.json().catch(() => null);
           if (!Array.isArray(rows) || rows.length === 0) break;
           all.push(...rows);
           if (rows.length < PAGE) break;
           offset += PAGE;
         }
-        return all.length > 0 ? all : null;
+        return fetched ? all : null;  // [] = valid empty, null = fetch error
       }
 
       // ── Supabase: fetch DOAR swap-urile DEX pentru wallet ─────────────────────
@@ -2046,7 +2048,8 @@
       //              reachedListingStart, checkedSwaps, oldestTimestamp, source }
       async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
-        if (!Array.isArray(swapEntries)) return null;
+        if (swapEntries === null) return null;  // eroare fetch
+        // swapEntries poate fi [] (wallet fara swap-uri) — e valid, returnam zerouri
 
         const pair      = CONFIG.pnlPairAddress;
         const tclId     = CONFIG.tokens.tcl.identifier;
