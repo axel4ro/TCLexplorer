@@ -2828,34 +2828,6 @@
         }
         html += `</tbody></table>`;
 
-        const detailRows = Array.isArray(details) ? details.slice(0, 80) : [];
-        if (detailRows.length) {
-          html += `<div class="earned-popup-total earned-detail-total">Tranzactii reward/cashback: <span>${details.length.toLocaleString("ro-RO")}</span></div>`;
-          html += `<table class="earned-breakdown-table earned-detail-table">
-            <thead><tr>
-              <th>Sursa</th>
-              <th style="text-align:right">TCL</th>
-              <th style="text-align:right">Tx</th>
-            </tr></thead><tbody>`;
-
-          for (const detail of detailRows) {
-            const fn = detail.function || "_other";
-            const label = detail.label || EARNED_FN_LABELS[fn] || fn;
-            const rate = detail.rate && detail.rate !== "reward" ? ` ${detail.rate}` : "";
-            const hash = String(detail.hash || "");
-            const shortHash = hash ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : "-";
-            html += `<tr>
-              <td>
-                <span class="earned-fn-name">${esc(label)}</span>
-                <span class="earned-fn-label">${esc(fn)}${esc(rate)}</span>
-              </td>
-              <td><span class="earned-tcl-amount">${formatTokenAmount(readNumber(detail.amount, 0))}</span></td>
-              <td>${hash ? `<a class="earned-tx-link" href="https://explorer.multiversx.com/transactions/${esc(hash)}" target="_blank" rel="noopener">${esc(shortHash)}</a>` : "-"}</td>
-            </tr>`;
-          }
-          html += `</tbody></table>`;
-        }
-
         body.innerHTML = html;
         overlay.classList.add("open");
       }
