@@ -577,7 +577,105 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius);
       background: rgba(255, 255, 255, 0.035);
+      position: relative;
     }
+
+    .pnl-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .pnl-card-header .pnl-label { margin: 0; }
+
+    .pnl-info-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 232, 204, 0.4);
+      background: rgba(0, 232, 204, 0.08);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+      line-height: 1;
+    }
+    .pnl-info-btn:hover { background: rgba(0,232,204,0.18); border-color: var(--accent); }
+
+    /* Earned breakdown popup */
+    .earned-popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(3px);
+      align-items: center;
+      justify-content: center;
+    }
+    .earned-popup-overlay.open { display: flex; }
+    .earned-popup {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      width: min(440px, calc(100vw - 32px));
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .earned-popup-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .earned-popup-head h3 { margin:0; font-size:1rem; color:var(--text); font-family:var(--font-display); }
+    .earned-popup-close {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: transparent; color: var(--text-muted);
+      cursor: pointer; font-size: 16px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .earned-popup-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .earned-popup-body {
+      padding: 12px 18px 16px;
+      overflow-y: auto;
+    }
+    .earned-popup-total {
+      padding: 10px 12px;
+      background: rgba(0,232,204,0.07);
+      border: 1px solid rgba(0,232,204,0.18);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+    .earned-popup-total span { color: var(--accent-strong); font-weight: 800; }
+    .earned-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    .earned-breakdown-table th {
+      text-align: left; padding: 6px 8px 8px;
+      color: var(--text-soft); font-size: 0.76rem;
+      font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .earned-breakdown-table th:last-child { text-align: right; }
+    .earned-breakdown-table td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .earned-breakdown-table td:last-child { text-align: right; color: var(--text-muted); font-size:0.82rem; }
+    .earned-fn-name { color: var(--text); font-weight: 600; }
+    .earned-fn-label { color: var(--text-muted); font-size: 0.78rem; display: block; }
+    .earned-tcl-amount { color: var(--accent-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .earned-bar-wrap { height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-top: 3px; }
+    .earned-bar { height: 3px; background: var(--accent); border-radius: 2px; min-width: 2px; }
 
     .pnl-label {
       margin: 0 0 8px;
@@ -928,13 +1026,29 @@
           <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
         </article>
         <article class="pnl-card">
-          <p class="pnl-label">Earned TCL $</p>
+          <div class="pnl-card-header">
+            <p class="pnl-label">Earned TCL $</p>
+            <button class="pnl-info-btn" id="earnedInfoBtn" title="Detalii surse Earned TCL" style="display:none">ⓘ</button>
+          </div>
           <p class="pnl-value" id="pnlEarnedTcl">--</p>
           <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
         </article>
       </div>
       <p class="pnl-status" id="pnlStatus">Conecteaza xPortal pentru PNL Check.</p>
     </section>
+
+    <!-- Earned TCL breakdown popup -->
+    <div class="earned-popup-overlay" id="earnedPopupOverlay">
+      <div class="earned-popup">
+        <div class="earned-popup-head">
+          <h3>Surse Earned TCL</h3>
+          <button class="earned-popup-close" id="earnedPopupClose">✕</button>
+        </div>
+        <div class="earned-popup-body" id="earnedPopupBody">
+          <p style="color:var(--text-muted);font-size:0.88rem">Se incarca...</p>
+        </div>
+      </div>
+    </div>
 
   </main>
 
@@ -2394,32 +2508,73 @@
 
       // Scans TCL received from the game contract, then validates the root transaction.
       // This catches manager-triggered claims while excluding collateral/refund returns.
-      // ── Earned TCL: pur Supabase, pagineaza complet ──────────────────────────
+      // ── Earned TCL: Supabase + breakdown pe functii (top 200 roots) ─────────────
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
-        if (!gameContract) return 0;
+        if (!gameContract) return { total: 0, breakdown: {} };
         try {
-          // Pagineaza prin TOATE intrarile game→wallet (depaseste limita 1000/req)
           const rows = await supabaseFetchAll("tcl_transfers", {
             sender:   `eq.${gameContract}`,
             receiver: `eq.${walletAddress}`,
-            select:   "action_transfers"
+            select:   "original_tx_hash,action_transfers"
           });
-          if (!Array.isArray(rows)) return 0;
+          if (!Array.isArray(rows)) return { total: 0, breakdown: {} };
 
-          let earned = 0;
+          // Grupeaza TCL pe root hash
+          const rootTcl = new Map();
+          let total = 0;
           for (const row of rows) {
+            const root = row.original_tx_hash;
+            if (!root) continue;
             const transfers = row.action_transfers;
             if (!Array.isArray(transfers)) continue;
             for (const t of transfers) {
               if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
               const norm = normalizePnlTradeTransfer(t);
-              if (norm) earned += norm.amount;
+              if (!norm) continue;
+              rootTcl.set(root, (rootTcl.get(root) || 0) + norm.amount);
+              total += norm.amount;
             }
           }
-          return earned;
+
+          // Top 200 root hashes dupa valoare → batch-fetch functii (4 request-uri)
+          const sorted = [...rootTcl.entries()].sort((a, b) => b[1] - a[1]);
+          const topRoots = sorted.slice(0, 200).map(([h]) => h);
+          const hashToFn = new Map();
+          const batchSize = 50;
+          for (let i = 0; i < topRoots.length; i += batchSize) {
+            const batch = topRoots.slice(i, i + batchSize);
+            try {
+              const txs = await fetchJson(buildApiUrl("/transactions", {
+                hashes: batch.join(","),
+                size:   batch.length,
+                fields: "txHash,function"
+              }), { retries: 1, retryDelayMs: 1000, timeoutMs: 12000 });
+              if (Array.isArray(txs)) {
+                txs.forEach(tx => {
+                  const h = tx?.txHash || tx?.hash;
+                  if (h) hashToFn.set(h, tx.function || "unknown");
+                });
+              }
+            } catch (_) {}
+          }
+
+          // Agrega pe functie
+          const breakdown = {};
+          let covered = 0;
+          for (const [root, tcl] of sorted) {
+            const fn = hashToFn.get(root);
+            if (fn !== undefined) {
+              breakdown[fn] = (breakdown[fn] || 0) + tcl;
+              covered += tcl;
+            }
+          }
+          const other = total - covered;
+          if (other > 0.01) breakdown["_other"] = other;
+
+          return { total, breakdown };
         } catch (_) {
-          return 0;
+          return { total: 0, breakdown: {} };
         }
       }
 
@@ -2434,10 +2589,21 @@
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
         dom.pnlTradeCount.textContent = `Trades: ${totals.tradeCount.toLocaleString("ro-RO")} (${totals.buyCount} buy / ${totals.sellCount} sell)`;
 
-        const earnedAmount = readNumber(earnedTcl, 0);
+        const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
+        const earnedAmount = readNumber(earnedData.total, 0);
         const earnedUsd = earnedAmount * readNumber(state.prices.tcl, 0);
         dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
         dom.pnlEarnedUsd.textContent = `Value: ${formatUsd(earnedUsd)} USDC`;
+
+        // Buton info breakdown — vizibil daca avem date
+        const infoBtn = document.getElementById("earnedInfoBtn");
+        if (infoBtn) {
+          const hasBreakdown = earnedAmount > 0 && Object.keys(earnedData.breakdown || {}).length > 0;
+          infoBtn.style.display = hasBreakdown ? "inline-flex" : "none";
+          if (hasBreakdown) {
+            infoBtn.onclick = () => showEarnedBreakdown(earnedData.breakdown, earnedAmount);
+          }
+        }
 
         const isSupabase = historyMeta.source === "supabase";
         let coverage;
@@ -2522,6 +2688,87 @@
         }
       }
 
+      // ── Earned TCL breakdown popup ────────────────────────────────────────────
+      const EARNED_FN_LABELS = {
+        claimRewards:              "Claim Rewards",
+        claimBorrowingRewards:     "Borrowing Rewards",
+        claimLendingRewards:       "Lending Rewards",
+        claimInfinityRewards:      "Infinity Staking",
+        claimReferralRewards:      "Referral Rewards",
+        referral:                  "Referral Rewards",
+        claimManagerRewards:       "Manager Rewards",
+        withdrawBalancePrivateShop:"Private Shop",
+        buyCoins:                  "Buy Coins",
+        buySft:                    "Buy SFT",
+        upgradeNft:                "Upgrade NFT",
+        mintNft:                   "Mint NFT",
+        equipNft:                  "Equip NFT",
+        unequipNft:                "Unequip NFT",
+        addBonus:                  "Add Bonus",
+        changeBonus:               "Change Bonus",
+        addCrystal:                "Add Crystal",
+        changeCrystal:             "Change Crystal",
+        addSocket:                 "Add Socket",
+        addRefinement:             "Add Refinement",
+        addStorage:                "Add Storage",
+        depositLiquidity:          "Deposit Liquidity",
+        removeLiquidity:           "Remove Liquidity",
+        _other:                    "Altele"
+      };
+
+      function showEarnedBreakdown(breakdown, total) {
+        const overlay = document.getElementById("earnedPopupOverlay");
+        const body    = document.getElementById("earnedPopupBody");
+        if (!overlay || !body) return;
+
+        const entries = Object.entries(breakdown)
+          .sort((a, b) => b[1] - a[1])
+          .filter(([, v]) => v > 0.001);
+
+        const maxVal = entries[0]?.[1] || 1;
+
+        let html = `<div class="earned-popup-total">Total earned: <span>${formatTokenAmount(total)} TCL</span></div>`;
+        html += `<table class="earned-breakdown-table">
+          <thead><tr>
+            <th>Functie / Metoda</th>
+            <th style="text-align:right">TCL</th>
+            <th style="text-align:right">%</th>
+          </tr></thead><tbody>`;
+
+        for (const [fn, tcl] of entries) {
+          const label   = EARNED_FN_LABELS[fn] || fn;
+          const pct     = total > 0 ? (tcl / total * 100) : 0;
+          const barW    = Math.round(tcl / maxVal * 100);
+          html += `<tr>
+            <td>
+              <span class="earned-fn-name">${escapeHtml(label)}</span>
+              <span class="earned-fn-label">${fn !== "_other" ? escapeHtml(fn) : ""}</span>
+              <div class="earned-bar-wrap"><div class="earned-bar" style="width:${barW}%"></div></div>
+            </td>
+            <td><span class="earned-tcl-amount">${formatTokenAmount(tcl)}</span></td>
+            <td>${pct.toFixed(1)}%</td>
+          </tr>`;
+        }
+        html += `</tbody></table>`;
+        body.innerHTML = html;
+        overlay.classList.add("open");
+      }
+
+      // Popup close logic — se initializeaza la boot
+      function initEarnedPopup() {
+        const overlay = document.getElementById("earnedPopupOverlay");
+        const closeBtn = document.getElementById("earnedPopupClose");
+        if (overlay) {
+          overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
+        }
+        if (closeBtn) {
+          closeBtn.addEventListener("click", () => overlay?.classList.remove("open"));
+        }
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") overlay?.classList.remove("open");
+        });
+      }
+
       async function copyWalletConnectUri() {
         if (!state.pendingUri) return;
         try {
@@ -2557,6 +2804,7 @@
         dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
         dom.cancelPairingBtn.addEventListener("click", cancelPairing);
         dom.pnlForm.addEventListener("submit", runPnlCheck);
+        initEarnedPopup();
         dom.pnlAddressInput.addEventListener("input", () => {
           dom.pnlAddressInput.dataset.mode = "manual";
           syncLoadingState();
