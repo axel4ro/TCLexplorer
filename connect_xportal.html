@@ -668,7 +668,9 @@
       gap: 8px;
       margin-bottom: 14px;
     }
-    @media (min-width: 380px) { .earned-cat-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 380px) {
+      .earned-cat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
     .earned-cat-card {
       padding: 10px;
       border: 1px solid var(--border-subtle);
@@ -2532,6 +2534,7 @@
           let selfTotal = 0;     // cashback pe propriile tranzactii
           let referralTotal = 0; // venit din referral (tranzactiile altora)
           let rewardTotal = 0;   // reward pool / claim-uri
+          let shopTotal = 0;     // Private Shop: vanzari (90%) + referral (2%)
           for (const [root, tcl] of rootTcl) {
             const fn = rootFn.get(root) || "_other";
             const sourceInfo = getEarnedSourceInfo(fn);
@@ -2541,12 +2544,15 @@
               continue;
             }
 
-            // Clasificare self vs referral (doar pentru cashback/shop, nu pentru reward-uri claim)
+            // Clasificare pe categorii de venit
             const payer = rootSender.get(root) || "";
             let category;
             if (sourceInfo.kind === "reward") {
-              category = "reward";
+              category = "reward";       // reward pool / claim-uri
               rewardTotal += tcl;
+            } else if (sourceInfo.kind === "shop") {
+              category = "shop";         // Private Shop: vanzare proprie (90%) + referral (2%)
+              shopTotal += tcl;
             } else if (payer && payer === walletAddress) {
               category = "cashback";   // propria achizitie cu cod referral → cashback
               selfTotal += tcl;
@@ -2572,7 +2578,7 @@
 
           return {
             total, breakdown, excluded, excludedBreakdown, details,
-            categories: { reward: rewardTotal, cashback: selfTotal, referral: referralTotal }
+            categories: { reward: rewardTotal, shop: shopTotal, cashback: selfTotal, referral: referralTotal }
           };
         } catch (_) {
           return { total: 0, breakdown: {} };
@@ -2738,8 +2744,9 @@
         if (categories) {
           const cats = [
             { key: "reward",   label: "Reward Pool",      sub: "claim-uri & daily rewards" },
-            { key: "cashback", label: "Cashback propriu", sub: "5% NFT/ItemShop, 2% Private Shop pe achizitiile tale" },
-            { key: "referral", label: "Referral",         sub: "5%/2% din tranzactiile celor invitati" }
+            { key: "shop",     label: "Private Shop",     sub: "vanzari (90%) + referral 2%" },
+            { key: "cashback", label: "Cashback propriu", sub: "5% NFT/ItemShop pe achizitiile tale" },
+            { key: "referral", label: "Referral",         sub: "5% din tranzactiile celor invitati" }
           ];
           let catHtml = "";
           for (const c of cats) {
