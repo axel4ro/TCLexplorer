@@ -759,27 +759,41 @@
       line-height: 1.6;
     }
 
+    .connect-aside {
+      min-width: 0;
+      align-self: stretch;
+    }
+
     .qr-panel {
-      grid-column: 1 / -1;
-      display: none;
-      grid-template-columns: 260px minmax(0, 1fr);
-      gap: 18px;
-      align-items: start;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      align-content: start;
       padding: 18px;
       border: 1px solid rgba(0, 245, 212, 0.18);
       border-radius: var(--radius);
       background: rgba(0, 0, 0, 0.18);
     }
 
-    .qr-panel.is-active {
-      display: grid;
+    .qr-panel[hidden],
+    .address-panel[hidden] {
+      display: none;
+    }
+
+    .qr-panel .eyebrow {
+      justify-self: start;
+    }
+
+    .qr-panel .small-note {
+      text-align: center;
     }
 
     .qr-code {
       display: grid;
       place-items: center;
-      width: 240px;
-      min-height: 240px;
+      width: 100%;
+      max-width: 240px;
+      min-height: 220px;
       padding: 10px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius);
@@ -911,33 +925,32 @@
         </div>
       </div>
 
-      <aside class="address-panel" aria-label="Wallet address">
-        <div>
-          <div class="eyebrow">Adresa conectata</div>
-          <code class="address-value" id="addressText">Neconectat</code>
-        </div>
-        <div class="address-actions">
-          <button class="btn" id="copyBtn" type="button">Copy</button>
-          <a class="btn" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
-        </div>
-      </aside>
+      <aside class="connect-aside" id="connectAside" aria-label="Conectare xPortal">
+        <!-- QR vizibil cat timp NU esti conectat -->
+        <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect QR">
+          <div class="eyebrow">Scaneaza cu xPortal</div>
+          <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code"></div>
+          <p class="small-note" id="qrNote">Scaneaza QR-ul cu xPortal. Pe telefon, apasa „Conecteaza xPortal".</p>
+          <div hidden aria-hidden="true">
+            <a id="xportalDeepLink" href="#" rel="noreferrer"></a>
+            <code id="wcUriText"></code>
+            <button id="copyUriBtn" type="button"></button>
+            <button id="cancelPairingBtn" type="button"></button>
+          </div>
+        </section>
 
-      <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect pairing">
-        <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code"></div>
-        <div class="qr-info">
+        <!-- Adresa conectata apare in locul QR-ului dupa conectare -->
+        <aside class="address-panel" id="addressPanel" aria-label="Wallet address" hidden>
           <div>
-            <h2 class="panel-title">Scaneaza cu xPortal</h2>
-            <p class="panel-subtitle">QR-ul este generat local din sesiunea WalletConnect. Nu parasesti pagina TCL Explorer.</p>
+            <div class="eyebrow">Adresa conectata</div>
+            <code class="address-value" id="addressText">Neconectat</code>
           </div>
-          <div class="qr-actions">
-            <a class="btn btn-primary" id="xportalDeepLink" href="#" rel="noreferrer">Deschide in xPortal</a>
-            <button class="btn" id="copyUriBtn" type="button">Copiaza URI</button>
-            <button class="btn btn-danger" id="cancelPairingBtn" type="button">Anuleaza</button>
+          <div class="address-actions">
+            <button class="btn" id="copyBtn" type="button">Copy</button>
+            <a class="btn" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
           </div>
-          <code class="wc-uri" id="wcUriText">Astept generarea URI-ului...</code>
-          <p class="small-note">Pe desktop, scaneaza QR-ul cu xPortal. Pe telefon, apasa butonul xPortal sau copiaza URI-ul WalletConnect.</p>
-        </div>
-      </section>
+        </aside>
+      </aside>
     </section>
 
     <section class="summary-grid" aria-label="Portfolio summary">
@@ -1169,6 +1182,7 @@
         explorerLink: document.getElementById("explorerLink"),
         statusText: document.getElementById("statusText"),
         qrPanel: document.getElementById("qrPanel"),
+        addressPanel: document.getElementById("addressPanel"),
         qrCode: document.getElementById("qrCode"),
         wcUriText: document.getElementById("wcUriText"),
         xportalDeepLink: document.getElementById("xportalDeepLink"),
@@ -1220,8 +1234,9 @@
         const isLoading = state.connecting || state.balanceLoading || state.pnlLoading;
         state.loading = isLoading;
         if (dom.refreshBtn) dom.refreshBtn.disabled = isLoading || !state.address;
-        dom.connectBtn.disabled = isLoading;
-        dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
+        // connectBtn = deschide xPortal prin deeplink → activ de indata ce exista URI
+        dom.connectBtn.disabled = state.connecting && !state.pendingUri;
+        if (dom.cancelPairingBtn) dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
         dom.pnlRunBtn.disabled = isLoading || !state.address || !isAddress(dom.pnlAddressInput.value);
         updatePnlFilterHref(dom.pnlAddressInput.value);
       }
@@ -1314,16 +1329,38 @@
         return state.signClient;
       }
 
+      // Comuta intre QR (neconectat) si cardul Adresa conectata (conectat)
+      function updateConnectionView() {
+        const connected = Boolean(state.address);
+        if (dom.qrPanel) dom.qrPanel.hidden = connected;
+        if (dom.addressPanel) dom.addressPanel.hidden = !connected;
+      }
+
       function showQrPanel() {
-        dom.qrPanel.classList.add("is-active");
+        updateConnectionView();
       }
 
       function hideQrPanel() {
-        dom.qrPanel.classList.remove("is-active");
         dom.qrCode.innerHTML = "";
-        dom.wcUriText.textContent = "Astept generarea URI-ului...";
-        dom.xportalDeepLink.href = "#";
+        if (dom.wcUriText) dom.wcUriText.textContent = "";
+        if (dom.xportalDeepLink) dom.xportalDeepLink.href = "#";
         state.pendingUri = "";
+        updateConnectionView();
+      }
+
+      // "Conecteaza xPortal" = deschide aplicatia xPortal prin deeplink
+      function openXPortalApp() {
+        if (state.address) return;
+        if (state.pendingUri) {
+          window.location.href = getXPortalDeepLink(state.pendingUri);
+        } else {
+          // URI inca negenerat — porneste sesiunea, apoi deschide deeplink-ul
+          connectWallet().then(() => {
+            if (state.pendingUri && !state.address) {
+              window.location.href = getXPortalDeepLink(state.pendingUri);
+            }
+          });
+        }
       }
 
       function isIOS() {
@@ -1364,8 +1401,9 @@
       }
 
       async function connectWallet() {
+        if (state.address || state.connecting) return;
         const projectId = getConfiguredProjectId();
-        showQrPanel();
+        updateConnectionView();
 
         if (!projectId) {
           setStatus("error", "Conexiunea WalletConnect nu este configurata.");
@@ -1453,6 +1491,8 @@
         renderEmptyBalances();
         renderEmptyPnl();
         setStatus("idle", "Neconectat");
+        // Regenereaza QR-ul pentru o noua conectare
+        connectWallet();
       }
 
       function getInitialAddress() {
@@ -1470,6 +1510,7 @@
         const address = state.address;
         dom.addressText.textContent = address || "Neconectat";
         dom.heroActions.hidden = Boolean(address);
+        updateConnectionView();
         dom.copyBtn.disabled = !address;
         dom.disconnectBtn.disabled = !address;
         dom.disconnectBtn.hidden = !address;
@@ -2873,14 +2914,17 @@
         if (state.address) {
           setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
           loadBalances();
+        } else {
+          // Genereaza automat QR-ul de conectare la incarcarea paginii
+          connectWallet();
         }
 
-        dom.connectBtn.addEventListener("click", connectWallet);
+        dom.connectBtn.addEventListener("click", openXPortalApp);
         if (dom.refreshBtn) dom.refreshBtn.addEventListener("click", loadBalances);
         dom.disconnectBtn.addEventListener("click", disconnectWallet);
         dom.copyBtn.addEventListener("click", copyAddress);
-        dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
-        dom.cancelPairingBtn.addEventListener("click", cancelPairing);
+        if (dom.copyUriBtn) dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
+        if (dom.cancelPairingBtn) dom.cancelPairingBtn.addEventListener("click", cancelPairing);
         dom.pnlForm.addEventListener("submit", runPnlCheck);
         initEarnedPopup();
         dom.pnlAddressInput.addEventListener("input", () => {
