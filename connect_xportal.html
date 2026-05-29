@@ -2506,9 +2506,10 @@
         };
       }
 
-      // Scans TCL received from the game contract, then validates the root transaction.
-      // This catches manager-triggered claims while excluding collateral/refund returns.
-      // ── Earned TCL: Supabase + breakdown pe functii (top 200 roots) ─────────────
+      // ── Earned TCL: Supabase + breakdown complet pe functii ─────────────────────
+      // Exclude functii de tip "return TCL" (equip/unequip) din totalul earned
+      const EXCLUDED_EARN_FNS = new Set(["equipNft", "unequipNft"]);
+
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
         if (!gameContract) return { total: 0, breakdown: {} };
@@ -2522,57 +2523,53 @@
 
           // Grupeaza TCL pe root hash
           const rootTcl = new Map();
-          let total = 0;
           for (const row of rows) {
             const root = row.original_tx_hash;
             if (!root) continue;
-            const transfers = row.action_transfers;
-            if (!Array.isArray(transfers)) continue;
-            for (const t of transfers) {
+            for (const t of (row.action_transfers || [])) {
               if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
               const norm = normalizePnlTradeTransfer(t);
               if (!norm) continue;
               rootTcl.set(root, (rootTcl.get(root) || 0) + norm.amount);
-              total += norm.amount;
             }
           }
 
-          // Top 200 root hashes dupa valoare → batch-fetch functii (4 request-uri)
-          const sorted = [...rootTcl.entries()].sort((a, b) => b[1] - a[1]);
-          const topRoots = sorted.slice(0, 200).map(([h]) => h);
+          // Fetch TOATE functiile root in paralel (10 concurrent → ~4-8s pentru 5k+ roots)
+          const allRoots = [...rootTcl.keys()];
+          const BATCH = 50, CONC = 10;
+          const batches = [];
+          for (let i = 0; i < allRoots.length; i += BATCH) batches.push(allRoots.slice(i, i + BATCH));
+
           const hashToFn = new Map();
-          const batchSize = 50;
-          for (let i = 0; i < topRoots.length; i += batchSize) {
-            const batch = topRoots.slice(i, i + batchSize);
-            try {
-              const txs = await fetchJson(buildApiUrl("/transactions", {
-                hashes: batch.join(","),
-                size:   batch.length,
-                fields: "txHash,function"
-              }), { retries: 1, retryDelayMs: 1000, timeoutMs: 12000 });
-              if (Array.isArray(txs)) {
-                txs.forEach(tx => {
-                  const h = tx?.txHash || tx?.hash;
-                  if (h) hashToFn.set(h, tx.function || "unknown");
-                });
-              }
-            } catch (_) {}
-          }
-
-          // Agrega pe functie
-          const breakdown = {};
-          let covered = 0;
-          for (const [root, tcl] of sorted) {
-            const fn = hashToFn.get(root);
-            if (fn !== undefined) {
-              breakdown[fn] = (breakdown[fn] || 0) + tcl;
-              covered += tcl;
+          for (let i = 0; i < batches.length; i += CONC) {
+            const chunk = batches.slice(i, i + CONC);
+            const results = await Promise.all(chunk.map(async batch => {
+              try {
+                return await fetchJson(buildApiUrl("/transactions", {
+                  hashes: batch.join(","), size: batch.length, fields: "txHash,function"
+                }), { retries: 1, retryDelayMs: 800, timeoutMs: 12000 });
+              } catch { return []; }
+            }));
+            for (const txs of results) {
+              if (Array.isArray(txs)) txs.forEach(tx => {
+                const h = tx?.txHash || tx?.hash;
+                if (h) hashToFn.set(h, tx.function || "unknown");
+              });
             }
           }
-          const other = total - covered;
-          if (other > 0.01) breakdown["_other"] = other;
 
-          return { total, breakdown };
+          // Agrega pe functie, exclud equip/unequip din total
+          const breakdown = {};
+          let total = 0;
+          let excluded = 0;
+          for (const [root, tcl] of rootTcl) {
+            const fn = hashToFn.get(root) || "_other";
+            if (EXCLUDED_EARN_FNS.has(fn)) { excluded += tcl; continue; }
+            breakdown[fn] = (breakdown[fn] || 0) + tcl;
+            total += tcl;
+          }
+
+          return { total, breakdown, excluded };
         } catch (_) {
           return { total: 0, breakdown: {} };
         }
@@ -2702,8 +2699,7 @@
         buySft:                    "Buy SFT",
         upgradeNft:                "Upgrade NFT",
         mintNft:                   "Mint NFT",
-        equipNft:                  "Equip NFT",
-        unequipNft:                "Unequip NFT",
+        // equipNft / unequipNft excluse din earned (sunt returnuri de TCL, nu castiguri)
         addBonus:                  "Add Bonus",
         changeBonus:               "Change Bonus",
         addCrystal:                "Add Crystal",
