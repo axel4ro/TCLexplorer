@@ -407,6 +407,37 @@
       font-size: 0.92rem;
     }
 
+    .pnl-limit-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: -2px 0 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      border-radius: var(--radius);
+      background: rgba(251, 191, 36, 0.07);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .pnl-limit-note::before {
+      content: "i";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      border-radius: 50%;
+      color: var(--accent-warn);
+      font-size: 0.72rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
     .token-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -759,6 +790,17 @@
       line-height: 1.6;
     }
 
+    .page-disclaimer {
+      margin: 4px 0 20px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
     /* Asigura ca atributul hidden ascunde elementele chiar daca .btn seteaza display */
     [hidden] { display: none !important; }
 
@@ -996,6 +1038,7 @@
           <p class="panel-subtitle">TCL swaps valued in USDC $ for the selected wallet.</p>
         </div>
       </div>
+      <p class="pnl-limit-note">P2P buy and sell transactions are not included in this PNL calculation.</p>
 
       <form class="pnl-form" id="pnlForm">
         <div class="pnl-field">
@@ -1119,6 +1162,8 @@
       </div>
     </section>
 
+    <p class="page-disclaimer">This tool is still in active development and may display incorrect or incomplete information. Please double-check important results before making decisions.</p>
+
     <!-- Earned TCL breakdown popup -->
     <div class="earned-popup-overlay" id="earnedPopupOverlay">
       <div class="earned-popup">
@@ -1135,7 +1180,7 @@
   </main>
 
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
-  <script src="lang/connect-xportal.bundle.js?v=20260529-1"></script>
+  <script src="lang/connect-xportal.bundle.js?v=20260529-2"></script>
   <script src="js/page-i18n.js?v=20260529-1"></script>
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
@@ -2465,9 +2510,9 @@
           url.searchParams.set("cursor", String(cursor));
 
           if (pass === 0) {
-            setPnlStatus("Completing the Supabase cache for this wallet...");
+            setPnlStatus("Preparing this wallet's transaction history...");
           } else {
-            setPnlStatus("Completing the Supabase cache... {count} root transactions saved", {
+            setPnlStatus("Preparing transaction history... {count} transactions checked", {
               count: totalUpserted.toLocaleString(getLocale())
             });
           }
@@ -2478,12 +2523,13 @@
           }).catch(() => null);
 
           if (!res || !res.ok) {
-            throw new Error("Could not complete the Supabase cache for this wallet.");
+            throw new Error("Could not prepare the transaction history for this wallet.");
           }
 
           const data = await res.json().catch(() => null);
           if (!data?.ok) {
-            throw new Error(data?.error || "The Supabase cache could not be completed.");
+            console.warn("PNL history preparation failed", data?.error || data);
+            throw new Error("Could not prepare the transaction history for this wallet.");
           }
 
           lastResult = data;
@@ -2495,7 +2541,7 @@
             return { ...data, totalUpserted };
           }
           if (nextCursor <= cursor) {
-            throw new Error("The Supabase cache could not advance for this wallet.");
+            throw new Error("Could not prepare the transaction history for this wallet.");
           }
 
           cursor = nextCursor;
@@ -2503,7 +2549,7 @@
         }
 
         if (lastResult && Number(lastResult.remaining) > 0) {
-          throw new Error("The Supabase cache is still completing for this wallet. Try again in a few seconds.");
+          throw new Error("Transaction history is still being prepared. Try again in a few seconds.");
         }
 
         return lastResult ? { ...lastResult, totalUpserted } : null;
@@ -2524,7 +2570,7 @@
                    reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
         }
 
-        setPnlStatus("{count} swaps found in Supabase cache. Calculating PNL...", {
+        setPnlStatus("{count} swaps found. Calculating PNL...", {
           count: swapEntries.length.toLocaleString(getLocale())
         });
 
@@ -2564,13 +2610,13 @@
 
       // Pastrat pentru compatibilitate cu runPnlCheck (nu mai scaneaza blockchain)
       async function fetchWalletTransferHistory(walletAddress) {
-        setPnlStatus("Searching for swaps in Supabase cache...");
+        setPnlStatus("Searching for TCL swaps...");
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         const transactionHashes = new Set();
 
         if (!Array.isArray(swapEntries) || swapEntries.length === 0) {
-          setPnlStatus("No TCL swaps exist for this wallet in Supabase cache.");
+          setPnlStatus("No TCL swaps found for this wallet.");
           return { transfers: [], checkedTransactions: 0, reachedListingStart: false,
                    hitPageLimit: false, exhaustedHistory: true, oldestTimestamp: null, source: "supabase-empty" };
         }
@@ -2580,7 +2626,7 @@
         const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
         const reachedListingStart = oldestTimestamp !== null && oldestTimestamp <= listingTimestamp;
 
-        setPnlStatus("Supabase: {count} swaps found", {
+        setPnlStatus("{count} swaps found.", {
           count: swapEntries.length.toLocaleString(getLocale())
         });
         return {
@@ -2883,12 +2929,12 @@
         let coverage;
         if (isSupabase) {
           if (historyMeta.reachedListingStart) {
-            coverage = translateText("Supabase cache - complete history since listing.");
+            coverage = translateText("Transaction history checked since listing.");
           } else if (historyMeta.oldestTimestamp) {
             const oldestDate = new Date(historyMeta.oldestTimestamp * 1000).toISOString().slice(0, 10);
-            coverage = translateText("Supabase cache - data available since {date}.", { date: oldestDate });
+            coverage = translateText("Transaction history checked since {date}.", { date: oldestDate });
           } else {
-            coverage = translateText("Supabase cache - data available.");
+            coverage = translateText("Transaction history checked.");
           }
         } else {
           coverage = historyMeta.hitPageLimit
@@ -2919,7 +2965,7 @@
 
         setPnlLoading(true);
         renderEmptyPnl();
-        setPnlStatus("Loading data from Supabase cache...");
+        setPnlStatus("Loading transaction history...");
 
         try {
           await ensurePnlSupabaseCache(walletAddress);
@@ -2930,7 +2976,7 @@
             fetchEarnedTcl(walletAddress)
           ]);
 
-          if (!pnlData) throw new Error("Could not load data from Supabase.");
+          if (!pnlData) throw new Error("Could not load transaction history.");
 
           // Construieste totals in formatul asteptat de renderPnlResult
           const totals = {
@@ -2955,7 +3001,7 @@
           renderPnlResult(totals, historyMeta, earnedTcl);
 
           if (pnlData.tradeCount === 0) {
-            setPnlStatus("No TCL swaps exist in cache for this wallet. Checked swaps: {count}.", {
+            setPnlStatus("No TCL swaps found for this wallet. Checked records: {count}.", {
               count: Number(pnlData.checkedSwaps || 0).toLocaleString(getLocale())
             });
           }
