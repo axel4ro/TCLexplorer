@@ -2063,68 +2063,84 @@
         }
       }
 
-      // ── PNL din Supabase: calculeaza direct TCL/USDC fara blockchain scan ─────────────
+      // ── PNL: Supabase pentru descoperire + batch MVX pentru USDC la pret real ────
+      // Supabase → hashurile swap-urilor (instant)
+      // MVX batch /transactions?hashes=...&withOperations=true → USDC real la momentul tranzactiei
+      // parsePnlTrades → buy/sell cu pretul exact din momentul tranzactiei
       async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
         if (swapEntries === null) return null;
 
-        const tclId     = CONFIG.tokens.tcl.identifier;
         const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
+        const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
 
-        // Grupeaza dupa rootHash — vanzarile si cumpararile apar ca intrari separate
-        const swapGroups = new Map();
-
-        for (const entry of swapEntries) {
-          const root = String(entry.originalTxHash || entry.txHash || "");
-          if (!root) continue;
-          if (!swapGroups.has(root)) swapGroups.set(root, { buyTcl:0, sellTcl:0, ts: Number(entry.timestamp)||0 });
-          const g = swapGroups.get(root);
-          if (Number(entry.timestamp) && Number(entry.timestamp) < g.ts) g.ts = Number(entry.timestamp);
-
-          const transfers = entry.action?.arguments?.transfers;
-          const firstT = Array.isArray(transfers) ? transfers[0] : null;
-          if (!firstT) continue;
-
-          const token = String(firstT.token || firstT.identifier || "");
-          if (token !== tclId) continue;  // ignora transferuri non-TCL
-          const norm = normalizePnlTradeTransfer(firstT);
-          if (!norm) continue;
-
-          // SELL: wallet e sender (trimite TCL catre DEX/contract)
-          const isSell = entry.sender === walletAddress;
-          // BUY: wallet e receiver (primeste TCL de la DEX printr-un SCR)
-          const isBuy  = entry.receiver === walletAddress && entry.originalTxHash;
-
-          if (isSell) g.sellTcl += norm.amount;
-          if (isBuy)  g.buyTcl  += norm.amount;
+        if (swapEntries.length === 0) {
+          return { buyTcl:0, buyCost:0, sellTcl:0, sellReceived:0,
+                   tradeCount:0, buyCount:0, sellCount:0,
+                   reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
         }
 
-        // Calculeaza totaluri
-        let buyTcl = 0, buyCost = 0, sellTcl = 0, sellReceived = 0;
-        let buyCount = 0, sellCount = 0;
-        let oldestTs = Infinity;
+        // ── Colectam root tx hashes unice ────────────────────────────────────────
+        const rootHashSet = new Set();
+        swapEntries.forEach(e => {
+          const root = String(e.originalTxHash || e.txHash || "");
+          if (root && root.length === 64) rootHashSet.add(root);
+        });
 
-        for (const [, g] of swapGroups) {
-          if (g.buyTcl > 0)  { buyTcl  += g.buyTcl;  buyCount++;  }
-          if (g.sellTcl > 0) { sellTcl += g.sellTcl; sellCount++; }
-          if (g.ts && g.ts < oldestTs) oldestTs = g.ts;
+        // ── Batch-fetch tranzactii complete cu operatii (USDC real la momentul tranzactiei) ──
+        // ~2-15 requesturi pentru 50-700 hashuri; mult mai rapid decat scanare pagini
+        const rootHashes = Array.from(rootHashSet);
+        const batchSize  = 50;
+        const fullTxMap  = new Map();
+        dom.pnlStatus.textContent = `${swapEntries.length} swap-uri. Se calculeaza USDC la pret real (${rootHashes.length} tx)...`;
+
+        for (let i = 0; i < rootHashes.length; i += batchSize) {
+          const batch = rootHashes.slice(i, i + batchSize);
+          try {
+            const txs = await fetchJson(buildApiUrl("/transactions", {
+              hashes:         batch.join(","),
+              size:           batch.length,
+              withOperations: "true"
+            }), { retries: 2, retryDelayMs: 1500, timeoutMs: 20000 });
+            if (Array.isArray(txs)) {
+              txs.forEach(tx => {
+                const h = String(tx?.txHash || tx?.hash || "");
+                if (h) fullTxMap.set(h, tx);
+              });
+            }
+          } catch (_) {}
+          if (i + batchSize < rootHashes.length) {
+            dom.pnlStatus.textContent = `Calculare USDC: ${Math.min(i + batchSize, rootHashes.length)}/${rootHashes.length}...`;
+          }
         }
 
-        // USD: aproximatie cu pretul curent (singura sursa disponibila fara blockchain)
-        const tclPrice = readNumber(state.prices.tcl, 0);
-        buyCost       = buyTcl  * tclPrice;
-        sellReceived  = sellTcl * tclPrice;
+        // ── Construim lista de transferuri: tx complete + SCR-uri din Supabase ──
+        const transfers = [];
+        const seen = new Set();
+        for (const tx of fullTxMap.values()) {
+          const h = String(tx?.txHash || tx?.hash || "");
+          if (h) { seen.add(h); transfers.push(tx); }
+        }
+        swapEntries.forEach((e, i) => {
+          const h = String(e.txHash || `sb:${i}`);
+          if (!seen.has(h)) { seen.add(h); transfers.push(e); }
+        });
 
-        const oldestTimestamp   = Number.isFinite(oldestTs) ? oldestTs : null;
-        const reachedListingStart = oldestTimestamp !== null && oldestTimestamp <= listingTs;
+        // ── parsePnlTrades calculeaza buy/sell cu USDC real din operatii ─────────
+        const trades = parsePnlTrades(transfers, walletAddress);
+        const totals = aggregatePnlTrades(trades);
 
         return {
-          buyTcl, buyCost, sellTcl, sellReceived,
-          tradeCount: buyCount + sellCount,
-          buyCount, sellCount,
-          reachedListingStart,
+          buyTcl:    totals.buyTcl,
+          buyCost:   totals.buyUsd,
+          sellTcl:   totals.sellTcl,
+          sellReceived: totals.sellUsd,
+          tradeCount: totals.tradeCount,
+          buyCount:   totals.buyCount,
+          sellCount:  totals.sellCount,
+          reachedListingStart: oldestTimestamp !== null && oldestTimestamp <= listingTs,
           checkedSwaps: swapEntries.length,
-          swapGroups: swapGroups.size,
           oldestTimestamp,
           source: "supabase"
         };
