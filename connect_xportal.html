@@ -1960,20 +1960,35 @@
         return fetched ? all : null;  // [] = valid empty, null = fetch error
       }
 
-      // ── Supabase: fetch DOAR swap-urile DEX pentru wallet ─────────────────────
+      // ── Supabase: fetch swap-urile DEX pentru wallet (toti protocoalele) ─────────
+      // SELLS: wallet apeleaza direct functii swap (aggregateEsdt, xo, swapTokensFixed...)
+      // BUYS:  wallet primeste TCL printr-un SCR (original_tx_hash != null, sender != game/self)
       async function fetchSwapEntriesFromSupabase(walletAddress) {
-        const pair = CONFIG.pnlPairAddress;
-        if (!pair) return null;
+        const gameContract = CONFIG.pnlGameContract || "";
+        const swapFns      = (CONFIG.pnlSwapFunctions || []).join(",");
+        const sel          = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
 
-        const orFilter = `(and(sender.eq.${walletAddress},receiver.eq.${pair}),and(sender.eq.${pair},receiver.eq.${walletAddress}))`;
-        const rows = await supabaseFetchAll("tcl_transfers", {
-          or:     orFilter,
-          order:  "ts.desc",
-          select: "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations"
+        // Sells: wallet→orice cu functie de swap
+        const sellRows = await supabaseFetchAll("tcl_transfers", {
+          sender:   `eq.${walletAddress}`,
+          function: `in.(${swapFns})`,
+          order:    "ts.desc",
+          select:   sel
         });
-        if (!Array.isArray(rows)) return null;
 
-        return rows.map((row) => ({
+        // Buys: wallet primeste TCL via SCR de la un contract DEX (nu game, nu self)
+        // original_tx_hash not null = e un SmartContractResult (nu tranzactie directa)
+        const buyRows = await supabaseFetchAll("tcl_transfers", {
+          receiver:         `eq.${walletAddress}`,
+          "original_tx_hash": "not.is.null",
+          sender:           `neq.${gameContract}`,
+          order:            "ts.desc",
+          select:           sel
+        });
+
+        if (sellRows === null && buyRows === null) return null;
+
+        const toEntry = (row) => ({
           txHash:         row.tx_hash,
           originalTxHash: row.original_tx_hash || undefined,
           type:           row.type || undefined,
@@ -1984,7 +1999,12 @@
           status:         row.status || "success",
           action:         row.action_transfers ? { arguments: { transfers: row.action_transfers } } : undefined,
           operations:     row.operations || undefined
-        }));
+        });
+
+        const sellEntries = Array.isArray(sellRows) ? sellRows : [];
+        const buyEntries  = Array.isArray(buyRows)  ? buyRows.filter(r => r.sender !== walletAddress) : [];
+
+        return [...sellEntries, ...buyEntries].map(toEntry);
       }
 
       // ── Supabase: citeste transferurile unui wallet din cache global ──────────
@@ -2044,25 +2064,20 @@
       }
 
       // ── PNL din Supabase: calculeaza direct TCL/USDC fara blockchain scan ─────────────
-      // Returneaza { buyTcl, buyCost, sellTcl, sellReceived, tradeCount, buyCount, sellCount,
-      //              reachedListingStart, checkedSwaps, oldestTimestamp, source }
       async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
-        if (swapEntries === null) return null;  // eroare fetch
-        // swapEntries poate fi [] (wallet fara swap-uri) — e valid, returnam zerouri
+        if (swapEntries === null) return null;
 
-        const pair      = CONFIG.pnlPairAddress;
         const tclId     = CONFIG.tokens.tcl.identifier;
-        const usdcId    = CONFIG.tokens.usdc.identifier;
         const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
 
-        // Grupeaza intrarile dupa original_tx_hash (un swap = mai multe SCR-uri)
-        const swapGroups = new Map(); // rootHash → { buyTcl, sellTcl, sellUsdc, buyUsdc, ts }
+        // Grupeaza dupa rootHash — vanzarile si cumpararile apar ca intrari separate
+        const swapGroups = new Map();
 
         for (const entry of swapEntries) {
           const root = String(entry.originalTxHash || entry.txHash || "");
           if (!root) continue;
-          if (!swapGroups.has(root)) swapGroups.set(root, { buyTcl:0, buyCost:0, sellTcl:0, sellReceived:0, ts: Number(entry.timestamp)||0 });
+          if (!swapGroups.has(root)) swapGroups.set(root, { buyTcl:0, sellTcl:0, ts: Number(entry.timestamp)||0 });
           const g = swapGroups.get(root);
           if (Number(entry.timestamp) && Number(entry.timestamp) < g.ts) g.ts = Number(entry.timestamp);
 
@@ -2071,14 +2086,17 @@
           if (!firstT) continue;
 
           const token = String(firstT.token || firstT.identifier || "");
-          const norm  = normalizePnlTradeTransfer(firstT);
+          if (token !== tclId) continue;  // ignora transferuri non-TCL
+          const norm = normalizePnlTradeTransfer(firstT);
           if (!norm) continue;
 
-          const isSellInput  = entry.sender === walletAddress && entry.receiver === pair && token === tclId;
-          const isBuyOutput  = entry.sender === pair && entry.receiver === walletAddress && token === tclId;
+          // SELL: wallet e sender (trimite TCL catre DEX/contract)
+          const isSell = entry.sender === walletAddress;
+          // BUY: wallet e receiver (primeste TCL de la DEX printr-un SCR)
+          const isBuy  = entry.receiver === walletAddress && entry.originalTxHash;
 
-          if (isSellInput)  g.sellTcl  += norm.amount;
-          if (isBuyOutput)  g.buyTcl   += norm.amount;
+          if (isSell) g.sellTcl += norm.amount;
+          if (isBuy)  g.buyTcl  += norm.amount;
         }
 
         // Calculeaza totaluri
