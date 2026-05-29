@@ -1932,6 +1932,46 @@
         return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
       }
 
+      // ── Supabase: fetch DOAR swap-urile DEX pentru wallet ─────────────────────
+      // Filtreaza direct wallet↔pairAddress in loc sa ia toate transferurile TCL
+      // Rezultat: ~10-100 randuri vs. 1000+, mult mai rapid
+      async function fetchSwapEntriesFromSupabase(walletAddress) {
+        const anonKey = CONFIG.pnlSupabaseAnonKey;
+        if (!anonKey || anonKey === "SUPABASE_ANON_KEY_HERE") return null;
+        const pair = CONFIG.pnlPairAddress;
+        if (!pair) return null;
+
+        // (wallet→pair) = sell TCL  SAU  (pair→wallet) = buy TCL
+        const orFilter = `(and(sender.eq.${walletAddress},receiver.eq.${pair}),and(sender.eq.${pair},receiver.eq.${walletAddress}))`;
+        const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
+        url.searchParams.set("or", orFilter);
+        url.searchParams.set("order", "ts.desc");
+        url.searchParams.set("limit", "10000");
+        url.searchParams.set("select", "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations");
+
+        const res = await fetch(url.toString(), {
+          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, Accept: "application/json" },
+          signal: AbortSignal.timeout(15000)
+        }).catch(() => null);
+
+        if (!res || !res.ok) return null;
+        const rows = await res.json().catch(() => null);
+        if (!Array.isArray(rows)) return null;
+
+        return rows.map((row) => ({
+          txHash: row.tx_hash,
+          originalTxHash: row.original_tx_hash || undefined,
+          type: row.type || undefined,
+          sender: row.sender,
+          receiver: row.receiver,
+          timestamp: row.ts,
+          function: row.function || undefined,
+          status: row.status || "success",
+          action: row.action_transfers ? { arguments: { transfers: row.action_transfers } } : undefined,
+          operations: row.operations || undefined
+        }));
+      }
+
       // ── Supabase: citeste transferurile unui wallet din cache global ──────────
       async function fetchTransfersFromSupabase(walletAddress) {
         const anonKey = CONFIG.pnlSupabaseAnonKey;
@@ -1989,7 +2029,6 @@
       }
 
       async function fetchWalletTransferHistory(walletAddress) {
-        const transferMap = new Map();
         const transactionHashes = new Set();
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         let reachedListingStart = false;
@@ -1997,19 +2036,20 @@
         let oldestTimestamp = null;
         let completedSources = 0;
 
-        // ── Incearca Supabase mai intai ───────────────────────────────────────────
-        dom.pnlStatus.textContent = "Se cauta date in cache Supabase...";
-        const supabaseEntries = await fetchTransfersFromSupabase(walletAddress);
+        // ── Supabase: fetch DOAR swap-urile DEX (nu toate 1000+ transferuri TCL) ──────
+        // Filtrare directa: wallet↔pairAddress (sell + buy), ~10-100 randuri max
+        dom.pnlStatus.textContent = "Se cauta swap-uri in cache Supabase...";
+        const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
 
-        if (Array.isArray(supabaseEntries) && supabaseEntries.length > 0) {
-          // Colectam hashurile unice ale tranzactiilor parinte (original_tx_hash sau tx_hash)
+        if (Array.isArray(swapEntries) && swapEntries.length > 0) {
+          // Colectam hashurile unice ale tranzactiilor root (original_tx_hash > tx_hash)
           const rootHashSet = new Set();
-          supabaseEntries.forEach((entry) => {
+          swapEntries.forEach((entry) => {
             const root = String(entry?.originalTxHash || entry?.txHash || "");
             if (root && root.length === 64) rootHashSet.add(root);
           });
 
-          const timestamps = supabaseEntries
+          const timestamps = swapEntries
             .map((e) => Number(e.timestamp))
             .filter(Number.isFinite);
           if (timestamps.length) {
@@ -2017,12 +2057,12 @@
             if (oldestTimestamp <= listingTimestamp) reachedListingStart = true;
           }
 
-          // ── Batch-fetch tranzactii complete de la MVX pentru operatii (TCL+USDC) ──
-          // Mult mai rapid decat scanarea paginilor: ~100 tranzactii = 2 requesturi
+          // ── Batch-fetch tranzactii complete cu operatii (TCL + USDC/EGLD) ──────────
+          // De obicei 10-100 hashuri => 1-2 requesturi MVX, ~2-4 secunde total
           const rootHashes = Array.from(rootHashSet);
           const batchSize = 50;
           const fullTxMap = new Map();
-          dom.pnlStatus.textContent = `Supabase: ${supabaseEntries.length} transferuri. Se incarca ${rootHashes.length} tranzactii complete...`;
+          dom.pnlStatus.textContent = `${swapEntries.length} swap-uri gasite. Se incarca ${rootHashes.length} tranzactii...`;
 
           for (let i = 0; i < rootHashes.length; i += batchSize) {
             const batch = rootHashes.slice(i, i + batchSize);
@@ -2032,7 +2072,7 @@
                 size: batch.length,
                 withOperations: "true"
               }), {
-                retries: 3,
+                retries: CONFIG.pnlMaxRetries,
                 retryDelayMs: CONFIG.pnlRetryDelayMs,
                 timeoutMs: CONFIG.pnlRequestTimeoutMs
               });
@@ -2043,35 +2083,24 @@
                 });
               }
             } catch (_) {}
-            dom.pnlStatus.textContent = `Se incarca tranzactii: ${Math.min(i + batchSize, rootHashes.length)}/${rootHashes.length}...`;
           }
 
-          // Construim lista finala: tranzactiile complete + SCR-urile din Supabase ca fallback
+          // Lista finala: tranzactii complete (cu operatii) + SCR-uri ca fallback
           const fullTransfers = [];
           const seenHashes = new Set();
 
-          // Adauga tranzactiile complete (au operatii) — prioritate maxima pentru parsePnlTrades
           for (const tx of fullTxMap.values()) {
             const hash = String(tx?.txHash || tx?.hash || "");
-            if (hash) {
-              seenHashes.add(hash);
-              fullTransfers.push(tx);
-              transactionHashes.add(hash);
-            }
+            if (hash) { seenHashes.add(hash); fullTransfers.push(tx); transactionHashes.add(hash); }
           }
-
-          // Adauga si SCR-urile din Supabase (pot fi utile pentru parsePnlTradesFromPairTransfers)
-          supabaseEntries.forEach((entry, index) => {
-            const entryHash = String(entry?.txHash || `supabase:${index}`);
-            const rootHash = String(entry?.originalTxHash || entry?.txHash || "");
-            if (entryHash && !seenHashes.has(entryHash)) {
-              seenHashes.add(entryHash);
-              fullTransfers.push(entry);
-            }
-            if (rootHash) transactionHashes.add(rootHash);
+          swapEntries.forEach((entry, i) => {
+            const h = String(entry?.txHash || `sb:${i}`);
+            if (!seenHashes.has(h)) { seenHashes.add(h); fullTransfers.push(entry); }
+            const r = String(entry?.originalTxHash || entry?.txHash || "");
+            if (r) transactionHashes.add(r);
           });
 
-          dom.pnlStatus.textContent = `Cache Supabase: ${supabaseEntries.length} TCL transferuri, ${fullTxMap.size} tranzactii complete incarcate`;
+          dom.pnlStatus.textContent = `Supabase: ${swapEntries.length} swap-uri, ${fullTxMap.size} tranzactii incarcate`;
 
           return {
             transfers: fullTransfers,
