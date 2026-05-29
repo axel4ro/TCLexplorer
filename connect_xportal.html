@@ -2029,6 +2029,7 @@
       }
 
       async function fetchWalletTransferHistory(walletAddress) {
+        const transferMap = new Map();
         const transactionHashes = new Set();
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         let reachedListingStart = false;
@@ -2437,8 +2438,81 @@
           "claimRewards", "claimBorrowingRewards", "claimInfinityRewards", "claimLendingRewards",
           "withdrawBalancePrivateShop", "buyCoins", "buySft",
           "addBonus", "changeBonus", "addSocket", "addRefinement",
-          "addCrystal", "changeCrystal", "upgradeNft"
+          "addCrystal", "changeCrystal", "upgradeNft",
+          "mintNft", "addStorage", "claimReferralRewards", "referral",
+          "claimManagerRewards", "depositLiquidity", "removeLiquidity"
         ]);
+
+        // ── Supabase fast path: citeste earned direct din cache ─────────────────
+        const anonKey = CONFIG.pnlSupabaseAnonKey;
+        if (anonKey && anonKey !== "SUPABASE_ANON_KEY_HERE") {
+          dom.pnlStatus.textContent = "Se calculeaza TCL earned din cache...";
+          try {
+            const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
+            url.searchParams.set("sender", `eq.${gameContract}`);
+            url.searchParams.set("receiver", `eq.${walletAddress}`);
+            url.searchParams.set("select", "original_tx_hash,action_transfers");
+            url.searchParams.set("limit", "100000");
+
+            const res = await fetch(url.toString(), {
+              headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, Accept: "application/json" },
+              signal: AbortSignal.timeout(15000)
+            });
+            if (res.ok) {
+              const rows = await res.json().catch(() => null);
+              if (Array.isArray(rows) && rows.length > 0) {
+                // Grupeaza dupa original_tx_hash pentru validarea functiei root
+                const rootMap = new Map();
+                rows.forEach(row => {
+                  const root = row.original_tx_hash;
+                  if (!root) return;
+                  if (!rootMap.has(root)) rootMap.set(root, []);
+                  rootMap.get(root).push(row);
+                });
+
+                const rootHashes = Array.from(rootMap.keys());
+                const validRoots = new Set();
+                const batchSize = 50;
+                dom.pnlStatus.textContent = `Se valideaza ${rootHashes.length} tranzactii earned...`;
+
+                for (let i = 0; i < rootHashes.length; i += batchSize) {
+                  const batch = rootHashes.slice(i, i + batchSize);
+                  try {
+                    const txs = await fetchJson(buildApiUrl("/transactions", {
+                      hashes: batch.join(","),
+                      size: batch.length,
+                      fields: "txHash,function,status"
+                    }), { retries: 2, retryDelayMs: 1500, timeoutMs: 15000 });
+                    if (Array.isArray(txs)) {
+                      txs.forEach(tx => {
+                        if (earnFunctions.has(tx.function) && tx.status !== "fail") {
+                          validRoots.add(tx.txHash);
+                        }
+                      });
+                    }
+                  } catch (_) {}
+                }
+
+                let earnedTcl = 0;
+                for (const [root, entries] of rootMap.entries()) {
+                  if (!validRoots.has(root)) continue;
+                  for (const entry of entries) {
+                    const transfers = entry.action_transfers;
+                    if (!Array.isArray(transfers)) continue;
+                    for (const t of transfers) {
+                      if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+                      const norm = normalizePnlTradeTransfer(t);
+                      if (norm) earnedTcl += norm.amount;
+                    }
+                  }
+                }
+                return earnedTcl;
+              }
+            }
+          } catch (_) {}
+        }
+
+        // ── Fallback: scan blockchain per functie (daca Supabase nu are date) ──
 
         const transferGroups = new Map();
         const seenTransfers = new Set();
