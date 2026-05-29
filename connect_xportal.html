@@ -2585,14 +2585,16 @@
 
             const payer = rootSender.get(root) || "";
             const isSelf = payer && payer === walletAddress;  // propria achizitie
-            let label, category;
+            let label, category, rate = "";
 
             if (sourceInfo.kind === "reward") {
               label = "Reward Pool"; category = "reward"; rewardTotal += tcl;
             } else if (sourceInfo.kind === "nft") {
+              rate = "5%";
               if (isSelf) { label = "NFTs - Cashback"; category = "cashback"; cashbackTotal += tcl; }
               else        { label = "NFTs - Referral"; category = "referral"; referralTotal += tcl; }
             } else if (sourceInfo.kind === "itemshop") {
+              rate = "5%";
               if (isSelf) { label = "ItemShop - Buy Karma Cashback"; category = "cashback"; cashbackTotal += tcl; }
               else        { label = "ItemShop - Buy Karma"; category = "referral"; referralTotal += tcl; }
             } else { // shop = Private Shop Web3
@@ -2600,13 +2602,13 @@
               const share = dist > 0 ? tcl / dist : 1;
               if (share >= 0.5) {
                 // Cota dominanta (~90%) = proceeds din vanzare
-                label = "Private Shop - Vanzare"; category = "sale"; saleTotal += tcl;
+                label = "Private Shop - Vanzare"; category = "sale"; rate = "vanzare"; saleTotal += tcl;
               } else if (isOwner) {
                 // Cota mica + wallet detine cod referral = venit referral
-                label = "Private Shop - Referral"; category = "referral"; referralTotal += tcl;
+                label = "Private Shop - Referral"; category = "referral"; rate = "2%"; referralTotal += tcl;
               } else {
                 // Cota mica + wallet e invitat = cashback pe propria cumparare
-                label = "Private Shop Web3 - Cashback"; category = "cashback"; cashbackTotal += tcl;
+                label = "Private Shop Web3 - Cashback"; category = "cashback"; rate = "2%"; cashbackTotal += tcl;
               }
             }
 
@@ -2614,7 +2616,7 @@
             total += tcl;
             details.push({
               hash: root, function: fn, label, amount: tcl,
-              category, rate: sourceInfo.rate, timestamp: rootTs.get(root) || 0
+              category, rate, timestamp: rootTs.get(root) || 0
             });
           }
 
