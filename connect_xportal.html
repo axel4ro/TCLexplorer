@@ -2187,10 +2187,7 @@
         }
       }
 
-      // ── PNL: Supabase pentru descoperire + batch MVX pentru USDC la pret real ────
-      // Supabase → hashurile swap-urilor (instant)
-      // MVX batch /transactions?hashes=...&withOperations=true → USDC real la momentul tranzactiei
-      // parsePnlTrades → buy/sell cu pretul exact din momentul tranzactiei
+      // PNL: calculeaza swap-urile doar din cache-ul Supabase.
       async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
         if (swapEntries === null) return null;
@@ -2205,53 +2202,21 @@
                    reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
         }
 
-        // ── Colectam root tx hashes unice ────────────────────────────────────────
-        const rootHashSet = new Set();
-        swapEntries.forEach(e => {
-          const root = String(e.originalTxHash || e.txHash || "");
-          if (root && root.length === 64) rootHashSet.add(root);
-        });
+        dom.pnlStatus.textContent = `${swapEntries.length} swap-uri gasite in cache Supabase. Se calculeaza PNL...`;
 
-        // ── Batch-fetch tranzactii complete cu operatii (USDC real la momentul tranzactiei) ──
-        // ~2-15 requesturi pentru 50-700 hashuri; mult mai rapid decat scanare pagini
-        const rootHashes = Array.from(rootHashSet);
-        const batchSize  = 50;
-        const fullTxMap  = new Map();
-        dom.pnlStatus.textContent = `${swapEntries.length} swap-uri. Se calculeaza USDC la pret real (${rootHashes.length} tx)...`;
-
-        for (let i = 0; i < rootHashes.length; i += batchSize) {
-          const batch = rootHashes.slice(i, i + batchSize);
-          try {
-            const txs = await fetchJson(buildApiUrl("/transactions", {
-              hashes:         batch.join(","),
-              size:           batch.length,
-              withOperations: "true"
-            }), { retries: 2, retryDelayMs: 1500, timeoutMs: 20000 });
-            if (Array.isArray(txs)) {
-              txs.forEach(tx => {
-                const h = String(tx?.txHash || tx?.hash || "");
-                if (h) fullTxMap.set(h, tx);
-              });
-            }
-          } catch (_) {}
-          if (i + batchSize < rootHashes.length) {
-            dom.pnlStatus.textContent = `Calculare USDC: ${Math.min(i + batchSize, rootHashes.length)}/${rootHashes.length}...`;
-          }
-        }
-
-        // ── Construim lista de transferuri: tx complete + SCR-uri din Supabase ──
+        // Construim lista de transferuri numai din randurile Supabase.
         const transfers = [];
         const seen = new Set();
-        for (const tx of fullTxMap.values()) {
-          const h = String(tx?.txHash || tx?.hash || "");
-          if (h) { seen.add(h); transfers.push(tx); }
-        }
         swapEntries.forEach((e, i) => {
-          const h = String(e.txHash || `sb:${i}`);
-          if (!seen.has(h)) { seen.add(h); transfers.push(e); }
+          const hash = String(e.txHash || e.originalTxHash || `sb:${i}`);
+          const key = `${hash}|${e.type || ""}|${e.sender || ""}|${e.receiver || ""}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            transfers.push(e);
+          }
         });
 
-        // ── parsePnlTrades calculeaza buy/sell cu USDC real din operatii ─────────
+        // parsePnlTrades foloseste operations/action_transfers stocate in Supabase.
         const trades = parsePnlTrades(transfers, walletAddress);
         const totals = aggregatePnlTrades(trades);
 
@@ -2297,149 +2262,6 @@
           exhaustedHistory: reachedListingStart,
           oldestTimestamp,
           source: "supabase"
-        };
-      }
-
-      // Dead code kept for reference — no longer called
-      async function scanTokenTransfers(walletAddress, tokenId, labelShort) {
-        const txMap = new Map();
-        const pageSize = CONFIG.pnlTokenScanPageSize || 1000;
-        const maxPages = CONFIG.pnlTokenScanMaxPages || 12;
-        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-        let hitPageLimit = false;
-        let oldestTimestamp = null;
-
-        for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-          dom.pnlStatus.textContent = `Se citesc transferurile ${labelShort}... ${txMap.size.toLocaleString("ro-RO")} tranzactii`;
-
-          const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-            from: pageIndex * pageSize,
-            size: pageSize,
-            status: "success",
-            order: "desc",
-            token: tokenId
-          }), {
-            retries: CONFIG.pnlMaxRetries,
-            retryDelayMs: CONFIG.pnlRetryDelayMs,
-            timeoutMs: CONFIG.pnlRequestTimeoutMs
-          });
-
-          if (!Array.isArray(page) || !page.length) break;
-
-          page.forEach((entry) => {
-            const hash = getPnlRootHash(entry);
-            if (!hash) return;
-            if (!txMap.has(hash)) txMap.set(hash, []);
-            txMap.get(hash).push(entry);
-          });
-
-          const timestamps = page
-            .map((e) => Number(e?.timestamp))
-            .filter((t) => Number.isFinite(t));
-
-          if (timestamps.length) {
-            const oldest = Math.min(...timestamps);
-            oldestTimestamp = oldestTimestamp == null ? oldest : Math.min(oldestTimestamp, oldest);
-            if (oldest <= listingTimestamp) break;
-          }
-
-          if (page.length < pageSize) break;
-
-          if (pageIndex === maxPages - 1) {
-            hitPageLimit = true;
-            break;
-          }
-
-          if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
-        }
-
-        return { txMap, hitPageLimit, oldestTimestamp };
-      }
-
-      async function fetchSwapTransactions(walletAddress) {
-        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-
-        // Phase 1: scan TCL transfers
-        const tclScan = await scanTokenTransfers(walletAddress, CONFIG.tokens.tcl.identifier, "TCL");
-
-        if (CONFIG.pnlSourcePauseMs > 0) await wait(CONFIG.pnlSourcePauseMs);
-
-        // Phase 2: scan USDC transfers
-        const usdcScan = await scanTokenTransfers(walletAddress, CONFIG.tokens.usdc.identifier, "USDC");
-
-        // Merge: only transactions that have BOTH TCL and USDC movements = swaps
-        const trades = [];
-        const allHashes = new Set([...tclScan.txMap.keys(), ...usdcScan.txMap.keys()]);
-
-        for (const hash of tclScan.txMap.keys()) {
-          const usdcEntries = usdcScan.txMap.get(hash);
-          if (!usdcEntries || !usdcEntries.length) continue; // no USDC in same tx → not a TCL/USDC swap
-
-          const tclEntries = tclScan.txMap.get(hash);
-          let tclReceived = 0, tclSent = 0, usdcReceived = 0, usdcSent = 0;
-          let txTimestamp = 0;
-
-          for (const e of tclEntries) {
-            const norm = normalizePnlTradeTransfer({ token: e.identifier || e.token, value: e.value });
-            if (!norm) continue;
-            if (String(e.receiver || "") === walletAddress) tclReceived += norm.amount;
-            if (String(e.sender || "") === walletAddress) tclSent += norm.amount;
-            if (!txTimestamp) txTimestamp = Number(e.timestamp) || 0;
-          }
-
-          for (const e of usdcEntries) {
-            const norm = normalizePnlTradeTransfer({ token: e.identifier || e.token, value: e.value });
-            if (!norm) continue;
-            if (String(e.receiver || "") === walletAddress) usdcReceived += norm.amount;
-            if (String(e.sender || "") === walletAddress) usdcSent += norm.amount;
-            if (!txTimestamp) txTimestamp = Number(e.timestamp) || 0;
-          }
-
-          let side, tclAmount, volumeUsd;
-
-          if (tclReceived > 0 && usdcSent > 0) {
-            side = "buy";
-            tclAmount = tclReceived;
-            volumeUsd = usdcSent;
-          } else if (tclSent > 0 && usdcReceived > 0) {
-            side = "sell";
-            tclAmount = tclSent;
-            volumeUsd = usdcReceived;
-          } else {
-            continue;
-          }
-
-          const price = volumeUsd / tclAmount;
-          if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
-
-          trades.push({ hash, timestamp: txTimestamp, side, tclAmount, volumeUsd, price, description: "Swap TCL" });
-        }
-
-        trades.sort((a, b) => a.timestamp - b.timestamp);
-
-        // Compute TCL earned from game contract (rewards, claims, upgrades, etc.)
-        let earnedTcl = 0;
-        const gameContract = CONFIG.pnlGameContract;
-        for (const entries of tclScan.txMap.values()) {
-          for (const e of entries) {
-            if (String(e.sender || "") !== gameContract) continue;
-            if (String(e.receiver || "") !== walletAddress) continue;
-            const norm = normalizePnlTradeTransfer({ token: e.identifier || e.token, value: e.value });
-            if (norm) earnedTcl += norm.amount;
-          }
-        }
-
-        const hitPageLimit = tclScan.hitPageLimit || usdcScan.hitPageLimit;
-        const oldest = Math.min(tclScan.oldestTimestamp ?? Infinity, usdcScan.oldestTimestamp ?? Infinity);
-
-        return {
-          trades,
-          earnedTcl,
-          checkedTransactions: allHashes.size,
-          reachedListingStart: Number.isFinite(oldest) && oldest <= listingTimestamp,
-          hitPageLimit,
-          exhaustedHistory: !hitPageLimit,
-          oldestTimestamp: Number.isFinite(oldest) ? oldest : null
         };
       }
 
@@ -2517,15 +2339,20 @@
           const rows = await supabaseFetchAll("tcl_transfers", {
             sender:   `eq.${gameContract}`,
             receiver: `eq.${walletAddress}`,
-            select:   "original_tx_hash,action_transfers"
+            select:   "tx_hash,original_tx_hash,function,action_transfers"
           });
           if (!Array.isArray(rows)) return { total: 0, breakdown: {} };
 
-          // Grupeaza TCL pe root hash
+          // Grupeaza TCL pe root hash si foloseste functia deja salvata in Supabase.
           const rootTcl = new Map();
+          const rootFn = new Map();
           for (const row of rows) {
-            const root = row.original_tx_hash;
+            const root = row.original_tx_hash || row.tx_hash;
             if (!root) continue;
+            const fn = String(row.function || "").trim();
+            if (fn && (!rootFn.has(root) || rootFn.get(root) === "_other")) {
+              rootFn.set(root, fn);
+            }
             for (const t of (row.action_transfers || [])) {
               if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
               const norm = normalizePnlTradeTransfer(t);
@@ -2534,36 +2361,12 @@
             }
           }
 
-          // Fetch TOATE functiile root in paralel (10 concurrent → ~4-8s pentru 5k+ roots)
-          const allRoots = [...rootTcl.keys()];
-          const BATCH = 50, CONC = 10;
-          const batches = [];
-          for (let i = 0; i < allRoots.length; i += BATCH) batches.push(allRoots.slice(i, i + BATCH));
-
-          const hashToFn = new Map();
-          for (let i = 0; i < batches.length; i += CONC) {
-            const chunk = batches.slice(i, i + CONC);
-            const results = await Promise.all(chunk.map(async batch => {
-              try {
-                return await fetchJson(buildApiUrl("/transactions", {
-                  hashes: batch.join(","), size: batch.length, fields: "txHash,function"
-                }), { retries: 1, retryDelayMs: 800, timeoutMs: 12000 });
-              } catch { return []; }
-            }));
-            for (const txs of results) {
-              if (Array.isArray(txs)) txs.forEach(tx => {
-                const h = tx?.txHash || tx?.hash;
-                if (h) hashToFn.set(h, tx.function || "unknown");
-              });
-            }
-          }
-
           // Agrega pe functie, exclud equip/unequip din total
           const breakdown = {};
           let total = 0;
           let excluded = 0;
           for (const [root, tcl] of rootTcl) {
-            const fn = hashToFn.get(root) || "_other";
+            const fn = rootFn.get(root) || "_other";
             if (EXCLUDED_EARN_FNS.has(fn)) { excluded += tcl; continue; }
             breakdown[fn] = (breakdown[fn] || 0) + tcl;
             total += tcl;
