@@ -1932,43 +1932,56 @@
         return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
       }
 
+      // ── Helper: pagineaza prin toate randurile Supabase (depaseste limita 1000) ──
+      async function supabaseFetchAll(path, params = {}, anonKey) {
+        const key = anonKey || CONFIG.pnlSupabaseAnonKey;
+        if (!key || key === "SUPABASE_ANON_KEY_HERE") return null;
+        const PAGE = 1000;
+        const all  = [];
+        let offset = 0;
+        while (true) {
+          const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/${path}`);
+          for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+          url.searchParams.set("limit",  String(PAGE));
+          url.searchParams.set("offset", String(offset));
+          const res = await fetch(url.toString(), {
+            headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+            signal: AbortSignal.timeout(15000)
+          }).catch(() => null);
+          if (!res || !res.ok) break;
+          const rows = await res.json().catch(() => null);
+          if (!Array.isArray(rows) || rows.length === 0) break;
+          all.push(...rows);
+          if (rows.length < PAGE) break;
+          offset += PAGE;
+        }
+        return all.length > 0 ? all : null;
+      }
+
       // ── Supabase: fetch DOAR swap-urile DEX pentru wallet ─────────────────────
-      // Filtreaza direct wallet↔pairAddress in loc sa ia toate transferurile TCL
-      // Rezultat: ~10-100 randuri vs. 1000+, mult mai rapid
       async function fetchSwapEntriesFromSupabase(walletAddress) {
-        const anonKey = CONFIG.pnlSupabaseAnonKey;
-        if (!anonKey || anonKey === "SUPABASE_ANON_KEY_HERE") return null;
         const pair = CONFIG.pnlPairAddress;
         if (!pair) return null;
 
-        // (wallet→pair) = sell TCL  SAU  (pair→wallet) = buy TCL
         const orFilter = `(and(sender.eq.${walletAddress},receiver.eq.${pair}),and(sender.eq.${pair},receiver.eq.${walletAddress}))`;
-        const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
-        url.searchParams.set("or", orFilter);
-        url.searchParams.set("order", "ts.desc");
-        url.searchParams.set("limit", "10000");
-        url.searchParams.set("select", "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations");
-
-        const res = await fetch(url.toString(), {
-          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, Accept: "application/json" },
-          signal: AbortSignal.timeout(15000)
-        }).catch(() => null);
-
-        if (!res || !res.ok) return null;
-        const rows = await res.json().catch(() => null);
+        const rows = await supabaseFetchAll("tcl_transfers", {
+          or:     orFilter,
+          order:  "ts.desc",
+          select: "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations"
+        });
         if (!Array.isArray(rows)) return null;
 
         return rows.map((row) => ({
-          txHash: row.tx_hash,
+          txHash:         row.tx_hash,
           originalTxHash: row.original_tx_hash || undefined,
-          type: row.type || undefined,
-          sender: row.sender,
-          receiver: row.receiver,
-          timestamp: row.ts,
-          function: row.function || undefined,
-          status: row.status || "success",
-          action: row.action_transfers ? { arguments: { transfers: row.action_transfers } } : undefined,
-          operations: row.operations || undefined
+          type:           row.type || undefined,
+          sender:         row.sender,
+          receiver:       row.receiver,
+          timestamp:      row.ts,
+          function:       row.function || undefined,
+          status:         row.status || "success",
+          action:         row.action_transfers ? { arguments: { transfers: row.action_transfers } } : undefined,
+          operations:     row.operations || undefined
         }));
       }
 
@@ -2334,28 +2347,17 @@
 
       // Scans TCL received from the game contract, then validates the root transaction.
       // This catches manager-triggered claims while excluding collateral/refund returns.
-      // ── Earned TCL: pur Supabase, fara blockchain ────────────────────────────
+      // ── Earned TCL: pur Supabase, pagineaza complet ──────────────────────────
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
         if (!gameContract) return 0;
-
-        const anonKey = CONFIG.pnlSupabaseAnonKey;
-        if (!anonKey || anonKey === "SUPABASE_ANON_KEY_HERE") return 0;
-
-        dom.pnlStatus.textContent = "Se calculeaza TCL earned din cache Supabase...";
         try {
-          const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
-          url.searchParams.set("sender", `eq.${gameContract}`);
-          url.searchParams.set("receiver", `eq.${walletAddress}`);
-          url.searchParams.set("select", "action_transfers");
-          url.searchParams.set("limit", "100000");
-
-          const res = await fetch(url.toString(), {
-            headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, Accept: "application/json" },
-            signal: AbortSignal.timeout(15000)
+          // Pagineaza prin TOATE intrarile game→wallet (depaseste limita 1000/req)
+          const rows = await supabaseFetchAll("tcl_transfers", {
+            sender:   `eq.${gameContract}`,
+            receiver: `eq.${walletAddress}`,
+            select:   "action_transfers"
           });
-          if (!res.ok) return 0;
-          const rows = await res.json().catch(() => null);
           if (!Array.isArray(rows)) return 0;
 
           let earned = 0;
