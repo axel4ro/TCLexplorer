@@ -676,6 +676,13 @@
     .earned-tcl-amount { color: var(--accent-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
     .earned-bar-wrap { height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-top: 3px; }
     .earned-bar { height: 3px; background: var(--accent); border-radius: 2px; min-width: 2px; }
+    .earned-detail-total { margin-top: 14px; }
+    .earned-detail-table a.earned-tx-link {
+      color: var(--accent-strong);
+      font-weight: 700;
+      text-decoration: none;
+      font-variant-numeric: tabular-nums;
+    }
 
     .pnl-label {
       margin: 0 0 8px;
@@ -2408,8 +2415,37 @@
       }
 
       // ── Earned TCL: Supabase + breakdown complet pe functii ─────────────────────
-      // Exclude functii de tip "return TCL" (equip/unequip) din totalul earned
-      const EXCLUDED_EARN_FNS = new Set(["equipNft", "unequipNft"]);
+      // Doar reward-uri reale si cashback/referral. Return/refund/withdraw nu intra in Earned.
+      const EARNED_REWARD_FNS = new Set([
+        "claimRewards",
+        "claimBorrowingRewards",
+        "claimLendingRewards",
+        "claimInfinityRewards",
+        "claimReferralRewards",
+        "claimManagerRewards",
+        "referral"
+      ]);
+      const EARNED_CASHBACK_5_FNS = new Set([
+        "buyCoins",
+        "buySft",
+        "upgradeNft",
+        "mintNft",
+        "addBonus",
+        "changeBonus",
+        "addCrystal",
+        "changeCrystal",
+        "addSocket",
+        "addRefinement",
+        "addStorage"
+      ]);
+      const EARNED_CASHBACK_2_FNS = new Set(["addBalancePrivateShop"]);
+
+      function getEarnedSourceInfo(fn) {
+        if (EARNED_REWARD_FNS.has(fn)) return { kind: "reward", rate: "reward" };
+        if (EARNED_CASHBACK_5_FNS.has(fn)) return { kind: "cashback", rate: "5%" };
+        if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "cashback", rate: "2%" };
+        return null;
+      }
 
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
@@ -2418,18 +2454,20 @@
           const rows = await supabaseFetchAll("tcl_transfers", {
             sender:   `eq.${gameContract}`,
             receiver: `eq.${walletAddress}`,
-            select:   "tx_hash,original_tx_hash,function,action_transfers"
+            select:   "tx_hash,original_tx_hash,function,action_transfers,ts"
           });
           if (!Array.isArray(rows)) return { total: 0, breakdown: {} };
 
           // Grupeaza TCL pe root hash si foloseste functia deja salvata in Supabase.
           const rootTcl = new Map();
           const rootFn = new Map();
+          const rootTs = new Map();
           const roots = new Set();
           for (const row of rows) {
             const root = row.original_tx_hash || row.tx_hash;
             if (!root) continue;
             roots.add(root);
+            if (row.ts && !rootTs.has(root)) rootTs.set(root, Number(row.ts) || 0);
             const fn = String(row.function || "").trim();
             if (fn && (!rootFn.has(root) || rootFn.get(root) === "_other")) {
               rootFn.set(root, fn);
@@ -2447,20 +2485,39 @@
             const root = entry.originalTxHash || entry.txHash;
             const fn = String(entry.function || "").trim();
             if (root && fn && !entry.originalTxHash) rootFn.set(root, fn);
+            if (root && entry.timestamp && !entry.originalTxHash) rootTs.set(root, Number(entry.timestamp) || 0);
           });
 
-          // Agrega pe functie, exclud equip/unequip din total
+          // Agrega doar sursele earned legitime; return/refund/withdraw sunt excluse.
           const breakdown = {};
+          const excludedBreakdown = {};
+          const details = [];
           let total = 0;
           let excluded = 0;
           for (const [root, tcl] of rootTcl) {
             const fn = rootFn.get(root) || "_other";
-            if (EXCLUDED_EARN_FNS.has(fn)) { excluded += tcl; continue; }
+            const sourceInfo = getEarnedSourceInfo(fn);
+            if (!sourceInfo) {
+              excluded += tcl;
+              excludedBreakdown[fn] = (excludedBreakdown[fn] || 0) + tcl;
+              continue;
+            }
+
             breakdown[fn] = (breakdown[fn] || 0) + tcl;
             total += tcl;
+            details.push({
+              hash: root,
+              function: fn,
+              amount: tcl,
+              kind: sourceInfo.kind,
+              rate: sourceInfo.rate,
+              timestamp: rootTs.get(root) || 0
+            });
           }
 
-          return { total, breakdown, excluded };
+          details.sort((left, right) => (right.timestamp || 0) - (left.timestamp || 0));
+
+          return { total, breakdown, excluded, excludedBreakdown, details };
         } catch (_) {
           return { total: 0, breakdown: {} };
         }
@@ -2489,7 +2546,7 @@
           const hasBreakdown = earnedAmount > 0 && Object.keys(earnedData.breakdown || {}).length > 0;
           infoBtn.style.display = hasBreakdown ? "inline-flex" : "none";
           if (hasBreakdown) {
-            infoBtn.onclick = () => showEarnedBreakdown(earnedData.breakdown, earnedAmount);
+            infoBtn.onclick = () => showEarnedBreakdown(earnedData.breakdown, earnedAmount, earnedData.details || []);
           }
         }
 
@@ -2587,21 +2644,18 @@
         claimReferralRewards:      "Referral Rewards",
         referral:                  "Referral Rewards",
         claimManagerRewards:       "Manager Rewards",
-        withdrawBalancePrivateShop:"Private Shop",
-        buyCoins:                  "Buy Coins",
-        buySft:                    "Buy SFT",
-        upgradeNft:                "Upgrade NFT",
-        mintNft:                   "Mint NFT",
-        // equipNft / unequipNft excluse din earned (sunt returnuri de TCL, nu castiguri)
-        addBonus:                  "Add Bonus",
-        changeBonus:               "Change Bonus",
-        addCrystal:                "Add Crystal",
-        changeCrystal:             "Change Crystal",
-        addSocket:                 "Add Socket",
-        addRefinement:             "Add Refinement",
-        addStorage:                "Add Storage",
-        depositLiquidity:          "Deposit Liquidity",
-        removeLiquidity:           "Remove Liquidity",
+        addBalancePrivateShop:     "Private Shop 2%",
+        buyCoins:                  "Buy Coins 5%",
+        buySft:                    "Buy SFT 5%",
+        upgradeNft:                "Upgrade NFT 5%",
+        mintNft:                   "Mint NFT 5%",
+        addBonus:                  "Add Bonus 5%",
+        changeBonus:               "Change Bonus 5%",
+        addCrystal:                "Add Crystal 5%",
+        changeCrystal:             "Change Crystal 5%",
+        addSocket:                 "Add Socket 5%",
+        addRefinement:             "Add Refinement 5%",
+        addStorage:                "Add Storage 5%",
         _other:                    "Altele"
       };
 
@@ -2610,7 +2664,7 @@
           ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
       }
 
-      function showEarnedBreakdown(breakdown, total) {
+      function showEarnedBreakdown(breakdown, total, details = []) {
         const overlay = document.getElementById("earnedPopupOverlay");
         const body    = document.getElementById("earnedPopupBody");
         if (!overlay || !body) return;
@@ -2644,6 +2698,35 @@
           </tr>`;
         }
         html += `</tbody></table>`;
+
+        const detailRows = Array.isArray(details) ? details.slice(0, 80) : [];
+        if (detailRows.length) {
+          html += `<div class="earned-popup-total earned-detail-total">Tranzactii reward/cashback: <span>${details.length.toLocaleString("ro-RO")}</span></div>`;
+          html += `<table class="earned-breakdown-table earned-detail-table">
+            <thead><tr>
+              <th>Sursa</th>
+              <th style="text-align:right">TCL</th>
+              <th style="text-align:right">Tx</th>
+            </tr></thead><tbody>`;
+
+          for (const detail of detailRows) {
+            const fn = detail.function || "_other";
+            const label = EARNED_FN_LABELS[fn] || fn;
+            const rate = detail.rate && detail.rate !== "reward" ? ` ${detail.rate}` : "";
+            const hash = String(detail.hash || "");
+            const shortHash = hash ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : "-";
+            html += `<tr>
+              <td>
+                <span class="earned-fn-name">${esc(label)}</span>
+                <span class="earned-fn-label">${esc(fn)}${esc(rate)}</span>
+              </td>
+              <td><span class="earned-tcl-amount">${formatTokenAmount(readNumber(detail.amount, 0))}</span></td>
+              <td>${hash ? `<a class="earned-tx-link" href="https://explorer.multiversx.com/transactions/${esc(hash)}" target="_blank" rel="noopener">${esc(shortHash)}</a>` : "-"}</td>
+            </tr>`;
+          }
+          html += `</tbody></table>`;
+        }
+
         body.innerHTML = html;
         overlay.classList.add("open");
       }
