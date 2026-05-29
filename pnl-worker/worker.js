@@ -16,8 +16,10 @@
 const PAGE_SIZE = 50;       // max cu withOperations=true
 const PAGES_PER_CRON = 10;  // 10 pagini × 50 = 500 intrari per run (max safe: ~46/50 subrequests)
 const UPSERT_CHUNK = 200;   // cate randuri upsertam odata in Supabase
-const ROOT_ENRICH_LIMIT = 450;
+const ROOT_ENRICH_LIMIT = 300;
 const ROOT_ENRICH_BATCH = 50;
+const ROOT_SCAN_BATCH = 80;
+const ROOT_SCAN_CHUNKS = 16;
 const TCL_GAME_CONTRACT = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
 const TCL_TRANSFER_SELECT = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
 const SWAP_FUNCTIONS = [
@@ -218,7 +220,7 @@ async function fetchWalletPnlRootHashes(env, wallet) {
     }),
     supabaseGetAll(env, "tcl_transfers", {
       receiver: `eq.${wallet}`,
-      sender: `neq.${gameContract}`,
+      sender: "like.erd1qqqq*",
       order: "ts.desc",
       select: TCL_TRANSFER_SELECT,
     }),
@@ -235,27 +237,47 @@ async function fetchWalletPnlRootHashes(env, wallet) {
     .filter((row) => firstTransferToken(row) === token)
     .map((row) => row.original_tx_hash || row.tx_hash);
   const buyRoots = allBuyRows
-    .filter((row) => row.sender !== wallet && String(row.sender || "").startsWith("erd1qqqq"))
+    .filter((row) => row.sender !== wallet && row.sender !== gameContract && String(row.sender || "").startsWith("erd1qqqq"))
     .map((row) => row.original_tx_hash || row.tx_hash);
   const earnedRoots = earnedRows.map((row) => row.original_tx_hash || row.tx_hash);
 
   return Array.from(new Set([...sellRoots, ...buyRoots, ...earnedRoots].filter(validTxHash)));
 }
 
-async function findMissingRootHashes(env, roots) {
+async function findMissingRootHashes(env, roots, cursor, maxMissing) {
   const existing = new Map();
-  for (let i = 0; i < roots.length; i += 80) {
-    const chunk = roots.slice(i, i + 80).join(",");
-    const rows = await supabaseGetAll(env, "tcl_transfers", {
+  const missing = [];
+  let nextCursor = Math.min(Math.max(0, cursor), roots.length);
+  let scannedRoots = 0;
+  let scannedChunks = 0;
+
+  while (
+    nextCursor < roots.length &&
+    missing.length < maxMissing &&
+    scannedChunks < ROOT_SCAN_CHUNKS
+  ) {
+    const chunkRoots = roots.slice(nextCursor, nextCursor + ROOT_SCAN_BATCH);
+    const chunk = chunkRoots.join(",");
+    const rows = await supabaseGet(env, "tcl_transfers", {
       tx_hash: `in.(${chunk})`,
       select: "tx_hash,operations",
     });
     rows.forEach((row) => {
       existing.set(row.tx_hash, Array.isArray(row.operations) && row.operations.length > 0);
     });
+    missing.push(...chunkRoots.filter((hash) => existing.get(hash) !== true));
+    nextCursor += chunkRoots.length;
+    scannedRoots += chunkRoots.length;
+    scannedChunks += 1;
   }
 
-  return roots.filter((hash) => existing.get(hash) !== true);
+  return {
+    missing,
+    nextCursor,
+    scannedRoots,
+    scannedChunks,
+    doneScanning: nextCursor >= roots.length,
+  };
 }
 
 async function enrichRootTransactions(env, rootHashes) {
@@ -520,22 +542,28 @@ async function handleEnrich(request, env) {
   }
 
   const requestedLimit = parseInt(url.searchParams.get("limit") || String(ROOT_ENRICH_LIMIT), 10);
+  const requestedCursor = parseInt(url.searchParams.get("cursor") || "0", 10);
   const limit = Math.max(1, Math.min(Number.isFinite(requestedLimit) ? requestedLimit : ROOT_ENRICH_LIMIT, ROOT_ENRICH_LIMIT));
+  const cursor = Math.max(0, Number.isFinite(requestedCursor) ? requestedCursor : 0);
   const roots = await fetchWalletPnlRootHashes(env, wallet);
-  const missing = await findMissingRootHashes(env, roots);
-  const toProcess = missing.slice(0, limit);
+  const scan = await findMissingRootHashes(env, roots, cursor, limit);
+  const toProcess = scan.missing;
   const upserted = toProcess.length ? await enrichRootTransactions(env, toProcess) : 0;
-  const remaining = Math.max(0, missing.length - toProcess.length);
+  const remaining = Math.max(0, roots.length - scan.nextCursor);
 
   return {
     ok: true,
     wallet,
     totalRoots: roots.length,
-    missingRoots: missing.length,
+    cursor,
+    nextCursor: scan.nextCursor,
+    scannedRoots: scan.scannedRoots,
+    scannedChunks: scan.scannedChunks,
+    missingRoots: scan.missing.length,
     processed: toProcess.length,
     upserted,
     remaining,
-    done: remaining === 0,
+    done: scan.doneScanning,
   };
 }
 

@@ -2142,13 +2142,13 @@
         // Filtram client-side dupa prefix contract (Supabase LIKE nu suporta wildcard in AND)
         const allBuyRows = await supabaseFetchAll("tcl_transfers", {
           receiver: `eq.${walletAddress}`,
-          sender:   `neq.${gameContract}`,
+          sender:   "like.erd1qqqq*",
           order:    "ts.desc",
           select:   PNL_TRANSFER_SELECT
         });
         // Pastreaza doar contracte MVX (sender incepe cu 'erd1qqqq') si exclude self-transfer
         const buyRows = Array.isArray(allBuyRows)
-          ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender.startsWith("erd1qqqq"))
+          ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender !== gameContract && r.sender.startsWith("erd1qqqq"))
           : allBuyRows;
 
         if (sellRows === null && buyRows === null) return null;
@@ -2213,12 +2213,14 @@
 
         let lastResult = null;
         let totalUpserted = 0;
-        const maxPasses = 10;
+        let cursor = 0;
+        const maxPasses = 80;
 
         for (let pass = 0; pass < maxPasses; pass += 1) {
           const url = new URL(`${workerUrl}/api/enrich`);
           url.searchParams.set("wallet", walletAddress);
-          url.searchParams.set("limit", "450");
+          url.searchParams.set("limit", "300");
+          url.searchParams.set("cursor", String(cursor));
 
           dom.pnlStatus.textContent = pass === 0
             ? "Se completeaza cache-ul Supabase pentru wallet..."
@@ -2242,11 +2244,15 @@
           totalUpserted += Math.max(0, Number(data.upserted) || 0);
 
           const remaining = Math.max(0, Number(data.remaining) || 0);
-          const processed = Math.max(0, Number(data.processed) || 0);
-          if (data.done || remaining === 0 || processed === 0) {
+          const nextCursor = Math.max(0, Number(data.nextCursor) || 0);
+          if (data.done || remaining === 0) {
             return { ...data, totalUpserted };
           }
+          if (nextCursor <= cursor) {
+            throw new Error("Cache-ul Supabase nu a putut avansa pentru acest wallet.");
+          }
 
+          cursor = nextCursor;
           await wait(250);
         }
 
