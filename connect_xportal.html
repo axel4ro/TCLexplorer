@@ -2079,40 +2079,10 @@
         return fetched ? all : null;  // [] = valid empty, null = fetch error
       }
 
-      // ── Supabase: fetch swap-urile DEX pentru wallet (toti protocoalele) ─────────
-      // SELLS: wallet apeleaza direct functii swap (aggregateEsdt, xo, swapTokensFixed...)
-      // BUYS:  wallet primeste TCL printr-un SCR (original_tx_hash != null, sender != game/self)
-      async function fetchSwapEntriesFromSupabase(walletAddress) {
-        const gameContract = CONFIG.pnlGameContract || "";
-        const swapFns      = (CONFIG.pnlSwapFunctions || []).join(",");
-        const sel          = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
+      const PNL_TRANSFER_SELECT = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
 
-        // Sells: wallet→orice cu functie de swap
-        const sellRows = await supabaseFetchAll("tcl_transfers", {
-          sender:   `eq.${walletAddress}`,
-          function: `in.(${swapFns})`,
-          order:    "ts.desc",
-          select:   sel
-        });
-
-        // Buys: wallet primeste TCL de la un contract DEX (orice protocol: USDC, EGLD, ONE, etc.)
-        // Contractele MVX incep cu 'erd1qqqq' (16 'q' dupa 'erd1')
-        // Excludem game contract (earned e calculat separat) si self-transfer
-        // Filtram client-side dupa prefix contract (Supabase LIKE nu suporta wildcard in AND)
-        const allBuyRows = await supabaseFetchAll("tcl_transfers", {
-          receiver: `eq.${walletAddress}`,
-          sender:   `neq.${gameContract}`,
-          order:    "ts.desc",
-          select:   sel
-        });
-        // Pastreaza doar contracte MVX (sender incepe cu 'erd1qqqq') si exclude self-transfer
-        const buyRows = Array.isArray(allBuyRows)
-          ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender.startsWith("erd1qqqq"))
-          : allBuyRows;
-
-        if (sellRows === null && buyRows === null) return null;
-
-        const toEntry = (row) => ({
+      function supabaseRowToPnlEntry(row) {
+        return {
           txHash:         row.tx_hash,
           originalTxHash: row.original_tx_hash || undefined,
           type:           row.type || undefined,
@@ -2123,12 +2093,75 @@
           status:         row.status || "success",
           action:         row.action_transfers ? { arguments: { transfers: row.action_transfers } } : undefined,
           operations:     row.operations || undefined
+        };
+      }
+
+      async function fetchPnlEntriesByRootHashes(rootHashes) {
+        const hashes = Array.from(new Set((rootHashes || []).filter((hash) => /^[0-9a-f]{64}$/i.test(String(hash)))));
+        if (!hashes.length) return [];
+
+        const rows = [];
+        const chunkSize = 80;
+        for (let i = 0; i < hashes.length; i += chunkSize) {
+          const chunk = hashes.slice(i, i + chunkSize).join(",");
+          const chunkRows = await supabaseFetchAll("tcl_transfers", {
+            or:     `(tx_hash.in.(${chunk}),original_tx_hash.in.(${chunk}))`,
+            order:  "ts.desc",
+            select: PNL_TRANSFER_SELECT
+          });
+          if (Array.isArray(chunkRows)) rows.push(...chunkRows);
+        }
+
+        const seen = new Set();
+        return rows.map(supabaseRowToPnlEntry).filter((entry) => {
+          const key = `${entry.txHash || ""}|${entry.originalTxHash || ""}|${entry.type || ""}|${entry.sender || ""}|${entry.receiver || ""}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      // ── Supabase: fetch swap-urile DEX pentru wallet (toti protocoalele) ─────────
+      // SELLS: wallet apeleaza direct functii swap (aggregateEsdt, xo, swapTokensFixed...)
+      // BUYS:  wallet primeste TCL printr-un SCR (original_tx_hash != null, sender != game/self)
+      async function fetchSwapEntriesFromSupabase(walletAddress) {
+        const gameContract = CONFIG.pnlGameContract || "";
+        const swapFns      = (CONFIG.pnlSwapFunctions || []).join(",");
+
+        // Sells: wallet→orice cu functie de swap
+        const sellRows = await supabaseFetchAll("tcl_transfers", {
+          sender:   `eq.${walletAddress}`,
+          function: `in.(${swapFns})`,
+          order:    "ts.desc",
+          select:   PNL_TRANSFER_SELECT
         });
 
-        const sellEntries = Array.isArray(sellRows) ? sellRows : [];
+        // Buys: wallet primeste TCL de la un contract DEX (orice protocol: USDC, EGLD, ONE, etc.)
+        // Contractele MVX incep cu 'erd1qqqq' (16 'q' dupa 'erd1')
+        // Excludem game contract (earned e calculat separat) si self-transfer
+        // Filtram client-side dupa prefix contract (Supabase LIKE nu suporta wildcard in AND)
+        const allBuyRows = await supabaseFetchAll("tcl_transfers", {
+          receiver: `eq.${walletAddress}`,
+          sender:   `neq.${gameContract}`,
+          order:    "ts.desc",
+          select:   PNL_TRANSFER_SELECT
+        });
+        // Pastreaza doar contracte MVX (sender incepe cu 'erd1qqqq') si exclude self-transfer
+        const buyRows = Array.isArray(allBuyRows)
+          ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender.startsWith("erd1qqqq"))
+          : allBuyRows;
+
+        if (sellRows === null && buyRows === null) return null;
+
+        const sellEntries = Array.isArray(sellRows)
+          ? sellRows.filter((row) => {
+              const firstTransfer = Array.isArray(row.action_transfers) ? row.action_transfers[0] : null;
+              return (firstTransfer?.token || firstTransfer?.identifier) === CONFIG.tokens.tcl.identifier;
+            })
+          : [];
         const buyEntries  = Array.isArray(buyRows)  ? buyRows.filter(r => r.sender !== walletAddress) : [];
 
-        return [...sellEntries, ...buyEntries].map(toEntry);
+        return [...sellEntries, ...buyEntries].map(supabaseRowToPnlEntry);
       }
 
       // ── Supabase: citeste transferurile unui wallet din cache global ──────────
@@ -2156,20 +2189,7 @@
         if (!Array.isArray(rows)) return null;
 
         // Transforma randurile Supabase in formatul MultiversX API
-        return rows.map((row) => ({
-          txHash: row.tx_hash,
-          originalTxHash: row.original_tx_hash || undefined,
-          type: row.type || undefined,
-          sender: row.sender,
-          receiver: row.receiver,
-          timestamp: row.ts,
-          function: row.function || undefined,
-          status: row.status || "success",
-          action: row.action_transfers
-            ? { arguments: { transfers: row.action_transfers } }
-            : undefined,
-          operations: row.operations || undefined
-        }));
+        return rows.map(supabaseRowToPnlEntry);
       }
 
       // Verifica starea sync-ului in worker
@@ -2204,10 +2224,13 @@
 
         dom.pnlStatus.textContent = `${swapEntries.length} swap-uri gasite in cache Supabase. Se calculeaza PNL...`;
 
+        const rootHashes = Array.from(new Set(swapEntries.map((entry) => entry.originalTxHash || entry.txHash).filter(Boolean)));
+        const relatedEntries = await fetchPnlEntriesByRootHashes(rootHashes);
+
         // Construim lista de transferuri numai din randurile Supabase.
         const transfers = [];
         const seen = new Set();
-        swapEntries.forEach((e, i) => {
+        [...relatedEntries, ...swapEntries].forEach((e, i) => {
           const hash = String(e.txHash || e.originalTxHash || `sb:${i}`);
           const key = `${hash}|${e.type || ""}|${e.sender || ""}|${e.receiver || ""}`;
           if (!seen.has(key)) {
@@ -2346,9 +2369,11 @@
           // Grupeaza TCL pe root hash si foloseste functia deja salvata in Supabase.
           const rootTcl = new Map();
           const rootFn = new Map();
+          const roots = new Set();
           for (const row of rows) {
             const root = row.original_tx_hash || row.tx_hash;
             if (!root) continue;
+            roots.add(root);
             const fn = String(row.function || "").trim();
             if (fn && (!rootFn.has(root) || rootFn.get(root) === "_other")) {
               rootFn.set(root, fn);
@@ -2360,6 +2385,13 @@
               rootTcl.set(root, (rootTcl.get(root) || 0) + norm.amount);
             }
           }
+
+          const relatedEntries = await fetchPnlEntriesByRootHashes(Array.from(roots));
+          relatedEntries.forEach((entry) => {
+            const root = entry.originalTxHash || entry.txHash;
+            const fn = String(entry.function || "").trim();
+            if (root && fn && !entry.originalTxHash) rootFn.set(root, fn);
+          });
 
           // Agrega pe functie, exclud equip/unequip din total
           const breakdown = {};
