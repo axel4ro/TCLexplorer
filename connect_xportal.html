@@ -2595,8 +2595,8 @@
               else        { label = "NFTs - Referral"; category = "referral"; referralTotal += tcl; }
             } else if (sourceInfo.kind === "itemshop") {
               rate = "5%";
-              if (isSelf) { label = "ItemShop - Buy Karma Cashback"; category = "cashback"; cashbackTotal += tcl; }
-              else        { label = "ItemShop - Buy Karma"; category = "referral"; referralTotal += tcl; }
+              if (isSelf) { label = "ItemShop - Karma Cashback"; category = "cashback"; cashbackTotal += tcl; }
+              else        { label = "ItemShop - Karma Referral"; category = "referral"; referralTotal += tcl; }
             } else { // shop = Private Shop Web3
               const dist = rootTotalDist.get(root) || tcl;
               const share = dist > 0 ? tcl / dist : 1;
