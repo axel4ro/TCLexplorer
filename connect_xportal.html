@@ -2348,7 +2348,10 @@
         let fetched = false;
         while (true) {
           const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/${path}`);
-          for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+          for (const [k, v] of Object.entries(params)) {
+            if (Array.isArray(v)) { for (const item of v) url.searchParams.append(k, item); }
+            else url.searchParams.set(k, v);
+          }
           url.searchParams.set("limit",  String(PAGE));
           url.searchParams.set("offset", String(offset));
           const res = await fetch(url.toString(), {
@@ -2415,26 +2418,25 @@
         const gameContract = CONFIG.pnlGameContract || "";
         const swapFns      = (CONFIG.pnlSwapFunctions || []).join(",");
 
-        // Sells: wallet→orice cu functie de swap
-        const sellRows = await supabaseFetchAll("tcl_transfers", {
-          sender:   `eq.${walletAddress}`,
-          function: `in.(${swapFns})`,
-          order:    "ts.desc",
-          select:   PNL_TRANSFER_SELECT
-        });
-
-        // Buys: wallet primeste TCL de la un contract DEX (orice protocol: USDC, EGLD, ONE, etc.)
-        // Contractele MVX incep cu 'erd1qqqq' (16 'q' dupa 'erd1')
-        // Excludem game contract server-side via PostgREST 'and' filter pentru a evita paginare inutila
-        const buyAndFilter = gameContract
-          ? `(sender.like.erd1qqqq*,sender.neq.${gameContract})`
-          : `(sender.like.erd1qqqq*)`;
-        const allBuyRows = await supabaseFetchAll("tcl_transfers", {
-          receiver: `eq.${walletAddress}`,
-          and:      buyAndFilter,
-          order:    "ts.desc",
-          select:   PNL_TRANSFER_SELECT
-        });
+        // Sells si Buys ruleaza in paralel pentru viteza
+        // Buy query: doua param 'sender' = AND in PostgREST (like + neq game contract)
+        const buySenderFilter = gameContract
+          ? [`like.erd1qqqq*`, `neq.${gameContract}`]
+          : `like.erd1qqqq*`;
+        const [sellRows, allBuyRows] = await Promise.all([
+          supabaseFetchAll("tcl_transfers", {
+            sender:   `eq.${walletAddress}`,
+            function: `in.(${swapFns})`,
+            order:    "ts.desc",
+            select:   PNL_TRANSFER_SELECT
+          }),
+          supabaseFetchAll("tcl_transfers", {
+            receiver: `eq.${walletAddress}`,
+            sender:   buySenderFilter,
+            order:    "ts.desc",
+            select:   PNL_TRANSFER_SELECT
+          })
+        ]);
         // Pastreaza doar contracte MVX (sender incepe cu 'erd1qqqq') si exclude self-transfer
         const buyRows = Array.isArray(allBuyRows)
           ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender !== gameContract && r.sender.startsWith("erd1qqqq"))
