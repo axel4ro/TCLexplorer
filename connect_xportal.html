@@ -1349,15 +1349,33 @@
       }
 
       // "Conecteaza xPortal" = deschide aplicatia xPortal prin deeplink
+      // Deschide deeplink-ul escapand iframe-ul (target _top) ca OS-ul sa intercepteze
+      // si sa deschida aplicatia xPortal. Pe desktop deschide intr-un tab nou.
+      function launchXPortalDeepLink(uri) {
+        const link = getXPortalDeepLink(uri);
+        if (isMobileDevice()) {
+          const a = document.createElement("a");
+          a.href = link;
+          a.target = "_top";
+          a.rel = "noreferrer";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } else {
+          window.open(link, "_blank", "noreferrer");
+        }
+      }
+
       function openXPortalApp() {
         if (state.address) return;
         if (state.pendingUri) {
-          window.location.href = getXPortalDeepLink(state.pendingUri);
+          launchXPortalDeepLink(state.pendingUri);
         } else {
           // URI inca negenerat — porneste sesiunea, apoi deschide deeplink-ul
+          setStatus("loading", "Generez sesiunea xPortal...");
           connectWallet().then(() => {
             if (state.pendingUri && !state.address) {
-              window.location.href = getXPortalDeepLink(state.pendingUri);
+              launchXPortalDeepLink(state.pendingUri);
             }
           });
         }
@@ -1367,8 +1385,13 @@
         return /iPad|iPhone|iPod/.test(navigator.userAgent || "");
       }
 
+      function isMobileDevice() {
+        return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+      }
+
+      // Universal link xPortal (MultiversX) — deschide aplicatia pe iOS + Android
       function getXPortalDeepLink(uri) {
-        return isIOS() ? `xportal://wc?uri=${encodeURIComponent(uri)}` : uri;
+        return `https://xportal.com/?wallet-connect=${encodeURIComponent(uri)}`;
       }
 
       function renderWalletConnectUri(uri) {
