@@ -2028,197 +2028,101 @@
         }
       }
 
-      async function fetchWalletTransferHistory(walletAddress) {
-        const transferMap = new Map();
-        const transactionHashes = new Set();
-        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-        let reachedListingStart = false;
-        let hitPageLimit = false;
-        let oldestTimestamp = null;
-        let completedSources = 0;
-
-        // ── Supabase: fetch DOAR swap-urile DEX (nu toate 1000+ transferuri TCL) ──────
-        // Filtrare directa: wallet↔pairAddress (sell + buy), ~10-100 randuri max
-        dom.pnlStatus.textContent = "Se cauta swap-uri in cache Supabase...";
+      // ── PNL din Supabase: calculeaza direct TCL/USDC fara blockchain scan ─────────────
+      // Returneaza { buyTcl, buyCost, sellTcl, sellReceived, tradeCount, buyCount, sellCount,
+      //              reachedListingStart, checkedSwaps, oldestTimestamp, source }
+      async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
+        if (!Array.isArray(swapEntries)) return null;
 
-        if (Array.isArray(swapEntries) && swapEntries.length > 0) {
-          // Colectam hashurile unice ale tranzactiilor root (original_tx_hash > tx_hash)
-          const rootHashSet = new Set();
-          swapEntries.forEach((entry) => {
-            const root = String(entry?.originalTxHash || entry?.txHash || "");
-            if (root && root.length === 64) rootHashSet.add(root);
-          });
+        const pair      = CONFIG.pnlPairAddress;
+        const tclId     = CONFIG.tokens.tcl.identifier;
+        const usdcId    = CONFIG.tokens.usdc.identifier;
+        const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
 
-          const timestamps = swapEntries
-            .map((e) => Number(e.timestamp))
-            .filter(Number.isFinite);
-          if (timestamps.length) {
-            oldestTimestamp = Math.min(...timestamps);
-            if (oldestTimestamp <= listingTimestamp) reachedListingStart = true;
-          }
+        // Grupeaza intrarile dupa original_tx_hash (un swap = mai multe SCR-uri)
+        const swapGroups = new Map(); // rootHash → { buyTcl, sellTcl, sellUsdc, buyUsdc, ts }
 
-          // ── Batch-fetch tranzactii complete cu operatii (TCL + USDC/EGLD) ──────────
-          // De obicei 10-100 hashuri => 1-2 requesturi MVX, ~2-4 secunde total
-          const rootHashes = Array.from(rootHashSet);
-          const batchSize = 50;
-          const fullTxMap = new Map();
-          dom.pnlStatus.textContent = `${swapEntries.length} swap-uri gasite. Se incarca ${rootHashes.length} tranzactii...`;
+        for (const entry of swapEntries) {
+          const root = String(entry.originalTxHash || entry.txHash || "");
+          if (!root) continue;
+          if (!swapGroups.has(root)) swapGroups.set(root, { buyTcl:0, buyCost:0, sellTcl:0, sellReceived:0, ts: Number(entry.timestamp)||0 });
+          const g = swapGroups.get(root);
+          if (Number(entry.timestamp) && Number(entry.timestamp) < g.ts) g.ts = Number(entry.timestamp);
 
-          for (let i = 0; i < rootHashes.length; i += batchSize) {
-            const batch = rootHashes.slice(i, i + batchSize);
-            try {
-              const txs = await fetchJson(buildApiUrl("/transactions", {
-                hashes: batch.join(","),
-                size: batch.length,
-                withOperations: "true"
-              }), {
-                retries: CONFIG.pnlMaxRetries,
-                retryDelayMs: CONFIG.pnlRetryDelayMs,
-                timeoutMs: CONFIG.pnlRequestTimeoutMs
-              });
-              if (Array.isArray(txs)) {
-                txs.forEach((tx) => {
-                  const hash = String(tx?.txHash || tx?.hash || "");
-                  if (hash) fullTxMap.set(hash, tx);
-                });
-              }
-            } catch (_) {}
-          }
+          const transfers = entry.action?.arguments?.transfers;
+          const firstT = Array.isArray(transfers) ? transfers[0] : null;
+          if (!firstT) continue;
 
-          // Lista finala: tranzactii complete (cu operatii) + SCR-uri ca fallback
-          const fullTransfers = [];
-          const seenHashes = new Set();
+          const token = String(firstT.token || firstT.identifier || "");
+          const norm  = normalizePnlTradeTransfer(firstT);
+          if (!norm) continue;
 
-          for (const tx of fullTxMap.values()) {
-            const hash = String(tx?.txHash || tx?.hash || "");
-            if (hash) { seenHashes.add(hash); fullTransfers.push(tx); transactionHashes.add(hash); }
-          }
-          swapEntries.forEach((entry, i) => {
-            const h = String(entry?.txHash || `sb:${i}`);
-            if (!seenHashes.has(h)) { seenHashes.add(h); fullTransfers.push(entry); }
-            const r = String(entry?.originalTxHash || entry?.txHash || "");
-            if (r) transactionHashes.add(r);
-          });
+          const isSellInput  = entry.sender === walletAddress && entry.receiver === pair && token === tclId;
+          const isBuyOutput  = entry.sender === pair && entry.receiver === walletAddress && token === tclId;
 
-          dom.pnlStatus.textContent = `Supabase: ${swapEntries.length} swap-uri, ${fullTxMap.size} tranzactii incarcate`;
-
-          return {
-            transfers: fullTransfers,
-            checkedTransactions: transactionHashes.size,
-            checkedLogs: fullTxMap.size,
-            reachedListingStart,
-            hitPageLimit: !reachedListingStart,
-            exhaustedHistory: reachedListingStart,
-            oldestTimestamp,
-            source: "supabase"
-          };
+          if (isSellInput)  g.sellTcl  += norm.amount;
+          if (isBuyOutput)  g.buyTcl   += norm.amount;
         }
 
-        // ── Fallback: scan direct MultiversX API ──────────────────────────────────
-        dom.pnlStatus.textContent = "Supabase gol — se scaneaza MultiversX API...";
+        // Calculeaza totaluri
+        let buyTcl = 0, buyCost = 0, sellTcl = 0, sellReceived = 0;
+        let buyCount = 0, sellCount = 0;
+        let oldestTs = Infinity;
 
-        const swapFunctionSources = CONFIG.pnlSwapFunctions.map((functionName) => ({
-          label: `metoda ${functionName}`,
-          maxPages: CONFIG.pnlSwapMaxPages,
-          params: { function: functionName }
-        }));
-        const sources = [
-          ...swapFunctionSources,
-          {
-            label: "transferurile TCL fallback",
-            maxPages: CONFIG.pnlMaxPages,
-            params: { token: CONFIG.tokens.tcl.identifier }
-          },
-          {
-            label: "wallet -> pool TCL/USDC",
-            maxPages: CONFIG.pnlPairMaxPages,
-            params: { receiver: CONFIG.pnlPairAddress }
-          },
-          {
-            label: "pool TCL/USDC -> wallet",
-            maxPages: CONFIG.pnlPairMaxPages,
-            params: { sender: CONFIG.pnlPairAddress }
-          }
-        ].filter((source) => source.maxPages > 0);
-
-        async function scanSource(source) {
-          for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex += 1) {
-            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-              from: pageIndex * CONFIG.pnlPageSize,
-              size: CONFIG.pnlPageSize,
-              status: "success",
-              order: "desc",
-              withOperations: "true",
-              ...source.params
-            }), {
-              retries: CONFIG.pnlMaxRetries,
-              retryDelayMs: CONFIG.pnlRetryDelayMs,
-              timeoutMs: CONFIG.pnlRequestTimeoutMs
-            });
-
-            if (!Array.isArray(page) || !page.length) {
-              return true;
-            }
-
-            page.forEach((entry, index) => {
-              const entryHash = String(entry?.txHash || `${getPnlRootHash(entry)}:${entry?.type || "entry"}:${entry?.timestamp || 0}:${index}`);
-              if (entryHash) transferMap.set(entryHash, entry);
-              const rootHash = getPnlRootHash(entry);
-              if (rootHash) transactionHashes.add(rootHash);
-            });
-
-            const pageTimestamps = page
-              .map((item) => Number(item?.timestamp))
-              .filter((timestamp) => Number.isFinite(timestamp));
-
-            if (pageTimestamps.length) {
-              const pageOldest = Math.min(...pageTimestamps);
-              const pageNewest = Math.max(...pageTimestamps);
-              oldestTimestamp = oldestTimestamp == null ? pageOldest : Math.min(oldestTimestamp, pageOldest);
-              if (pageOldest <= listingTimestamp) reachedListingStart = true;
-              if (pageNewest <= listingTimestamp) {
-                return true;
-              }
-            }
-
-            dom.pnlStatus.textContent = `Se citesc ${source.label}... ${transactionHashes.size.toLocaleString("ro-RO")} tranzactii verificate`;
-
-            if (page.length < CONFIG.pnlPageSize) {
-              return true;
-            }
-
-            if (pageIndex === source.maxPages - 1) {
-              hitPageLimit = true;
-              return false;
-            }
-
-            if (CONFIG.pnlPagePauseMs > 0) {
-              await wait(CONFIG.pnlPagePauseMs);
-            }
-          }
-
-          hitPageLimit = true;
-          return false;
+        for (const [, g] of swapGroups) {
+          if (g.buyTcl > 0)  { buyTcl  += g.buyTcl;  buyCount++;  }
+          if (g.sellTcl > 0) { sellTcl += g.sellTcl; sellCount++; }
+          if (g.ts && g.ts < oldestTs) oldestTs = g.ts;
         }
 
-        for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex += 1) {
-          const source = sources[sourceIndex];
-          const completed = await scanSource(source);
-          if (completed) completedSources += 1;
-          if (sourceIndex < sources.length - 1 && CONFIG.pnlSourcePauseMs > 0) {
-            await wait(CONFIG.pnlSourcePauseMs);
-          }
-        }
+        // USD: aproximatie cu pretul curent (singura sursa disponibila fara blockchain)
+        const tclPrice = readNumber(state.prices.tcl, 0);
+        buyCost       = buyTcl  * tclPrice;
+        sellReceived  = sellTcl * tclPrice;
+
+        const oldestTimestamp   = Number.isFinite(oldestTs) ? oldestTs : null;
+        const reachedListingStart = oldestTimestamp !== null && oldestTimestamp <= listingTs;
 
         return {
-          transfers: Array.from(transferMap.values()),
+          buyTcl, buyCost, sellTcl, sellReceived,
+          tradeCount: buyCount + sellCount,
+          buyCount, sellCount,
+          reachedListingStart,
+          checkedSwaps: swapEntries.length,
+          swapGroups: swapGroups.size,
+          oldestTimestamp,
+          source: "supabase"
+        };
+      }
+
+      // Pastrat pentru compatibilitate cu runPnlCheck (nu mai scaneaza blockchain)
+      async function fetchWalletTransferHistory(walletAddress) {
+        dom.pnlStatus.textContent = "Se cauta swap-uri in cache Supabase...";
+        const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
+        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        const transactionHashes = new Set();
+
+        if (!Array.isArray(swapEntries) || swapEntries.length === 0) {
+          dom.pnlStatus.textContent = "Nu exista swap-uri TCL pentru acest wallet in cache Supabase.";
+          return { transfers: [], checkedTransactions: 0, reachedListingStart: false,
+                   hitPageLimit: false, exhaustedHistory: true, oldestTimestamp: null, source: "supabase-empty" };
+        }
+
+        swapEntries.forEach(e => { const r = e.originalTxHash || e.txHash; if (r) transactionHashes.add(r); });
+        const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
+        const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
+        const reachedListingStart = oldestTimestamp !== null && oldestTimestamp <= listingTimestamp;
+
+        dom.pnlStatus.textContent = `Supabase: ${swapEntries.length} swap-uri gasite`;
+        return {
+          transfers: swapEntries,
           checkedTransactions: transactionHashes.size,
           reachedListingStart,
-          hitPageLimit,
-          exhaustedHistory: completedSources === sources.length,
+          hitPageLimit: !reachedListingStart,
+          exhaustedHistory: reachedListingStart,
           oldestTimestamp,
-          source: "api"
+          source: "supabase"
         };
       }
 
@@ -2430,256 +2334,44 @@
 
       // Scans TCL received from the game contract, then validates the root transaction.
       // This catches manager-triggered claims while excluding collateral/refund returns.
+      // ── Earned TCL: pur Supabase, fara blockchain ────────────────────────────
       async function fetchEarnedTcl(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
         if (!gameContract) return 0;
 
-        const earnFunctions = new Set([
-          "claimRewards", "claimBorrowingRewards", "claimInfinityRewards", "claimLendingRewards",
-          "withdrawBalancePrivateShop", "buyCoins", "buySft",
-          "addBonus", "changeBonus", "addSocket", "addRefinement",
-          "addCrystal", "changeCrystal", "upgradeNft",
-          "mintNft", "addStorage", "claimReferralRewards", "referral",
-          "claimManagerRewards", "depositLiquidity", "removeLiquidity"
-        ]);
-
-        // ── Supabase fast path: citeste earned direct din cache ─────────────────
         const anonKey = CONFIG.pnlSupabaseAnonKey;
-        if (anonKey && anonKey !== "SUPABASE_ANON_KEY_HERE") {
-          dom.pnlStatus.textContent = "Se calculeaza TCL earned din cache...";
-          try {
-            const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
-            url.searchParams.set("sender", `eq.${gameContract}`);
-            url.searchParams.set("receiver", `eq.${walletAddress}`);
-            url.searchParams.set("select", "original_tx_hash,action_transfers");
-            url.searchParams.set("limit", "100000");
+        if (!anonKey || anonKey === "SUPABASE_ANON_KEY_HERE") return 0;
 
-            const res = await fetch(url.toString(), {
-              headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, Accept: "application/json" },
-              signal: AbortSignal.timeout(15000)
-            });
-            if (res.ok) {
-              const rows = await res.json().catch(() => null);
-              if (Array.isArray(rows) && rows.length > 0) {
-                // Grupeaza dupa original_tx_hash pentru validarea functiei root
-                const rootMap = new Map();
-                rows.forEach(row => {
-                  const root = row.original_tx_hash;
-                  if (!root) return;
-                  if (!rootMap.has(root)) rootMap.set(root, []);
-                  rootMap.get(root).push(row);
-                });
+        dom.pnlStatus.textContent = "Se calculeaza TCL earned din cache Supabase...";
+        try {
+          const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
+          url.searchParams.set("sender", `eq.${gameContract}`);
+          url.searchParams.set("receiver", `eq.${walletAddress}`);
+          url.searchParams.set("select", "action_transfers");
+          url.searchParams.set("limit", "100000");
 
-                const rootHashes = Array.from(rootMap.keys());
-                const validRoots = new Set();
-                const batchSize = 50;
-                dom.pnlStatus.textContent = `Se valideaza ${rootHashes.length} tranzactii earned...`;
-
-                for (let i = 0; i < rootHashes.length; i += batchSize) {
-                  const batch = rootHashes.slice(i, i + batchSize);
-                  try {
-                    const txs = await fetchJson(buildApiUrl("/transactions", {
-                      hashes: batch.join(","),
-                      size: batch.length,
-                      fields: "txHash,function,status"
-                    }), { retries: 2, retryDelayMs: 1500, timeoutMs: 15000 });
-                    if (Array.isArray(txs)) {
-                      txs.forEach(tx => {
-                        if (earnFunctions.has(tx.function) && tx.status !== "fail") {
-                          validRoots.add(tx.txHash);
-                        }
-                      });
-                    }
-                  } catch (_) {}
-                }
-
-                let earnedTcl = 0;
-                for (const [root, entries] of rootMap.entries()) {
-                  if (!validRoots.has(root)) continue;
-                  for (const entry of entries) {
-                    const transfers = entry.action_transfers;
-                    if (!Array.isArray(transfers)) continue;
-                    for (const t of transfers) {
-                      if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
-                      const norm = normalizePnlTradeTransfer(t);
-                      if (norm) earnedTcl += norm.amount;
-                    }
-                  }
-                }
-                return earnedTcl;
-              }
-            }
-          } catch (_) {}
-        }
-
-        // ── Fallback: scan blockchain per functie (daca Supabase nu are date) ──
-
-        const transferGroups = new Map();
-        const seenTransfers = new Set();
-        const pageSize = Math.max(1, Number(CONFIG.pnlTokenScanPageSize) || 1000);
-        const maxPages = Math.max(1, Number(CONFIG.pnlTokenScanMaxPages) || 12);
-        const functionPageSize = 50;   // max allowed with withOperations=true
-        const functionMaxPages = 20;   // 20 * 50 = 1000 entries per function max
-        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-        const methodMatchedRootHashes = new Set();
-
-        function addEarnedTransfer(rootHash, transferKey, amount) {
-          if (!rootHash || seenTransfers.has(transferKey)) return;
-          seenTransfers.add(transferKey);
-
-          let group = transferGroups.get(rootHash);
-          if (!group) {
-            group = { amount: 0, count: 0 };
-            transferGroups.set(rootHash, group);
-          }
-          group.amount += amount;
-          group.count += 1;
-        }
-
-        function collectEarnedEntry(entry) {
-          if (String(entry?.sender || "") !== gameContract) return;
-          if (String(entry?.receiver || "") !== walletAddress) return;
-
-          const rootHash = getPnlRootHash(entry);
-          if (!rootHash || methodMatchedRootHashes.has(rootHash)) return;
-
-          const transferList = entry?.action?.arguments?.transfers;
-          const firstTransfer = Array.isArray(transferList) ? transferList[0] : null;
-          const tokenId = String(firstTransfer?.token || firstTransfer?.identifier || entry?.identifier || entry?.token || "");
-          if (tokenId !== CONFIG.tokens.tcl.identifier) return;
-
-          const value = firstTransfer?.value != null ? firstTransfer.value : entry?.value;
-          const norm = normalizePnlTradeTransfer({ token: CONFIG.tokens.tcl.identifier, value });
-          if (!norm) return;
-
-          addEarnedTransfer(rootHash, [
-            rootHash,
-            entry?.txHash || "",
-            value || ""
-          ].join("|"), norm.amount);
-        }
-
-        function collectEarnedOperations(entry) {
-          const rootHash = getPnlRootHash(entry);
-          if (!rootHash) return;
-
-          methodMatchedRootHashes.add(rootHash);
-          if (!Array.isArray(entry?.operations)) return;
-
-          for (const rawOperation of entry.operations) {
-            const operation = normalizePnlOperation(rawOperation);
-            if (!operation) continue;
-            if (operation.token !== CONFIG.tokens.tcl.identifier) continue;
-            if (operation.sender !== gameContract) continue;
-            if (operation.receiver !== walletAddress) continue;
-
-            addEarnedTransfer(rootHash, `${rootHash}|${operation.key}`, operation.amount);
-          }
-        }
-
-        async function scanEarnedSource(source) {
-          for (let pageIndex = 0; pageIndex < source.maxPages; pageIndex++) {
-            dom.pnlStatus.textContent = `Se citesc recompensele TCL (${source.label})... pag ${pageIndex + 1}`;
-
-            const page = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
-              from: pageIndex * source.pageSize,
-              size: source.pageSize,
-              status: "success",
-              order: "desc",
-              withOperations: source.withOperations ? "true" : undefined,
-              ...source.params
-            }), {
-              retries: CONFIG.pnlMaxRetries,
-              retryDelayMs: CONFIG.pnlRetryDelayMs,
-              timeoutMs: CONFIG.pnlRequestTimeoutMs
-            });
-
-            if (!Array.isArray(page) || !page.length) return;
-
-            for (const entry of page) {
-              if (source.collectOperations) {
-                collectEarnedOperations(entry);
-              } else {
-                collectEarnedEntry(entry);
-              }
-            }
-
-            const timestamps = page.map((e) => Number(e?.timestamp)).filter((t) => Number.isFinite(t));
-            if (timestamps.length && Math.max(...timestamps) <= listingTimestamp) return;
-            if (page.length < source.pageSize) return;
-            if (CONFIG.pnlPagePauseMs > 0) await wait(CONFIG.pnlPagePauseMs);
-          }
-        }
-
-        const earnedSources = [
-          ...Array.from(earnFunctions).map((functionName) => ({
-            label: `metoda ${functionName}`,
-            pageSize: functionPageSize,
-            maxPages: functionMaxPages,
-            withOperations: true,
-            collectOperations: true,
-            params: { function: functionName }
-          })),
-          {
-            label: "transferuri TCL fallback",
-            pageSize,
-            maxPages,
-            withOperations: false,
-            collectOperations: false,
-            params: {
-              token: CONFIG.tokens.tcl.identifier,
-              sender: gameContract
-            }
-          }
-        ];
-
-        for (const source of earnedSources) {
-          await scanEarnedSource(source);
-          if (CONFIG.pnlSourcePauseMs > 0) await wait(CONFIG.pnlSourcePauseMs);
-        }
-
-        const rootHashes = Array.from(transferGroups.keys());
-        const rootTransactions = new Map();
-        const batchSize = 50;
-
-        for (let index = 0; index < rootHashes.length; index += batchSize) {
-          const batch = rootHashes.slice(index, index + batchSize);
-          dom.pnlStatus.textContent = `Se valideaza sursa recompenselor TCL... ${Math.min(index + batch.length, rootHashes.length)}/${rootHashes.length}`;
-
-          const transactions = await fetchJson(buildApiUrl("/transactions", {
-            hashes: batch.join(","),
-            size: batch.length
-          }), {
-            retries: CONFIG.pnlMaxRetries,
-            retryDelayMs: CONFIG.pnlRetryDelayMs,
-            timeoutMs: CONFIG.pnlRequestTimeoutMs
+          const res = await fetch(url.toString(), {
+            headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, Accept: "application/json" },
+            signal: AbortSignal.timeout(15000)
           });
+          if (!res.ok) return 0;
+          const rows = await res.json().catch(() => null);
+          if (!Array.isArray(rows)) return 0;
 
-          if (Array.isArray(transactions)) {
-            transactions.forEach((transaction) => {
-              const hash = String(transaction?.txHash || transaction?.hash || "");
-              if (hash) rootTransactions.set(hash, transaction);
-            });
+          let earned = 0;
+          for (const row of rows) {
+            const transfers = row.action_transfers;
+            if (!Array.isArray(transfers)) continue;
+            for (const t of transfers) {
+              if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+              const norm = normalizePnlTradeTransfer(t);
+              if (norm) earned += norm.amount;
+            }
           }
-
-          if (index + batchSize < rootHashes.length && CONFIG.pnlPagePauseMs > 0) {
-            await wait(CONFIG.pnlPagePauseMs);
-          }
+          return earned;
+        } catch (_) {
+          return 0;
         }
-
-        let earnedTcl = 0;
-        for (const [rootHash, group] of transferGroups.entries()) {
-          const rootTransaction = rootTransactions.get(rootHash);
-          if (!rootTransaction) continue;
-
-          const rootFunction = String(rootTransaction?.function || rootTransaction?.action?.name || "");
-          if (!earnFunctions.has(rootFunction)) continue;
-          if (rootTransaction?.status && rootTransaction.status !== "success") continue;
-
-          earnedTcl += group.amount;
-        }
-
-        return earnedTcl;
       }
 
       function renderPnlResult(totals, historyMeta, earnedTcl = 0) {
@@ -2727,17 +2419,41 @@
 
         setPnlLoading(true);
         renderEmptyPnl();
-        dom.pnlStatus.textContent = "Se porneste scanarea PNL...";
+        dom.pnlStatus.textContent = "Se incarca datele din cache Supabase...";
 
         try {
-          const historyData = await fetchWalletTransferHistory(walletAddress);
-          const trades = parsePnlTrades(historyData.transfers, walletAddress);
-          const totals = aggregatePnlTrades(trades);
-          const earnedTcl = await fetchEarnedTcl(walletAddress);
-          renderPnlResult(totals, historyData, earnedTcl);
+          // Ruleaza in paralel: swap PNL + earned TCL (ambele din Supabase)
+          const [pnlData, earnedTcl] = await Promise.all([
+            fetchPnlFromSupabase(walletAddress),
+            fetchEarnedTcl(walletAddress)
+          ]);
 
-          if (!trades.length) {
-            dom.pnlStatus.textContent = `Nu am gasit swapuri TCL/USDC pentru walletul verificat. Tranzactii verificate: ${historyData.checkedTransactions.toLocaleString("ro-RO")}.`;
+          if (!pnlData) throw new Error("Nu s-au putut incarca datele din Supabase.");
+
+          // Construieste totals in formatul asteptat de renderPnlResult
+          const totals = {
+            tradeCount: pnlData.tradeCount,
+            buyCount:   pnlData.buyCount,
+            sellCount:  pnlData.sellCount,
+            buyTcl:     pnlData.buyTcl,
+            sellTcl:    pnlData.sellTcl,
+            buyUsd:     pnlData.buyCost,
+            sellUsd:    pnlData.sellReceived
+          };
+
+          const historyMeta = {
+            source:              "supabase",
+            reachedListingStart: pnlData.reachedListingStart,
+            hitPageLimit:        !pnlData.reachedListingStart,
+            exhaustedHistory:    pnlData.reachedListingStart,
+            checkedTransactions: pnlData.checkedSwaps,
+            oldestTimestamp:     pnlData.oldestTimestamp
+          };
+
+          renderPnlResult(totals, historyMeta, earnedTcl);
+
+          if (pnlData.tradeCount === 0) {
+            dom.pnlStatus.textContent = `Nu exista swap-uri TCL in cache pentru acest wallet. Swap-uri verificate: ${pnlData.checkedSwaps}.`;
           }
         } catch (error) {
           console.error(error);
