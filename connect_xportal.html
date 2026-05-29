@@ -661,6 +661,30 @@
       color: var(--text-muted);
     }
     .earned-popup-total span { color: var(--accent-strong); font-weight: 800; }
+
+    .earned-cat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    @media (min-width: 380px) { .earned-cat-grid { grid-template-columns: repeat(3, 1fr); } }
+    .earned-cat-card {
+      padding: 10px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.025);
+    }
+    .earned-cat-label {
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.03em; color: var(--text-soft); margin-bottom: 5px;
+    }
+    .earned-cat-value {
+      font-family: var(--font-display); font-size: 1.05rem;
+      color: var(--accent-strong); line-height: 1.1;
+    }
+    .earned-cat-value span { font-size: 0.7rem; color: var(--text-muted); }
+    .earned-cat-sub { margin-top: 4px; font-size: 0.7rem; color: var(--text-muted); line-height: 1.3; }
     .earned-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
     .earned-breakdown-table th {
       text-align: left; padding: 6px 8px 8px;
@@ -2467,6 +2491,7 @@
           const rootTcl = new Map();
           const rootFn = new Map();
           const rootTs = new Map();
+          const rootSender = new Map();  // cine a initiat tranzactia (platitorul)
           const roots = new Set();
           for (const row of rows) {
             const root = row.original_tx_hash || row.tx_hash;
@@ -2489,16 +2514,24 @@
           relatedEntries.forEach((entry) => {
             const root = entry.originalTxHash || entry.txHash;
             const fn = String(entry.function || "").trim();
-            if (root && fn && !entry.originalTxHash) rootFn.set(root, fn);
-            if (root && entry.timestamp && !entry.originalTxHash) rootTs.set(root, Number(entry.timestamp) || 0);
+            // Tranzactia root (nu SCR) ne da functia reala + cine a platit (sender)
+            if (root && !entry.originalTxHash) {
+              if (fn) rootFn.set(root, fn);
+              if (entry.timestamp) rootTs.set(root, Number(entry.timestamp) || 0);
+              if (entry.sender) rootSender.set(root, entry.sender);
+            }
           });
 
           // Agrega doar sursele earned legitime; return/refund/withdraw sunt excluse.
+          // Clasificare: cashback pe propriile achizitii (self) vs referral (de la referrals).
           const breakdown = {};
           const excludedBreakdown = {};
           const details = [];
           let total = 0;
           let excluded = 0;
+          let selfTotal = 0;     // cashback pe propriile tranzactii
+          let referralTotal = 0; // venit din referral (tranzactiile altora)
+          let rewardTotal = 0;   // reward pool / claim-uri
           for (const [root, tcl] of rootTcl) {
             const fn = rootFn.get(root) || "_other";
             const sourceInfo = getEarnedSourceInfo(fn);
@@ -2506,6 +2539,20 @@
               excluded += tcl;
               excludedBreakdown[fn] = (excludedBreakdown[fn] || 0) + tcl;
               continue;
+            }
+
+            // Clasificare self vs referral (doar pentru cashback/shop, nu pentru reward-uri claim)
+            const payer = rootSender.get(root) || "";
+            let category;
+            if (sourceInfo.kind === "reward") {
+              category = "reward";
+              rewardTotal += tcl;
+            } else if (payer && payer === walletAddress) {
+              category = "cashback";   // propria achizitie cu cod referral → cashback
+              selfTotal += tcl;
+            } else {
+              category = "referral";   // achizitia altcuiva care te are ca referral
+              referralTotal += tcl;
             }
 
             breakdown[fn] = (breakdown[fn] || 0) + tcl;
@@ -2516,13 +2563,17 @@
               amount: tcl,
               kind: sourceInfo.kind,
               rate: sourceInfo.rate,
+              category,
               timestamp: rootTs.get(root) || 0
             });
           }
 
           details.sort((left, right) => (right.timestamp || 0) - (left.timestamp || 0));
 
-          return { total, breakdown, excluded, excludedBreakdown, details };
+          return {
+            total, breakdown, excluded, excludedBreakdown, details,
+            categories: { reward: rewardTotal, cashback: selfTotal, referral: referralTotal }
+          };
         } catch (_) {
           return { total: 0, breakdown: {} };
         }
@@ -2551,7 +2602,7 @@
           const hasBreakdown = earnedAmount > 0 && Object.keys(earnedData.breakdown || {}).length > 0;
           infoBtn.style.display = hasBreakdown ? "inline-flex" : "none";
           if (hasBreakdown) {
-            infoBtn.onclick = () => showEarnedBreakdown(earnedData.breakdown, earnedAmount, earnedData.details || []);
+            infoBtn.onclick = () => showEarnedBreakdown(earnedData.breakdown, earnedAmount, earnedData.details || [], earnedData.categories || null);
           }
         }
 
@@ -2670,7 +2721,7 @@
           ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
       }
 
-      function showEarnedBreakdown(breakdown, total, details = []) {
+      function showEarnedBreakdown(breakdown, total, details = [], categories = null) {
         const overlay = document.getElementById("earnedPopupOverlay");
         const body    = document.getElementById("earnedPopupBody");
         if (!overlay || !body) return;
@@ -2682,6 +2733,27 @@
         const maxVal = entries[0]?.[1] || 1;
 
         let html = `<div class="earned-popup-total">Total earned: <span>${formatTokenAmount(total)} TCL</span></div>`;
+
+        // Sumar pe categorii: reward pool / cashback propriu / referral
+        if (categories) {
+          const cats = [
+            { key: "reward",   label: "Reward Pool",      sub: "claim-uri & daily rewards" },
+            { key: "cashback", label: "Cashback propriu", sub: "5% NFT/ItemShop, 2% Private Shop pe achizitiile tale" },
+            { key: "referral", label: "Referral",         sub: "5%/2% din tranzactiile celor invitati" }
+          ];
+          let catHtml = "";
+          for (const c of cats) {
+            const val = readNumber(categories[c.key], 0);
+            if (val <= 0.001) continue;
+            const pct = total > 0 ? (val / total * 100) : 0;
+            catHtml += `<div class="earned-cat-card">
+              <div class="earned-cat-label">${esc(c.label)}</div>
+              <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
+              <div class="earned-cat-sub">${esc(c.sub)} · ${pct.toFixed(0)}%</div>
+            </div>`;
+          }
+          if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
+        }
         html += `<table class="earned-breakdown-table">
           <thead><tr>
             <th>Functie / Metoda</th>
