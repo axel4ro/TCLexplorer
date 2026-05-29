@@ -10,11 +10,28 @@
 //   GET  /api/status              — starea sync-ului
 //   POST /api/sync?secret=XXX     — trigger manual (backfill + incremental)
 //   GET  /api/transfers?wallet=erd1...  — toate transferurile unui wallet din Supabase
+//   GET  /api/enrich?wallet=erd1...     — completeaza root tx lipsa pentru PNL
 // ============================================================
 
 const PAGE_SIZE = 50;       // max cu withOperations=true
 const PAGES_PER_CRON = 10;  // 10 pagini × 50 = 500 intrari per run (max safe: ~46/50 subrequests)
 const UPSERT_CHUNK = 200;   // cate randuri upsertam odata in Supabase
+const ROOT_ENRICH_LIMIT = 450;
+const ROOT_ENRICH_BATCH = 50;
+const TCL_GAME_CONTRACT = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+const TCL_TRANSFER_SELECT = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
+const SWAP_FUNCTIONS = [
+  "swapTokensFixedInput",
+  "swapTokensFixedOutput",
+  "multiPairSwap",
+  "multiPairSwapTokensFixedInput",
+  "swap",
+  "aggregateEsdt",
+  "aggregateEgld",
+  "xo",
+  "buySwap",
+  "composeTasks",
+];
 
 // ── CORS ────────────────────────────────────────────────────
 
@@ -56,6 +73,25 @@ async function supabaseGet(env, path, params = {}) {
   });
   if (!res.ok) throw new Error(`Supabase GET ${path}: ${res.status} ${await res.text()}`);
   return res.json();
+}
+
+async function supabaseGetAll(env, path, params = {}, pageSize = 1000) {
+  const all = [];
+  let offset = 0;
+
+  while (true) {
+    const rows = await supabaseGet(env, path, {
+      ...params,
+      limit: String(pageSize),
+      offset: String(offset),
+    });
+    if (!Array.isArray(rows) || !rows.length) break;
+    all.push(...rows);
+    if (rows.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return all;
 }
 
 async function supabaseUpsert(env, table, rows) {
@@ -141,6 +177,104 @@ function entryToRow(entry) {
       : null,
     operations: Array.isArray(entry.operations) ? entry.operations : null,
   };
+}
+
+function transactionToRow(tx) {
+  return {
+    tx_hash: tx.txHash || tx.hash,
+    original_tx_hash: null,
+    type: tx.type || "Transaction",
+    sender: tx.sender || "",
+    receiver: tx.receiver || "",
+    ts: Number(tx.timestamp) || 0,
+    function: tx.function || null,
+    status: tx.status || "success",
+    action_transfers: Array.isArray(tx.action?.arguments?.transfers)
+      ? tx.action.arguments.transfers
+      : null,
+    operations: Array.isArray(tx.operations) ? tx.operations : null,
+  };
+}
+
+function validTxHash(hash) {
+  return /^[0-9a-f]{64}$/i.test(String(hash || ""));
+}
+
+function firstTransferToken(row) {
+  const first = Array.isArray(row.action_transfers) ? row.action_transfers[0] : null;
+  return first?.token || first?.identifier || "";
+}
+
+async function fetchWalletPnlRootHashes(env, wallet) {
+  const gameContract = env.PNL_GAME_CONTRACT || TCL_GAME_CONTRACT;
+  const swapFns = SWAP_FUNCTIONS.join(",");
+
+  const [sellRows, allBuyRows, earnedRows] = await Promise.all([
+    supabaseGetAll(env, "tcl_transfers", {
+      sender: `eq.${wallet}`,
+      function: `in.(${swapFns})`,
+      order: "ts.desc",
+      select: TCL_TRANSFER_SELECT,
+    }),
+    supabaseGetAll(env, "tcl_transfers", {
+      receiver: `eq.${wallet}`,
+      sender: `neq.${gameContract}`,
+      order: "ts.desc",
+      select: TCL_TRANSFER_SELECT,
+    }),
+    supabaseGetAll(env, "tcl_transfers", {
+      sender: `eq.${gameContract}`,
+      receiver: `eq.${wallet}`,
+      order: "ts.desc",
+      select: "tx_hash,original_tx_hash",
+    }),
+  ]);
+
+  const token = env.TCL_TOKEN || "TCL-fe459d";
+  const sellRoots = sellRows
+    .filter((row) => firstTransferToken(row) === token)
+    .map((row) => row.original_tx_hash || row.tx_hash);
+  const buyRoots = allBuyRows
+    .filter((row) => row.sender !== wallet && String(row.sender || "").startsWith("erd1qqqq"))
+    .map((row) => row.original_tx_hash || row.tx_hash);
+  const earnedRoots = earnedRows.map((row) => row.original_tx_hash || row.tx_hash);
+
+  return Array.from(new Set([...sellRoots, ...buyRoots, ...earnedRoots].filter(validTxHash)));
+}
+
+async function findMissingRootHashes(env, roots) {
+  const existing = new Map();
+  for (let i = 0; i < roots.length; i += 80) {
+    const chunk = roots.slice(i, i + 80).join(",");
+    const rows = await supabaseGetAll(env, "tcl_transfers", {
+      tx_hash: `in.(${chunk})`,
+      select: "tx_hash,operations",
+    });
+    rows.forEach((row) => {
+      existing.set(row.tx_hash, Array.isArray(row.operations) && row.operations.length > 0);
+    });
+  }
+
+  return roots.filter((hash) => existing.get(hash) !== true);
+}
+
+async function enrichRootTransactions(env, rootHashes) {
+  const rows = [];
+  for (let i = 0; i < rootHashes.length; i += ROOT_ENRICH_BATCH) {
+    const batch = rootHashes.slice(i, i + ROOT_ENRICH_BATCH);
+    const txs = await mvxFetch(env, "/transactions", {
+      hashes: batch.join(","),
+      size: String(batch.length),
+      withOperations: "true",
+    });
+    if (Array.isArray(txs)) {
+      rows.push(...txs.map(transactionToRow).filter((row) => validTxHash(row.tx_hash)));
+    }
+    await sleep(120);
+  }
+
+  await supabaseUpsert(env, "tcl_transfers", rows);
+  return rows.length;
 }
 
 // ── Sync logic ───────────────────────────────────────────────
@@ -378,6 +512,33 @@ async function handleTransfers(request, env) {
   };
 }
 
+async function handleEnrich(request, env) {
+  const url = new URL(request.url);
+  const wallet = url.searchParams.get("wallet") || "";
+  if (!wallet || !wallet.startsWith("erd1")) {
+    return { error: "wallet invalid" };
+  }
+
+  const requestedLimit = parseInt(url.searchParams.get("limit") || String(ROOT_ENRICH_LIMIT), 10);
+  const limit = Math.max(1, Math.min(Number.isFinite(requestedLimit) ? requestedLimit : ROOT_ENRICH_LIMIT, ROOT_ENRICH_LIMIT));
+  const roots = await fetchWalletPnlRootHashes(env, wallet);
+  const missing = await findMissingRootHashes(env, roots);
+  const toProcess = missing.slice(0, limit);
+  const upserted = toProcess.length ? await enrichRootTransactions(env, toProcess) : 0;
+  const remaining = Math.max(0, missing.length - toProcess.length);
+
+  return {
+    ok: true,
+    wallet,
+    totalRoots: roots.length,
+    missingRoots: missing.length,
+    processed: toProcess.length,
+    upserted,
+    remaining,
+    done: remaining === 0,
+  };
+}
+
 // ── Main fetch handler ────────────────────────────────────────
 
 export default {
@@ -435,6 +596,17 @@ export default {
         return json(data, 200, env, request);
       } catch (err) {
         return json({ error: err.message }, 500, env, request);
+      }
+    }
+
+    // GET /api/enrich?wallet=erd1...&limit=450
+    if (path === "/api/enrich" && request.method === "GET") {
+      try {
+        const data = await handleEnrich(request, env);
+        if (data.error) return json(data, 400, env, request);
+        return json(data, 200, env, request);
+      } catch (err) {
+        return json({ ok: false, error: err.message }, 500, env, request);
       }
     }
 

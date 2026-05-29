@@ -2207,6 +2207,56 @@
         }
       }
 
+      async function ensurePnlSupabaseCache(walletAddress) {
+        const workerUrl = CONFIG.pnlSyncWorkerUrl;
+        if (!workerUrl || workerUrl.includes("workers.dev") === false) return null;
+
+        let lastResult = null;
+        let totalUpserted = 0;
+        const maxPasses = 10;
+
+        for (let pass = 0; pass < maxPasses; pass += 1) {
+          const url = new URL(`${workerUrl}/api/enrich`);
+          url.searchParams.set("wallet", walletAddress);
+          url.searchParams.set("limit", "450");
+
+          dom.pnlStatus.textContent = pass === 0
+            ? "Se completeaza cache-ul Supabase pentru wallet..."
+            : `Se completeaza cache-ul Supabase... ${totalUpserted.toLocaleString("ro-RO")} tranzactii root salvate`;
+
+          const res = await fetch(url.toString(), {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(70000)
+          }).catch(() => null);
+
+          if (!res || !res.ok) {
+            throw new Error("Nu s-a putut completa cache-ul Supabase pentru acest wallet.");
+          }
+
+          const data = await res.json().catch(() => null);
+          if (!data?.ok) {
+            throw new Error(data?.error || "Cache-ul Supabase nu a putut fi completat.");
+          }
+
+          lastResult = data;
+          totalUpserted += Math.max(0, Number(data.upserted) || 0);
+
+          const remaining = Math.max(0, Number(data.remaining) || 0);
+          const processed = Math.max(0, Number(data.processed) || 0);
+          if (data.done || remaining === 0 || processed === 0) {
+            return { ...data, totalUpserted };
+          }
+
+          await wait(250);
+        }
+
+        if (lastResult && Number(lastResult.remaining) > 0) {
+          throw new Error("Cache-ul Supabase inca se completeaza pentru acest wallet. Incearca din nou in cateva secunde.");
+        }
+
+        return lastResult ? { ...lastResult, totalUpserted } : null;
+      }
+
       // PNL: calculeaza swap-urile doar din cache-ul Supabase.
       async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
@@ -2477,6 +2527,8 @@
         dom.pnlStatus.textContent = "Se incarca datele din cache Supabase...";
 
         try {
+          await ensurePnlSupabaseCache(walletAddress);
+
           // Ruleaza in paralel: swap PNL + earned TCL (ambele din Supabase)
           const [pnlData, earnedTcl] = await Promise.all([
             fetchPnlFromSupabase(walletAddress),
