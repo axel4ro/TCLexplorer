@@ -400,6 +400,7 @@
         TCL Token
       </h2>
       <button type="button" class="token-flow-link" onclick="openFlowPage()" aria-label="Open TCL Flow Chart">Flow</button>
+      <button type="button" class="token-flow-link" onclick="openPnlCheckPage()" aria-label="Open PNL Check">PNL Check</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
@@ -2770,6 +2771,16 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true,
     readyFallbackMs: 120000
   },
+  "pnl-check": {
+    src: "connect_xportal.html",
+    title: "PNL Check",
+    navId: "btn-token",
+    routeKey: "pnl-check",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing PNL Check & wallet balances.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 20000
+  },
   signal: {
     src: "signal.html",
     title: "Signal",
@@ -5015,6 +5026,11 @@ function closeAprCalculator() {
 
 function openFlowPage() {
   const route = INTERNAL_PAGE_ROUTES.flow;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openPnlCheckPage() {
+  const route = INTERNAL_PAGE_ROUTES["pnl-check"];
   openInternalPage(route.src, route.title, route);
 }
 

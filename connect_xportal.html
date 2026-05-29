@@ -2887,6 +2887,16 @@
           dom.pnlAddressInput.dataset.mode = "manual";
           syncLoadingState();
         });
+
+        // Anunta pagina parinte (index.html) ca embed-ul e gata → ascunde splash-ul
+        notifyParentReady();
+      }
+
+      function notifyParentReady() {
+        if (window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); }
+          catch (_) {}
+        }
       }
 
       boot();
