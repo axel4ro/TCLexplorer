@@ -2416,6 +2416,7 @@
 
       // ── Earned TCL: Supabase + breakdown complet pe functii ─────────────────────
       // Doar reward-uri reale si cashback/referral. Return/refund/withdraw nu intra in Earned.
+      // Reward-uri claim (borrow, lending, infinity, staking, auto-claim)
       const EARNED_REWARD_FNS = new Set([
         "claimRewards",
         "claimBorrowingRewards",
@@ -2423,8 +2424,10 @@
         "claimInfinityRewards",
         "claimReferralRewards",
         "claimManagerRewards",
-        "referral"
+        "referral",
+        "addDaysAutoClaim"
       ]);
+      // Cashback/referral 5% pe interactiuni NFT + ItemShop (buyCoins/buySft)
       const EARNED_CASHBACK_5_FNS = new Set([
         "buyCoins",
         "buySft",
@@ -2438,12 +2441,14 @@
         "addRefinement",
         "addStorage"
       ]);
-      const EARNED_CASHBACK_2_FNS = new Set(["addBalancePrivateShop"]);
+      // Private Shop: withdrawBalancePrivateShop distribuie TCL (vanzator + referral 2%).
+      // NU addBalancePrivateShop (acela e DEPOZIT — wallet-ul trimite TCL, nu primeste).
+      const EARNED_CASHBACK_2_FNS = new Set(["withdrawBalancePrivateShop"]);
 
       function getEarnedSourceInfo(fn) {
         if (EARNED_REWARD_FNS.has(fn)) return { kind: "reward", rate: "reward" };
         if (EARNED_CASHBACK_5_FNS.has(fn)) return { kind: "cashback", rate: "5%" };
-        if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "cashback", rate: "2%" };
+        if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "shop", rate: "shop" };
         return null;
       }
 
@@ -2644,7 +2649,8 @@
         claimReferralRewards:      "Referral Rewards",
         referral:                  "Referral Rewards",
         claimManagerRewards:       "Manager Rewards",
-        addBalancePrivateShop:     "Private Shop 2%",
+        addDaysAutoClaim:          "Auto-Claim Rewards",
+        withdrawBalancePrivateShop:"Private Shop (vanzare + 2% referral)",
         buyCoins:                  "Buy Coins 5%",
         buySft:                    "Buy SFT 5%",
         upgradeNft:                "Upgrade NFT 5%",
