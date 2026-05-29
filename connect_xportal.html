@@ -972,7 +972,7 @@
 
   <main class="page-shell">
     <header class="topbar">
-      <a class="brand-link" href="index.html" aria-label="TCL Explorer">
+      <a class="brand-link" id="brandLink" href="index.html" aria-label="TCL Explorer">
         <img src="images/thecursedland.png" alt="">
         <span>TCL Explorer</span>
       </a>
@@ -3214,6 +3214,8 @@
         if (dom.copyUriBtn) dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
         if (dom.cancelPairingBtn) dom.cancelPairingBtn.addEventListener("click", cancelPairing);
         dom.pnlForm.addEventListener("submit", runPnlCheck);
+        const brandLink = document.getElementById("brandLink");
+        if (brandLink) brandLink.addEventListener("click", goBackToExplorer);
         initEarnedPopup();
         dom.pnlAddressInput.addEventListener("input", () => {
           dom.pnlAddressInput.dataset.mode = "manual";
@@ -3228,6 +3230,21 @@
         if (window.parent && window.parent !== window) {
           try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); }
           catch (_) {}
+        }
+      }
+
+      // Brand "TCL Explorer": cand pagina e embed in index.html (iframe), nu incarca
+      // index.html in interiorul iframe-ului (ar da doua pagini suprapuse). In schimb
+      // cere parintelui sa inchida embed-ul si sa revina la pagina TCL Token — la fel
+      // ca butoanele "Back to TCL Token" din celelalte pagini.
+      function goBackToExplorer(event) {
+        if (window.parent && window.parent !== window) {
+          if (event) event.preventDefault();
+          try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          } catch (_) {
+            window.location.href = "index.html#token";
+          }
         }
       }
 
