@@ -1,5 +1,6 @@
 (function () {
   const SOURCE_TEXT = new WeakMap();
+  const RENDERED_TEXT = new WeakMap();
   const SOURCE_ATTR = new WeakMap();
   const TEXT_SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"]);
   const ATTRS = ["placeholder", "title", "aria-label", "alt", "value"];
@@ -30,13 +31,17 @@
     const trimmed = raw.trim();
     if (!trimmed || !/[A-Za-z]/.test(trimmed)) return;
 
-    if (!SOURCE_TEXT.has(node)) SOURCE_TEXT.set(node, trimmed);
+    const lastRendered = RENDERED_TEXT.get(node);
+    if (!SOURCE_TEXT.has(node) || (lastRendered && trimmed !== lastRendered)) {
+      SOURCE_TEXT.set(node, trimmed);
+    }
     const source = SOURCE_TEXT.get(node);
     const translated = translateSource(source, lang);
     if (translated === source && lang !== "en") return;
 
     const nextValue = raw.replace(trimmed, translated);
     if (nextValue !== raw) node.nodeValue = nextValue;
+    RENDERED_TEXT.set(node, translated);
   }
 
   function getAttrSources(element) {

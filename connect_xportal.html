@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Balanta xPortal - TCL Explorer</title>
+  <title>xPortal Balance - TCL Explorer</title>
   <meta name="theme-color" content="#07080c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -924,7 +924,7 @@
   <div class="page-loading" id="balanceOverlay" aria-hidden="true">
     <div class="loading-dialog" role="status" aria-live="polite">
       <span class="loading-spinner" aria-hidden="true"></span>
-      <span id="pageOverlayText">Se actualizeaza balanta...</span>
+      <span id="pageOverlayText">Updating balance...</span>
     </div>
   </div>
 
@@ -935,7 +935,7 @@
         <span>TCL Explorer</span>
       </a>
       <div class="topbar-actions">
-        <button class="btn btn-danger" id="disconnectBtn" type="button" hidden>Deconecteaza</button>
+        <button class="btn btn-danger" id="disconnectBtn" type="button" hidden>Disconnect</button>
       </div>
     </header>
 
@@ -946,27 +946,27 @@
           <span>xPortal</span>
         </div>
         <div>
-          <h1 id="pageTitle">Balanta xPortal</h1>
-          <p class="hero-copy">Conecteaza xPortal si vezi balanta pentru EGLD, USDC si TCL, cu valoarea estimata in dolari langa amount.</p>
+          <h1 id="pageTitle">xPortal Balance</h1>
+          <p class="hero-copy">Connect xPortal and view your EGLD, USDC and TCL balances, with the estimated dollar value next to each amount.</p>
         </div>
         <div class="hero-actions" id="heroActions"></div>
         <div class="status-line" role="status" aria-live="polite">
           <span class="status-dot" aria-hidden="true"></span>
-          <span id="statusText">Neconectat</span>
+          <span id="statusText">Disconnected</span>
         </div>
       </div>
 
-      <aside class="connect-aside" id="connectAside" aria-label="Conectare xPortal">
+      <aside class="connect-aside" id="connectAside" aria-label="Connect xPortal">
         <!-- QR vizibil cat timp NU esti conectat -->
         <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect QR">
-          <div class="eyebrow">Scaneaza cu xPortal</div>
+          <div class="eyebrow">Scan with xPortal</div>
           <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code"></div>
           <!-- Conecteaza = link real (deeplink) sub QR — se taseaza direct pe mobil -->
           <div class="qr-connect-actions">
-            <a class="btn btn-connect" id="connectBtn" target="_top" rel="noreferrer" href="#" aria-label="Conecteaza xPortal">Conecteaza xPortal</a>
-            <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Instaleaza xPortal</a>
+            <a class="btn btn-connect" id="connectBtn" target="_top" rel="noreferrer" href="#" aria-label="Connect xPortal">Connect xPortal</a>
+            <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Install xPortal</a>
           </div>
-          <p class="small-note" id="qrNote">Scaneaza QR-ul cu xPortal, sau apasa butonul albastru pe telefon.</p>
+          <p class="small-note" id="qrNote">Scan the QR with xPortal, or tap the blue button on your phone.</p>
           <div hidden aria-hidden="true">
             <a id="xportalDeepLink" href="#" rel="noreferrer"></a>
             <code id="wcUriText"></code>
@@ -978,8 +978,8 @@
         <!-- Adresa conectata apare in locul QR-ului dupa conectare -->
         <aside class="address-panel" id="addressPanel" aria-label="Wallet address" hidden>
           <div>
-            <div class="eyebrow">Adresa conectata</div>
-            <code class="address-value" id="addressText">Neconectat</code>
+            <div class="eyebrow">Connected address</div>
+            <code class="address-value" id="addressText">Disconnected</code>
           </div>
           <div class="address-actions">
             <button class="btn" id="copyBtn" type="button">Copy</button>
@@ -993,7 +993,7 @@
       <div class="panel-head">
         <div>
           <h2 class="panel-title" id="pnlTitle">PNL Check</h2>
-          <p class="panel-subtitle">Swapuri TCL evaluate in USDC $ pentru walletul selectat.</p>
+          <p class="panel-subtitle">TCL swaps valued in USDC $ for the selected wallet.</p>
         </div>
       </div>
 
@@ -1027,38 +1027,38 @@
         <article class="pnl-card">
           <div class="pnl-card-header">
             <p class="pnl-label">Earned TCL $</p>
-            <button class="pnl-info-btn" id="earnedInfoBtn" title="Detalii surse Earned TCL" style="display:none">ⓘ</button>
+            <button class="pnl-info-btn" id="earnedInfoBtn" title="Earned TCL source details" style="display:none">ⓘ</button>
           </div>
           <p class="pnl-value" id="pnlEarnedTcl">--</p>
           <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
         </article>
       </div>
-      <p class="pnl-status" id="pnlStatus">Conecteaza xPortal pentru PNL Check.</p>
+      <p class="pnl-status" id="pnlStatus">Connect xPortal for PNL Check.</p>
     </section>
 
     <section class="summary-grid" aria-label="Portfolio summary">
       <article class="summary-item">
-        <p class="summary-label">Total estimat</p>
+        <p class="summary-label">Estimated total</p>
         <p class="summary-value" id="totalUsd">--</p>
         <p class="summary-meta">EGLD + USDC + TCL</p>
       </article>
       <article class="summary-item">
-        <p class="summary-label">Pret TCL</p>
+        <p class="summary-label">TCL price</p>
         <p class="summary-value" id="tclPrice">--</p>
-        <p class="summary-meta">Sursa: DexScreener / MultiversX</p>
+        <p class="summary-meta">Source: DexScreener / MultiversX</p>
       </article>
       <article class="summary-item">
-        <p class="summary-label">Ultimul update</p>
+        <p class="summary-label">Last update</p>
         <p class="summary-value" id="updatedAt">--</p>
-        <p class="summary-meta">Date live din API</p>
+        <p class="summary-meta">Live API data</p>
       </article>
     </section>
 
     <section class="balances-panel" aria-labelledby="balancesTitle">
       <div class="panel-head">
         <div>
-          <h2 class="panel-title" id="balancesTitle">Balante</h2>
-          <p class="panel-subtitle">Amount-ul tokenului si valoarea aproximativa in USD.</p>
+          <h2 class="panel-title" id="balancesTitle">Balances</h2>
+          <p class="panel-subtitle">Token amount and approximate USD value.</p>
         </div>
       </div>
 
@@ -1076,7 +1076,7 @@
             <p class="usd-value" data-token-usd="egld">--</p>
           </div>
           <div class="token-meta">
-            <div class="meta-row"><span>Pret</span><span data-token-price="egld">--</span></div>
+            <div class="meta-row"><span>Price</span><span data-token-price="egld">--</span></div>
             <div class="meta-row"><span>Token</span><span>EGLD</span></div>
           </div>
         </article>
@@ -1094,7 +1094,7 @@
             <p class="usd-value" data-token-usd="usdc">--</p>
           </div>
           <div class="token-meta">
-            <div class="meta-row"><span>Pret</span><span data-token-price="usdc">--</span></div>
+            <div class="meta-row"><span>Price</span><span data-token-price="usdc">--</span></div>
             <div class="meta-row"><span>Token</span><span>USDC-c76f1f</span></div>
           </div>
         </article>
@@ -1112,7 +1112,7 @@
             <p class="usd-value" data-token-usd="tcl">--</p>
           </div>
           <div class="token-meta">
-            <div class="meta-row"><span>Pret</span><span data-token-price="tcl">--</span></div>
+            <div class="meta-row"><span>Price</span><span data-token-price="tcl">--</span></div>
             <div class="meta-row"><span>Token</span><span>TCL-fe459d</span></div>
           </div>
         </article>
@@ -1123,17 +1123,20 @@
     <div class="earned-popup-overlay" id="earnedPopupOverlay">
       <div class="earned-popup">
         <div class="earned-popup-head">
-          <h3>Surse Earned TCL</h3>
+          <h3>Earned TCL Sources</h3>
           <button class="earned-popup-close" id="earnedPopupClose">✕</button>
         </div>
         <div class="earned-popup-body" id="earnedPopupBody">
-          <p style="color:var(--text-muted);font-size:0.88rem">Se incarca...</p>
+          <p style="color:var(--text-muted);font-size:0.88rem">Loading...</p>
         </div>
       </div>
     </div>
 
   </main>
 
+  <script src="lang/page-common.bundle.js?v=20260515-3"></script>
+  <script src="lang/connect-xportal.bundle.js?v=20260529-1"></script>
+  <script src="js/page-i18n.js?v=20260529-1"></script>
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
   <script>
@@ -1244,9 +1247,77 @@
         pnlStatus: document.getElementById("pnlStatus")
       };
 
-      function setStatus(kind, message) {
+      const SUPPORTED_LANGS = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
+      const LOCALE_BY_LANG = {
+        en: "en-US",
+        ro: "ro-RO",
+        tr: "tr-TR",
+        de: "de-DE",
+        es: "es-ES",
+        fr: "fr-FR",
+        it: "it-IT",
+        pl: "pl-PL",
+        pt: "pt-PT"
+      };
+      const dynamicText = new Map();
+      let activeLang = normalizePageLang(new URLSearchParams(location.search).get("lang") || localStorage.getItem("lang") || navigator.language || "en");
+
+      function normalizePageLang(lang) {
+        const raw = String(lang || "en").toLowerCase();
+        if (SUPPORTED_LANGS.includes(raw)) return raw;
+        const base = raw.split("-")[0];
+        return SUPPORTED_LANGS.includes(base) ? base : "en";
+      }
+
+      function getLocale() {
+        return LOCALE_BY_LANG[activeLang] || LOCALE_BY_LANG.en;
+      }
+
+      function translateText(source, params = {}) {
+        const raw = String(source || "");
+        const dict = window.TCL_PAGE_I18N?.[activeLang] || {};
+        const translated = activeLang === "en" ? raw : (dict[raw] || raw);
+        return translated.replace(/\{(\w+)\}/g, (_, key) => (
+          Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`
+        ));
+      }
+
+      function setDynamicText(element, source, params = {}) {
+        if (!element) return;
+        dynamicText.set(element, { source, params });
+        element.textContent = translateText(source, params);
+      }
+
+      function refreshDynamicText() {
+        document.documentElement.lang = activeLang;
+        dynamicText.forEach(({ source, params }, element) => {
+          if (document.documentElement.contains(element)) {
+            element.textContent = translateText(source, params);
+          }
+        });
+        syncPageOverlay();
+      }
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.type !== "tcl:set-lang") return;
+        activeLang = normalizePageLang(data.lang);
+        refreshDynamicText();
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== "lang" || !event.newValue) return;
+        activeLang = normalizePageLang(event.newValue);
+        refreshDynamicText();
+      });
+
+      function setStatus(kind, message, params = {}) {
         document.body.dataset.state = kind;
-        dom.statusText.textContent = message;
+        setDynamicText(dom.statusText, message, params);
+      }
+
+      function setPnlStatus(message, params = {}) {
+        setDynamicText(dom.pnlStatus, message, params);
       }
 
       function updatePnlFilterHref(address) {
@@ -1296,7 +1367,7 @@
 
       function syncPageOverlay() {
         const isActive = state.balanceLoading || state.pnlLoading;
-        dom.pageOverlayText.textContent = state.pnlLoading ? "Se calculeaza PNL..." : "Se actualizeaza balanta...";
+        setDynamicText(dom.pageOverlayText, state.pnlLoading ? "Calculating PNL..." : "Updating balance...");
         dom.balanceOverlay.classList.toggle("is-active", isActive);
         dom.balanceOverlay.setAttribute("aria-hidden", String(!isActive));
         document.body.classList.toggle("is-balance-loading", isActive);
@@ -1336,7 +1407,7 @@
       async function getSignClient() {
         const projectId = getConfiguredProjectId();
         if (!projectId) {
-          throw new Error("Conexiunea WalletConnect nu este configurata.");
+          throw new Error("WalletConnect connection is not configured.");
         }
         if (state.signClient && state.signClientProjectId === projectId) {
           return state.signClient;
@@ -1344,7 +1415,7 @@
 
         const SignClient = getWalletConnectGlobal();
         if (!SignClient?.init) {
-          throw new Error("WalletConnect nu s-a incarcat. Verifica conexiunea la internet.");
+          throw new Error("WalletConnect did not load. Check your internet connection.");
         }
 
         state.signClient = await SignClient.init({
@@ -1364,7 +1435,7 @@
           renderAddress();
           renderEmptyBalances();
           renderEmptyPnl();
-          setStatus("idle", "Sesiunea xPortal a fost inchisa.");
+          setStatus("idle", "The xPortal session was closed.");
         });
         return state.signClient;
       }
@@ -1419,7 +1490,7 @@
         }
         // URI inca negenerat — blocheaza navigarea, genereaza sesiunea, apoi deschide deeplink
         if (event) event.preventDefault();
-        setStatus("loading", "Generez sesiunea xPortal...");
+        setStatus("loading", "Generating xPortal session...");
         connectWallet().then(() => {
           if (state.pendingUri && !hasConnectedWallet()) {
             launchXPortalDeepLink(state.pendingUri);
@@ -1465,7 +1536,7 @@
         }
 
         if (!window.QRCode) {
-          throw new Error("QR library nu s-a incarcat.");
+          throw new Error("The QR library did not load.");
         }
 
         new window.QRCode(dom.qrCode, {
@@ -1493,13 +1564,13 @@
         updateConnectionView();
 
         if (!projectId) {
-          setStatus("error", "Conexiunea WalletConnect nu este configurata.");
+          setStatus("error", "WalletConnect connection is not configured.");
           return;
         }
 
         const runId = ++state.connectionRunId;
         setConnectionLoading(true);
-        setStatus("loading", "Generez sesiunea WalletConnect...");
+        setStatus("loading", "Generating WalletConnect session...");
 
         try {
           const client = await getSignClient();
@@ -1514,18 +1585,18 @@
           });
 
           if (!uri) {
-            throw new Error("WalletConnect nu a returnat URI pentru QR.");
+            throw new Error("WalletConnect did not return a URI for the QR.");
           }
 
           renderWalletConnectUri(uri);
-          setStatus("loading", "Scaneaza QR-ul cu xPortal si aproba conexiunea.");
+          setStatus("loading", "Scan the QR with xPortal and approve the connection.");
 
           const session = await approval();
           if (runId !== state.connectionRunId) return;
 
           const address = extractAddressFromSession(session);
           if (!address) {
-            throw new Error("Nu am primit o adresa MultiversX valida din xPortal.");
+            throw new Error("xPortal did not return a valid MultiversX address.");
           }
 
           state.address = address;
@@ -1538,12 +1609,12 @@
           hideQrPanel();
           renderAddress();
           setConnectionLoading(false);
-          setStatus("loading", `Conectat prin xPortal. Se actualizeaza balanta pentru ${truncateAddress(address)}...`);
+          setStatus("loading", "Connected with xPortal. Updating balance for {address}...", { address: truncateAddress(address) });
           await loadBalances();
         } catch (error) {
           console.error(error);
           if (runId === state.connectionRunId) {
-            setStatus("error", error?.message || "Conectarea xPortal a esuat.");
+            setStatus("error", error?.message || "xPortal connection failed.");
           }
         } finally {
           if (runId === state.connectionRunId) {
@@ -1577,7 +1648,7 @@
         renderAddress();
         renderEmptyBalances();
         renderEmptyPnl();
-        setStatus("idle", "Neconectat");
+        setStatus("idle", "Disconnected");
         // Regenereaza QR-ul pentru o noua conectare
         connectWallet();
       }
@@ -1594,14 +1665,18 @@
       }
 
       function truncateAddress(address) {
-        if (!address) return "Neconectat";
+        if (!address) return translateText("Disconnected");
         return `${address.slice(0, 12)}...${address.slice(-10)}`;
       }
 
       function renderAddress() {
         const address = state.address;
         const connected = hasConnectedWallet();
-        dom.addressText.textContent = connected ? address : "Neconectat";
+        if (connected) {
+          dynamicText.delete(dom.addressText);
+          dom.addressText.textContent = address;
+        }
+        else setDynamicText(dom.addressText, "Disconnected");
         dom.heroActions.hidden = connected;
         updateConnectionView();
         dom.copyBtn.disabled = !connected;
@@ -1615,7 +1690,7 @@
         if (!connected) {
           dom.pnlAddressInput.value = "";
           dom.pnlAddressInput.dataset.mode = "auto";
-          dom.pnlStatus.textContent = "Conecteaza xPortal pentru PNL Check.";
+          setPnlStatus("Connect xPortal for PNL Check.");
         }
         if (dom.refreshBtn) dom.refreshBtn.disabled = !connected || state.loading;
         dom.explorerLink.href = connected
@@ -1628,9 +1703,9 @@
         if (!hasConnectedWallet()) return;
         try {
           await navigator.clipboard.writeText(state.address);
-          setStatus("ready", `Copiat: ${truncateAddress(state.address)}`);
+          setStatus("ready", "Copied: {address}", { address: truncateAddress(state.address) });
         } catch (_) {
-          setStatus("error", "Nu am putut copia adresa in clipboard.");
+          setStatus("error", "Could not copy the address to clipboard.");
         }
       }
 
@@ -1652,7 +1727,7 @@
         const maxRetries = Math.max(0, Number(options.retries) || 0);
         const retryDelayMs = Math.max(0, Number(options.retryDelayMs ?? CONFIG.pnlRetryDelayMs) || 0);
         const timeoutMs = Math.max(1000, Number(options.timeoutMs ?? CONFIG.requestTimeoutMs) || CONFIG.requestTimeoutMs);
-        const timeoutMessage = options.timeoutMessage || "API timeout. Am asteptat prea mult raspunsul.";
+        const timeoutMessage = options.timeoutMessage || "API timeout. The response took too long.";
 
         for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
           const controller = new AbortController();
@@ -1694,7 +1769,7 @@
           }
         }
 
-        throw new Error("Cererea API a esuat dupa retry.");
+        throw new Error("The API request failed after retries.");
       }
 
       function readNumber(value, fallback = 0) {
@@ -1766,7 +1841,7 @@
       function formatUsd(value) {
         const amount = readNumber(value, 0);
         const decimals = Math.abs(amount) < 1 && amount !== 0 ? 4 : 2;
-        return new Intl.NumberFormat("en-US", {
+        return new Intl.NumberFormat(getLocale(), {
           style: "currency",
           currency: "USD",
           minimumFractionDigits: decimals,
@@ -1777,7 +1852,7 @@
       function formatPrice(value) {
         const amount = readNumber(value, 0);
         const decimals = amount > 0 && amount < 0.01 ? 8 : 4;
-        return new Intl.NumberFormat("en-US", {
+        return new Intl.NumberFormat(getLocale(), {
           style: "currency",
           currency: "USD",
           minimumFractionDigits: decimals,
@@ -1788,7 +1863,7 @@
       function formatTokenAmount(value) {
         const amount = readNumber(value, 0);
         const decimals = Math.abs(amount) < 1000 && amount !== 0 ? 4 : 2;
-        return new Intl.NumberFormat("en-US", {
+        return new Intl.NumberFormat(getLocale(), {
           minimumFractionDigits: 0,
           maximumFractionDigits: decimals
         }).format(amount);
@@ -1828,14 +1903,14 @@
 
       function renderEmptyPnl() {
         dom.pnlBoughtTcl.textContent = "--";
-        dom.pnlBoughtUsd.textContent = "Cost: --";
+        setDynamicText(dom.pnlBoughtUsd, "Cost: --");
         dom.pnlSoldTcl.textContent = "--";
-        dom.pnlSoldUsd.textContent = "Received: --";
+        setDynamicText(dom.pnlSoldUsd, "Received: --");
         dom.pnlNetUsd.textContent = "--";
         dom.pnlNetUsd.classList.remove("is-positive", "is-negative");
-        dom.pnlTradeCount.textContent = "Trades: --";
+        setDynamicText(dom.pnlTradeCount, "Trades: --");
         dom.pnlEarnedTcl.textContent = "--";
-        dom.pnlEarnedUsd.textContent = "Value: --";
+        setDynamicText(dom.pnlEarnedUsd, "Value: --");
       }
 
       function getTokenByIdentifier(tokens, identifier) {
@@ -1846,7 +1921,7 @@
         if (!state.address || state.balanceLoading) return;
 
         setBalanceLoading(true);
-        setStatus("loading", "Se citesc balantele...");
+        setStatus("loading", "Reading balances...");
 
         try {
           await fetchPrices();
@@ -1883,16 +1958,16 @@
 
           dom.totalUsd.textContent = formatUsd(total);
           dom.tclPrice.textContent = formatPrice(state.prices.tcl);
-          dom.updatedAt.textContent = new Intl.DateTimeFormat("ro-RO", {
+          dom.updatedAt.textContent = new Intl.DateTimeFormat(getLocale(), {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit"
           }).format(new Date());
 
-          setStatus("ready", `Balante actualizate pentru ${truncateAddress(state.address)}`);
+          setStatus("ready", "Balances updated for {address}", { address: truncateAddress(state.address) });
         } catch (error) {
           console.error(error);
-          setStatus("error", "Nu am putut citi balantele. Reconecteaza xPortal si incearca din nou.");
+          setStatus("error", "Could not read balances. Reconnect xPortal and try again.");
         } finally {
           setBalanceLoading(false);
           renderAddress();
@@ -2389,9 +2464,13 @@
           url.searchParams.set("limit", "300");
           url.searchParams.set("cursor", String(cursor));
 
-          dom.pnlStatus.textContent = pass === 0
-            ? "Se completeaza cache-ul Supabase pentru wallet..."
-            : `Se completeaza cache-ul Supabase... ${totalUpserted.toLocaleString("ro-RO")} tranzactii root salvate`;
+          if (pass === 0) {
+            setPnlStatus("Completing the Supabase cache for this wallet...");
+          } else {
+            setPnlStatus("Completing the Supabase cache... {count} root transactions saved", {
+              count: totalUpserted.toLocaleString(getLocale())
+            });
+          }
 
           const res = await fetch(url.toString(), {
             headers: { Accept: "application/json" },
@@ -2399,12 +2478,12 @@
           }).catch(() => null);
 
           if (!res || !res.ok) {
-            throw new Error("Nu s-a putut completa cache-ul Supabase pentru acest wallet.");
+            throw new Error("Could not complete the Supabase cache for this wallet.");
           }
 
           const data = await res.json().catch(() => null);
           if (!data?.ok) {
-            throw new Error(data?.error || "Cache-ul Supabase nu a putut fi completat.");
+            throw new Error(data?.error || "The Supabase cache could not be completed.");
           }
 
           lastResult = data;
@@ -2416,7 +2495,7 @@
             return { ...data, totalUpserted };
           }
           if (nextCursor <= cursor) {
-            throw new Error("Cache-ul Supabase nu a putut avansa pentru acest wallet.");
+            throw new Error("The Supabase cache could not advance for this wallet.");
           }
 
           cursor = nextCursor;
@@ -2424,7 +2503,7 @@
         }
 
         if (lastResult && Number(lastResult.remaining) > 0) {
-          throw new Error("Cache-ul Supabase inca se completeaza pentru acest wallet. Incearca din nou in cateva secunde.");
+          throw new Error("The Supabase cache is still completing for this wallet. Try again in a few seconds.");
         }
 
         return lastResult ? { ...lastResult, totalUpserted } : null;
@@ -2445,7 +2524,9 @@
                    reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
         }
 
-        dom.pnlStatus.textContent = `${swapEntries.length} swap-uri gasite in cache Supabase. Se calculeaza PNL...`;
+        setPnlStatus("{count} swaps found in Supabase cache. Calculating PNL...", {
+          count: swapEntries.length.toLocaleString(getLocale())
+        });
 
         const rootHashes = Array.from(new Set(swapEntries.map((entry) => entry.originalTxHash || entry.txHash).filter(Boolean)));
         const relatedEntries = await fetchPnlEntriesByRootHashes(rootHashes);
@@ -2483,13 +2564,13 @@
 
       // Pastrat pentru compatibilitate cu runPnlCheck (nu mai scaneaza blockchain)
       async function fetchWalletTransferHistory(walletAddress) {
-        dom.pnlStatus.textContent = "Se cauta swap-uri in cache Supabase...";
+        setPnlStatus("Searching for swaps in Supabase cache...");
         const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
         const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         const transactionHashes = new Set();
 
         if (!Array.isArray(swapEntries) || swapEntries.length === 0) {
-          dom.pnlStatus.textContent = "Nu exista swap-uri TCL pentru acest wallet in cache Supabase.";
+          setPnlStatus("No TCL swaps exist for this wallet in Supabase cache.");
           return { transfers: [], checkedTransactions: 0, reachedListingStart: false,
                    hitPageLimit: false, exhaustedHistory: true, oldestTimestamp: null, source: "supabase-empty" };
         }
@@ -2499,7 +2580,9 @@
         const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
         const reachedListingStart = oldestTimestamp !== null && oldestTimestamp <= listingTimestamp;
 
-        dom.pnlStatus.textContent = `Supabase: ${swapEntries.length} swap-uri gasite`;
+        setPnlStatus("Supabase: {count} swaps found", {
+          count: swapEntries.length.toLocaleString(getLocale())
+        });
         return {
           transfers: swapEntries,
           checkedTransactions: transactionHashes.size,
@@ -2557,11 +2640,11 @@
           retries: 1,
           retryDelayMs: 1500,
           timeoutMs: 60000,
-          timeoutMessage: "Endpointul PNL rapid a depasit timpul de raspuns."
+          timeoutMessage: "The fast PNL endpoint timed out."
         });
 
         if (!payload?.ok) {
-          throw new Error(payload?.error || "Endpointul PNL rapid este indisponibil.");
+          throw new Error(payload?.error || "The fast PNL endpoint is unavailable.");
         }
 
         return {
@@ -2736,7 +2819,7 @@
               const share = dist > 0 ? tcl / dist : 1;
               if (share >= 0.5) {
                 // Cota dominanta (~90%) = proceeds din vanzare
-                label = "Private Shop - Vanzare"; category = "sale"; rate = "vanzare"; saleTotal += tcl;
+                label = "Private Shop - Sale"; category = "sale"; rate = "sale"; saleTotal += tcl;
               } else if (isOwner) {
                 // Cota mica + wallet detine cod referral = venit referral
                 label = "Private Shop - Referral"; category = "referral"; rate = "2%"; referralTotal += tcl;
@@ -2768,19 +2851,23 @@
       function renderPnlResult(totals, historyMeta, earnedTcl = 0) {
         const pnlUsd = totals.sellUsd - totals.buyUsd;
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
-        dom.pnlBoughtUsd.textContent = `Cost: ${formatUsd(totals.buyUsd)} USDC`;
+        setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC", { value: formatUsd(totals.buyUsd) });
         dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
-        dom.pnlSoldUsd.textContent = `Received: ${formatUsd(totals.sellUsd)} USDC`;
+        setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC", { value: formatUsd(totals.sellUsd) });
         dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
         dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
-        dom.pnlTradeCount.textContent = `Trades: ${totals.tradeCount.toLocaleString("ro-RO")} (${totals.buyCount} buy / ${totals.sellCount} sell)`;
+        setDynamicText(dom.pnlTradeCount, "Trades: {total} ({buy} buy / {sell} sell)", {
+          total: totals.tradeCount.toLocaleString(getLocale()),
+          buy: totals.buyCount.toLocaleString(getLocale()),
+          sell: totals.sellCount.toLocaleString(getLocale())
+        });
 
         const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
         const earnedAmount = readNumber(earnedData.total, 0);
         const earnedUsd = earnedAmount * readNumber(state.prices.tcl, 0);
         dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
-        dom.pnlEarnedUsd.textContent = `Value: ${formatUsd(earnedUsd)} USDC`;
+        setDynamicText(dom.pnlEarnedUsd, "Value: {value} USDC", { value: formatUsd(earnedUsd) });
 
         // Buton info breakdown — vizibil daca avem date
         const infoBtn = document.getElementById("earnedInfoBtn");
@@ -2796,24 +2883,27 @@
         let coverage;
         if (isSupabase) {
           if (historyMeta.reachedListingStart) {
-            coverage = "Cache Supabase — istoric complet de la listing.";
+            coverage = translateText("Supabase cache - complete history since listing.");
           } else if (historyMeta.oldestTimestamp) {
             const oldestDate = new Date(historyMeta.oldestTimestamp * 1000).toISOString().slice(0, 10);
-            coverage = `Cache Supabase — date disponibile din ${oldestDate}.`;
+            coverage = translateText("Supabase cache - data available since {date}.", { date: oldestDate });
           } else {
-            coverage = "Cache Supabase — date disponibile.";
+            coverage = translateText("Supabase cache - data available.");
           }
         } else {
           coverage = historyMeta.hitPageLimit
-            ? "Limita de scanare MultiversX atinsa; rezultatul poate fi partial."
+            ? translateText("MultiversX scan limit reached; the result may be partial.")
             : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
-                ? "MultiversX scan complet pentru perioada TCL."
-                : "MultiversX scan pana la limita API.");
+                ? translateText("Complete MultiversX scan for the TCL period.")
+                : translateText("MultiversX scan up to API limit."));
         }
         const checkedCount = Number(historyMeta.checkedTransactions)
           || Number(historyMeta.checkedLogs)
           || (Array.isArray(historyMeta.transfers) ? historyMeta.transfers.length : 0);
-        dom.pnlStatus.textContent = `${coverage} Tranzactii TCL: ${checkedCount.toLocaleString("ro-RO")}.`;
+        setPnlStatus("{coverage} TCL transactions: {count}.", {
+          coverage,
+          count: checkedCount.toLocaleString(getLocale())
+        });
       }
 
       async function runPnlCheck(event) {
@@ -2822,14 +2912,14 @@
 
         if (!isAddress(walletAddress)) {
           renderEmptyPnl();
-          dom.pnlStatus.textContent = "Adresa walletului nu este valida.";
+          setPnlStatus("The wallet address is not valid.");
           syncLoadingState();
           return;
         }
 
         setPnlLoading(true);
         renderEmptyPnl();
-        dom.pnlStatus.textContent = "Se incarca datele din cache Supabase...";
+        setPnlStatus("Loading data from Supabase cache...");
 
         try {
           await ensurePnlSupabaseCache(walletAddress);
@@ -2840,7 +2930,7 @@
             fetchEarnedTcl(walletAddress)
           ]);
 
-          if (!pnlData) throw new Error("Nu s-au putut incarca datele din Supabase.");
+          if (!pnlData) throw new Error("Could not load data from Supabase.");
 
           // Construieste totals in formatul asteptat de renderPnlResult
           const totals = {
@@ -2865,13 +2955,15 @@
           renderPnlResult(totals, historyMeta, earnedTcl);
 
           if (pnlData.tradeCount === 0) {
-            dom.pnlStatus.textContent = `Nu exista swap-uri TCL in cache pentru acest wallet. Swap-uri verificate: ${pnlData.checkedSwaps}.`;
+            setPnlStatus("No TCL swaps exist in cache for this wallet. Checked swaps: {count}.", {
+              count: Number(pnlData.checkedSwaps || 0).toLocaleString(getLocale())
+            });
           }
         } catch (error) {
           console.error(error);
           renderEmptyPnl();
-          dom.pnlStatus.textContent = error?.message || "PNL Check a esuat.";
-          setStatus("error", "PNL Check a esuat. Incearca din nou.");
+          setPnlStatus(error?.message || "PNL Check failed.");
+          setStatus("error", "PNL Check failed. Try again.");
         } finally {
           setPnlLoading(false);
         }
@@ -2887,7 +2979,7 @@
         referral:                  "Referral Rewards",
         claimManagerRewards:       "Manager Rewards",
         addDaysAutoClaim:          "Auto-Claim Rewards",
-        withdrawBalancePrivateShop:"Private Shop (vanzare + 2% referral)",
+        withdrawBalancePrivateShop:"Private Shop (sale + 2% referral)",
         buyCoins:                  "Buy Coins 5%",
         buySft:                    "Buy SFT 5%",
         upgradeNft:                "Upgrade NFT 5%",
@@ -2899,7 +2991,7 @@
         addSocket:                 "Add Socket 5%",
         addRefinement:             "Add Refinement 5%",
         addStorage:                "Add Storage 5%",
-        _other:                    "Altele"
+        _other:                    "Other"
       };
 
       function esc(s) {
@@ -2918,15 +3010,15 @@
 
         const maxVal = entries[0]?.[1] || 1;
 
-        let html = `<div class="earned-popup-total">Total earned: <span>${formatTokenAmount(total)} TCL</span></div>`;
+        let html = `<div class="earned-popup-total">${esc(translateText("Total earned:"))} <span>${formatTokenAmount(total)} TCL</span></div>`;
 
         // Sumar pe categorii: reward pool / cashback propriu / referral
         if (categories) {
           const cats = [
-            { key: "reward",   label: "Reward Pool",      sub: "claim-uri & daily rewards" },
-            { key: "sale",     label: "Private Shop Sale", sub: "vanzari proprii (90%)" },
-            { key: "cashback", label: "Cashback",         sub: "invitat: 5% NFT/ItemShop, 2% Private Shop" },
-            { key: "referral", label: "Referral",         sub: "owner cod: 5%/2% din invitati" }
+            { key: "reward",   label: "Reward Pool",       sub: "claims and daily rewards" },
+            { key: "sale",     label: "Private Shop Sale", sub: "owned sales (90%)" },
+            { key: "cashback", label: "Cashback",          sub: "guest: 5% NFT/ItemShop, 2% Private Shop" },
+            { key: "referral", label: "Referral",          sub: "code owner: 5%/2% from guests" }
           ];
           let catHtml = "";
           for (const c of cats) {
@@ -2934,16 +3026,16 @@
             if (val <= 0.001) continue;
             const pct = total > 0 ? (val / total * 100) : 0;
             catHtml += `<div class="earned-cat-card">
-              <div class="earned-cat-label">${esc(c.label)}</div>
+              <div class="earned-cat-label">${esc(translateText(c.label))}</div>
               <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
-              <div class="earned-cat-sub">${esc(c.sub)} · ${pct.toFixed(0)}%</div>
+              <div class="earned-cat-sub">${esc(translateText(c.sub))} · ${pct.toFixed(0)}%</div>
             </div>`;
           }
           if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
         }
         html += `<table class="earned-breakdown-table">
           <thead><tr>
-            <th>Sursa</th>
+            <th>${esc(translateText("Source"))}</th>
             <th style="text-align:right">TCL</th>
             <th style="text-align:right">%</th>
           </tr></thead><tbody>`;
@@ -2953,7 +3045,7 @@
           const barW    = Math.round(tcl / maxVal * 100);
           html += `<tr>
             <td>
-              <span class="earned-fn-name">${esc(label)}</span>
+              <span class="earned-fn-name">${esc(translateText(label))}</span>
               <div class="earned-bar-wrap"><div class="earned-bar" style="width:${barW}%"></div></div>
             </td>
             <td><span class="earned-tcl-amount">${formatTokenAmount(tcl)}</span></td>
@@ -2985,9 +3077,9 @@
         if (!state.pendingUri) return;
         try {
           await navigator.clipboard.writeText(state.pendingUri);
-          setStatus("loading", "WalletConnect URI copiat. Lipeste-l in xPortal daca ai nevoie.");
+          setStatus("loading", "WalletConnect URI copied. Paste it in xPortal if needed.");
         } catch (_) {
-          setStatus("error", "Nu am putut copia WalletConnect URI.");
+          setStatus("error", "Could not copy WalletConnect URI.");
         }
       }
 
@@ -2996,7 +3088,11 @@
         hideQrPanel();
         setConnectionLoading(false);
         const connected = hasConnectedWallet();
-        setStatus(connected ? "connected" : "idle", connected ? `Conectat: ${truncateAddress(state.address)}` : "Conectarea xPortal a fost anulata.");
+        setStatus(
+          connected ? "connected" : "idle",
+          connected ? "Connected: {address}" : "The xPortal connection was canceled.",
+          connected ? { address: truncateAddress(state.address) } : {}
+        );
       }
 
       function boot() {
@@ -3006,7 +3102,7 @@
         renderEmptyPnl();
 
         if (state.address) {
-          setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(state.address) });
           loadBalances();
         } else {
           // Genereaza automat QR-ul de conectare la incarcarea paginii
