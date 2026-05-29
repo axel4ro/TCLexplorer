@@ -1976,14 +1976,20 @@
           select:   sel
         });
 
-        // Buys: wallet primeste TCL de la orice sursa (DEX SCR, direct, P2P)
-        // Excludem: game contract si self-sender (evita game earnings duplicate)
-        const buyRows = await supabaseFetchAll("tcl_transfers", {
+        // Buys: wallet primeste TCL de la un contract DEX (orice protocol: USDC, EGLD, ONE, etc.)
+        // Contractele MVX incep cu 'erd1qqqq' (16 'q' dupa 'erd1')
+        // Excludem game contract (earned e calculat separat) si self-transfer
+        // Filtram client-side dupa prefix contract (Supabase LIKE nu suporta wildcard in AND)
+        const allBuyRows = await supabaseFetchAll("tcl_transfers", {
           receiver: `eq.${walletAddress}`,
           sender:   `neq.${gameContract}`,
           order:    "ts.desc",
           select:   sel
         });
+        // Pastreaza doar contracte MVX (sender incepe cu 'erd1qqqq') si exclude self-transfer
+        const buyRows = Array.isArray(allBuyRows)
+          ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender.startsWith("erd1qqqq"))
+          : allBuyRows;
 
         if (sellRows === null && buyRows === null) return null;
 
