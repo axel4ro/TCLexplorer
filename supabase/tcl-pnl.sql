@@ -34,6 +34,26 @@ create index if not exists tcl_transfers_orig
   where original_tx_hash is not null;
 
 -- ------------------------------------------------------------
+-- 1b. Indexuri compuse pentru PNL (CRITIC pentru wallet-uri cu mult earned)
+-- ------------------------------------------------------------
+-- Problema: un wallet cu doar earned poate avea zeci de mii de randuri unde
+-- e 'receiver' (toate de la game contract). Query-ul de BUY
+--   receiver=W AND sender LIKE 'erd1qqqq%' AND sender <> GAME
+-- foloseste indexul (receiver, ts) -> obtine ~25k pointeri de rand, dar trebuie
+-- sa citeasca fiecare tuplu din heap ca sa verifice 'sender' (nu e in index).
+-- ~25k citiri random la rece => ~3s => statement timeout (57014) => 500.
+-- Indexul (receiver, sender) tine 'sender' in index: filtrarea sender se face
+-- index-only, fara heap fetch pentru cele ~25k randuri excluse => instant.
+create index if not exists tcl_transfers_receiver_sender
+  on public.tcl_transfers (receiver, sender);
+
+-- Simetric pentru query-ul de EARNED: sender=GAME AND receiver=W.
+-- 'sender=GAME' singur se potriveste cu milioane de randuri (game trimite catre
+-- toata lumea); fara (sender, receiver) Postgres citeste enorm din heap.
+create index if not exists tcl_transfers_sender_receiver
+  on public.tcl_transfers (sender, receiver);
+
+-- ------------------------------------------------------------
 -- 2. Swap-uri pre-procesate (buy/sell)
 -- ------------------------------------------------------------
 create table if not exists public.tcl_trades (
