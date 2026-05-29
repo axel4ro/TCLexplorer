@@ -1180,7 +1180,7 @@
   </main>
 
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
-  <script src="lang/connect-xportal.bundle.js?v=20260529-2"></script>
+  <script src="lang/connect-xportal.bundle.js?v=20260529-3"></script>
   <script src="js/page-i18n.js?v=20260529-1"></script>
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
@@ -2664,6 +2664,27 @@
         });
       }
 
+      function createEmptyPnlData() {
+        return {
+          buyTcl: 0,
+          buyCost: 0,
+          sellTcl: 0,
+          sellReceived: 0,
+          tradeCount: 0,
+          buyCount: 0,
+          sellCount: 0,
+          reachedListingStart: false,
+          checkedSwaps: 0,
+          oldestTimestamp: null,
+          source: "supabase"
+        };
+      }
+
+      function readEarnedTotal(earnedTcl) {
+        if (earnedTcl && typeof earnedTcl === "object") return readNumber(earnedTcl.total, 0);
+        return readNumber(earnedTcl, 0);
+      }
+
       function normalizePnlTotals(totals) {
         return {
           tradeCount: Math.max(0, Math.floor(readNumber(totals?.tradeCount, 0))),
@@ -2968,15 +2989,24 @@
         setPnlStatus("Loading transaction history...");
 
         try {
-          await ensurePnlSupabaseCache(walletAddress);
-
-          // Ruleaza in paralel: swap PNL + earned TCL (ambele din Supabase)
-          const [pnlData, earnedTcl] = await Promise.all([
+          const [pnlResult, earnedResult] = await Promise.allSettled([
             fetchPnlFromSupabase(walletAddress),
             fetchEarnedTcl(walletAddress)
           ]);
 
-          if (!pnlData) throw new Error("Could not load transaction history.");
+          if (pnlResult.status === "rejected") {
+            console.warn("PNL buy/sell lookup failed", pnlResult.reason);
+          }
+          if (earnedResult.status === "rejected") {
+            console.warn("Earned TCL lookup failed", earnedResult.reason);
+          }
+
+          const pnlData = (pnlResult.status === "fulfilled" && pnlResult.value)
+            ? pnlResult.value
+            : createEmptyPnlData();
+          const earnedTcl = (earnedResult.status === "fulfilled" && earnedResult.value)
+            ? earnedResult.value
+            : { total: 0, breakdown: {} };
 
           // Construieste totals in formatul asteptat de renderPnlResult
           const totals = {
@@ -3000,8 +3030,16 @@
 
           renderPnlResult(totals, historyMeta, earnedTcl);
 
-          if (pnlData.tradeCount === 0) {
-            setPnlStatus("No TCL swaps found for this wallet. Checked records: {count}.", {
+          const earnedAmount = readEarnedTotal(earnedTcl);
+          const pnlUnavailable = pnlResult.status !== "fulfilled" || !pnlResult.value;
+          if (pnlUnavailable && earnedAmount > 0) {
+            setPnlStatus("Could not load buy/sell swaps. Earned TCL was still checked.");
+          } else if (pnlUnavailable) {
+            setPnlStatus("PNL Check completed with the data currently available.");
+          } else if (pnlData.tradeCount === 0 && earnedAmount > 0) {
+            setPnlStatus("No buy/sell swaps found. Earned TCL was still calculated.");
+          } else if (pnlData.tradeCount === 0) {
+            setPnlStatus("No buy/sell swaps or earned TCL found for this wallet. Checked records: {count}.", {
               count: Number(pnlData.checkedSwaps || 0).toLocaleString(getLocale())
             });
           }
