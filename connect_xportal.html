@@ -2712,6 +2712,11 @@
         _other:                    "Altele"
       };
 
+      function esc(s) {
+        return String(s || "").replace(/[&<>"']/g, c =>
+          ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      }
+
       function showEarnedBreakdown(breakdown, total) {
         const overlay = document.getElementById("earnedPopupOverlay");
         const body    = document.getElementById("earnedPopupBody");
@@ -2737,8 +2742,8 @@
           const barW    = Math.round(tcl / maxVal * 100);
           html += `<tr>
             <td>
-              <span class="earned-fn-name">${escapeHtml(label)}</span>
-              <span class="earned-fn-label">${fn !== "_other" ? escapeHtml(fn) : ""}</span>
+              <span class="earned-fn-name">${esc(label)}</span>
+              <span class="earned-fn-label">${fn !== "_other" ? esc(fn) : ""}</span>
               <div class="earned-bar-wrap"><div class="earned-bar" style="width:${barW}%"></div></div>
             </td>
             <td><span class="earned-tcl-amount">${formatTokenAmount(tcl)}</span></td>
