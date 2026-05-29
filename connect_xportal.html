@@ -2002,12 +2002,11 @@
         const supabaseEntries = await fetchTransfersFromSupabase(walletAddress);
 
         if (Array.isArray(supabaseEntries) && supabaseEntries.length > 0) {
-          // Populam map-ul din Supabase
-          supabaseEntries.forEach((entry, index) => {
-            const entryHash = String(entry?.txHash || `${entry?.originalTxHash}:supabase:${index}`);
-            if (entryHash) transferMap.set(entryHash, entry);
-            const rootHash = String(entry?.originalTxHash || entry?.txHash || "");
-            if (rootHash) transactionHashes.add(rootHash);
+          // Colectam hashurile unice ale tranzactiilor parinte (original_tx_hash sau tx_hash)
+          const rootHashSet = new Set();
+          supabaseEntries.forEach((entry) => {
+            const root = String(entry?.originalTxHash || entry?.txHash || "");
+            if (root && root.length === 64) rootHashSet.add(root);
           });
 
           const timestamps = supabaseEntries
@@ -2018,11 +2017,66 @@
             if (oldestTimestamp <= listingTimestamp) reachedListingStart = true;
           }
 
-          dom.pnlStatus.textContent = `Supabase: ${supabaseEntries.length.toLocaleString("ro-RO")} transferuri incarcate`;
+          // ── Batch-fetch tranzactii complete de la MVX pentru operatii (TCL+USDC) ──
+          // Mult mai rapid decat scanarea paginilor: ~100 tranzactii = 2 requesturi
+          const rootHashes = Array.from(rootHashSet);
+          const batchSize = 50;
+          const fullTxMap = new Map();
+          dom.pnlStatus.textContent = `Supabase: ${supabaseEntries.length} transferuri. Se incarca ${rootHashes.length} tranzactii complete...`;
+
+          for (let i = 0; i < rootHashes.length; i += batchSize) {
+            const batch = rootHashes.slice(i, i + batchSize);
+            try {
+              const txs = await fetchJson(buildApiUrl("/transactions", {
+                hashes: batch.join(","),
+                size: batch.length,
+                withOperations: "true"
+              }), {
+                retries: 3,
+                retryDelayMs: CONFIG.pnlRetryDelayMs,
+                timeoutMs: CONFIG.pnlRequestTimeoutMs
+              });
+              if (Array.isArray(txs)) {
+                txs.forEach((tx) => {
+                  const hash = String(tx?.txHash || tx?.hash || "");
+                  if (hash) fullTxMap.set(hash, tx);
+                });
+              }
+            } catch (_) {}
+            dom.pnlStatus.textContent = `Se incarca tranzactii: ${Math.min(i + batchSize, rootHashes.length)}/${rootHashes.length}...`;
+          }
+
+          // Construim lista finala: tranzactiile complete + SCR-urile din Supabase ca fallback
+          const fullTransfers = [];
+          const seenHashes = new Set();
+
+          // Adauga tranzactiile complete (au operatii) — prioritate maxima pentru parsePnlTrades
+          for (const tx of fullTxMap.values()) {
+            const hash = String(tx?.txHash || tx?.hash || "");
+            if (hash) {
+              seenHashes.add(hash);
+              fullTransfers.push(tx);
+              transactionHashes.add(hash);
+            }
+          }
+
+          // Adauga si SCR-urile din Supabase (pot fi utile pentru parsePnlTradesFromPairTransfers)
+          supabaseEntries.forEach((entry, index) => {
+            const entryHash = String(entry?.txHash || `supabase:${index}`);
+            const rootHash = String(entry?.originalTxHash || entry?.txHash || "");
+            if (entryHash && !seenHashes.has(entryHash)) {
+              seenHashes.add(entryHash);
+              fullTransfers.push(entry);
+            }
+            if (rootHash) transactionHashes.add(rootHash);
+          });
+
+          dom.pnlStatus.textContent = `Cache Supabase: ${supabaseEntries.length} TCL transferuri, ${fullTxMap.size} tranzactii complete incarcate`;
 
           return {
-            transfers: Array.from(transferMap.values()),
+            transfers: fullTransfers,
             checkedTransactions: transactionHashes.size,
+            checkedLogs: fullTxMap.size,
             reachedListingStart,
             hitPageLimit: !reachedListingStart,
             exhaustedHistory: reachedListingStart,

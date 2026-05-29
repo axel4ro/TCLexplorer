@@ -8,7 +8,7 @@ workers_dev = true
 SUPABASE_URL = "https://phhzrfzhwwooeqsdztee.supabase.co"
 ALLOWED_ORIGIN = "https://axel4ro.github.io"
 SOURCE_URLS = "https://axel4ro.github.io/TCLexplorer/,https://axel4ro.github.io/TCLexplorer/weekly_events.json,https://www.thecursedland.com/,https://whitepaper.thecursedland.com/"
-GROQ_MODEL = "llama-3.1-8b-instant"
+GEMINI_MODEL = "gemini-2.0-flash"
 RAG_MATCH_COUNT = "5"
 RATE_LIMIT_WINDOW_SECONDS = "60"
 RATE_LIMIT_MAX = "4"
@@ -22,7 +22,7 @@ DEBUG_ERRORS = "false"
 
 [secrets]
 required = [
-  "GROQ_API_KEY",
+  "GEMINI_API_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
   "SYNC_SECRET"
 ]

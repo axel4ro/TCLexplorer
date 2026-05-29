@@ -13,8 +13,8 @@ const TCL_TOKEN    = "TCL-fe459d";
 const LISTING_TS   = 1718236800;   // 2024-06-13
 const PAGE_SIZE    = 50;
 const UPSERT_CHUNK = 200;
-const DELAY_MS     = 120;          // intre pagini MVX
-const MAX_WINDOW   = 10000;        // limita MVX pentru from+size
+const MAX_WINDOW      = 10000;     // limita MVX pentru from+size
+const MVX_INTERVAL_MS = 1100;      // interval minim intre request-uri MVX (= ~55 req/min)
 
 // ── Citeste key-ul din .dev.vars sau env ──────────────────────
 import { readFileSync, existsSync } from "fs";
@@ -69,6 +69,17 @@ async function sbGetState(key) {
   return rows[0]?.value ?? null;
 }
 
+// ── Throttle simplu ──────────────────────────────────────────
+// Garanteaza un interval minim fix intre request-urile catre MVX.
+// Mai simplu si mai fiabil decat un sliding window.
+
+let lastMvxCall = 0;
+async function mvxThrottle() {
+  const wait = MVX_INTERVAL_MS - (Date.now() - lastMvxCall);
+  if (wait > 0) await sleep(wait);
+  lastMvxCall = Date.now();
+}
+
 // ── MultiversX API ───────────────────────────────────────────
 
 async function mvxFetch(path, params = {}) {
@@ -77,12 +88,15 @@ async function mvxFetch(path, params = {}) {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
   }
 
+  await mvxThrottle(); // interval minim garantat intre request-uri
+
   let lastErr = new Error("MVX fetch failed");
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     if (attempt > 0) {
-      const wait = attempt <= 2 ? 3000 * attempt : 15000 * (attempt - 2);
-      process.stdout.write(`\n  [retry ${attempt}/5] astept ${wait/1000}s...`);
-      await sleep(wait);
+      // 429 neasteptat — asteapta 62s si continua
+      process.stdout.write(`\n  [429] astept 62s...`);
+      await sleep(62000);
+      lastMvxCall = 0; // permite urmatorul request imediat dupa wait
     }
     try {
       const r = await fetch(url.toString(), {
@@ -91,19 +105,18 @@ async function mvxFetch(path, params = {}) {
       });
       if (r.status === 429) {
         lastErr = new Error("MVX 429 (rate limit)");
-        process.stdout.write(` 429`);
         continue;
       }
       if (r.status >= 500) {
         lastErr = new Error(`MVX ${r.status}`);
-        process.stdout.write(` ${r.status}`);
+        await sleep(3000);
         continue;
       }
       if (!r.ok) throw new Error(`MVX ${r.status} ${await r.text()}`);
       return r.json();
     } catch (err) {
       lastErr = err;
-      if (attempt < 5) process.stdout.write(` err:${err.message.slice(0,60)}`);
+      if (attempt < 3) await sleep(3000);
     }
   }
   throw lastErr;
@@ -130,9 +143,18 @@ function entryToRow(e) {
 
 // ── Main ─────────────────────────────────────────────────────
 
+const FALLBACK_TOTAL = 355000; // fallback daca count endpoint e rate-limited
+
 async function getTotalCount() {
-  const r = await fetch(`${MVX_API}/tokens/${TCL_TOKEN}/transfers/count`);
-  return r.ok ? Number(await r.json()) : 0;
+  try {
+    const r = await fetch(`${MVX_API}/tokens/${TCL_TOKEN}/transfers/count`,
+      { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const n = Number(await r.json());
+      return n > 0 ? n : FALLBACK_TOTAL;
+    }
+  } catch (_) {}
+  return FALLBACK_TOTAL;
 }
 
 async function main() {
@@ -258,7 +280,7 @@ async function main() {
       break;
     }
 
-    await sleep(DELAY_MS);
+    // fara delay fix — rate limiter-ul din mvxFetch gestioneaza viteza
   }
 
   const totalSec = ((Date.now() - startTime) / 1000).toFixed(1);

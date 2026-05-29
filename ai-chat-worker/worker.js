@@ -57,7 +57,7 @@ const TCL_EXPLORER_PATHS = [
   "lang/wiki.bundle.js"
 ];
 
-const DEFAULT_MODEL = "llama-3.1-8b-instant";
+const DEFAULT_MODEL = "gemini-2.0-flash";
 const MAX_QUESTION_CHARS = 1000;
 const MAX_CONTEXT_CHARS = 5000;
 const rateLimitBuckets = new Map();
@@ -553,7 +553,7 @@ async function handleChat(request, env, ctx) {
   }
 
   assertRequiredEnv(env, [
-    "GROQ_API_KEY",
+    "GEMINI_API_KEY",
     "SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
     "ALLOWED_ORIGIN"
@@ -891,7 +891,7 @@ function tokenizeForSearch(value) {
 }
 
 async function generateAnswer(env, question, matches, language, history = [], eventContext = "") {
-  const model = String(env.GROQ_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+  const model = String(env.GEMINI_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   const context = buildContext(matches);
   const systemText = `You are Companion, a friendly assistant for The Cursed Land players on TCLexplorer. Rules:
 - Reply in ${languageName(language)} with correct, natural grammar. For Romanian: use proper diacritics (ă â î ș ț), correct verb forms (e.g. "îmi amintesc" not "amintesc"), natural phrasing — avoid word-for-word translation from English.
@@ -915,42 +915,43 @@ async function generateAnswer(env, question, matches, language, history = [], ev
   const prompt = parts.join("\n");
 
   // Include last 4 history messages for natural conversation context
-  const historyMessages = history.slice(-4).map((h) => ({
-    role: h.role,
-    content: h.content
+  // Gemini uses "model" role instead of "assistant"
+  const historyContents = history.slice(-4).map((h) => ({
+    role: h.role === "assistant" ? "model" : "user",
+    parts: [{ text: h.content }]
   }));
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+
+  const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${env.GROQ_API_KEY}`
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemText },
-        ...historyMessages,
-        { role: "user", content: prompt }
+      system_instruction: { parts: [{ text: systemText }] },
+      contents: [
+        ...historyContents,
+        { role: "user", parts: [{ text: prompt }] }
       ],
-      temperature: 0.25,
-      max_tokens: 260
+      generationConfig: {
+        temperature: 0.25,
+        maxOutputTokens: 260
+      }
     })
   });
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
     if (response.status === 429) {
-      const err = new Error("Groq quota exceeded");
+      const err = new Error("Gemini quota exceeded");
       err.code = "GEMINI_QUOTA";
       throw err;
     }
-    throw new Error(`Groq API HTTP ${response.status}: ${details.slice(0, 300)}`);
+    throw new Error(`Gemini API HTTP ${response.status}: ${details.slice(0, 300)}`);
   }
 
   const payload = await response.json();
-  const text = (payload.choices || [])
-    .map((choice) => choice?.message?.content || "")
+  const text = (payload.candidates?.[0]?.content?.parts || [])
+    .map((p) => p.text || "")
     .join("\n")
     .trim();
 
