@@ -953,6 +953,53 @@
       </aside>
     </section>
 
+    <section class="pnl-panel" id="pnlPanel" aria-labelledby="pnlTitle" hidden>
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title" id="pnlTitle">PNL Check</h2>
+          <p class="panel-subtitle">Swapuri TCL evaluate in USDC $ pentru walletul selectat.</p>
+        </div>
+      </div>
+
+      <form class="pnl-form" id="pnlForm">
+        <div class="pnl-field">
+          <label for="pnlAddressInput">Wallet</label>
+          <input class="pnl-input" id="pnlAddressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
+        </div>
+        <div class="pnl-btns">
+          <button class="btn btn-primary" id="pnlRunBtn" type="submit">Run</button>
+          <a class="btn" id="pnlFilterBtn" target="_blank" rel="noreferrer noopener" href="#" tabindex="0">Filter</a>
+        </div>
+      </form>
+
+      <div class="pnl-results" aria-live="polite">
+        <article class="pnl-card">
+          <p class="pnl-label">TCL bought</p>
+          <p class="pnl-value" id="pnlBoughtTcl">--</p>
+          <p class="pnl-meta" id="pnlBoughtUsd">Cost: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">TCL sold</p>
+          <p class="pnl-value" id="pnlSoldTcl">--</p>
+          <p class="pnl-meta" id="pnlSoldUsd">Received: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">PNL $ USDC</p>
+          <p class="pnl-value" id="pnlNetUsd">--</p>
+          <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
+        </article>
+        <article class="pnl-card">
+          <div class="pnl-card-header">
+            <p class="pnl-label">Earned TCL $</p>
+            <button class="pnl-info-btn" id="earnedInfoBtn" title="Detalii surse Earned TCL" style="display:none">ⓘ</button>
+          </div>
+          <p class="pnl-value" id="pnlEarnedTcl">--</p>
+          <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
+        </article>
+      </div>
+      <p class="pnl-status" id="pnlStatus">Conecteaza xPortal pentru PNL Check.</p>
+    </section>
+
     <section class="summary-grid" aria-label="Portfolio summary">
       <article class="summary-item">
         <p class="summary-label">Total estimat</p>
@@ -1034,53 +1081,6 @@
           </div>
         </article>
       </div>
-    </section>
-
-    <section class="pnl-panel" id="pnlPanel" aria-labelledby="pnlTitle" hidden>
-      <div class="panel-head">
-        <div>
-          <h2 class="panel-title" id="pnlTitle">PNL Check</h2>
-          <p class="panel-subtitle">Swapuri TCL evaluate in USDC $ pentru walletul selectat.</p>
-        </div>
-      </div>
-
-      <form class="pnl-form" id="pnlForm">
-        <div class="pnl-field">
-          <label for="pnlAddressInput">Wallet</label>
-          <input class="pnl-input" id="pnlAddressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
-        </div>
-        <div class="pnl-btns">
-          <button class="btn btn-primary" id="pnlRunBtn" type="submit">Run</button>
-          <a class="btn" id="pnlFilterBtn" target="_blank" rel="noreferrer noopener" href="#" tabindex="0">Filter</a>
-        </div>
-      </form>
-
-      <div class="pnl-results" aria-live="polite">
-        <article class="pnl-card">
-          <p class="pnl-label">TCL bought</p>
-          <p class="pnl-value" id="pnlBoughtTcl">--</p>
-          <p class="pnl-meta" id="pnlBoughtUsd">Cost: --</p>
-        </article>
-        <article class="pnl-card">
-          <p class="pnl-label">TCL sold</p>
-          <p class="pnl-value" id="pnlSoldTcl">--</p>
-          <p class="pnl-meta" id="pnlSoldUsd">Received: --</p>
-        </article>
-        <article class="pnl-card">
-          <p class="pnl-label">PNL $ USDC</p>
-          <p class="pnl-value" id="pnlNetUsd">--</p>
-          <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
-        </article>
-        <article class="pnl-card">
-          <div class="pnl-card-header">
-            <p class="pnl-label">Earned TCL $</p>
-            <button class="pnl-info-btn" id="earnedInfoBtn" title="Detalii surse Earned TCL" style="display:none">ⓘ</button>
-          </div>
-          <p class="pnl-value" id="pnlEarnedTcl">--</p>
-          <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
-        </article>
-      </div>
-      <p class="pnl-status" id="pnlStatus">Conecteaza xPortal pentru PNL Check.</p>
     </section>
 
     <!-- Earned TCL breakdown popup -->
