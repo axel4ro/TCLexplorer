@@ -2471,11 +2471,34 @@
       // NU addBalancePrivateShop (acela e DEPOZIT — wallet-ul trimite TCL, nu primeste).
       const EARNED_CASHBACK_2_FNS = new Set(["withdrawBalancePrivateShop"]);
 
+      // ItemShop = cumparare valuta in joc (Karma) / SFT-uri
+      const EARNED_ITEMSHOP_FNS = new Set(["buyCoins", "buySft"]);
+
       function getEarnedSourceInfo(fn) {
         if (EARNED_REWARD_FNS.has(fn)) return { kind: "reward", rate: "reward" };
-        if (EARNED_CASHBACK_5_FNS.has(fn)) return { kind: "cashback", rate: "5%" };
-        if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "shop", rate: "shop" };
+        if (EARNED_CASHBACK_5_FNS.has(fn)) {
+          return { kind: EARNED_ITEMSHOP_FNS.has(fn) ? "itemshop" : "nft", rate: "5%" };
+        }
+        if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "shop", rate: "2%" };
         return null;
+      }
+
+      // Verifica daca wallet-ul detine un cod de referral (setReferralCodeOwner)
+      // → distinge venit din referral (owner) vs cashback (invitee) la Private Shop.
+      async function walletOwnsReferralCode(walletAddress) {
+        const gameContract = CONFIG.pnlGameContract;
+        if (!gameContract) return false;
+        try {
+          const txs = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transactions`, {
+            receiver: gameContract,
+            function: "setReferralCodeOwner",
+            size: 1,
+            fields: "txHash"
+          }), { retries: 1, retryDelayMs: 800, timeoutMs: 8000 });
+          return Array.isArray(txs) && txs.length > 0;
+        } catch (_) {
+          return false;
+        }
       }
 
       async function fetchEarnedTcl(walletAddress) {
@@ -2513,6 +2536,9 @@
           }
 
           const relatedEntries = await fetchPnlEntriesByRootHashes(Array.from(roots));
+          // rootTotalDist = total TCL distribuit de game in acel root (toti destinatarii)
+          // → folosit pentru cota wallet-ului la Private Shop (90% vanzare vs 2% cashback/referral)
+          const rootTotalDist = new Map();
           relatedEntries.forEach((entry) => {
             const root = entry.originalTxHash || entry.txHash;
             const fn = String(entry.function || "").trim();
@@ -2522,19 +2548,32 @@
               if (entry.timestamp) rootTs.set(root, Number(entry.timestamp) || 0);
               if (entry.sender) rootSender.set(root, entry.sender);
             }
+            // Insumeaza toate iesirile de TCL ale game-ului (catre orice destinatar)
+            if (root && entry.sender === gameContract) {
+              for (const t of (entry.action?.arguments?.transfers || [])) {
+                if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+                const norm = normalizePnlTradeTransfer(t);
+                if (norm) rootTotalDist.set(root, (rootTotalDist.get(root) || 0) + norm.amount);
+              }
+            }
           });
 
+          // Avem nevoie de statusul de owner doar daca exista intrari Private Shop
+          let isOwner = false;
+          let needOwnerCheck = false;
+          for (const [root] of rootTcl) {
+            if (getEarnedSourceInfo(rootFn.get(root) || "")?.kind === "shop") { needOwnerCheck = true; break; }
+          }
+          if (needOwnerCheck) isOwner = await walletOwnsReferralCode(walletAddress);
+
           // Agrega doar sursele earned legitime; return/refund/withdraw sunt excluse.
-          // Clasificare: cashback pe propriile achizitii (self) vs referral (de la referrals).
+          // Etichete fine: sursa (NFT/ItemShop/PrivateShop) × tip (Cashback propriu / Referral / Vanzare).
           const breakdown = {};
           const excludedBreakdown = {};
           const details = [];
-          let total = 0;
-          let excluded = 0;
-          let selfTotal = 0;     // cashback pe propriile tranzactii
-          let referralTotal = 0; // venit din referral (tranzactiile altora)
-          let rewardTotal = 0;   // reward pool / claim-uri
-          let shopTotal = 0;     // Private Shop: vanzari (90%) + referral (2%)
+          let total = 0, excluded = 0;
+          let cashbackTotal = 0, referralTotal = 0, rewardTotal = 0, saleTotal = 0;
+
           for (const [root, tcl] of rootTcl) {
             const fn = rootFn.get(root) || "_other";
             const sourceInfo = getEarnedSourceInfo(fn);
@@ -2544,33 +2583,38 @@
               continue;
             }
 
-            // Clasificare pe categorii de venit
             const payer = rootSender.get(root) || "";
-            let category;
+            const isSelf = payer && payer === walletAddress;  // propria achizitie
+            let label, category;
+
             if (sourceInfo.kind === "reward") {
-              category = "reward";       // reward pool / claim-uri
-              rewardTotal += tcl;
-            } else if (sourceInfo.kind === "shop") {
-              category = "shop";         // Private Shop: vanzare proprie (90%) + referral (2%)
-              shopTotal += tcl;
-            } else if (payer && payer === walletAddress) {
-              category = "cashback";   // propria achizitie cu cod referral → cashback
-              selfTotal += tcl;
-            } else {
-              category = "referral";   // achizitia altcuiva care te are ca referral
-              referralTotal += tcl;
+              label = "Reward Pool"; category = "reward"; rewardTotal += tcl;
+            } else if (sourceInfo.kind === "nft") {
+              if (isSelf) { label = "NFTs - Cashback"; category = "cashback"; cashbackTotal += tcl; }
+              else        { label = "NFTs - Referral"; category = "referral"; referralTotal += tcl; }
+            } else if (sourceInfo.kind === "itemshop") {
+              if (isSelf) { label = "ItemShop - Buy Karma Cashback"; category = "cashback"; cashbackTotal += tcl; }
+              else        { label = "ItemShop - Buy Karma"; category = "referral"; referralTotal += tcl; }
+            } else { // shop = Private Shop Web3
+              const dist = rootTotalDist.get(root) || tcl;
+              const share = dist > 0 ? tcl / dist : 1;
+              if (share >= 0.5) {
+                // Cota dominanta (~90%) = proceeds din vanzare
+                label = "Private Shop - Vanzare"; category = "sale"; saleTotal += tcl;
+              } else if (isOwner) {
+                // Cota mica + wallet detine cod referral = venit referral
+                label = "Private Shop - Referral"; category = "referral"; referralTotal += tcl;
+              } else {
+                // Cota mica + wallet e invitat = cashback pe propria cumparare
+                label = "Private Shop Web3 - Cashback"; category = "cashback"; cashbackTotal += tcl;
+              }
             }
 
-            breakdown[fn] = (breakdown[fn] || 0) + tcl;
+            breakdown[label] = (breakdown[label] || 0) + tcl;
             total += tcl;
             details.push({
-              hash: root,
-              function: fn,
-              amount: tcl,
-              kind: sourceInfo.kind,
-              rate: sourceInfo.rate,
-              category,
-              timestamp: rootTs.get(root) || 0
+              hash: root, function: fn, label, amount: tcl,
+              category, rate: sourceInfo.rate, timestamp: rootTs.get(root) || 0
             });
           }
 
@@ -2578,7 +2622,7 @@
 
           return {
             total, breakdown, excluded, excludedBreakdown, details,
-            categories: { reward: rewardTotal, shop: shopTotal, cashback: selfTotal, referral: referralTotal }
+            categories: { reward: rewardTotal, sale: saleTotal, cashback: cashbackTotal, referral: referralTotal }
           };
         } catch (_) {
           return { total: 0, breakdown: {} };
@@ -2744,9 +2788,9 @@
         if (categories) {
           const cats = [
             { key: "reward",   label: "Reward Pool",      sub: "claim-uri & daily rewards" },
-            { key: "shop",     label: "Private Shop",     sub: "vanzari (90%) + referral 2%" },
-            { key: "cashback", label: "Cashback propriu", sub: "5% NFT/ItemShop pe achizitiile tale" },
-            { key: "referral", label: "Referral",         sub: "5% din tranzactiile celor invitati" }
+            { key: "sale",     label: "Private Shop Sale", sub: "vanzari proprii (90%)" },
+            { key: "cashback", label: "Cashback",         sub: "invitat: 5% NFT/ItemShop, 2% Private Shop" },
+            { key: "referral", label: "Referral",         sub: "owner cod: 5%/2% din invitati" }
           ];
           let catHtml = "";
           for (const c of cats) {
@@ -2763,19 +2807,17 @@
         }
         html += `<table class="earned-breakdown-table">
           <thead><tr>
-            <th>Functie / Metoda</th>
+            <th>Sursa</th>
             <th style="text-align:right">TCL</th>
             <th style="text-align:right">%</th>
           </tr></thead><tbody>`;
 
-        for (const [fn, tcl] of entries) {
-          const label   = EARNED_FN_LABELS[fn] || fn;
+        for (const [label, tcl] of entries) {
           const pct     = total > 0 ? (tcl / total * 100) : 0;
           const barW    = Math.round(tcl / maxVal * 100);
           html += `<tr>
             <td>
               <span class="earned-fn-name">${esc(label)}</span>
-              <span class="earned-fn-label">${fn !== "_other" ? esc(fn) : ""}</span>
               <div class="earned-bar-wrap"><div class="earned-bar" style="width:${barW}%"></div></div>
             </td>
             <td><span class="earned-tcl-amount">${formatTokenAmount(tcl)}</span></td>
@@ -2796,7 +2838,7 @@
 
           for (const detail of detailRows) {
             const fn = detail.function || "_other";
-            const label = EARNED_FN_LABELS[fn] || fn;
+            const label = detail.label || EARNED_FN_LABELS[fn] || fn;
             const rate = detail.rate && detail.rate !== "reward" ? ` ${detail.rate}` : "";
             const hash = String(detail.hash || "");
             const shortHash = hash ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : "-";
