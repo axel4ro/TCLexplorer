@@ -1976,14 +1976,13 @@
           select:   sel
         });
 
-        // Buys: wallet primeste TCL via SCR de la un contract DEX (nu game, nu self)
-        // original_tx_hash not null = e un SmartContractResult (nu tranzactie directa)
+        // Buys: wallet primeste TCL de la orice sursa (DEX SCR, direct, P2P)
+        // Excludem: game contract si self-sender (evita game earnings duplicate)
         const buyRows = await supabaseFetchAll("tcl_transfers", {
-          receiver:         `eq.${walletAddress}`,
-          "original_tx_hash": "not.is.null",
-          sender:           `neq.${gameContract}`,
-          order:            "ts.desc",
-          select:           sel
+          receiver: `eq.${walletAddress}`,
+          sender:   `neq.${gameContract}`,
+          order:    "ts.desc",
+          select:   sel
         });
 
         if (sellRows === null && buyRows === null) return null;
@@ -2430,15 +2429,23 @@
         dom.pnlEarnedUsd.textContent = `Value: ${formatUsd(earnedUsd)} USDC`;
 
         const isSupabase = historyMeta.source === "supabase";
-        const coverage = isSupabase
-          ? (historyMeta.reachedListingStart
-              ? "Cache Supabase — istoric complet de la listing."
-              : "Cache Supabase — sync in curs (backfill partial).")
-          : (historyMeta.hitPageLimit
-              ? "Limita de scanare MultiversX atinsa; rezultatul poate fi partial."
-              : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
-                  ? "MultiversX scan complet pentru perioada TCL."
-                  : "MultiversX scan pana la limita API."));
+        let coverage;
+        if (isSupabase) {
+          if (historyMeta.reachedListingStart) {
+            coverage = "Cache Supabase — istoric complet de la listing.";
+          } else if (historyMeta.oldestTimestamp) {
+            const oldestDate = new Date(historyMeta.oldestTimestamp * 1000).toISOString().slice(0, 10);
+            coverage = `Cache Supabase — date disponibile din ${oldestDate}.`;
+          } else {
+            coverage = "Cache Supabase — date disponibile.";
+          }
+        } else {
+          coverage = historyMeta.hitPageLimit
+            ? "Limita de scanare MultiversX atinsa; rezultatul poate fi partial."
+            : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
+                ? "MultiversX scan complet pentru perioada TCL."
+                : "MultiversX scan pana la limita API.");
+        }
         const checkedCount = Number(historyMeta.checkedTransactions)
           || Number(historyMeta.checkedLogs)
           || (Array.isArray(historyMeta.transfers) ? historyMeta.transfers.length : 0);
