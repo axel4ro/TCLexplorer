@@ -2425,11 +2425,13 @@
 
         // Buys: wallet primeste TCL de la un contract DEX (orice protocol: USDC, EGLD, ONE, etc.)
         // Contractele MVX incep cu 'erd1qqqq' (16 'q' dupa 'erd1')
-        // Excludem game contract (earned e calculat separat) si self-transfer
-        // Filtram client-side dupa prefix contract (Supabase LIKE nu suporta wildcard in AND)
+        // Excludem game contract server-side via PostgREST 'and' filter pentru a evita paginare inutila
+        const buyAndFilter = gameContract
+          ? `(sender.like.erd1qqqq*,sender.neq.${gameContract})`
+          : `(sender.like.erd1qqqq*)`;
         const allBuyRows = await supabaseFetchAll("tcl_transfers", {
           receiver: `eq.${walletAddress}`,
-          sender:   "like.erd1qqqq*",
+          and:      buyAndFilter,
           order:    "ts.desc",
           select:   PNL_TRANSFER_SELECT
         });
@@ -2437,8 +2439,6 @@
         const buyRows = Array.isArray(allBuyRows)
           ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender !== gameContract && r.sender.startsWith("erd1qqqq"))
           : allBuyRows;
-
-        if (sellRows === null && buyRows === null) return null;
 
         const sellEntries = Array.isArray(sellRows)
           ? sellRows.filter((row) => {
@@ -2557,8 +2557,7 @@
 
       // PNL: calculeaza swap-urile doar din cache-ul Supabase.
       async function fetchPnlFromSupabase(walletAddress) {
-        const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
-        if (swapEntries === null) return null;
+        const swapEntries = (await fetchSwapEntriesFromSupabase(walletAddress)) ?? [];
 
         const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
