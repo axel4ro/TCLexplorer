@@ -2343,6 +2343,7 @@
         const key = anonKey || CONFIG.pnlSupabaseAnonKey;
         if (!key || key === "SUPABASE_ANON_KEY_HERE") return null;
         const PAGE = 1000;
+        const MAX_RETRIES = 3;       // Supabase intoarce 500 tranzitoriu (statement timeout / load)
         const all  = [];
         let offset = 0;
         let fetched = false;
@@ -2354,10 +2355,20 @@
           }
           url.searchParams.set("limit",  String(PAGE));
           url.searchParams.set("offset", String(offset));
-          const res = await fetch(url.toString(), {
-            headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
-            signal: AbortSignal.timeout(15000)
-          }).catch(() => null);
+
+          // Reincearca pagina pe erori tranzitorii (500/502/503/504/timeout)
+          let res = null;
+          for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+            res = await fetch(url.toString(), {
+              headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+              signal: AbortSignal.timeout(30000)
+            }).catch(() => null);
+            if (res && res.ok) break;
+            const transient = !res || res.status >= 500;
+            if (!transient || attempt === MAX_RETRIES) break;
+            await wait(600 * (attempt + 1));  // backoff: 600ms, 1.2s, 1.8s
+          }
+
           if (!res || !res.ok) break;
           fetched = true;
           const rows = await res.json().catch(() => null);
