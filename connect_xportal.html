@@ -2434,17 +2434,19 @@
         const buySenderFilter = gameContract
           ? [`like.erd1qqqq*`, `neq.${gameContract}`]
           : `like.erd1qqqq*`;
+        // NB: fara order=ts.desc — combinat cu un filtru selectiv, planner-ul Postgres
+        // alege indexul global pe ts si scaneaza toata tabela cautand 1000 randuri
+        // care nu exista (wallet doar cu earned) => statement timeout => 500.
+        // Ordinea nu conteaza: dedupem dupa hash si calculam oldestTimestamp cu Math.min.
         const [sellRows, allBuyRows] = await Promise.all([
           supabaseFetchAll("tcl_transfers", {
             sender:   `eq.${walletAddress}`,
             function: `in.(${swapFns})`,
-            order:    "ts.desc",
             select:   PNL_TRANSFER_SELECT
           }),
           supabaseFetchAll("tcl_transfers", {
             receiver: `eq.${walletAddress}`,
             sender:   buySenderFilter,
-            order:    "ts.desc",
             select:   PNL_TRANSFER_SELECT
           })
         ]);
