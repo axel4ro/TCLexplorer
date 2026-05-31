@@ -2240,6 +2240,11 @@
               inputAmount: 0,
               outputToken: null,
               outputAmount: 0,
+              // Output stocat inline in action_transfers al tranzactiei swap (fara SCR
+              // separat pair->wallet). Folosit doar daca operations lipseste si nu
+              // exista un output SCR — evita dublarea pe swap-urile deja enrichuite.
+              inlineOutputToken: null,
+              inlineOutputAmount: 0,
               description: "",
               invalid: false
             };
@@ -2265,6 +2270,16 @@
             }
             groupedSwap.inputToken = primaryTransfer.token;
             groupedSwap.inputAmount += primaryTransfer.amount;
+            // Unele swap-uri (cele cu operations=null, neenrichuite) au output-ul
+            // (TCL/USDC primit) inline in action_transfers, nu intr-un SCR pair->wallet.
+            for (let i = 1; i < transferList.length; i += 1) {
+              const extra = normalizePnlTradeTransfer(transferList[i]);
+              if (!extra || extra.token === primaryTransfer.token) continue;
+              if (extra.token !== CONFIG.tokens.tcl.identifier && extra.token !== CONFIG.tokens.usdc.identifier) continue;
+              if (groupedSwap.inlineOutputToken && groupedSwap.inlineOutputToken !== extra.token) continue;
+              groupedSwap.inlineOutputToken = extra.token;
+              groupedSwap.inlineOutputAmount += extra.amount;
+            }
             continue;
           }
 
@@ -2288,6 +2303,12 @@
         const trades = [];
         for (const groupedSwap of groupedSwaps.values()) {
           if (groupedSwap.invalid) continue;
+          // Fallback: daca nu am gasit un output SCR pair->wallet, foloseste output-ul
+          // inline din tranzactia swap (cazul operations=null, swap neenrichuit).
+          if ((!groupedSwap.outputToken || groupedSwap.outputAmount <= 0) && groupedSwap.inlineOutputToken && groupedSwap.inlineOutputAmount > 0) {
+            groupedSwap.outputToken = groupedSwap.inlineOutputToken;
+            groupedSwap.outputAmount = groupedSwap.inlineOutputAmount;
+          }
           if (!groupedSwap.inputToken || !groupedSwap.outputToken || groupedSwap.inputAmount <= 0 || groupedSwap.outputAmount <= 0) continue;
 
           let side = "";
