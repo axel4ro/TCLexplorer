@@ -18,6 +18,7 @@ const PAGES_PER_CRON = 10;  // 10 pagini × 50 = 500 intrari per run (max safe: 
 const UPSERT_CHUNK = 200;   // cate randuri upsertam odata in Supabase
 const ROOT_ENRICH_LIMIT = 300;
 const ENRICH_FRESH_LIMIT = 150;   // root-uri swap noi enrichuite per rulare de cron
+const ENRICH_BACKLOG_LIMIT = 100; // root-uri din backlog (enriched=false) drenate per rulare
 const ROOT_ENRICH_BATCH = 50;
 const ROOT_SCAN_BATCH = 80;
 const ROOT_SCAN_CHUNKS = 16;
@@ -166,6 +167,11 @@ function sleep(ms) {
 
 // Mapeaza un entry din MVX API la randul din Supabase
 function entryToRow(entry) {
+  const hasOps = Array.isArray(entry.operations) && entry.operations.length > 0;
+  // Doar swap-urile root fara operations intra in backlog (enriched=false).
+  // Restul (earned, SCR-uri, swap-uri cu ops) raman enriched=true => indexul
+  // partial de backlog ramane mic. Vezi supabase/tcl-pnl-enriched.sql.
+  const isSwapRoot = !entry.originalTxHash && SWAP_FUNCTIONS.includes(entry.function);
   return {
     tx_hash: entry.txHash || entry.originalTxHash + ":" + (entry.type || "scr"),
     original_tx_hash: entry.originalTxHash || null,
@@ -179,6 +185,7 @@ function entryToRow(entry) {
       ? entry.action.arguments.transfers
       : null,
     operations: Array.isArray(entry.operations) ? entry.operations : null,
+    enriched: hasOps || !isSwapRoot,
   };
 }
 
@@ -196,6 +203,9 @@ function transactionToRow(tx) {
       ? tx.action.arguments.transfers
       : null,
     operations: Array.isArray(tx.operations) ? tx.operations : null,
+    // Folosit doar post-enrichment (enrichRootTransactions) => marcam done ca sa
+    // nu reprocesam la nesfarsit un root (chiar daca API-ul nu a dat operations).
+    enriched: true,
   };
 }
 
@@ -298,6 +308,29 @@ async function enrichRootTransactions(env, rootHashes) {
 
   await supabaseUpsert(env, "tcl_transfers", rows);
   return rows.length;
+}
+
+// Drena backlog-ul de swap-uri root neenrichuite (enriched=false). Query-ul
+// foloseste indexul partial tcl_transfers_need_enrich => ieftin (1 subrequest),
+// chiar daca un scan "operations is null" ar da timeout. Bounded ca sa ramanem
+// sub limita de subrequests; backlog-ul se goleste treptat peste mai multe rulari.
+async function syncEnrichBacklog(env, log) {
+  const rows = await supabaseGet(env, "tcl_transfers", {
+    enriched: "eq.false",
+    order: "ts.desc",
+    limit: String(ENRICH_BACKLOG_LIMIT),
+    select: "tx_hash",
+  });
+  const roots = (Array.isArray(rows) ? rows : [])
+    .map((r) => r.tx_hash)
+    .filter(validTxHash);
+  if (!roots.length) {
+    log("[backlog] nimic de enrichuit");
+    return 0;
+  }
+  const n = await enrichRootTransactions(env, roots);
+  log(`[backlog] enrichuit ${n} root-uri (din ${roots.length} selectate)`);
+  return n;
 }
 
 // ── Sync logic ───────────────────────────────────────────────
@@ -473,6 +506,7 @@ async function runSync(env, debug = false) {
 
   let newCount = 0;
   let backfillCount = 0;
+  let backlogCount = 0;
   const errors = [];
 
   try {
@@ -489,9 +523,16 @@ async function runSync(env, debug = false) {
     if (debug) errors.push({ phase: "backfill", error: err.message, stack: err.stack });
   }
 
+  try {
+    backlogCount = await syncEnrichBacklog(env, log);
+  } catch (err) {
+    log("[backlog] eroare:", err.message);
+    if (debug) errors.push({ phase: "backlog", error: err.message, stack: err.stack });
+  }
+
   return debug
-    ? { newCount, backfillCount, errors }
-    : { newCount, backfillCount };
+    ? { newCount, backfillCount, backlogCount, errors }
+    : { newCount, backfillCount, backlogCount };
 }
 
 // ── HTTP handlers ─────────────────────────────────────────────
