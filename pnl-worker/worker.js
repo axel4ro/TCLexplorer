@@ -17,6 +17,7 @@ const PAGE_SIZE = 50;       // max cu withOperations=true
 const PAGES_PER_CRON = 10;  // 10 pagini × 50 = 500 intrari per run (max safe: ~46/50 subrequests)
 const UPSERT_CHUNK = 200;   // cate randuri upsertam odata in Supabase
 const ROOT_ENRICH_LIMIT = 300;
+const ENRICH_FRESH_LIMIT = 150;   // root-uri swap noi enrichuite per rulare de cron
 const ROOT_ENRICH_BATCH = 50;
 const ROOT_SCAN_BATCH = 80;
 const ROOT_SCAN_CHUNKS = 16;
@@ -308,9 +309,14 @@ async function syncIncremental(env, log) {
 
   log(`[incremental] newest_ts=${newestTs}`);
 
+  const gameContract = env.PNL_GAME_CONTRACT || TCL_GAME_CONTRACT;
   let offset = 0;
   let totalNew = 0;
   let newNewestTs = newestTs;
+  // Root-uri de swap/buy DEX care au nevoie de operations complete (multi-leg /
+  // aggregator => endpoint-ul /tokens/transfers le da operations=null). Le
+  // enrichuim imediat ca PNL-ul sa fie corect fara a astepta un /api/enrich manual.
+  const enrichRoots = new Set();
 
   for (let page = 0; page < PAGES_PER_CRON; page++) {
     const entries = await mvxFetch(
@@ -336,6 +342,18 @@ async function syncIncremental(env, log) {
     await supabaseUpsert(env, "tcl_transfers", rows);
     totalNew += rows.length;
 
+    for (const e of fresh) {
+      const root = e.originalTxHash || e.txHash;
+      if (!validTxHash(root)) continue;
+      const isSwapTx = SWAP_FUNCTIONS.includes(e.function);
+      // SCR provenit de la un contract DEX (pair/aggregator), nu de la game =>
+      // partea de "buy" unde wallet-ul trimite USDC si primeste TCL inapoi.
+      const isDexScr = Boolean(e.originalTxHash)
+        && String(e.sender || "").startsWith("erd1qqqq")
+        && e.sender !== gameContract;
+      if (isSwapTx || isDexScr) enrichRoots.add(root);
+    }
+
     const pageMax = Math.max(...fresh.map((e) => Number(e.timestamp) || 0));
     if (pageMax > newNewestTs) newNewestTs = pageMax;
 
@@ -347,6 +365,19 @@ async function syncIncremental(env, log) {
   if (newNewestTs > newestTs) {
     await supabaseSet(env, "newest_ts", newNewestTs);
   }
+
+  // Enrichuieste root-urile de swap noi (bounded ca sa ramanem sub limita de
+  // subrequests). Restul backlog-ului se completeaza prin /api/enrich per-wallet.
+  if (enrichRoots.size) {
+    const roots = Array.from(enrichRoots).slice(0, ENRICH_FRESH_LIMIT);
+    try {
+      const n = await enrichRootTransactions(env, roots);
+      log(`[incremental] enrichuit ${n} root-uri swap noi (din ${enrichRoots.size})`);
+    } catch (err) {
+      log("[incremental] enrich root-uri noi esuat:", err.message);
+    }
+  }
+
   log(`[incremental] ${totalNew} transferuri noi`);
   return totalNew;
 }
