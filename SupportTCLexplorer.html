@@ -511,35 +511,35 @@
         <img src="images/thecursedland.png" alt="">
         <span>TCL Explorer</span>
       </a>
-      <a class="top-link" href="connect_xportal.html">xPortal Balance</a>
+      <a class="top-link" href="connect_xportal.html" data-i18n="xPortal Balance">xPortal Balance</a>
     </header>
 
     <section class="hero" aria-labelledby="pageTitle">
       <div class="hero-copy">
         <div class="lockup">
           <img src="images/EGLD.png" alt="">
-          <span>EGLD Mainnet</span>
+          <span data-i18n="EGLD Mainnet">EGLD Mainnet</span>
         </div>
         <div>
-          <h1 id="pageTitle">🚀 Support TCLexplorer Infrastructure</h1>
-          <p class="lead">Help support the ongoing operation and development of TCLexplorer by contributing to essential infrastructure costs, including:</p>
+          <h1 id="pageTitle" data-i18n="🚀 Support TCLexplorer Infrastructure">🚀 Support TCLexplorer Infrastructure</h1>
+          <p class="lead" data-i18n="Help support the ongoing operation and development of TCLexplorer by contributing to essential infrastructure costs, including:">Help support the ongoing operation and development of TCLexplorer by contributing to essential infrastructure costs, including:</p>
         </div>
         <ul class="support-list" aria-label="Infrastructure costs">
-          <li>🖥️ Server Hosting</li>
-          <li>🌐 Domain Renewal</li>
-          <li>🤖 AI Services</li>
-          <li>🔗 API Access</li>
-          <li>☁️ Cloud Infrastructure</li>
-          <li>🛠️ New Features &amp; Development</li>
+          <li data-i18n="🖥️ Server Hosting">🖥️ Server Hosting</li>
+          <li data-i18n="🌐 Domain Renewal">🌐 Domain Renewal</li>
+          <li data-i18n="🤖 AI Services">🤖 AI Services</li>
+          <li data-i18n="🔗 API Access">🔗 API Access</li>
+          <li data-i18n="☁️ Cloud Infrastructure">☁️ Cloud Infrastructure</li>
+          <li data-i18n="🛠️ New Features &amp; Development">🛠️ New Features &amp; Development</li>
         </ul>
-        <p class="support-thanks">Every contribution helps keep TCLexplorer online, fast, reliable, and continuously improving for the entire community.</p>
-        <p class="support-thanks"><strong>Thank you for supporting TCLexplorer! ❤️</strong></p>
+        <p class="support-thanks" data-i18n="Every contribution helps keep TCLexplorer online, fast, reliable, and continuously improving for the entire community.">Every contribution helps keep TCLexplorer online, fast, reliable, and continuously improving for the entire community.</p>
+        <p class="support-thanks"><strong data-i18n="Thank you for supporting TCLexplorer! ❤️">Thank you for supporting TCLexplorer! ❤️</strong></p>
       </div>
 
       <div class="support-stack">
         <section class="connect-panel" aria-labelledby="connectTitle">
           <div class="panel-head">
-            <h2 class="panel-title" id="connectTitle">Conectare xPortal</h2>
+            <h2 class="panel-title" id="connectTitle" data-i18n="Connect xPortal">Connect xPortal</h2>
             <span class="panel-icon"><img src="images/xPortal.png" alt=""></span>
           </div>
 
@@ -550,62 +550,57 @@
             <div class="btn-row">
               <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer">
                 <img src="images/xPortal.png" alt="">
-                <span>Conecteaza xPortal</span>
+                <span data-i18n="Connect xPortal">Connect xPortal</span>
               </a>
-              <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Instaleaza xPortal</a>
+              <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer" data-i18n="Install xPortal">Install xPortal</a>
             </div>
           </div>
 
           <div id="connectedView" hidden>
-            <div class="eyebrow">Adresa conectata</div>
-            <code class="address-box" id="connectedAddress">Neconectat</code>
+            <div class="eyebrow" data-i18n="Connected address">Connected address</div>
+            <code class="address-box" id="connectedAddress">Disconnected</code>
             <div class="btn-row" style="margin-top: 12px;">
-              <button class="btn" id="copyConnectedBtn" type="button">Copiaza</button>
-              <a class="btn" id="connectedExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
-              <button class="btn btn-danger" id="disconnectBtn" type="button">Deconecteaza</button>
+              <button class="btn" id="copyConnectedBtn" type="button" data-i18n="Copy">Copy</button>
+              <a class="btn" id="connectedExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer" data-i18n="Explorer">Explorer</a>
+              <button class="btn btn-danger" id="disconnectBtn" type="button" data-i18n="Disconnect">Disconnect</button>
             </div>
           </div>
 
           <div class="status-line" role="status" aria-live="polite">
             <span class="status-dot" aria-hidden="true"></span>
-            <span id="statusText">Se pregateste QR-ul de conectare...</span>
+            <span id="statusText">Preparing the connection QR...</span>
           </div>
         </section>
 
         <section class="send-panel" id="sendPanel" aria-labelledby="sendTitle" hidden>
           <div class="panel-head">
-            <h2 class="panel-title" id="sendTitle">Trimite EGLD</h2>
+            <h2 class="panel-title" id="sendTitle" data-i18n="Send EGLD">Send EGLD</h2>
             <span class="panel-icon"><img src="images/EGLD.png" alt=""></span>
           </div>
 
-          <div class="eyebrow">Adresa destinatie</div>
+          <div class="eyebrow" data-i18n="Recipient address">Recipient address</div>
           <code class="address-box" id="recipientAddress">erd1p9fyv579tfnlagwd02mreuadpjxssgdx7psqe6l32r07guzxdeksfyvjmd</code>
 
           <div class="field-grid">
             <div class="field">
-              <label for="amountInput">Suma EGLD</label>
+              <label for="amountInput" data-i18n="EGLD amount">EGLD amount</label>
               <input id="amountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.01">
             </div>
-            <button class="btn btn-primary" id="sendBtn" type="button">Trimite cu xPortal</button>
+            <button class="btn btn-primary" id="sendBtn" type="button">Send with xPortal</button>
           </div>
 
-          <div class="btn-row">
-            <button class="btn" id="copyRecipientBtn" type="button">Copiaza adresa</button>
-            <a class="btn" id="openXportalBtn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Deschide xPortal</a>
-            <a class="btn" id="recipientExplorerLink" href="#" target="_blank" rel="noreferrer">Vezi adresa</a>
-          </div>
-
-          <p class="small-note" id="sendStatus">QR-ul si deeplink-ul sunt disponibile dupa conectare. Introdu suma EGLD si confirma tranzactia in xPortal.</p>
+          <p class="small-note" id="sendStatus">Enter the EGLD amount and confirm the transfer in xPortal.</p>
           <div class="tx-result" id="txResult" hidden></div>
         </section>
       </div>
     </section>
 
-    <p class="footer-note">Verifica mereu adresa si suma in xPortal inainte de confirmare.</p>
+    <p class="footer-note" data-i18n="Always verify the address and amount in xPortal before confirming.">Always verify the address and amount in xPortal before confirming.</p>
   </main>
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260602-1"></script>
   <script>
     (function () {
       "use strict";
@@ -672,6 +667,63 @@
         brandLink: document.getElementById("brandLink")
       };
 
+      const SUPPORTED_LANGS = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
+      const dynamicText = new Map();
+      let activeLang = normalizePageLang(
+        new URLSearchParams(location.search).get("lang") ||
+        window.localStorage.getItem("lang") ||
+        navigator.language ||
+        "en"
+      );
+
+      function normalizePageLang(lang) {
+        const raw = String(lang || "en").toLowerCase();
+        if (SUPPORTED_LANGS.includes(raw)) return raw;
+        const base = raw.split("-")[0];
+        return SUPPORTED_LANGS.includes(base) ? base : "en";
+      }
+
+      function translateText(source, params = {}) {
+        const raw = String(source || "");
+        const dict = window.TCL_PAGE_I18N?.[activeLang] || {};
+        const translated = activeLang === "en" ? raw : (dict[raw] || raw);
+        return translated.replace(/\{(\w+)\}/g, (_, key) => (
+          Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`
+        ));
+      }
+
+      function setDynamicText(element, source, params = {}) {
+        if (!element) return;
+        dynamicText.set(element, { source, params });
+        element.textContent = translateText(source, params);
+      }
+
+      function applyTranslations() {
+        document.documentElement.lang = activeLang;
+        document.title = translateText("Support TCLexplorer Infrastructure");
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          el.textContent = translateText(el.getAttribute("data-i18n"));
+        });
+        dynamicText.forEach(({ source, params }, el) => {
+          if (document.documentElement.contains(el)) {
+            el.textContent = translateText(source, params);
+          }
+        });
+      }
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.type !== "tcl:set-lang") return;
+        activeLang = normalizePageLang(data.lang);
+        applyTranslations();
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== "lang" || !event.newValue) return;
+        activeLang = normalizePageLang(event.newValue);
+        applyTranslations();
+      });
+
       function isAddress(value) {
         return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(value || "").trim());
       }
@@ -686,13 +738,13 @@
         return Boolean(state.address && state.sessionTopic);
       }
 
-      function setStatus(kind, message) {
+      function setStatus(kind, source, params = {}) {
         document.body.dataset.state = kind;
-        dom.statusText.textContent = message;
+        setDynamicText(dom.statusText, source, params);
       }
 
-      function setSendStatus(message) {
-        dom.sendStatus.textContent = message;
+      function setSendStatus(source, params = {}) {
+        setDynamicText(dom.sendStatus, source, params);
       }
 
       function getWalletConnectGlobal() {
@@ -710,14 +762,16 @@
           name: "Support TCLexplorer Infrastructure",
           description: "Send EGLD support through xPortal",
           url: appUrl,
-          icons: [iconUrl]
+          icons: [iconUrl],
+          // Lets xPortal bring the user back to TCLexplorer after confirming.
+          redirect: { native: "", universal: appUrl }
         };
       }
 
       async function getSignClient() {
         const projectId = String(CONFIG.walletConnectProjectId || "").trim();
         if (!projectId) {
-          throw new Error("WalletConnect nu este configurat.");
+          throw new Error("WalletConnect is not configured.");
         }
         if (state.signClient && state.signClientProjectId === projectId) {
           return state.signClient;
@@ -725,7 +779,7 @@
 
         const SignClient = getWalletConnectGlobal();
         if (!SignClient?.init) {
-          throw new Error("WalletConnect nu s-a incarcat.");
+          throw new Error("WalletConnect failed to load.");
         }
 
         state.signClient = await SignClient.init({
@@ -766,9 +820,16 @@
         return isMobileDevice() ? "xportal://" : "https://xportal.com/app";
       }
 
+      function openXPortalApp() {
+        if (!isMobileDevice()) return;
+        try {
+          window.location.href = "xportal://";
+        } catch (_) {}
+      }
+
       function renderQr(target, text, size) {
         if (!window.QRCode) {
-          throw new Error("Biblioteca QR nu s-a incarcat.");
+          throw new Error("The QR library failed to load.");
         }
         target.innerHTML = "";
         new window.QRCode(target, {
@@ -784,9 +845,9 @@
       function renderRecipientTools() {
         const explorerUrl = `https://explorer.multiversx.com/accounts/${CONFIG.recipientAddress}`;
         dom.recipientAddress.textContent = CONFIG.recipientAddress;
-        dom.recipientExplorerLink.href = explorerUrl;
+        if (dom.recipientExplorerLink) dom.recipientExplorerLink.href = explorerUrl;
         if (dom.recipientQrCode) renderQr(dom.recipientQrCode, CONFIG.recipientAddress, 220);
-        dom.openXportalBtn.href = getXPortalAppLink();
+        if (dom.openXportalBtn) dom.openXportalBtn.href = getXPortalAppLink();
       }
 
       function syncConnectionView() {
@@ -794,7 +855,12 @@
         dom.connectView.hidden = connected;
         dom.connectedView.hidden = !connected;
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
-        dom.connectedAddress.textContent = connected ? state.address : "Neconectat";
+        if (connected) {
+          dynamicText.delete(dom.connectedAddress);
+          dom.connectedAddress.textContent = state.address;
+        } else {
+          setDynamicText(dom.connectedAddress, "Disconnected");
+        }
         dom.connectedExplorerLink.href = connected
           ? `https://explorer.multiversx.com/accounts/${state.address}`
           : "https://explorer.multiversx.com/";
@@ -805,7 +871,7 @@
         const amount = dom.amountInput.value.trim();
         const canSend = hasConnectedWallet() && isValidAmount(amount) && !state.sending && !state.connecting;
         dom.sendBtn.disabled = !canSend;
-        dom.sendBtn.textContent = state.sending ? "Se trimite..." : "Trimite cu xPortal";
+        setDynamicText(dom.sendBtn, state.sending ? "Sending..." : "Send with xPortal");
 
         if (state.pendingUri) {
           dom.connectBtn.classList.remove("is-disabled");
@@ -831,7 +897,7 @@
         window.localStorage.removeItem(CONFIG.storageKey);
         window.localStorage.removeItem(CONFIG.sessionTopicKey);
         syncConnectionView();
-        setStatus("idle", "Conexiunea xPortal a fost inchisa.");
+        setStatus("idle", "xPortal connection closed.");
         startConnection();
       }
 
@@ -857,8 +923,8 @@
           const sessionAddress = extractAddressFromSession(session);
           if (sessionAddress) state.address = sessionAddress;
           saveConnection(state.address, storedTopic);
-          setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
-          setSendStatus("Introdu suma EGLD si confirma transferul in xPortal.");
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(state.address) });
+          setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
           return true;
         } catch (_) {
           clearConnection();
@@ -871,7 +937,7 @@
         const runId = ++state.connectionRunId;
         state.connecting = true;
         syncButtons();
-        setStatus("loading", "Se genereaza sesiunea xPortal...");
+        setStatus("loading", "Generating xPortal session...");
 
         try {
           const client = await getSignClient();
@@ -886,30 +952,30 @@
           });
 
           if (!uri) {
-            throw new Error("WalletConnect nu a returnat un URI pentru QR.");
+            throw new Error("WalletConnect did not return a QR URI.");
           }
 
           state.pendingUri = uri;
           renderQr(dom.connectQrCode, uri, 220);
           syncButtons();
-          setStatus("loading", "Scaneaza QR-ul sau apasa Conecteaza xPortal.");
+          setStatus("loading", "Scan the QR or tap Connect xPortal.");
 
           const session = await approval();
           if (runId !== state.connectionRunId) return;
 
           const address = extractAddressFromSession(session);
           if (!address) {
-            throw new Error("xPortal nu a returnat o adresa MultiversX valida.");
+            throw new Error("xPortal did not return a valid MultiversX address.");
           }
 
           state.pendingUri = "";
           saveConnection(address, session.topic || "");
-          setStatus("connected", `Conectat: ${truncateAddress(address)}`);
-          setSendStatus("Introdu suma EGLD si confirma transferul in xPortal.");
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(address) });
+          setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
         } catch (error) {
           if (runId === state.connectionRunId) {
             console.error(error);
-            setStatus("error", error?.message || "Conectarea xPortal a esuat.");
+            setStatus("error", error?.message || "xPortal connection failed.");
           }
         } finally {
           if (runId === state.connectionRunId) {
@@ -962,7 +1028,7 @@
         const price = await fetchEgldPrice();
         if (!price) {
           dom.amountInput.placeholder = "0.01";
-          setSendStatus("Introdu suma EGLD si confirma transferul in xPortal.");
+          setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
           return;
         }
         state.egldPrice = price;
@@ -983,18 +1049,23 @@
       function updateAmountNote() {
         if (state.sending || !state.egldPrice) return;
         const raw = dom.amountInput.value.trim().replace(",", ".");
-        const minSuffix = state.minEgldStr
-          ? ` · minim ${state.minEgldStr} EGLD (~${CONFIG.minUsd} $)`
-          : "";
 
         if (!/^\d+(\.\d{1,18})?$/.test(raw) || parseEgldToAtomic(raw) <= 0n) {
-          setSendStatus(`Introdu suma EGLD${minSuffix}.`);
+          if (state.minEgldStr) {
+            setSendStatus("Enter the EGLD amount · min {min} EGLD (~{usd} $).", { min: state.minEgldStr, usd: CONFIG.minUsd });
+          } else {
+            setSendStatus("Enter the EGLD amount.");
+          }
           return;
         }
 
-        const usd = Number(raw) * state.egldPrice;
+        const usd = (Number(raw) * state.egldPrice).toFixed(2);
         const belowMin = state.minEgldAtomic > 0n && parseEgldToAtomic(raw) < state.minEgldAtomic;
-        setSendStatus(`${raw} EGLD ≈ ${usd.toFixed(2)} $${belowMin ? minSuffix : ""}.`);
+        if (belowMin) {
+          setSendStatus("{amount} EGLD ≈ {usd} $ · min {min} EGLD (~{usdMin} $).", { amount: raw, usd, min: state.minEgldStr, usdMin: CONFIG.minUsd });
+        } else {
+          setSendStatus("{amount} EGLD ≈ {usd} $.", { amount: raw, usd });
+        }
       }
 
       function parseEgldToAtomic(value) {
@@ -1019,21 +1090,21 @@
           await navigator.clipboard.writeText(text);
           setSendStatus(okMessage);
         } catch (_) {
-          setSendStatus("Nu am putut copia automat. Selecteaza manual adresa afisata.");
+          setSendStatus("Could not copy automatically. Select the displayed address manually.");
         }
       }
 
       async function fetchAccount(address) {
         const response = await fetch(`${CONFIG.apiBase}/accounts/${address}`);
         if (!response.ok) {
-          throw new Error("Nu am putut citi contul conectat.");
+          throw new Error("Could not read the connected account.");
         }
         return response.json();
       }
 
       async function requestTransactionSignature(transaction) {
         const client = await getSignClient();
-        const result = await client.request({
+        const requestPromise = client.request({
           topic: state.sessionTopic,
           chainId: CONFIG.chainId,
           request: {
@@ -1042,12 +1113,18 @@
           }
         });
 
+        // On mobile, surface xPortal so the user can confirm; it returns here
+        // afterwards via the redirect set in the WalletConnect metadata.
+        openXPortalApp();
+
+        const result = await requestPromise;
+
         const signed = result?.transaction && typeof result.transaction === "object"
           ? { ...transaction, ...result.transaction }
           : { ...transaction, ...result };
 
         if (!signed.signature) {
-          throw new Error("xPortal nu a returnat semnatura tranzactiei.");
+          throw new Error("xPortal did not return the transaction signature.");
         }
 
         return signed;
@@ -1072,7 +1149,7 @@
         const text = await response.text();
         const data = text ? JSON.parse(text) : {};
         if (!response.ok) {
-          throw new Error(data?.message || data?.error || `Cererea a esuat: ${response.status}`);
+          throw new Error(data?.message || data?.error || `Request failed: ${response.status}`);
         }
         return data;
       }
@@ -1081,20 +1158,20 @@
         if (state.sending) return;
         const amountText = dom.amountInput.value.trim().replace(",", ".");
         if (!isValidAmount(amountText)) {
-          setSendStatus("Introdu o suma EGLD valida.");
+          setSendStatus("Enter a valid EGLD amount.");
           syncButtons();
           return;
         }
 
         if (!hasConnectedWallet()) {
-          setSendStatus("Conecteaza xPortal inainte de transfer.");
+          setSendStatus("Connect xPortal before sending.");
           return;
         }
 
         state.sending = true;
         dom.txResult.hidden = true;
         syncButtons();
-        setSendStatus("Se pregateste tranzactia EGLD...");
+        setSendStatus("Preparing the EGLD transaction...");
 
         try {
           const account = await fetchAccount(state.address);
@@ -1103,7 +1180,8 @@
           const balanceAtomic = BigInt(account.balance || "0");
 
           if (balanceAtomic < amountAtomic + feeAtomic) {
-            throw new Error(`Balanta nu acopera suma si taxa estimata (${formatEgldFromAtomic(feeAtomic)} EGLD).`);
+            setSendStatus("Balance does not cover the amount plus the estimated fee ({fee} EGLD).", { fee: formatEgldFromAtomic(feeAtomic) });
+            return;
           }
 
           const transaction = {
@@ -1117,21 +1195,21 @@
             version: 1
           };
 
-          setSendStatus("Confirma tranzactia in xPortal.");
+          setSendStatus("Confirm the transaction in xPortal.");
           const signedTransaction = await requestTransactionSignature(transaction);
-          setSendStatus("Semnatura primita. Se trimite tranzactia pe MultiversX...");
+          setSendStatus("Signature received. Broadcasting the transaction on MultiversX...");
           const txHash = await broadcastTransaction(signedTransaction);
           const txUrl = `https://explorer.multiversx.com/transactions/${txHash}`;
 
           dom.txResult.innerHTML = `
-            <strong>Tranzactie trimisa.</strong>
+            <strong>${translateText("Transaction sent.")}</strong>
             <a href="${txUrl}" target="_blank" rel="noreferrer">${txHash}</a>
           `;
           dom.txResult.hidden = false;
-          setSendStatus(`Trimis ${amountText} EGLD catre adresa de support.`);
+          setSendStatus("Sent {amount} EGLD to the support address.", { amount: amountText });
         } catch (error) {
           console.error(error);
-          setSendStatus(error?.message || "Transferul nu a putut fi trimis.");
+          setSendStatus(error?.message || "The transfer could not be sent.");
         } finally {
           state.sending = false;
           syncButtons();
@@ -1158,14 +1236,13 @@
       }
 
       async function boot() {
+        applyTranslations();
         renderRecipientTools();
         dom.connectBtn.addEventListener("click", (event) => {
           if (!state.pendingUri) event.preventDefault();
         });
         dom.disconnectBtn.addEventListener("click", disconnectWallet);
-        dom.copyConnectedBtn.addEventListener("click", () => copyText(state.address, "Adresa conectata a fost copiata."));
-        dom.copyRecipientBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa destinatie a fost copiata."));
-        dom.openXportalBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa a fost copiata. Deschide xPortal si lipeste-o la Send."));
+        dom.copyConnectedBtn.addEventListener("click", () => copyText(state.address, "Connected address copied."));
         dom.sendBtn.addEventListener("click", sendEgld);
         dom.amountInput.addEventListener("input", () => {
           syncButtons();
@@ -1182,7 +1259,7 @@
 
       boot().catch((error) => {
         console.error(error);
-        setStatus("error", error?.message || "Pagina nu s-a putut initializa.");
+        setStatus("error", error?.message || "The page could not be initialized.");
         notifyParentReady();
       });
     })();
