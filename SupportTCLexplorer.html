@@ -935,10 +935,7 @@
       function isValidAmount(value) {
         const raw = String(value || "").trim().replace(",", ".");
         if (!/^\d+(\.\d{1,18})?$/.test(raw)) return false;
-        const atomic = parseEgldToAtomic(raw);
-        if (atomic <= 0n) return false;
-        if (state.minEgldAtomic > 0n && atomic < state.minEgldAtomic) return false;
-        return true;
+        return parseEgldToAtomic(raw) > 0n;
       }
 
       async function fetchEgldPrice() {
@@ -1084,11 +1081,7 @@
         if (state.sending) return;
         const amountText = dom.amountInput.value.trim().replace(",", ".");
         if (!isValidAmount(amountText)) {
-          if (state.minEgldStr && /^\d+(\.\d{1,18})?$/.test(amountText) && parseEgldToAtomic(amountText) < state.minEgldAtomic) {
-            setSendStatus(`Suma minima este ${state.minEgldStr} EGLD (~${CONFIG.minUsd} $).`);
-          } else {
-            setSendStatus("Introdu o suma EGLD valida.");
-          }
+          setSendStatus("Introdu o suma EGLD valida.");
           syncButtons();
           return;
         }
