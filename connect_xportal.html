@@ -603,7 +603,7 @@
     }
 
     .pnl-card {
-      /* 4 carduri pe rand (~277px); ultimul rand (3 carduri) creste sa umple latimea */
+      /* 4 carduri pe rand (~277px) */
       flex: 1 1 250px;
       min-width: 0;
       min-height: 122px;
@@ -721,6 +721,8 @@
     }
     .earned-cat-value span { font-size: 0.7rem; color: var(--text-muted); }
     .earned-cat-sub { margin-top: 4px; font-size: 0.7rem; color: var(--text-muted); line-height: 1.3; }
+    .earned-source-link { color: var(--accent-strong); font-weight: 700; text-decoration: none; }
+    .earned-source-link:hover { text-decoration: underline; }
     .earned-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
     .earned-breakdown-table th {
       text-align: left; padding: 6px 8px 8px;
@@ -1082,6 +1084,14 @@
           <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
         </article>
         <article class="pnl-card">
+          <div class="pnl-card-header">
+            <p class="pnl-label">Presale</p>
+            <button class="pnl-info-btn" id="presaleInfoBtn" type="button" title="Presale sources (Seed Zero, Seed, Public Sale)" style="display:none">i</button>
+          </div>
+          <p class="pnl-value" id="pnlPresaleTcl">--</p>
+          <p class="pnl-meta" id="pnlPresaleUsd">Cost: --</p>
+        </article>
+        <article class="pnl-card">
           <p class="pnl-label">Wallet Balance</p>
           <p class="pnl-value" id="pnlWalletTcl">--</p>
           <p class="pnl-meta" id="pnlWalletUsd">Value: --</p>
@@ -1211,6 +1221,19 @@
       </div>
     </div>
 
+    <!-- Presale breakdown popup -->
+    <div class="earned-popup-overlay" id="presalePopupOverlay">
+      <div class="earned-popup">
+        <div class="earned-popup-head">
+          <h3>Presale Sources</h3>
+          <button class="earned-popup-close" id="presalePopupClose">x</button>
+        </div>
+        <div class="earned-popup-body" id="presalePopupBody">
+          <p style="color:var(--text-muted);font-size:0.88rem">Loading...</p>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
@@ -1243,6 +1266,28 @@
           "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json",
           "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
         ],
+        pnlPresaleSources: [
+          {
+            key: "seedZero",
+            label: "Seed Zero",
+            address: "erd1qqqqqqqqqqqqqpgqk9yf8y32wzwupjy7724j5wm3rk737ph20ufslxuppr",
+            priceUsd: 0.005
+          },
+          {
+            key: "seed",
+            label: "Seed",
+            address: "erd1qqqqqqqqqqqqqpgq97axlw2euvr3kenudu6xlch8zwmz2ah50ufspnfks0",
+            priceUsd: 0.005
+          },
+          {
+            key: "publicSale",
+            label: "BHero Public Sale",
+            address: "erd1qqqqqqqqqqqqqpgq5xu6me8xveumsunfyq9352pa0hpkplsqsyxszfw8sd",
+            priceUsd: 0.006
+          }
+        ],
+        pnlPresalePageSize: 100,
+        pnlPresaleMaxPages: 20,
         pnlPageSize: 50,
         pnlMaxPages: 220,
         pnlPairMaxPages: 20,
@@ -1336,6 +1381,8 @@
         pnlInfinityUsd: document.getElementById("pnlInfinityUsd"),
         pnlStakingTcl: document.getElementById("pnlStakingTcl"),
         pnlStakingUsd: document.getElementById("pnlStakingUsd"),
+        pnlPresaleTcl: document.getElementById("pnlPresaleTcl"),
+        pnlPresaleUsd: document.getElementById("pnlPresaleUsd"),
         pnlWalletTcl: document.getElementById("pnlWalletTcl"),
         pnlWalletUsd: document.getElementById("pnlWalletUsd"),
         pnlStatus: document.getElementById("pnlStatus")
@@ -2009,6 +2056,10 @@
         setDynamicText(dom.pnlInfinityUsd, "Cost: --");
         dom.pnlStakingTcl.textContent = "--";
         setDynamicText(dom.pnlStakingUsd, "Value: --");
+        dom.pnlPresaleTcl.textContent = "--";
+        setDynamicText(dom.pnlPresaleUsd, "Cost: --");
+        const presaleInfoBtn = document.getElementById("presaleInfoBtn");
+        if (presaleInfoBtn) presaleInfoBtn.style.display = "none";
         dom.pnlWalletTcl.textContent = "--";
         setDynamicText(dom.pnlWalletUsd, "Value: --");
       }
@@ -3118,6 +3169,117 @@
         }
       }
 
+      // Presale: TCL primit din Seed Zero, Seed si BHero Public Sale.
+      // Costul fix este scazut din PNL; valoarea actuala intra prin sold, staking sau wallet.
+      function createEmptyPresaleData() {
+        const sources = (CONFIG.pnlPresaleSources || []).map((source) => ({
+          key: source.key,
+          label: source.label,
+          address: source.address,
+          priceUsd: readNumber(source.priceUsd, 0),
+          tcl: 0,
+          cost: 0,
+          count: 0
+        }));
+        return { totalTcl: 0, totalCost: 0, totalCount: 0, sources };
+      }
+
+      function readTclAmountFromPresaleTransfer(entry) {
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList)) return 0;
+        return transferList.reduce((sum, transfer) => {
+          const normalized = normalizePnlTradeTransfer(transfer);
+          return normalized?.token === CONFIG.tokens.tcl.identifier
+            ? sum + normalized.amount
+            : sum;
+        }, 0);
+      }
+
+      async function fetchPresaleSource(walletAddress, source) {
+        const result = {
+          key: source.key,
+          label: source.label,
+          address: source.address,
+          priceUsd: readNumber(source.priceUsd, 0),
+          tcl: 0,
+          cost: 0,
+          count: 0
+        };
+        if (!isAddress(walletAddress) || !isAddress(source.address)) return result;
+
+        const pageSize = Math.max(1, Number(CONFIG.pnlPresalePageSize) || 100);
+        const maxPages = Math.max(1, Number(CONFIG.pnlPresaleMaxPages) || 10);
+        const seen = new Set();
+
+        try {
+          let from = 0;
+          for (let page = 0; page < maxPages; page += 1) {
+            const rows = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+              sender: source.address,
+              receiver: walletAddress,
+              token: CONFIG.tokens.tcl.identifier,
+              size: pageSize,
+              from
+            }), { retries: 2, retryDelayMs: 800, timeoutMs: 12000 });
+
+            if (!Array.isArray(rows) || rows.length === 0) break;
+
+            for (const row of rows) {
+              if (row.status !== "success") continue;
+              if (row.sender !== source.address || row.receiver !== walletAddress) continue;
+
+              const amount = readTclAmountFromPresaleTransfer(row);
+              if (!Number.isFinite(amount) || amount <= 0) continue;
+
+              const key = `${row.txHash || ""}|${row.originalTxHash || ""}|${amount}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              result.tcl += amount;
+              result.count += 1;
+            }
+
+            if (rows.length < pageSize) break;
+            from += pageSize;
+          }
+        } catch (_) {
+          result.cost = result.tcl * result.priceUsd;
+          return result;
+        }
+
+        result.cost = result.tcl * result.priceUsd;
+        return result;
+      }
+
+      async function fetchPresale(walletAddress) {
+        const sources = CONFIG.pnlPresaleSources || [];
+        if (!sources.length) return createEmptyPresaleData();
+
+        const sourceResults = await Promise.all(sources.map((source) => fetchPresaleSource(walletAddress, source)));
+        return sourceResults.reduce((total, source) => {
+          total.totalTcl += readNumber(source.tcl, 0);
+          total.totalCost += readNumber(source.cost, 0);
+          total.totalCount += Math.max(0, Math.floor(readNumber(source.count, 0)));
+          total.sources.push(source);
+          return total;
+        }, { totalTcl: 0, totalCost: 0, totalCount: 0, sources: [] });
+      }
+
+      function renderPresale(presale) {
+        const data = presale && typeof presale === "object" ? presale : createEmptyPresaleData();
+        const totalTcl = readNumber(data.totalTcl, 0);
+        const totalCost = readNumber(data.totalCost, 0);
+        dom.pnlPresaleTcl.textContent = `${formatTokenAmount(totalTcl)} TCL`;
+        setDynamicText(dom.pnlPresaleUsd, "Cost: {value} USDC", { value: formatUsd(totalCost) });
+
+        const btn = document.getElementById("presaleInfoBtn");
+        if (btn) {
+          const hasSources = Array.isArray(data.sources) && data.sources.length > 0;
+          btn.style.display = hasSources ? "inline-flex" : "none";
+          if (hasSources) btn.onclick = () => showPresaleBreakdown(data);
+        }
+      }
+
       // ── Wallet Balance: TCL lichid detinut acum in wallet ───────────────────────
       // Tokenii disponibili (neblocati) din wallet, cititi live din API. Conteaza ca
       // valoare detinuta in PNL.
@@ -3141,23 +3303,24 @@
         setDynamicText(dom.pnlWalletUsd, "Value: {value} USDC", { value: formatUsd(usd) });
       }
 
-      function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null, staking = null, wallet = null) {
+      function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null, staking = null, presale = null, wallet = null) {
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
         setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC", { value: formatUsd(totals.buyUsd) });
         dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
         setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC", { value: formatUsd(totals.sellUsd) });
 
         const tclPrice = readNumber(state.prices.tcl, 0);
-        // Valoarea TCL earned + TCL staked (la pretul curent) si costul Infinity Offers (USDC platit)
+        // Valoarea TCL earned + TCL staked (la pretul curent), plus costurile Presale si Infinity Offers.
         const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
         const earnedAmount = readNumber(earnedData.total, 0);
         const earnedUsd = earnedAmount * tclPrice;
         const infinityCost = infinity && typeof infinity === "object" ? readNumber(infinity.usdc, 0) : 0;
         const stakingValue = staking && typeof staking === "object" ? readNumber(staking.total, 0) * tclPrice : 0;
+        const presaleCost = presale && typeof presale === "object" ? readNumber(presale.totalCost, 0) : 0;
         const walletValue = wallet && typeof wallet === "object" ? readNumber(wallet.tcl, 0) * tclPrice : 0;
 
-        // PNL net = vanzari + valoarea TCL earned + TCL staked + TCL din wallet − cost cumparari − cost Infinity Offers
-        const pnlUsd = totals.sellUsd - totals.buyUsd + earnedUsd + stakingValue + walletValue - infinityCost;
+        // PNL net = vanzari + valoarea TCL earned + TCL staked + TCL din wallet - cost cumparari - Presale - Infinity Offers
+        const pnlUsd = totals.sellUsd - totals.buyUsd + earnedUsd + stakingValue + walletValue - presaleCost - infinityCost;
         dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
         dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
@@ -3233,11 +3396,12 @@
             console.warn("PNL cache preparation incomplete", prepErr);
           }
 
-          const [pnlResult, earnedResult, infinityResult, stakingResult, walletResult] = await Promise.allSettled([
+          const [pnlResult, earnedResult, infinityResult, stakingResult, presaleResult, walletResult] = await Promise.allSettled([
             fetchPnlFromSupabase(walletAddress),
             fetchEarnedTcl(walletAddress),
             fetchInfinityOffers(walletAddress),
             fetchStaking(walletAddress),
+            fetchPresale(walletAddress),
             fetchWalletBalance(walletAddress)
           ]);
 
@@ -3252,6 +3416,9 @@
           }
           if (stakingResult.status === "rejected") {
             console.warn("Staking lookup failed", stakingResult.reason);
+          }
+          if (presaleResult.status === "rejected") {
+            console.warn("Presale lookup failed", presaleResult.reason);
           }
           if (walletResult.status === "rejected") {
             console.warn("Wallet balance lookup failed", walletResult.reason);
@@ -3269,6 +3436,9 @@
           const staking = (stakingResult.status === "fulfilled" && stakingResult.value)
             ? stakingResult.value
             : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+          const presale = (presaleResult.status === "fulfilled" && presaleResult.value)
+            ? presaleResult.value
+            : createEmptyPresaleData();
           const wallet = (walletResult.status === "fulfilled" && walletResult.value)
             ? walletResult.value
             : { tcl: 0 };
@@ -3293,13 +3463,15 @@
             oldestTimestamp:     pnlData.oldestTimestamp
           };
 
-          renderPnlResult(totals, historyMeta, earnedTcl, infinity, staking, wallet);
+          renderPnlResult(totals, historyMeta, earnedTcl, infinity, staking, presale, wallet);
           renderInfinityOffers(infinity);
           renderStaking(staking);
+          renderPresale(presale);
           renderWalletBalance(wallet);
 
           const earnedAmount = readEarnedTotal(earnedTcl);
           const infinityCount = readNumber(infinity.count, 0);
+          const presaleAmount = readNumber(presale.totalTcl, 0);
           const pnlUnavailable = pnlResult.status !== "fulfilled" || !pnlResult.value;
           if (pnlUnavailable && earnedAmount > 0) {
             setPnlStatus("Could not load buy/sell swaps. Earned TCL was still checked.");
@@ -3309,6 +3481,8 @@
             setPnlStatus("No buy/sell swaps found. Earned TCL was still calculated.");
           } else if (pnlData.tradeCount === 0 && infinityCount > 0) {
             setPnlStatus("No buy/sell swaps found. Infinity Offers were still calculated.");
+          } else if (pnlData.tradeCount === 0 && presaleAmount > 0) {
+            setPnlStatus("No buy/sell swaps found. Presale was still calculated.");
           } else if (pnlData.tradeCount === 0) {
             setPnlStatus("No buy/sell swaps or earned TCL found for this wallet. Checked records: {count}.", {
               count: Number(pnlData.checkedSwaps || 0).toLocaleString(getLocale())
@@ -3447,12 +3621,52 @@
         overlay.classList.add("open");
       }
 
-      // Popup close logic — se initializeaza la boot
+      // Breakdown Presale pe cele 3 surse: Seed Zero, Seed, BHero Public Sale
+      function showPresaleBreakdown(presale) {
+        const overlay = document.getElementById("presalePopupOverlay");
+        const body    = document.getElementById("presalePopupBody");
+        if (!overlay || !body) return;
+
+        const data = presale && typeof presale === "object" ? presale : createEmptyPresaleData();
+        const fallbackSources = createEmptyPresaleData().sources;
+        const sources = Array.isArray(data.sources) && data.sources.length ? data.sources : fallbackSources;
+        const totalTcl = readNumber(data.totalTcl, 0);
+        const totalCost = readNumber(data.totalCost, 0);
+        const unitPrice = (price) => `$${readNumber(price, 0).toFixed(3)}`;
+
+        let html = `<div class="earned-popup-total">${esc(translateText("Total presale:"))} <span>${formatTokenAmount(totalTcl)} TCL</span>
+          <div class="earned-cat-sub">${esc(translateText("Cost basis:"))} ${formatUsd(totalCost)} USDC</div>
+        </div>`;
+
+        let catHtml = "";
+        for (const source of sources) {
+          const val = readNumber(source.tcl, 0);
+          const cost = readNumber(source.cost, 0);
+          const pct = totalTcl > 0 ? (val / totalTcl * 100) : 0;
+          const explorerUrl = `https://explorer.multiversx.com/accounts/${source.address}`;
+          const pctText = totalTcl > 0 ? ` - ${pct.toFixed(0)}%` : "";
+          catHtml += `<div class="earned-cat-card">
+            <div class="earned-cat-label">${esc(translateText(source.label))}</div>
+            <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
+            <div class="earned-cat-sub">${formatUsd(cost)} USDC @ ${unitPrice(source.priceUsd)} / TCL${pctText}</div>
+            <div class="earned-cat-sub"><a class="earned-source-link" href="${esc(explorerUrl)}" target="_blank" rel="noreferrer noopener">${esc(translateText("Explorer"))}</a></div>
+          </div>`;
+        }
+        if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
+        html += `<p style="color:var(--text-muted);font-size:0.78rem;margin-top:10px;line-height:1.4">${esc(translateText("Seed Zero and Seed are valued at $0.005 per TCL. BHero Public Sale is valued at $0.006 per TCL."))}</p>`;
+
+        body.innerHTML = html;
+        overlay.classList.add("open");
+      }
+
+      // Popup close logic - se initializeaza la boot
       function initEarnedPopup() {
         const overlay = document.getElementById("earnedPopupOverlay");
         const closeBtn = document.getElementById("earnedPopupClose");
         const stOverlay = document.getElementById("stakingPopupOverlay");
         const stClose = document.getElementById("stakingPopupClose");
+        const presaleOverlay = document.getElementById("presalePopupOverlay");
+        const presaleClose = document.getElementById("presalePopupClose");
         if (overlay) {
           overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
         }
@@ -3465,8 +3679,14 @@
         if (stClose) {
           stClose.addEventListener("click", () => stOverlay?.classList.remove("open"));
         }
+        if (presaleOverlay) {
+          presaleOverlay.addEventListener("click", (e) => { if (e.target === presaleOverlay) presaleOverlay.classList.remove("open"); });
+        }
+        if (presaleClose) {
+          presaleClose.addEventListener("click", () => presaleOverlay?.classList.remove("open"));
+        }
         document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") { overlay?.classList.remove("open"); stOverlay?.classList.remove("open"); }
+          if (e.key === "Escape") { overlay?.classList.remove("open"); stOverlay?.classList.remove("open"); presaleOverlay?.classList.remove("open"); }
         });
       }
 
