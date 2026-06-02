@@ -597,7 +597,7 @@
 
     .pnl-results {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
       margin-bottom: 12px;
     }
@@ -1075,6 +1075,11 @@
           <p class="pnl-value" id="pnlEarnedTcl">--</p>
           <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
         </article>
+        <article class="pnl-card">
+          <p class="pnl-label">Infinity Offers</p>
+          <p class="pnl-value" id="pnlInfinityTcl">--</p>
+          <p class="pnl-meta" id="pnlInfinityUsd">Cost: --</p>
+        </article>
       </div>
       <p class="pnl-status" id="pnlStatus">Connect xPortal for PNL Check.</p>
     </section>
@@ -1200,6 +1205,9 @@
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
+        // Infinity Offers: functia buyStakingOffer pe game contract (USDC platit -> TCL burnat)
+        pnlInfinityFunction: "buyStakingOffer",
+        pnlInfinityMaxPages: 10,
         pnlPageSize: 50,
         pnlMaxPages: 220,
         pnlPairMaxPages: 20,
@@ -1289,6 +1297,8 @@
         pnlTradeCount: document.getElementById("pnlTradeCount"),
         pnlEarnedTcl: document.getElementById("pnlEarnedTcl"),
         pnlEarnedUsd: document.getElementById("pnlEarnedUsd"),
+        pnlInfinityTcl: document.getElementById("pnlInfinityTcl"),
+        pnlInfinityUsd: document.getElementById("pnlInfinityUsd"),
         pnlStatus: document.getElementById("pnlStatus")
       };
 
@@ -1956,6 +1966,8 @@
         setDynamicText(dom.pnlTradeCount, "Trades: --");
         dom.pnlEarnedTcl.textContent = "--";
         setDynamicText(dom.pnlEarnedUsd, "Value: --");
+        dom.pnlInfinityTcl.textContent = "--";
+        setDynamicText(dom.pnlInfinityUsd, "Cost: --");
       }
 
       function getTokenByIdentifier(tokens, identifier) {
@@ -2950,6 +2962,77 @@
         }
       }
 
+      // ── Infinity Offers (buyStakingOffer): USDC platit + TCL cumparat ───────────
+      // Wallet-ul plateste USDC catre game contract; contractul face localBurn de TCL,
+      // deci TCL-ul NU ajunge in wallet => nu apare in buy/sell PnL. Citim direct din
+      // API tranzactiile buyStakingOffer ale wallet-ului si insumam. Query live la
+      // fiecare rulare => se actualizeaza singur cand mai cumpara (fara worker/Supabase).
+      function decodeTxData(b64) {
+        if (!b64) return "";
+        try { return atob(String(b64)); } catch (_) { return ""; }
+      }
+
+      function hexToAscii(hex) {
+        const clean = String(hex || "");
+        let out = "";
+        for (let i = 0; i + 1 < clean.length; i += 2) {
+          out += String.fromCharCode(parseInt(clean.slice(i, i + 2), 16));
+        }
+        return out;
+      }
+
+      function hexToTokenAmount(hex, decimals) {
+        if (!/^[0-9a-fA-F]+$/.test(String(hex || ""))) return 0;
+        try { return rawToNumber(BigInt("0x" + hex).toString(), decimals); }
+        catch (_) { return 0; }
+      }
+
+      async function fetchInfinityOffers(walletAddress) {
+        const empty = { tcl: 0, usdc: 0, count: 0 };
+        const gameContract = CONFIG.pnlGameContract;
+        const fn = CONFIG.pnlInfinityFunction;
+        if (!gameContract || !fn) return empty;
+        const usdcId = CONFIG.tokens.usdc.identifier;
+        const pageSize = 50;
+        try {
+          let tcl = 0, usdc = 0, count = 0, from = 0;
+          for (let page = 0; page < CONFIG.pnlInfinityMaxPages; page++) {
+            const rows = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transactions`, {
+              receiver: gameContract,
+              function: fn,
+              size: pageSize,
+              from,
+              fields: "sender,status,data"
+            }), { retries: 2, retryDelayMs: 800, timeoutMs: 12000 });
+            if (!Array.isArray(rows) || rows.length === 0) break;
+            for (const row of rows) {
+              if (row.status !== "success") continue;       // exclude tranzactiile esuate
+              if (row.sender !== walletAddress) continue;    // doar platile facute de wallet
+              // data = ESDTTransfer@<tokenHex>@<usdcHex>@buyStakingOffer@<offerId>@<tclHex>
+              const parts = decodeTxData(row.data).split("@");
+              if (parts[0] !== "ESDTTransfer" || parts.length < 6) continue;
+              if (hexToAscii(parts[1]) !== usdcId) continue; // plata trebuie sa fie in USDC
+              usdc += hexToTokenAmount(parts[2], CONFIG.tokens.usdc.decimals);
+              tcl  += hexToTokenAmount(parts[parts.length - 1], CONFIG.tokens.tcl.decimals);
+              count++;
+            }
+            if (rows.length < pageSize) break;
+            from += pageSize;
+          }
+          return { tcl, usdc, count };
+        } catch (_) {
+          return empty;
+        }
+      }
+
+      function renderInfinityOffers(infinity) {
+        const data = infinity && typeof infinity === "object" ? infinity : { tcl: 0, usdc: 0, count: 0 };
+        const tcl = readNumber(data.tcl, 0);
+        const usdc = readNumber(data.usdc, 0);
+        dom.pnlInfinityTcl.textContent = `${formatTokenAmount(tcl)} TCL`;
+        setDynamicText(dom.pnlInfinityUsd, "Cost: {value} USDC", { value: formatUsd(usdc) });
+      }
+
       function renderPnlResult(totals, historyMeta, earnedTcl = 0) {
         const pnlUsd = totals.sellUsd - totals.buyUsd;
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
@@ -3034,9 +3117,10 @@
             console.warn("PNL cache preparation incomplete", prepErr);
           }
 
-          const [pnlResult, earnedResult] = await Promise.allSettled([
+          const [pnlResult, earnedResult, infinityResult] = await Promise.allSettled([
             fetchPnlFromSupabase(walletAddress),
-            fetchEarnedTcl(walletAddress)
+            fetchEarnedTcl(walletAddress),
+            fetchInfinityOffers(walletAddress)
           ]);
 
           if (pnlResult.status === "rejected") {
@@ -3045,6 +3129,9 @@
           if (earnedResult.status === "rejected") {
             console.warn("Earned TCL lookup failed", earnedResult.reason);
           }
+          if (infinityResult.status === "rejected") {
+            console.warn("Infinity Offers lookup failed", infinityResult.reason);
+          }
 
           const pnlData = (pnlResult.status === "fulfilled" && pnlResult.value)
             ? pnlResult.value
@@ -3052,6 +3139,9 @@
           const earnedTcl = (earnedResult.status === "fulfilled" && earnedResult.value)
             ? earnedResult.value
             : { total: 0, breakdown: {} };
+          const infinity = (infinityResult.status === "fulfilled" && infinityResult.value)
+            ? infinityResult.value
+            : { tcl: 0, usdc: 0, count: 0 };
 
           // Construieste totals in formatul asteptat de renderPnlResult
           const totals = {
@@ -3074,8 +3164,10 @@
           };
 
           renderPnlResult(totals, historyMeta, earnedTcl);
+          renderInfinityOffers(infinity);
 
           const earnedAmount = readEarnedTotal(earnedTcl);
+          const infinityCount = readNumber(infinity.count, 0);
           const pnlUnavailable = pnlResult.status !== "fulfilled" || !pnlResult.value;
           if (pnlUnavailable && earnedAmount > 0) {
             setPnlStatus("Could not load buy/sell swaps. Earned TCL was still checked.");
@@ -3083,6 +3175,8 @@
             setPnlStatus("PNL Check completed with the data currently available.");
           } else if (pnlData.tradeCount === 0 && earnedAmount > 0) {
             setPnlStatus("No buy/sell swaps found. Earned TCL was still calculated.");
+          } else if (pnlData.tradeCount === 0 && infinityCount > 0) {
+            setPnlStatus("No buy/sell swaps found. Infinity Offers were still calculated.");
           } else if (pnlData.tradeCount === 0) {
             setPnlStatus("No buy/sell swaps or earned TCL found for this wallet. Checked records: {count}.", {
               count: Number(pnlData.checkedSwaps || 0).toLocaleString(getLocale())
