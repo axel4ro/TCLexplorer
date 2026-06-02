@@ -37,6 +37,21 @@ const SWAP_FUNCTIONS = [
   "composeTasks",
 ];
 
+// Aggregatorii/routerele MultiversX care ruteaza TCL. Un buy prin oricare din ei
+// livreaza TCL printr-un SCR, dar tx-ul root muta tokenul de input (EGLD/USDC), deci
+// root-ul NU apare in /tokens/TCL-fe459d/transfers => trebuie enrichuit explicit ca sa
+// aiba `operations` (necesare pentru costul USDC din PNL). Detectia de mai jos (isDexScr)
+// e generica (orice contract erd1qqqq != game), deci prinde si aggregatori noi; lista e
+// pastrata explicit pentru claritate si ca referinta. Vezi pnl-worker/enrich-roots.mjs
+// pentru backfill-ul istoric.
+const KNOWN_AGGREGATORS = new Set([
+  "erd1qqqqqqqqqqqqqpgqcc69ts8409p3h77q5chsaqz57y6hugvc4fvs64k74v", // AshSwap: Aggregator v2
+  "erd1qqqqqqqqqqqqqpgq5rf2sppxk2xu4m0pkmugw2es4gak3rgjah0sxvajva", // XOXNO: Swap Aggregator
+  "erd1qqqqqqqqqqqqqpgqn7wy983tdh5katf5yn5nl2gcdflf4azh6jtsggjx9a", // OneDex: Aggregator
+  "erd1qqqqqqqqqqqqqpgqq66xk9gfr4esuhem3jru86wg5hvp33a62jps2fy57p", // xExchange: Router
+  "erd1qqqqqqqqqqqqqpgqsytkvnexypp7argk02l0rasnj57sxa542jpshkl7df", // xExchange: Tasks Composer
+]);
+
 // ── CORS ────────────────────────────────────────────────────
 
 function corsHeaders(env, req) {
@@ -379,11 +394,12 @@ async function syncIncremental(env, log) {
       const root = e.originalTxHash || e.txHash;
       if (!validTxHash(root)) continue;
       const isSwapTx = SWAP_FUNCTIONS.includes(e.function);
-      // SCR provenit de la un contract DEX (pair/aggregator), nu de la game =>
-      // partea de "buy" unde wallet-ul trimite USDC si primeste TCL inapoi.
+      // SCR provenit de la un contract DEX (pair/aggregator/router), nu de la game =>
+      // partea de "buy" unde wallet-ul trimite input si primeste TCL inapoi. Generic
+      // (orice contract != game) + lista explicita KNOWN_AGGREGATORS ca referinta.
       const isDexScr = Boolean(e.originalTxHash)
-        && String(e.sender || "").startsWith("erd1qqqq")
-        && e.sender !== gameContract;
+        && e.sender !== gameContract
+        && (KNOWN_AGGREGATORS.has(e.sender) || String(e.sender || "").startsWith("erd1qqqq"));
       if (isSwapTx || isDexScr) enrichRoots.add(root);
     }
 
