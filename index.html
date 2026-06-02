@@ -321,6 +321,7 @@
       <button type="button" class="nav-item nav-item--external" onclick="openTCL()" id="btn-TCL">
         <img src="https://axel4ro.github.io/TCLexplorer/images/thecursedland.png" alt=""> The Cursed Land ↗
       </button>
+      <button type="button" class="nav-item" onclick="openSupportTCLPage()" id="btn-supportTcl" data-i18n="sidebar_support_tcl">🧡 TCLexplorer 🧡</button>
     </nav>
     <div class="sidebar-footer">MultiversX · TCL-fe459d</div>
   </aside>
@@ -1086,7 +1087,7 @@
   <img id="overlayImg" class="overlay-img" alt="" />
 </div>
 
-<script src="lang/common.bundle.js?v=20260515-3"></script>
+<script src="lang/common.bundle.js?v=20260602-1"></script>
 <script src="lang/events.bundle.js?v=20260521-1"></script>
 <script src="lang/exp-table.bundle.js?v=20260515-3"></script>
 <script src="lang/web3.bundle.js?v=20260515-3"></script>
@@ -2844,6 +2845,15 @@ const INTERNAL_PAGE_ROUTES = {
     routeKey: "apr-rewards",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing APR rewards calculator.",
+    waitForReadyMessage: true
+  },
+  "support-tcl": {
+    src: "SupportTCLexplorer.html",
+    title: "Support TCLexplorer",
+    navId: "btn-supportTcl",
+    routeKey: "support-tcl",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing the TCLexplorer support page.",
     waitForReadyMessage: true
   }
 };
@@ -5066,6 +5076,11 @@ function openTransactionSimulatorPage() {
 
 function openAprRewardsCalculatorPage() {
   const route = INTERNAL_PAGE_ROUTES["apr-rewards"];
+  openInternalPage(route.src, route.title, route);
+}
+
+function openSupportTCLPage() {
+  const route = INTERNAL_PAGE_ROUTES["support-tcl"];
   openInternalPage(route.src, route.title, route);
 }
 
