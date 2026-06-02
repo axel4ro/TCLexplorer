@@ -1058,14 +1058,9 @@
           <p class="pnl-meta" id="pnlBoughtUsd">Cost: --</p>
         </article>
         <article class="pnl-card">
-          <p class="pnl-label">TCL sold</p>
-          <p class="pnl-value" id="pnlSoldTcl">--</p>
-          <p class="pnl-meta" id="pnlSoldUsd">Received: --</p>
-        </article>
-        <article class="pnl-card">
-          <p class="pnl-label">PNL $ USDC</p>
-          <p class="pnl-value" id="pnlNetUsd">--</p>
-          <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
+          <p class="pnl-label">Infinity Offers</p>
+          <p class="pnl-value" id="pnlInfinityTcl">--</p>
+          <p class="pnl-meta" id="pnlInfinityUsd">Cost: --</p>
         </article>
         <article class="pnl-card">
           <div class="pnl-card-header">
@@ -1076,9 +1071,14 @@
           <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
         </article>
         <article class="pnl-card">
-          <p class="pnl-label">Infinity Offers</p>
-          <p class="pnl-value" id="pnlInfinityTcl">--</p>
-          <p class="pnl-meta" id="pnlInfinityUsd">Cost: --</p>
+          <p class="pnl-label">TCL sold</p>
+          <p class="pnl-value" id="pnlSoldTcl">--</p>
+          <p class="pnl-meta" id="pnlSoldUsd">Received: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">PNL $ USDC</p>
+          <p class="pnl-value" id="pnlNetUsd">--</p>
+          <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
         </article>
       </div>
       <p class="pnl-status" id="pnlStatus">Connect xPortal for PNL Check.</p>
@@ -3033,12 +3033,20 @@
         setDynamicText(dom.pnlInfinityUsd, "Cost: {value} USDC", { value: formatUsd(usdc) });
       }
 
-      function renderPnlResult(totals, historyMeta, earnedTcl = 0) {
-        const pnlUsd = totals.sellUsd - totals.buyUsd;
+      function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null) {
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
         setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC", { value: formatUsd(totals.buyUsd) });
         dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
         setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC", { value: formatUsd(totals.sellUsd) });
+
+        // Valoarea TCL earned (la pretul curent) si costul Infinity Offers (USDC platit)
+        const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
+        const earnedAmount = readNumber(earnedData.total, 0);
+        const earnedUsd = earnedAmount * readNumber(state.prices.tcl, 0);
+        const infinityCost = infinity && typeof infinity === "object" ? readNumber(infinity.usdc, 0) : 0;
+
+        // PNL net = primit din vanzari + valoarea TCL earned − cost cumparari − cost Infinity Offers
+        const pnlUsd = totals.sellUsd - totals.buyUsd + earnedUsd - infinityCost;
         dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
         dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
@@ -3048,9 +3056,6 @@
           sell: totals.sellCount.toLocaleString(getLocale())
         });
 
-        const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
-        const earnedAmount = readNumber(earnedData.total, 0);
-        const earnedUsd = earnedAmount * readNumber(state.prices.tcl, 0);
         dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
         setDynamicText(dom.pnlEarnedUsd, "Value: {value} USDC", { value: formatUsd(earnedUsd) });
 
@@ -3163,7 +3168,7 @@
             oldestTimestamp:     pnlData.oldestTimestamp
           };
 
-          renderPnlResult(totals, historyMeta, earnedTcl);
+          renderPnlResult(totals, historyMeta, earnedTcl, infinity);
           renderInfinityOffers(infinity);
 
           const earnedAmount = readEarnedTotal(earnedTcl);
