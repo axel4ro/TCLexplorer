@@ -596,13 +596,16 @@
     }
 
     .pnl-results {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       margin-bottom: 12px;
     }
 
     .pnl-card {
+      /* 4 carduri pe rand (~277px); ultimul rand (3 carduri) creste sa umple latimea */
+      flex: 1 1 250px;
+      min-width: 0;
       min-height: 122px;
       padding: 14px;
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1064,11 +1067,24 @@
         </article>
         <article class="pnl-card">
           <div class="pnl-card-header">
+            <p class="pnl-label">Staking</p>
+            <button class="pnl-info-btn" id="stakingInfoBtn" title="Staking sources (NFT, Loan, Infinity)" style="display:none">ⓘ</button>
+          </div>
+          <p class="pnl-value" id="pnlStakingTcl">--</p>
+          <p class="pnl-meta" id="pnlStakingUsd">Value: --</p>
+        </article>
+        <article class="pnl-card">
+          <div class="pnl-card-header">
             <p class="pnl-label">Earned TCL $</p>
             <button class="pnl-info-btn" id="earnedInfoBtn" title="Earned TCL source details" style="display:none">ⓘ</button>
           </div>
           <p class="pnl-value" id="pnlEarnedTcl">--</p>
           <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">Wallet Balance</p>
+          <p class="pnl-value" id="pnlWalletTcl">--</p>
+          <p class="pnl-meta" id="pnlWalletUsd">Value: --</p>
         </article>
         <article class="pnl-card">
           <p class="pnl-label">TCL sold</p>
@@ -1182,6 +1198,19 @@
       </div>
     </div>
 
+    <!-- Staking breakdown popup -->
+    <div class="earned-popup-overlay" id="stakingPopupOverlay">
+      <div class="earned-popup">
+        <div class="earned-popup-head">
+          <h3>Staking Sources</h3>
+          <button class="earned-popup-close" id="stakingPopupClose">✕</button>
+        </div>
+        <div class="earned-popup-body" id="stakingPopupBody">
+          <p style="color:var(--text-muted);font-size:0.88rem">Loading...</p>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="lang/page-common.bundle.js?v=20260515-3"></script>
@@ -1208,6 +1237,12 @@
         // Infinity Offers: functia buyStakingOffer pe game contract (USDC platit -> TCL burnat)
         pnlInfinityFunction: "buyStakingOffer",
         pnlInfinityMaxPages: 10,
+        // Staking (NFT + Loan + Infinity) — precalculat in leaderboard.json (top stakers)
+        pnlStakingLeaderboardUrls: [
+          "https://axel4ro.github.io/TCLexplorer/leaderboard.json",
+          "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json",
+          "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
+        ],
         pnlPageSize: 50,
         pnlMaxPages: 220,
         pnlPairMaxPages: 20,
@@ -1299,6 +1334,10 @@
         pnlEarnedUsd: document.getElementById("pnlEarnedUsd"),
         pnlInfinityTcl: document.getElementById("pnlInfinityTcl"),
         pnlInfinityUsd: document.getElementById("pnlInfinityUsd"),
+        pnlStakingTcl: document.getElementById("pnlStakingTcl"),
+        pnlStakingUsd: document.getElementById("pnlStakingUsd"),
+        pnlWalletTcl: document.getElementById("pnlWalletTcl"),
+        pnlWalletUsd: document.getElementById("pnlWalletUsd"),
         pnlStatus: document.getElementById("pnlStatus")
       };
 
@@ -1968,6 +2007,10 @@
         setDynamicText(dom.pnlEarnedUsd, "Value: --");
         dom.pnlInfinityTcl.textContent = "--";
         setDynamicText(dom.pnlInfinityUsd, "Cost: --");
+        dom.pnlStakingTcl.textContent = "--";
+        setDynamicText(dom.pnlStakingUsd, "Value: --");
+        dom.pnlWalletTcl.textContent = "--";
+        setDynamicText(dom.pnlWalletUsd, "Value: --");
       }
 
       function getTokenByIdentifier(tokens, identifier) {
@@ -3033,20 +3076,88 @@
         setDynamicText(dom.pnlInfinityUsd, "Cost: {value} USDC", { value: formatUsd(usdc) });
       }
 
-      function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null) {
+      // ── Staking (NFT + Loan + Infinity) din leaderboard.json ─────────────────────
+      // Datele de staking sunt precalculate in leaderboard.json (~top stakers), generat
+      // periodic de task-ul de analytics. Nu exista query live per-wallet, deci un wallet
+      // din afara topului apare cu 0 (necunoscut din aceasta sursa).
+      async function fetchStaking(walletAddress) {
+        const empty = { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+        const urls = CONFIG.pnlStakingLeaderboardUrls || [];
+        let data = null;
+        for (const url of urls) {
+          try {
+            const sep = url.includes("?") ? "&" : "?";
+            data = await fetchJson(`${url}${sep}t=${Date.now()}`, { retries: 0, timeoutMs: 9000 });
+            if (data && typeof data === "object") break;
+            data = null;
+          } catch (_) { data = null; }
+        }
+        if (!data || typeof data !== "object") return empty;
+        const entry = data[walletAddress];
+        if (!entry || typeof entry !== "object") return empty;
+        const toTcl = (v) => { const n = Number(v) / 1e18; return Number.isFinite(n) ? n : 0; };
+        const nft = toTcl(entry.nft);
+        const loan = toTcl(entry.loan);
+        const infinity = toTcl(entry.infinity);
+        const total = entry.total != null ? toTcl(entry.total) : (nft + loan + infinity);
+        return { nft, loan, infinity, total, found: true };
+      }
+
+      function renderStaking(staking) {
+        const data = staking && typeof staking === "object" ? staking : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+        const total = readNumber(data.total, 0);
+        const usd = total * readNumber(state.prices.tcl, 0);
+        dom.pnlStakingTcl.textContent = `${formatTokenAmount(total)} TCL`;
+        setDynamicText(dom.pnlStakingUsd, "Value: {value} USDC", { value: formatUsd(usd) });
+
+        const btn = document.getElementById("stakingInfoBtn");
+        if (btn) {
+          const hasBreakdown = total > 0;
+          btn.style.display = hasBreakdown ? "inline-flex" : "none";
+          if (hasBreakdown) btn.onclick = () => showStakingBreakdown(data);
+        }
+      }
+
+      // ── Wallet Balance: TCL lichid detinut acum in wallet ───────────────────────
+      // Tokenii disponibili (neblocati) din wallet, cititi live din API. Conteaza ca
+      // valoare detinuta in PNL.
+      async function fetchWalletBalance(walletAddress) {
+        try {
+          const tokens = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/tokens`, {
+            identifiers: CONFIG.tokens.tcl.identifier
+          }), { retries: 1, retryDelayMs: 800, timeoutMs: 10000 });
+          const tcl = getTokenByIdentifier(Array.isArray(tokens) ? tokens : [], CONFIG.tokens.tcl.identifier);
+          return { tcl: tcl ? rawToNumber(tcl.balance, CONFIG.tokens.tcl.decimals) : 0 };
+        } catch (_) {
+          return { tcl: 0 };
+        }
+      }
+
+      function renderWalletBalance(wallet) {
+        const data = wallet && typeof wallet === "object" ? wallet : { tcl: 0 };
+        const tcl = readNumber(data.tcl, 0);
+        const usd = tcl * readNumber(state.prices.tcl, 0);
+        dom.pnlWalletTcl.textContent = `${formatTokenAmount(tcl)} TCL`;
+        setDynamicText(dom.pnlWalletUsd, "Value: {value} USDC", { value: formatUsd(usd) });
+      }
+
+      function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null, staking = null, wallet = null) {
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
         setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC", { value: formatUsd(totals.buyUsd) });
         dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
         setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC", { value: formatUsd(totals.sellUsd) });
 
-        // Valoarea TCL earned (la pretul curent) si costul Infinity Offers (USDC platit)
+        const tclPrice = readNumber(state.prices.tcl, 0);
+        // Valoarea TCL earned + TCL staked (la pretul curent) si costul Infinity Offers (USDC platit)
         const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
         const earnedAmount = readNumber(earnedData.total, 0);
-        const earnedUsd = earnedAmount * readNumber(state.prices.tcl, 0);
+        const earnedUsd = earnedAmount * tclPrice;
         const infinityCost = infinity && typeof infinity === "object" ? readNumber(infinity.usdc, 0) : 0;
+        const stakingValue = staking && typeof staking === "object" ? readNumber(staking.total, 0) * tclPrice : 0;
+        const walletValue = wallet && typeof wallet === "object" ? readNumber(wallet.tcl, 0) * tclPrice : 0;
 
-        // PNL net = primit din vanzari + valoarea TCL earned − cost cumparari − cost Infinity Offers
-        const pnlUsd = totals.sellUsd - totals.buyUsd + earnedUsd - infinityCost;
+        // PNL net = vanzari + valoarea TCL earned + TCL staked + TCL din wallet − cost cumparari − cost Infinity Offers
+        const pnlUsd = totals.sellUsd - totals.buyUsd + earnedUsd + stakingValue + walletValue - infinityCost;
         dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
         dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
@@ -3122,10 +3233,12 @@
             console.warn("PNL cache preparation incomplete", prepErr);
           }
 
-          const [pnlResult, earnedResult, infinityResult] = await Promise.allSettled([
+          const [pnlResult, earnedResult, infinityResult, stakingResult, walletResult] = await Promise.allSettled([
             fetchPnlFromSupabase(walletAddress),
             fetchEarnedTcl(walletAddress),
-            fetchInfinityOffers(walletAddress)
+            fetchInfinityOffers(walletAddress),
+            fetchStaking(walletAddress),
+            fetchWalletBalance(walletAddress)
           ]);
 
           if (pnlResult.status === "rejected") {
@@ -3137,6 +3250,12 @@
           if (infinityResult.status === "rejected") {
             console.warn("Infinity Offers lookup failed", infinityResult.reason);
           }
+          if (stakingResult.status === "rejected") {
+            console.warn("Staking lookup failed", stakingResult.reason);
+          }
+          if (walletResult.status === "rejected") {
+            console.warn("Wallet balance lookup failed", walletResult.reason);
+          }
 
           const pnlData = (pnlResult.status === "fulfilled" && pnlResult.value)
             ? pnlResult.value
@@ -3147,6 +3266,12 @@
           const infinity = (infinityResult.status === "fulfilled" && infinityResult.value)
             ? infinityResult.value
             : { tcl: 0, usdc: 0, count: 0 };
+          const staking = (stakingResult.status === "fulfilled" && stakingResult.value)
+            ? stakingResult.value
+            : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+          const wallet = (walletResult.status === "fulfilled" && walletResult.value)
+            ? walletResult.value
+            : { tcl: 0 };
 
           // Construieste totals in formatul asteptat de renderPnlResult
           const totals = {
@@ -3168,8 +3293,10 @@
             oldestTimestamp:     pnlData.oldestTimestamp
           };
 
-          renderPnlResult(totals, historyMeta, earnedTcl, infinity);
+          renderPnlResult(totals, historyMeta, earnedTcl, infinity, staking, wallet);
           renderInfinityOffers(infinity);
+          renderStaking(staking);
+          renderWalletBalance(wallet);
 
           const earnedAmount = readEarnedTotal(earnedTcl);
           const infinityCount = readNumber(infinity.count, 0);
@@ -3286,18 +3413,60 @@
         overlay.classList.add("open");
       }
 
+      // Breakdown Staking pe cele 3 surse: NFT, Loan, Infinity
+      function showStakingBreakdown(staking) {
+        const overlay = document.getElementById("stakingPopupOverlay");
+        const body    = document.getElementById("stakingPopupBody");
+        if (!overlay || !body) return;
+
+        const total = readNumber(staking?.total, 0);
+        const price = readNumber(state.prices.tcl, 0);
+        const sources = [
+          { key: "nft",      label: "NFT Staking" },
+          { key: "loan",     label: "Loan Staking" },
+          { key: "infinity", label: "Infinity Staking" }
+        ];
+
+        let html = `<div class="earned-popup-total">${esc(translateText("Total staked:"))} <span>${formatTokenAmount(total)} TCL</span></div>`;
+        let catHtml = "";
+        for (const s of sources) {
+          const val = readNumber(staking?.[s.key], 0);
+          if (val <= 0) continue;
+          const pct = total > 0 ? (val / total * 100) : 0;
+          const usdText = price ? `≈ ${formatUsd(val * price)} · ` : "";
+          catHtml += `<div class="earned-cat-card">
+            <div class="earned-cat-label">${esc(translateText(s.label))}</div>
+            <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
+            <div class="earned-cat-sub">${usdText}${pct.toFixed(0)}%</div>
+          </div>`;
+        }
+        if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
+        html += `<p style="color:var(--text-muted);font-size:0.78rem;margin-top:10px;line-height:1.4">${esc(translateText("Source: Top Staking leaderboard, updated periodically. Wallets outside the top stakers may show 0."))}</p>`;
+
+        body.innerHTML = html;
+        overlay.classList.add("open");
+      }
+
       // Popup close logic — se initializeaza la boot
       function initEarnedPopup() {
         const overlay = document.getElementById("earnedPopupOverlay");
         const closeBtn = document.getElementById("earnedPopupClose");
+        const stOverlay = document.getElementById("stakingPopupOverlay");
+        const stClose = document.getElementById("stakingPopupClose");
         if (overlay) {
           overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
         }
         if (closeBtn) {
           closeBtn.addEventListener("click", () => overlay?.classList.remove("open"));
         }
+        if (stOverlay) {
+          stOverlay.addEventListener("click", (e) => { if (e.target === stOverlay) stOverlay.classList.remove("open"); });
+        }
+        if (stClose) {
+          stClose.addEventListener("click", () => stOverlay?.classList.remove("open"));
+        }
         document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") overlay?.classList.remove("open");
+          if (e.key === "Escape") { overlay?.classList.remove("open"); stOverlay?.classList.remove("open"); }
         });
       }
 
