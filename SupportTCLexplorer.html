@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support TCLexplorer Infrastructure</title>
+  <meta name="theme-color" content="#07080c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: #111621;
+      --panel-strong: #171c29;
+      --line: rgba(0, 232, 204, 0.18);
+      --line-strong: rgba(0, 232, 204, 0.38);
+      --text: #e8edf5;
+      --muted: #8f9aae;
+      --soft: #667085;
+      --accent: #00e8cc;
+      --accent-2: #2f75ff;
+      --gold: #f7c35f;
+      --danger: #fb7185;
+      --success: #4ade80;
+      --radius: 8px;
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(13, 19, 30, 0.98) 0%, rgba(7, 9, 14, 0.98) 54%, #04060a 100%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.022) 0, rgba(255, 255, 255, 0.022) 1px, transparent 1px, transparent 66px);
+      color: var(--text);
+      font-family: var(--font-ui);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .page-shell {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 42px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .brand-link,
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .brand-link {
+      gap: 10px;
+    }
+
+    .brand-link img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.05fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .hero-copy,
+    .connect-panel,
+    .send-panel,
+    .address-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(22, 27, 40, 0.96), rgba(12, 15, 23, 0.96));
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+    }
+
+    .hero-copy {
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      min-height: 420px;
+      padding: clamp(20px, 4vw, 34px);
+      overflow: hidden;
+    }
+
+    .lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+      min-height: 50px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .lockup img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 720px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(2.3rem, 6vw, 4.9rem);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 650px;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.13rem);
+      line-height: 1.7;
+    }
+
+    .support-list {
+      display: grid;
+      gap: 8px;
+      max-width: 650px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .support-list li {
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .support-thanks {
+      max-width: 650px;
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.65;
+    }
+
+    .connect-panel,
+    .send-panel,
+    .address-panel {
+      padding: 18px;
+    }
+
+    .support-stack {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 2vw, 1.45rem);
+      letter-spacing: 0;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .panel-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 32px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--soft);
+      box-shadow: 0 0 0 4px rgba(102, 112, 133, 0.12);
+    }
+
+    body[data-state="ready"] .status-dot,
+    body[data-state="connected"] .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.12);
+    }
+
+    body[data-state="loading"] .status-dot {
+      background: var(--gold);
+      box-shadow: 0 0 0 4px rgba(247, 195, 95, 0.14);
+    }
+
+    body[data-state="error"] .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12);
+    }
+
+    .qr-wrap {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      margin: 12px 0 14px;
+    }
+
+    .qr-code {
+      display: grid;
+      place-items: center;
+      width: min(100%, 240px);
+      min-height: 220px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .qr-code canvas,
+    .qr-code img {
+      width: 220px;
+      height: 220px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 800;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+    }
+
+    .btn img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .btn-primary {
+      border-color: rgba(0, 232, 204, 0.46);
+      background: linear-gradient(135deg, var(--accent), #55f5df);
+      color: #041210;
+      box-shadow: 0 12px 28px rgba(0, 232, 204, 0.18);
+    }
+
+    .btn-blue {
+      border-color: rgba(47, 117, 255, 0.58);
+      background: linear-gradient(135deg, #2f75ff, #1640ca);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(47, 117, 255, 0.22);
+    }
+
+    .btn-danger {
+      border-color: rgba(251, 113, 133, 0.3);
+      background: rgba(251, 113, 133, 0.12);
+      color: #fff;
+    }
+
+    .btn:disabled,
+    .btn.is-disabled {
+      pointer-events: none;
+      opacity: 0.55;
+      transform: none;
+    }
+
+    .address-box {
+      display: block;
+      min-height: 64px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(0, 232, 204, 0.14);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--text);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin: 14px 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    label,
+    .eyebrow {
+      color: var(--soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(143, 154, 174, 0.22);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.62);
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--line-strong);
+      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
+    }
+
+    .quick-amounts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .quick-amounts button {
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid rgba(247, 195, 95, 0.24);
+      border-radius: var(--radius);
+      background: rgba(247, 195, 95, 0.08);
+      color: #ffe1a2;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .tx-result {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(74, 222, 128, 0.18);
+      border-radius: var(--radius);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .tx-result a {
+      color: #9ff7bd;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-note {
+      color: var(--soft);
+      font-size: 0.82rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-copy {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page-shell {
+        width: min(100% - 18px, 1120px);
+        padding-top: 14px;
+      }
+
+      .topbar,
+      .btn-row,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+      }
+
+      .brand-link,
+      .top-link,
+      .btn,
+      .field-grid .btn {
+        width: 100%;
+      }
+
+      .field-grid {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body data-state="idle">
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand-link" id="brandLink" href="index.html" aria-label="TCL Explorer">
+        <img src="images/thecursedland.png" alt="">
+        <span>TCL Explorer</span>
+      </a>
+      <a class="top-link" href="connect_xportal.html">xPortal Balance</a>
+    </header>
+
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-copy">
+        <div class="lockup">
+          <img src="images/EGLD.png" alt="">
+          <span>EGLD Mainnet</span>
+        </div>
+        <div>
+          <h1 id="pageTitle">🚀 Support TCLexplorer Infrastructure</h1>
+          <p class="lead">Help support the ongoing operation and development of TCLexplorer by contributing to essential infrastructure costs, including:</p>
+        </div>
+        <ul class="support-list" aria-label="Infrastructure costs">
+          <li>🖥️ Server Hosting</li>
+          <li>🌐 Domain Renewal</li>
+          <li>🤖 AI Services</li>
+          <li>🔗 API Access</li>
+          <li>☁️ Cloud Infrastructure</li>
+          <li>🛠️ New Features &amp; Development</li>
+        </ul>
+        <p class="support-thanks">Every contribution helps keep TCLexplorer online, fast, reliable, and continuously improving for the entire community.</p>
+        <p class="support-thanks"><strong>Thank you for supporting TCLexplorer! ❤️</strong></p>
+      </div>
+
+      <div class="support-stack">
+        <section class="connect-panel" aria-labelledby="connectTitle">
+          <div class="panel-head">
+            <h2 class="panel-title" id="connectTitle">Conectare xPortal</h2>
+            <span class="panel-icon"><img src="images/xPortal.png" alt=""></span>
+          </div>
+
+          <div id="connectView">
+            <div class="qr-wrap">
+              <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR code"></div>
+            </div>
+            <div class="btn-row">
+              <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer">
+                <img src="images/xPortal.png" alt="">
+                <span>Conecteaza xPortal</span>
+              </a>
+              <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Instaleaza xPortal</a>
+            </div>
+          </div>
+
+          <div id="connectedView" hidden>
+            <div class="eyebrow">Adresa conectata</div>
+            <code class="address-box" id="connectedAddress">Neconectat</code>
+            <div class="btn-row" style="margin-top: 12px;">
+              <button class="btn" id="copyConnectedBtn" type="button">Copiaza</button>
+              <a class="btn" id="connectedExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
+              <button class="btn btn-danger" id="disconnectBtn" type="button">Deconecteaza</button>
+            </div>
+          </div>
+
+          <div class="status-line" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="statusText">Se pregateste QR-ul de conectare...</span>
+          </div>
+        </section>
+
+        <section class="send-panel" id="sendPanel" aria-labelledby="sendTitle" hidden>
+          <div class="panel-head">
+            <h2 class="panel-title" id="sendTitle">Trimite EGLD</h2>
+            <span class="panel-icon"><img src="images/EGLD.png" alt=""></span>
+          </div>
+
+          <div class="eyebrow">Adresa destinatie</div>
+          <code class="address-box" id="recipientAddress">erd1p9fyv579tfnlagwd02mreuadpjxssgdx7psqe6l32r07guzxdeksfyvjmd</code>
+
+          <div class="qr-wrap">
+            <div class="qr-code" id="recipientQrCode" aria-label="Recipient address QR code"></div>
+          </div>
+
+          <div class="quick-amounts" aria-label="Sume rapide">
+            <button type="button" data-amount="0.01">0.01 EGLD</button>
+            <button type="button" data-amount="0.05">0.05 EGLD</button>
+            <button type="button" data-amount="0.1">0.1 EGLD</button>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="amountInput">Suma EGLD</label>
+              <input id="amountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.01">
+            </div>
+            <button class="btn btn-primary" id="sendBtn" type="button">Trimite cu xPortal</button>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" id="copyRecipientBtn" type="button">Copiaza adresa</button>
+            <a class="btn" id="openXportalBtn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Deschide xPortal</a>
+            <a class="btn" id="recipientExplorerLink" href="#" target="_blank" rel="noreferrer">Vezi adresa</a>
+          </div>
+
+          <p class="small-note" id="sendStatus">QR-ul si deeplink-ul sunt disponibile dupa conectare. Introdu suma EGLD si confirma tranzactia in xPortal.</p>
+          <div class="tx-result" id="txResult" hidden></div>
+        </section>
+      </div>
+    </section>
+
+    <p class="footer-note">Verifica mereu adresa si suma in xPortal inainte de confirmare.</p>
+  </main>
+
+  <script src="lib/walletconnect-sign-client.umd.js"></script>
+  <script src="lib/qrcode.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const CONFIG = {
+        walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+        relayUrl: "wss://relay.walletconnect.com",
+        chainId: "mvx:1",
+        chainID: "1",
+        apiBase: "https://api.multiversx.com",
+        gatewayBase: "https://gateway.multiversx.com",
+        recipientAddress: "erd1p9fyv579tfnlagwd02mreuadpjxssgdx7psqe6l32r07guzxdeksfyvjmd",
+        storageKey: "tclExplorer.xportal.address.v1",
+        sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
+        walletConnectMethods: [
+          "mvx_signTransaction",
+          "mvx_signTransactions",
+          "mvx_signMessage",
+          "mvx_signLoginToken",
+          "mvx_signNativeAuthToken",
+          "mvx_cancelAction"
+        ],
+        egldDecimals: 18,
+        gasPrice: 1000000000,
+        gasLimit: 50000
+      };
+
+      const state = {
+        address: "",
+        sessionTopic: "",
+        pendingUri: "",
+        connecting: false,
+        sending: false,
+        signClient: null,
+        signClientProjectId: "",
+        connectionRunId: 0
+      };
+
+      const dom = {
+        connectView: document.getElementById("connectView"),
+        connectedView: document.getElementById("connectedView"),
+        sendPanel: document.getElementById("sendPanel"),
+        connectQrCode: document.getElementById("connectQrCode"),
+        recipientQrCode: document.getElementById("recipientQrCode"),
+        connectBtn: document.getElementById("connectBtn"),
+        disconnectBtn: document.getElementById("disconnectBtn"),
+        copyConnectedBtn: document.getElementById("copyConnectedBtn"),
+        copyRecipientBtn: document.getElementById("copyRecipientBtn"),
+        connectedAddress: document.getElementById("connectedAddress"),
+        connectedExplorerLink: document.getElementById("connectedExplorerLink"),
+        recipientAddress: document.getElementById("recipientAddress"),
+        recipientExplorerLink: document.getElementById("recipientExplorerLink"),
+        amountInput: document.getElementById("amountInput"),
+        sendBtn: document.getElementById("sendBtn"),
+        sendStatus: document.getElementById("sendStatus"),
+        statusText: document.getElementById("statusText"),
+        openXportalBtn: document.getElementById("openXportalBtn"),
+        txResult: document.getElementById("txResult"),
+        brandLink: document.getElementById("brandLink")
+      };
+
+      function isAddress(value) {
+        return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(value || "").trim());
+      }
+
+      function truncateAddress(address) {
+        const value = String(address || "");
+        if (value.length <= 18) return value;
+        return `${value.slice(0, 10)}...${value.slice(-8)}`;
+      }
+
+      function hasConnectedWallet() {
+        return Boolean(state.address && state.sessionTopic);
+      }
+
+      function setStatus(kind, message) {
+        document.body.dataset.state = kind;
+        dom.statusText.textContent = message;
+      }
+
+      function setSendStatus(message) {
+        dom.sendStatus.textContent = message;
+      }
+
+      function getWalletConnectGlobal() {
+        const walletConnect = window["@walletconnect/sign-client"];
+        return walletConnect?.SignClient || walletConnect?.default || null;
+      }
+
+      function getAppMetadata() {
+        const baseUrl = window.location.origin && window.location.origin !== "null"
+          ? window.location.origin
+          : "https://axel4ro.github.io";
+        const appUrl = new URL(window.location.pathname || "/TCLexplorer/SupportTCLexplorer.html", baseUrl).href;
+        const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
+        return {
+          name: "Support TCLexplorer Infrastructure",
+          description: "Send EGLD support through xPortal",
+          url: appUrl,
+          icons: [iconUrl]
+        };
+      }
+
+      async function getSignClient() {
+        const projectId = String(CONFIG.walletConnectProjectId || "").trim();
+        if (!projectId) {
+          throw new Error("WalletConnect nu este configurat.");
+        }
+        if (state.signClient && state.signClientProjectId === projectId) {
+          return state.signClient;
+        }
+
+        const SignClient = getWalletConnectGlobal();
+        if (!SignClient?.init) {
+          throw new Error("WalletConnect nu s-a incarcat.");
+        }
+
+        state.signClient = await SignClient.init({
+          projectId,
+          relayUrl: CONFIG.relayUrl,
+          metadata: getAppMetadata()
+        });
+        state.signClientProjectId = projectId;
+        state.signClient.on("session_delete", clearConnection);
+        return state.signClient;
+      }
+
+      function isIOS() {
+        const ua = navigator.userAgent || "";
+        const platform = navigator.platform || "";
+        return /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      }
+
+      function isAndroid() {
+        return /Android/i.test(navigator.userAgent || "");
+      }
+
+      function isMobileDevice() {
+        return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+      }
+
+      function getXPortalSchemeLink(uri) {
+        return `xportal://wc?uri=${encodeURIComponent(uri)}`;
+      }
+
+      function getXPortalDeepLink(uri) {
+        if (isIOS()) return getXPortalSchemeLink(uri);
+        if (isAndroid()) return uri;
+        return isMobileDevice() ? uri : "https://xportal.com/app";
+      }
+
+      function getXPortalAppLink() {
+        return isMobileDevice() ? "xportal://" : "https://xportal.com/app";
+      }
+
+      function renderQr(target, text, size) {
+        if (!window.QRCode) {
+          throw new Error("Biblioteca QR nu s-a incarcat.");
+        }
+        target.innerHTML = "";
+        new window.QRCode(target, {
+          text,
+          width: size,
+          height: size,
+          colorDark: "#020408",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M
+        });
+      }
+
+      function renderRecipientTools() {
+        const explorerUrl = `https://explorer.multiversx.com/accounts/${CONFIG.recipientAddress}`;
+        dom.recipientAddress.textContent = CONFIG.recipientAddress;
+        dom.recipientExplorerLink.href = explorerUrl;
+        renderQr(dom.recipientQrCode, CONFIG.recipientAddress, 220);
+        dom.openXportalBtn.href = getXPortalAppLink();
+      }
+
+      function syncConnectionView() {
+        const connected = hasConnectedWallet();
+        dom.connectView.hidden = connected;
+        dom.connectedView.hidden = !connected;
+        if (dom.sendPanel) dom.sendPanel.hidden = !connected;
+        dom.connectedAddress.textContent = connected ? state.address : "Neconectat";
+        dom.connectedExplorerLink.href = connected
+          ? `https://explorer.multiversx.com/accounts/${state.address}`
+          : "https://explorer.multiversx.com/";
+        syncButtons();
+      }
+
+      function syncButtons() {
+        const amount = dom.amountInput.value.trim();
+        const canSend = hasConnectedWallet() && isValidAmount(amount) && !state.sending && !state.connecting;
+        dom.sendBtn.disabled = !canSend;
+        dom.sendBtn.textContent = state.sending ? "Se trimite..." : "Trimite cu xPortal";
+
+        if (state.pendingUri) {
+          dom.connectBtn.classList.remove("is-disabled");
+          dom.connectBtn.href = getXPortalDeepLink(state.pendingUri);
+        } else {
+          dom.connectBtn.classList.add("is-disabled");
+          dom.connectBtn.href = "#";
+        }
+      }
+
+      function saveConnection(address, topic) {
+        state.address = address;
+        state.sessionTopic = topic || "";
+        window.localStorage.setItem(CONFIG.storageKey, state.address);
+        window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
+        syncConnectionView();
+      }
+
+      function clearConnection() {
+        state.address = "";
+        state.sessionTopic = "";
+        state.pendingUri = "";
+        window.localStorage.removeItem(CONFIG.storageKey);
+        window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        syncConnectionView();
+        setStatus("idle", "Conexiunea xPortal a fost inchisa.");
+        startConnection();
+      }
+
+      function extractAddressFromSession(session) {
+        const namespaces = session?.namespaces || {};
+        const accounts = Object.values(namespaces).flatMap((namespace) => namespace?.accounts || []);
+        const mvxAccount = accounts.find((account) => String(account).startsWith(`${CONFIG.chainId}:`)) ||
+          accounts.find((account) => String(account).includes(":erd1"));
+        const address = String(mvxAccount || "").split(":").pop();
+        return isAddress(address) ? address : "";
+      }
+
+      async function restoreSessionIfPossible() {
+        const storedAddress = window.localStorage.getItem(CONFIG.storageKey) || "";
+        const storedTopic = window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
+        if (!isAddress(storedAddress) || !storedTopic) return false;
+
+        state.address = storedAddress;
+        state.sessionTopic = storedTopic;
+        try {
+          const client = await getSignClient();
+          const session = client.session.get(storedTopic);
+          const sessionAddress = extractAddressFromSession(session);
+          if (sessionAddress) state.address = sessionAddress;
+          saveConnection(state.address, storedTopic);
+          setStatus("connected", `Conectat: ${truncateAddress(state.address)}`);
+          setSendStatus("Introdu suma EGLD si confirma transferul in xPortal.");
+          return true;
+        } catch (_) {
+          clearConnection();
+          return false;
+        }
+      }
+
+      async function startConnection() {
+        if (state.address || state.connecting) return;
+        const runId = ++state.connectionRunId;
+        state.connecting = true;
+        syncButtons();
+        setStatus("loading", "Se genereaza sesiunea xPortal...");
+
+        try {
+          const client = await getSignClient();
+          const { uri, approval } = await client.connect({
+            optionalNamespaces: {
+              mvx: {
+                chains: [CONFIG.chainId],
+                methods: CONFIG.walletConnectMethods,
+                events: []
+              }
+            }
+          });
+
+          if (!uri) {
+            throw new Error("WalletConnect nu a returnat un URI pentru QR.");
+          }
+
+          state.pendingUri = uri;
+          renderQr(dom.connectQrCode, uri, 220);
+          syncButtons();
+          setStatus("loading", "Scaneaza QR-ul sau apasa Conecteaza xPortal.");
+
+          const session = await approval();
+          if (runId !== state.connectionRunId) return;
+
+          const address = extractAddressFromSession(session);
+          if (!address) {
+            throw new Error("xPortal nu a returnat o adresa MultiversX valida.");
+          }
+
+          state.pendingUri = "";
+          saveConnection(address, session.topic || "");
+          setStatus("connected", `Conectat: ${truncateAddress(address)}`);
+          setSendStatus("Introdu suma EGLD si confirma transferul in xPortal.");
+        } catch (error) {
+          if (runId === state.connectionRunId) {
+            console.error(error);
+            setStatus("error", error?.message || "Conectarea xPortal a esuat.");
+          }
+        } finally {
+          if (runId === state.connectionRunId) {
+            state.connecting = false;
+            syncButtons();
+          }
+        }
+      }
+
+      async function disconnectWallet() {
+        const topic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey);
+        const client = state.signClient;
+        state.connectionRunId++;
+        if (client && topic) {
+          client.disconnect({
+            topic,
+            reason: { code: 6000, message: "User disconnected" }
+          }).catch(() => {});
+        }
+        clearConnection();
+      }
+
+      function isValidAmount(value) {
+        const raw = String(value || "").trim().replace(",", ".");
+        if (!/^\d+(\.\d{1,18})?$/.test(raw)) return false;
+        return parseEgldToAtomic(raw) > 0n;
+      }
+
+      function parseEgldToAtomic(value) {
+        const raw = String(value || "").trim().replace(",", ".");
+        if (!/^\d+(\.\d{0,18})?$/.test(raw)) return 0n;
+        const parts = raw.split(".");
+        const whole = parts[0] || "0";
+        const fraction = (parts[1] || "").padEnd(CONFIG.egldDecimals, "0");
+        return BigInt(whole) * 10n ** BigInt(CONFIG.egldDecimals) + BigInt(fraction || "0");
+      }
+
+      function formatEgldFromAtomic(value) {
+        const atomic = BigInt(value || "0");
+        const base = 10n ** BigInt(CONFIG.egldDecimals);
+        const whole = atomic / base;
+        const fraction = String(atomic % base).padStart(CONFIG.egldDecimals, "0").replace(/0+$/, "");
+        return fraction ? `${whole}.${fraction}` : String(whole);
+      }
+
+      async function copyText(text, okMessage) {
+        try {
+          await navigator.clipboard.writeText(text);
+          setSendStatus(okMessage);
+        } catch (_) {
+          setSendStatus("Nu am putut copia automat. Selecteaza manual adresa afisata.");
+        }
+      }
+
+      async function fetchAccount(address) {
+        const response = await fetch(`${CONFIG.apiBase}/accounts/${address}`);
+        if (!response.ok) {
+          throw new Error("Nu am putut citi contul conectat.");
+        }
+        return response.json();
+      }
+
+      async function requestTransactionSignature(transaction) {
+        const client = await getSignClient();
+        const result = await client.request({
+          topic: state.sessionTopic,
+          chainId: CONFIG.chainId,
+          request: {
+            method: "mvx_signTransaction",
+            params: { transaction }
+          }
+        });
+
+        const signed = result?.transaction && typeof result.transaction === "object"
+          ? { ...transaction, ...result.transaction }
+          : { ...transaction, ...result };
+
+        if (!signed.signature) {
+          throw new Error("xPortal nu a returnat semnatura tranzactiei.");
+        }
+
+        return signed;
+      }
+
+      async function broadcastTransaction(transaction) {
+        const apiResult = await postJson(`${CONFIG.apiBase}/transactions`, transaction).catch((error) => ({ error }));
+        if (!apiResult.error) {
+          return apiResult.txHash || apiResult.hash || apiResult;
+        }
+
+        const gatewayResult = await postJson(`${CONFIG.gatewayBase}/transaction/send`, transaction);
+        return gatewayResult?.data?.txHash || gatewayResult?.txHash || gatewayResult?.hash || gatewayResult;
+      }
+
+      async function postJson(url, body) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : {};
+        if (!response.ok) {
+          throw new Error(data?.message || data?.error || `Cererea a esuat: ${response.status}`);
+        }
+        return data;
+      }
+
+      async function sendEgld() {
+        if (state.sending) return;
+        const amountText = dom.amountInput.value.trim().replace(",", ".");
+        if (!isValidAmount(amountText)) {
+          setSendStatus("Introdu o suma EGLD valida.");
+          syncButtons();
+          return;
+        }
+
+        if (!hasConnectedWallet()) {
+          setSendStatus("Conecteaza xPortal inainte de transfer.");
+          return;
+        }
+
+        state.sending = true;
+        dom.txResult.hidden = true;
+        syncButtons();
+        setSendStatus("Se pregateste tranzactia EGLD...");
+
+        try {
+          const account = await fetchAccount(state.address);
+          const amountAtomic = parseEgldToAtomic(amountText);
+          const feeAtomic = BigInt(CONFIG.gasPrice) * BigInt(CONFIG.gasLimit);
+          const balanceAtomic = BigInt(account.balance || "0");
+
+          if (balanceAtomic < amountAtomic + feeAtomic) {
+            throw new Error(`Balanta nu acopera suma si taxa estimata (${formatEgldFromAtomic(feeAtomic)} EGLD).`);
+          }
+
+          const transaction = {
+            nonce: Number(account.nonce || 0),
+            value: amountAtomic.toString(),
+            receiver: CONFIG.recipientAddress,
+            sender: state.address,
+            gasPrice: CONFIG.gasPrice,
+            gasLimit: CONFIG.gasLimit,
+            chainID: CONFIG.chainID,
+            version: 1
+          };
+
+          setSendStatus("Confirma tranzactia in xPortal.");
+          const signedTransaction = await requestTransactionSignature(transaction);
+          setSendStatus("Semnatura primita. Se trimite tranzactia pe MultiversX...");
+          const txHash = await broadcastTransaction(signedTransaction);
+          const txUrl = `https://explorer.multiversx.com/transactions/${txHash}`;
+
+          dom.txResult.innerHTML = `
+            <strong>Tranzactie trimisa.</strong>
+            <a href="${txUrl}" target="_blank" rel="noreferrer">${txHash}</a>
+          `;
+          dom.txResult.hidden = false;
+          setSendStatus(`Trimis ${amountText} EGLD catre adresa de support.`);
+        } catch (error) {
+          console.error(error);
+          setSendStatus(error?.message || "Transferul nu a putut fi trimis.");
+        } finally {
+          state.sending = false;
+          syncButtons();
+        }
+      }
+
+      function goBackToExplorer(event) {
+        if (window.parent && window.parent !== window) {
+          if (event) event.preventDefault();
+          try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          } catch (_) {
+            window.location.href = "index.html#token";
+          }
+        }
+      }
+
+      function notifyParentReady() {
+        if (window.parent && window.parent !== window) {
+          try {
+            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+          } catch (_) {}
+        }
+      }
+
+      async function boot() {
+        renderRecipientTools();
+        dom.connectBtn.addEventListener("click", (event) => {
+          if (!state.pendingUri) event.preventDefault();
+        });
+        dom.disconnectBtn.addEventListener("click", disconnectWallet);
+        dom.copyConnectedBtn.addEventListener("click", () => copyText(state.address, "Adresa conectata a fost copiata."));
+        dom.copyRecipientBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa destinatie a fost copiata."));
+        dom.openXportalBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa a fost copiata. Deschide xPortal si lipeste-o la Send."));
+        dom.sendBtn.addEventListener("click", sendEgld);
+        dom.amountInput.addEventListener("input", syncButtons);
+        document.querySelectorAll("[data-amount]").forEach((button) => {
+          button.addEventListener("click", () => {
+            dom.amountInput.value = button.dataset.amount || "";
+            syncButtons();
+          });
+        });
+        if (dom.brandLink) dom.brandLink.addEventListener("click", goBackToExplorer);
+
+        const restored = await restoreSessionIfPossible();
+        if (!restored) startConnection();
+        syncConnectionView();
+        notifyParentReady();
+      }
+
+      boot().catch((error) => {
+        console.error(error);
+        setStatus("error", error?.message || "Pagina nu s-a putut initializa.");
+        notifyParentReady();
+      });
+    })();
+  </script>
+</body>
+</html>
