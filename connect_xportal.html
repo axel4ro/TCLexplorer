@@ -1256,6 +1256,9 @@
         pnlSupabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoaHpyZnpod3dvb2Vxc2R6dGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODI2MzksImV4cCI6MjA5NTQ1ODYzOX0.TPJ2e5FbbWNqthkgHAC-r2WsMiP29CbfNkBaMFyf-yw",
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        pnlAggregatorAddresses: [
+          "erd1qqqqqqqqqqqqqpgqcc69ts8409p3h77q5chsaqz57y6hugvc4fvs64k74v"
+        ],
         pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
         // Infinity Offers: functia buyStakingOffer pe game contract (USDC platit -> TCL burnat)
         pnlInfinityFunction: "buyStakingOffer",
@@ -1300,6 +1303,10 @@
         pnlMaxRetries: 6,
         pnlRetryDelayMs: 4000,
         pnlRequestTimeoutMs: 35000,
+        pnlAggregatorBuyMinTcl: 0.001,
+        pnlAggregatorBuyRootLimit: 180,
+        pnlAggregatorRootBatchSize: 6,
+        pnlAggregatorRootPauseMs: 120,
         pnlSwapFunctions: [
           "swapTokensFixedInput",
           "swapTokensFixedOutput",
@@ -2466,6 +2473,146 @@
       }
 
       // ── Helper: pagineaza prin toate randurile Supabase (depaseste limita 1000) ──
+      function sumPnlEntryTokenAmount(entry, tokenId) {
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList)) return 0;
+        return transferList.reduce((sum, transfer) => {
+          const normalized = normalizePnlTradeTransfer(transfer);
+          return normalized?.token === tokenId ? sum + normalized.amount : sum;
+        }, 0);
+      }
+
+      function getPnlAggregatorSet() {
+        return new Set((CONFIG.pnlAggregatorAddresses || []).map((address) => String(address).trim()).filter(Boolean));
+      }
+
+      function collectAggregatorBuyCandidates(transfers, walletAddress, knownTradeHashes = new Set()) {
+        const aggregators = getPnlAggregatorSet();
+        if (!aggregators.size) return [];
+
+        const minTcl = Math.max(0, readNumber(CONFIG.pnlAggregatorBuyMinTcl, 0));
+        const candidates = new Map();
+
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+          if (entry.receiver !== walletAddress || !aggregators.has(entry.sender)) continue;
+
+          const rootHash = getPnlRootHash(entry);
+          if (!/^[0-9a-f]{64}$/i.test(rootHash) || knownTradeHashes.has(rootHash)) continue;
+
+          const tclAmount = sumPnlEntryTokenAmount(entry, CONFIG.tokens.tcl.identifier);
+          if (!Number.isFinite(tclAmount) || tclAmount <= minTcl) continue;
+
+          const timestamp = Number(entry.timestamp) || 0;
+          const existing = candidates.get(rootHash);
+          if (existing) {
+            existing.tclAmount += tclAmount;
+            if (timestamp && (!existing.timestamp || timestamp < existing.timestamp)) {
+              existing.timestamp = timestamp;
+            }
+          } else {
+            candidates.set(rootHash, {
+              hash: rootHash,
+              timestamp,
+              tclAmount
+            });
+          }
+        }
+
+        const limit = Math.max(1, Math.floor(readNumber(CONFIG.pnlAggregatorBuyRootLimit, 180)));
+        return Array.from(candidates.values())
+          .sort((left, right) => right.timestamp - left.timestamp)
+          .slice(0, limit);
+      }
+
+      function parseAggregatorBuyTradeFromRoot(rootTx, candidate, walletAddress) {
+        if (!rootTx || (rootTx.status && rootTx.status !== "success")) return null;
+
+        const aggregators = getPnlAggregatorSet();
+        if (rootTx.sender !== walletAddress || !aggregators.has(rootTx.receiver)) return null;
+
+        const operations = Array.isArray(rootTx.operations)
+          ? rootTx.operations.map(normalizePnlOperation).filter(Boolean)
+          : [];
+        if (!operations.length) return null;
+
+        const tclToWallet = operations
+          .filter((operation) =>
+            operation.token === CONFIG.tokens.tcl.identifier &&
+            operation.receiver === walletAddress &&
+            aggregators.has(operation.sender)
+          )
+          .reduce((sum, operation) => sum + operation.amount, 0);
+        const tclAmount = tclToWallet > 0 ? tclToWallet : candidate.tclAmount;
+        if (!Number.isFinite(tclAmount) || tclAmount <= readNumber(CONFIG.pnlAggregatorBuyMinTcl, 0)) return null;
+
+        const usdcIntoPair = operations
+          .filter((operation) =>
+            operation.token === CONFIG.tokens.usdc.identifier &&
+            operation.receiver === CONFIG.pnlPairAddress
+          )
+          .reduce((sum, operation) => sum + operation.amount, 0);
+        if (!Number.isFinite(usdcIntoPair) || usdcIntoPair <= 0) return null;
+
+        const tclIntoPair = operations
+          .filter((operation) =>
+            operation.token === CONFIG.tokens.tcl.identifier &&
+            operation.receiver === CONFIG.pnlPairAddress
+          )
+          .reduce((sum, operation) => sum + operation.amount, 0);
+        if (tclIntoPair > tclAmount) return null;
+
+        return {
+          hash: candidate.hash,
+          timestamp: candidate.timestamp || Number(rootTx.timestamp) || 0,
+          side: "buy",
+          tclAmount,
+          volumeUsd: usdcIntoPair,
+          price: usdcIntoPair / tclAmount,
+          description: "Aggregator TCL buy"
+        };
+      }
+
+      async function fetchAggregatorBuyFallbackTrades(transfers, walletAddress, knownTradeHashes = new Set()) {
+        const candidates = collectAggregatorBuyCandidates(transfers, walletAddress, knownTradeHashes);
+        if (!candidates.length) return [];
+
+        setPnlStatus("Pricing {count} aggregator buys...", {
+          count: candidates.length.toLocaleString(getLocale())
+        });
+
+        const batchSize = Math.max(1, Math.floor(readNumber(CONFIG.pnlAggregatorRootBatchSize, 6)));
+        const pauseMs = Math.max(0, readNumber(CONFIG.pnlAggregatorRootPauseMs, 120));
+        const trades = [];
+
+        for (let i = 0; i < candidates.length; i += batchSize) {
+          const batch = candidates.slice(i, i + batchSize);
+          const settled = await Promise.allSettled(batch.map(async (candidate) => {
+            const rootTx = await fetchJson(buildApiUrl(`/transactions/${candidate.hash}`, {
+              fields: "txHash,timestamp,status,function,sender,receiver,operations"
+            }), {
+              retries: 1,
+              retryDelayMs: 800,
+              timeoutMs: 18000,
+              timeoutMessage: "Aggregator buy lookup timed out."
+            });
+            return parseAggregatorBuyTradeFromRoot(rootTx, candidate, walletAddress);
+          }));
+
+          settled.forEach((result) => {
+            if (result.status === "fulfilled" && result.value) {
+              trades.push(result.value);
+            }
+          });
+
+          if (pauseMs && i + batchSize < candidates.length) {
+            await wait(pauseMs);
+          }
+        }
+
+        return trades.sort((left, right) => left.timestamp - right.timestamp);
+      }
+
       async function supabaseFetchAll(path, params = {}, anonKey) {
         const key = anonKey || CONFIG.pnlSupabaseAnonKey;
         if (!key || key === "SUPABASE_ANON_KEY_HERE") return null;
@@ -2703,7 +2850,7 @@
 
         const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
         const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
-        const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
+        let oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
 
         if (swapEntries.length === 0) {
           return { buyTcl:0, buyCost:0, sellTcl:0, sellReceived:0,
@@ -2731,7 +2878,24 @@
         });
 
         // parsePnlTrades foloseste operations/action_transfers stocate in Supabase.
-        const trades = parsePnlTrades(transfers, walletAddress);
+        let trades = parsePnlTrades(transfers, walletAddress);
+        const aggregatorBuyTrades = await fetchAggregatorBuyFallbackTrades(
+          transfers,
+          walletAddress,
+          new Set(trades.map((trade) => trade.hash).filter(Boolean))
+        );
+        if (aggregatorBuyTrades.length) {
+          const mergedTrades = new Map();
+          [...trades, ...aggregatorBuyTrades].forEach((trade) => {
+            if (trade?.hash) mergedTrades.set(trade.hash, trade);
+          });
+          trades = Array.from(mergedTrades.values()).sort((left, right) => left.timestamp - right.timestamp);
+          const aggregatorTimestamps = aggregatorBuyTrades.map((trade) => Number(trade.timestamp)).filter(Number.isFinite);
+          if (aggregatorTimestamps.length) {
+            const aggregatorOldest = Math.min(...aggregatorTimestamps);
+            oldestTimestamp = oldestTimestamp === null ? aggregatorOldest : Math.min(oldestTimestamp, aggregatorOldest);
+          }
+        }
         const totals = aggregatePnlTrades(trades);
 
         return {
