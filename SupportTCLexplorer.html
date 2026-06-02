@@ -979,8 +979,25 @@
           dom.amountInput.value = state.minEgldStr;
         }
 
-        setSendStatus(`Suma minima: ${state.minEgldStr} EGLD (~${CONFIG.minUsd} $ la ${price.toFixed(2)} $/EGLD).`);
+        updateAmountNote();
         syncButtons();
+      }
+
+      function updateAmountNote() {
+        if (state.sending || !state.egldPrice) return;
+        const raw = dom.amountInput.value.trim().replace(",", ".");
+        const minSuffix = state.minEgldStr
+          ? ` · minim ${state.minEgldStr} EGLD (~${CONFIG.minUsd} $)`
+          : "";
+
+        if (!/^\d+(\.\d{1,18})?$/.test(raw) || parseEgldToAtomic(raw) <= 0n) {
+          setSendStatus(`Introdu suma EGLD${minSuffix}.`);
+          return;
+        }
+
+        const usd = Number(raw) * state.egldPrice;
+        const belowMin = state.minEgldAtomic > 0n && parseEgldToAtomic(raw) < state.minEgldAtomic;
+        setSendStatus(`${raw} EGLD ≈ ${usd.toFixed(2)} $${belowMin ? minSuffix : ""}.`);
       }
 
       function parseEgldToAtomic(value) {
@@ -1157,7 +1174,10 @@
         dom.copyRecipientBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa destinatie a fost copiata."));
         dom.openXportalBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa a fost copiata. Deschide xPortal si lipeste-o la Send."));
         dom.sendBtn.addEventListener("click", sendEgld);
-        dom.amountInput.addEventListener("input", syncButtons);
+        dom.amountInput.addEventListener("input", () => {
+          syncButtons();
+          updateAmountNote();
+        });
         if (dom.brandLink) dom.brandLink.addEventListener("click", goBackToExplorer);
 
         const restored = await restoreSessionIfPossible();
