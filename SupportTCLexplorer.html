@@ -158,12 +158,15 @@
     }
 
     h1 {
-      max-width: 720px;
+      max-width: 100%;
       color: var(--text);
       font-family: var(--font-display);
-      font-size: clamp(2.3rem, 6vw, 4.9rem);
-      line-height: 1.02;
+      font-size: clamp(1.9rem, 4vw, 3.4rem);
+      line-height: 1.08;
       letter-spacing: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
     }
 
     .lead {
@@ -578,16 +581,6 @@
           <div class="eyebrow">Adresa destinatie</div>
           <code class="address-box" id="recipientAddress">erd1p9fyv579tfnlagwd02mreuadpjxssgdx7psqe6l32r07guzxdeksfyvjmd</code>
 
-          <div class="qr-wrap">
-            <div class="qr-code" id="recipientQrCode" aria-label="Recipient address QR code"></div>
-          </div>
-
-          <div class="quick-amounts" aria-label="Sume rapide">
-            <button type="button" data-amount="0.01">0.01 EGLD</button>
-            <button type="button" data-amount="0.05">0.05 EGLD</button>
-            <button type="button" data-amount="0.1">0.1 EGLD</button>
-          </div>
-
           <div class="field-grid">
             <div class="field">
               <label for="amountInput">Suma EGLD</label>
@@ -637,7 +630,9 @@
         ],
         egldDecimals: 18,
         gasPrice: 1000000000,
-        gasLimit: 50000
+        gasLimit: 50000,
+        minUsd: 1,
+        minAmountDecimals: 4
       };
 
       const state = {
@@ -648,7 +643,10 @@
         sending: false,
         signClient: null,
         signClientProjectId: "",
-        connectionRunId: 0
+        connectionRunId: 0,
+        egldPrice: 0,
+        minEgldAtomic: 0n,
+        minEgldStr: ""
       };
 
       const dom = {
@@ -787,7 +785,7 @@
         const explorerUrl = `https://explorer.multiversx.com/accounts/${CONFIG.recipientAddress}`;
         dom.recipientAddress.textContent = CONFIG.recipientAddress;
         dom.recipientExplorerLink.href = explorerUrl;
-        renderQr(dom.recipientQrCode, CONFIG.recipientAddress, 220);
+        if (dom.recipientQrCode) renderQr(dom.recipientQrCode, CONFIG.recipientAddress, 220);
         dom.openXportalBtn.href = getXPortalAppLink();
       }
 
@@ -937,7 +935,52 @@
       function isValidAmount(value) {
         const raw = String(value || "").trim().replace(",", ".");
         if (!/^\d+(\.\d{1,18})?$/.test(raw)) return false;
-        return parseEgldToAtomic(raw) > 0n;
+        const atomic = parseEgldToAtomic(raw);
+        if (atomic <= 0n) return false;
+        if (state.minEgldAtomic > 0n && atomic < state.minEgldAtomic) return false;
+        return true;
+      }
+
+      async function fetchEgldPrice() {
+        try {
+          const response = await fetch(`${CONFIG.apiBase}/economics`);
+          if (!response.ok) return 0;
+          const data = await response.json();
+          const price = Number(data?.price || 0);
+          return price > 0 ? price : 0;
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function computeMinEgldStr(price) {
+        const decimals = CONFIG.minAmountDecimals;
+        const factor = Math.pow(10, decimals);
+        const minEgld = CONFIG.minUsd / price;
+        // Round up so the amount is always worth at least minUsd.
+        return (Math.ceil(minEgld * factor) / factor).toFixed(decimals);
+      }
+
+      async function applyMinimumAmount() {
+        const price = await fetchEgldPrice();
+        if (!price) {
+          dom.amountInput.placeholder = "0.01";
+          setSendStatus("Introdu suma EGLD si confirma transferul in xPortal.");
+          return;
+        }
+        state.egldPrice = price;
+        state.minEgldStr = computeMinEgldStr(price);
+        state.minEgldAtomic = parseEgldToAtomic(state.minEgldStr);
+        dom.amountInput.placeholder = state.minEgldStr;
+
+        const current = dom.amountInput.value.trim().replace(",", ".");
+        const currentAtomic = /^\d+(\.\d{1,18})?$/.test(current) ? parseEgldToAtomic(current) : 0n;
+        if (currentAtomic < state.minEgldAtomic) {
+          dom.amountInput.value = state.minEgldStr;
+        }
+
+        setSendStatus(`Suma minima: ${state.minEgldStr} EGLD (~${CONFIG.minUsd} $ la ${price.toFixed(2)} $/EGLD).`);
+        syncButtons();
       }
 
       function parseEgldToAtomic(value) {
@@ -1024,7 +1067,11 @@
         if (state.sending) return;
         const amountText = dom.amountInput.value.trim().replace(",", ".");
         if (!isValidAmount(amountText)) {
-          setSendStatus("Introdu o suma EGLD valida.");
+          if (state.minEgldStr && /^\d+(\.\d{1,18})?$/.test(amountText) && parseEgldToAtomic(amountText) < state.minEgldAtomic) {
+            setSendStatus(`Suma minima este ${state.minEgldStr} EGLD (~${CONFIG.minUsd} $).`);
+          } else {
+            setSendStatus("Introdu o suma EGLD valida.");
+          }
           syncButtons();
           return;
         }
@@ -1111,17 +1158,12 @@
         dom.openXportalBtn.addEventListener("click", () => copyText(CONFIG.recipientAddress, "Adresa a fost copiata. Deschide xPortal si lipeste-o la Send."));
         dom.sendBtn.addEventListener("click", sendEgld);
         dom.amountInput.addEventListener("input", syncButtons);
-        document.querySelectorAll("[data-amount]").forEach((button) => {
-          button.addEventListener("click", () => {
-            dom.amountInput.value = button.dataset.amount || "";
-            syncButtons();
-          });
-        });
         if (dom.brandLink) dom.brandLink.addEventListener("click", goBackToExplorer);
 
         const restored = await restoreSessionIfPossible();
         if (!restored) startConnection();
         syncConnectionView();
+        await applyMinimumAmount();
         notifyParentReady();
       }
 
