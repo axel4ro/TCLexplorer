@@ -1,6 +1,7 @@
 {
   "name": "TCL Explorer",
   "short_name": "TCL Explorer",
+  "id": "https://tclexplorer.com/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
