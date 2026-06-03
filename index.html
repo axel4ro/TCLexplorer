@@ -972,6 +972,14 @@
       <p class="app-boot-splash__subtitle" id="internalPageLoadingSubtitle">Preparing dashboard, live data and navigation.</p>
       <div class="app-boot-splash__bar" aria-hidden="true"></div>
     </div>
+    <div id="loadingAdSlot" hidden style="width:100%;max-width:728px;margin:18px auto 0;padding:0 16px">
+      <ins class="adsbygoogle"
+        style="display:block"
+        data-ad-client="ca-pub-1568493858640885"
+        data-ad-slot="8834036540"
+        data-ad-format="auto"
+        data-full-width-responsive="true"></ins>
+    </div>
   </div>
   <iframe id="internalPageFrame" title="Internal explorer page" loading="lazy"></iframe>
 </div>
@@ -3714,6 +3722,20 @@ function openInternalPage(src, title, options = {}) {
   internalPageState.title = title || "Explorer Page";
   internalPageState.navId = options.navId || "";
   internalPageState.routeKey = options.routeKey || "";
+
+  // Show AdSense banner during loading only for token and wiki pages
+  const loadingAd = document.getElementById("loadingAdSlot");
+  if (loadingAd) {
+    const adPages = ["token", "wiki"];
+    const showAd = adPages.includes(internalPageState.routeKey);
+    if (showAd && loadingAd.hidden) {
+      loadingAd.hidden = false;
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (_) {}
+    } else if (!showAd) {
+      loadingAd.hidden = true;
+    }
+  }
+
   internalPageState.waitForReadyMessage = !!options.waitForReadyMessage;
   internalPageState.readyFallbackMs = Number.isFinite(Number(options.readyFallbackMs))
     ? Math.max(0, Number(options.readyFallbackMs))
