@@ -510,6 +510,40 @@
       border-color: rgba(0, 232, 204, 0.6);
     }
 
+    .btn-disconnect-sm {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border: 1px solid rgba(220, 53, 69, 0.35);
+      border-radius: 999px;
+      background: rgba(220, 53, 69, 0.08);
+      color: #e87a85;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-disconnect-sm:hover {
+      background: rgba(220, 53, 69, 0.16);
+      border-color: rgba(220, 53, 69, 0.6);
+    }
+
+    .address-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .address-short {
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.9rem;
+      color: var(--text);
+      min-width: 0;
+    }
+
     .connected-balance-card {
       margin-bottom: 14px;
     }
@@ -759,7 +793,10 @@
             <span class="panel-icon"><img src="images/EGLD.png" alt=""></span>
           </div>
           <div class="wallet-balance-card" aria-live="polite">
-            <div class="eyebrow" data-i18n="Wallet Balance">Wallet Balance</div>
+            <div class="wallet-balance-header">
+              <div class="eyebrow" data-i18n="Wallet Balance">Wallet Balance</div>
+              <a class="btn-explorer-sm" href="https://explorer.multiversx.com/accounts/erd12v5r5hxrk2rkptrkgemlpak6m5h6q35ant2plr4jan6adw5nfqmshjcvfg" target="_blank" rel="noreferrer">Explorer</a>
+            </div>
             <div class="wallet-balance-values">
               <span class="wallet-balance-egld" id="supportBalanceEgld">-- EGLD</span>
               <span class="wallet-balance-usd" id="supportBalanceUsd">$--</span>
@@ -806,10 +843,12 @@
               </div>
             </div>
             <div class="eyebrow" data-i18n="Connected address">Connected address</div>
-            <code class="address-box" id="connectedAddress">Disconnected</code>
+            <div class="address-inline-row">
+              <code class="address-short" id="connectedAddress">---</code>
+              <button class="btn-disconnect-sm" id="disconnectBtn" type="button" data-i18n="Disconnect">Disconnect</button>
+            </div>
             <div class="btn-row connected-actions">
               <a class="btn" id="connectedExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer" data-i18n="Explorer">Explorer</a>
-              <button class="btn btn-danger" id="disconnectBtn" type="button" data-i18n="Disconnect">Disconnect</button>
             </div>
           </div>
 
@@ -1275,7 +1314,8 @@
         setDynamicText(dom.connectTitle, connected ? "xPortal Connected" : "Connect xPortal");
         if (connected) {
           dynamicText.delete(dom.connectedAddress);
-          dom.connectedAddress.textContent = state.address;
+          const a = state.address;
+          dom.connectedAddress.textContent = a.length > 6 ? `${a.slice(0, 3)}...${a.slice(-3)}` : a;
         } else {
           setDynamicText(dom.connectedAddress, "Disconnected");
         }
