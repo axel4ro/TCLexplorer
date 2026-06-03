@@ -323,7 +323,10 @@
       </button>
       <button type="button" class="nav-item" onclick="openSupportTCLPage()" id="btn-supportTcl" data-i18n="sidebar_support_tcl">🧡 TCLexplorer 🧡</button>
     </nav>
-    <div class="sidebar-footer">MultiversX · TCL-fe459d</div>
+    <div class="sidebar-footer">
+      <div>Developed with ❤️ for Community</div>
+      <div id="buildInfo" style="opacity:0.55;font-size:0.7rem;margin-top:3px"></div>
+    </div>
   </aside>
   <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
 
@@ -5188,6 +5191,27 @@ function simulateApr() {
   result += `</div>`;
   document.getElementById("aprResult").innerHTML = result;
 }
+</script>
+<script>
+(function() {
+  const el = document.getElementById("buildInfo");
+  if (!el) return;
+  fetch("https://api.github.com/repos/axel4ro/TCLexplorer/commits?per_page=1", {
+    headers: { Accept: "application/vnd.github.v3+json" }
+  })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function(data) {
+      const commit = data && data[0];
+      if (!commit) return;
+      const sha = commit.sha.slice(0, 7);
+      const d = new Date(commit.commit.author.date);
+      const pad = function(n) { return String(n).padStart(2, "0"); };
+      const fmt = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate())
+        + " " + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + " UTC";
+      el.textContent = "build " + sha + " · " + fmt;
+    })
+    .catch(function() {});
+})();
 </script>
 </body>
 </html>
