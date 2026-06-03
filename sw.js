@@ -198,6 +198,14 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("push", (event) => {
   const payload = parsePushPayload(event);
+  // Cancel local timer for this specific event to avoid duplicate notification
+  if (payload.id) {
+    const timer = localTimers.get(payload.id);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      localTimers.delete(payload.id);
+    }
+  }
   event.waitUntil(showEventNotification(payload));
 });
 
