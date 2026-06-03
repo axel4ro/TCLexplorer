@@ -8,6 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1568493858640885" crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
@@ -913,6 +914,14 @@
               <button class="btn-watch-ad" id="watchAdBtn" type="button">
                 ▶ Watch an Ad
               </button>
+              <div id="adSlotContainer" hidden style="margin-top:8px;min-height:100px;background:rgba(0,0,0,0.18);border-radius:var(--radius);overflow:hidden">
+                <ins class="adsbygoogle"
+                  style="display:block;width:100%;min-height:100px"
+                  data-ad-client="ca-pub-1568493858640885"
+                  data-ad-slot="AUTO"
+                  data-ad-format="auto"
+                  data-full-width-responsive="true"></ins>
+              </div>
               <p class="ads-egld-note">or <span>Connect xPortal</span> above to support directly with EGLD $</p>
             </div>
           </div>
@@ -1807,7 +1816,17 @@
         const watchAdBtn = document.getElementById("watchAdBtn");
         if (watchAdBtn) {
           watchAdBtn.addEventListener("click", function() {
-            window.open("https://go.coinzilla.io/click?pid=1&campid=TCLexplorer", "_blank", "noopener,noreferrer");
+            const container = document.getElementById("adSlotContainer");
+            if (!container) return;
+            if (container.hidden) {
+              container.hidden = false;
+              try {
+                (window.adsbygoogle = window.adsbygoogle || []).push({});
+              } catch (_) {}
+              watchAdBtn.textContent = "❤️ Thank you for supporting!";
+              watchAdBtn.disabled = true;
+              watchAdBtn.style.opacity = "0.7";
+            }
           });
         }
         dom.sendBtn.addEventListener("click", sendEgld);
