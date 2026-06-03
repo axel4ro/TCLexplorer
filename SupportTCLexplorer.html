@@ -109,6 +109,7 @@
     }
 
     .hero-copy,
+    .support-wallet-panel,
     .connect-panel,
     .send-panel,
     .address-panel {
@@ -203,6 +204,7 @@
       line-height: 1.65;
     }
 
+    .support-wallet-panel,
     .connect-panel,
     .send-panel,
     .address-panel {
@@ -443,11 +445,14 @@
     .wallet-balance-card {
       display: grid;
       gap: 8px;
-      margin-bottom: 14px;
       padding: 12px;
       border: 1px solid rgba(0, 232, 204, 0.14);
       border-radius: var(--radius);
       background: rgba(0, 232, 204, 0.055);
+    }
+
+    .connected-balance-card {
+      margin-bottom: 14px;
     }
 
     .wallet-balance-values {
@@ -563,6 +568,7 @@
       gap: 12px;
     }
 
+    body[data-state="connected"] .support-wallet-panel,
     body[data-state="connected"] .connect-panel,
     body[data-state="connected"] .send-panel {
       padding: 14px 16px;
@@ -649,6 +655,20 @@
       </div>
 
       <div class="support-stack">
+        <section class="support-wallet-panel" id="supportWalletPanel" aria-labelledby="supportWalletTitle" hidden>
+          <div class="panel-head">
+            <h2 class="panel-title" id="supportWalletTitle" data-i18n="Support TCLexplorer - Wallet Balance">Support TCLexplorer - Wallet Balance</h2>
+            <span class="panel-icon"><img src="images/EGLD.png" alt=""></span>
+          </div>
+          <div class="wallet-balance-card" aria-live="polite">
+            <div class="eyebrow" data-i18n="Wallet Balance">Wallet Balance</div>
+            <div class="wallet-balance-values">
+              <span class="wallet-balance-egld" id="supportBalanceEgld">-- EGLD</span>
+              <span class="wallet-balance-usd" id="supportBalanceUsd">$--</span>
+            </div>
+          </div>
+        </section>
+
         <section class="connect-panel" aria-labelledby="connectTitle">
           <div class="panel-head">
             <h2 class="panel-title" id="connectTitle" data-i18n="Connect xPortal">Connect xPortal</h2>
@@ -672,11 +692,11 @@
           </div>
 
           <div id="connectedView" hidden>
-            <div class="wallet-balance-card" aria-live="polite">
-              <div class="eyebrow" data-i18n="Wallet Balance">Wallet Balance</div>
+            <div class="wallet-balance-card connected-balance-card" aria-live="polite">
+              <div class="eyebrow" data-i18n="Your Wallet Balance">Your Wallet Balance</div>
               <div class="wallet-balance-values">
-                <span class="wallet-balance-egld" id="supportBalanceEgld">-- EGLD</span>
-                <span class="wallet-balance-usd" id="supportBalanceUsd">$--</span>
+                <span class="wallet-balance-egld" id="userBalanceEgld">-- EGLD</span>
+                <span class="wallet-balance-usd" id="userBalanceUsd">$--</span>
               </div>
             </div>
             <div class="eyebrow" data-i18n="Connected address">Connected address</div>
@@ -720,7 +740,7 @@
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
-  <script src="lang/support-tcl.bundle.js?v=20260603-3"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-4"></script>
   <script>
     (function () {
       "use strict";
@@ -765,6 +785,7 @@
       };
 
       const dom = {
+        supportWalletPanel: document.getElementById("supportWalletPanel"),
         connectView: document.getElementById("connectView"),
         connectedView: document.getElementById("connectedView"),
         sendPanel: document.getElementById("sendPanel"),
@@ -777,6 +798,8 @@
         connectedExplorerLink: document.getElementById("connectedExplorerLink"),
         supportBalanceEgld: document.getElementById("supportBalanceEgld"),
         supportBalanceUsd: document.getElementById("supportBalanceUsd"),
+        userBalanceEgld: document.getElementById("userBalanceEgld"),
+        userBalanceUsd: document.getElementById("userBalanceUsd"),
         recipientAddress: document.getElementById("recipientAddress"),
         amountInput: document.getElementById("amountInput"),
         sendBtn: document.getElementById("sendBtn"),
@@ -1012,6 +1035,11 @@
         if (dom.supportBalanceUsd) dom.supportBalanceUsd.textContent = usdText;
       }
 
+      function setUserWalletBalance(egldText, usdText) {
+        if (dom.userBalanceEgld) dom.userBalanceEgld.textContent = egldText;
+        if (dom.userBalanceUsd) dom.userBalanceUsd.textContent = usdText;
+      }
+
       async function ensureEgldPrice() {
         if (state.egldPrice > 0) return state.egldPrice;
         const price = await fetchEgldPrice();
@@ -1037,8 +1065,32 @@
         }
       }
 
+      async function loadUserWalletBalance() {
+        if (!state.address) {
+          setUserWalletBalance("-- EGLD", "$--");
+          return;
+        }
+
+        setUserWalletBalance(translateText("Loading balance..."), "$--");
+        try {
+          const [account, price] = await Promise.all([
+            fetchAccount(state.address),
+            ensureEgldPrice()
+          ]);
+          const balanceAtomic = BigInt(account.balance || "0");
+          const egldText = formatEgldDisplayFromAtomic(balanceAtomic);
+          const egldAmount = Number(formatEgldFromAtomic(balanceAtomic));
+          const usdText = price > 0 ? formatUsdDisplay(egldAmount * price) : "$--";
+          setUserWalletBalance(egldText, usdText);
+        } catch (error) {
+          console.warn("Could not load connected wallet balance", error);
+          setUserWalletBalance(translateText("Balance unavailable"), "$--");
+        }
+      }
+
       function syncConnectionView() {
         const connected = hasConnectedWallet();
+        if (dom.supportWalletPanel) dom.supportWalletPanel.hidden = !connected;
         dom.connectView.hidden = connected;
         dom.connectedView.hidden = !connected;
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
@@ -1075,6 +1127,7 @@
         window.localStorage.setItem(CONFIG.storageKey, state.address);
         window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
         syncConnectionView();
+        loadUserWalletBalance();
       }
 
       function clearConnection() {
@@ -1083,6 +1136,7 @@
         state.pendingUri = "";
         window.localStorage.removeItem(CONFIG.storageKey);
         window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        setUserWalletBalance("-- EGLD", "$--");
         syncConnectionView();
         setStatus("idle", "xPortal connection closed.");
         startConnection();
