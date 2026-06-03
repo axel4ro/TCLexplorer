@@ -1256,8 +1256,15 @@
         pnlSupabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoaHpyZnpod3dvb2Vxc2R6dGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODI2MzksImV4cCI6MjA5NTQ1ODYzOX0.TPJ2e5FbbWNqthkgHAC-r2WsMiP29CbfNkBaMFyf-yw",
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        // Aggregatorii MultiversX care ruteaza TCL (descoperiti scanand /tokens/TCL-fe459d/transfers).
+        // Un buy prin oricare din ei e detectat ca TCL primit de la aceste adrese; costul USDC
+        // se ia din leg-ul USDC intrat in pool-ul TCL/USDC (pnlPairAddress) in interiorul tx-ului.
         pnlAggregatorAddresses: [
-          "erd1qqqqqqqqqqqqqpgqcc69ts8409p3h77q5chsaqz57y6hugvc4fvs64k74v"
+          "erd1qqqqqqqqqqqqqpgqcc69ts8409p3h77q5chsaqz57y6hugvc4fvs64k74v", // AshSwap: Aggregator v2
+          "erd1qqqqqqqqqqqqqpgq5rf2sppxk2xu4m0pkmugw2es4gak3rgjah0sxvajva", // XOXNO: Swap Aggregator
+          "erd1qqqqqqqqqqqqqpgqn7wy983tdh5katf5yn5nl2gcdflf4azh6jtsggjx9a", // OneDex: Aggregator
+          "erd1qqqqqqqqqqqqqpgqq66xk9gfr4esuhem3jru86wg5hvp33a62jps2fy57p", // xExchange: Router
+          "erd1qqqqqqqqqqqqqpgqsytkvnexypp7argk02l0rasnj57sxa542jpshkl7df"  // xExchange: Tasks Composer
         ],
         pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
         // Infinity Offers: functia buyStakingOffer pe game contract (USDC platit -> TCL burnat)
@@ -1265,7 +1272,7 @@
         pnlInfinityMaxPages: 10,
         // Staking (NFT + Loan + Infinity) — precalculat in leaderboard.json (top stakers)
         pnlStakingLeaderboardUrls: [
-          "https://axel4ro.github.io/TCLexplorer/leaderboard.json",
+          "/leaderboard.json",
           "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json",
           "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
         ],
@@ -1541,8 +1548,8 @@
       function getAppMetadata() {
         const baseUrl = window.location.origin && window.location.origin !== "null"
           ? window.location.origin
-          : "https://axel4ro.github.io";
-        const appUrl = new URL(window.location.pathname || "/TCLexplorer/connect_xportal.html", baseUrl).href;
+          : "https://tclexplorer.com";
+        const appUrl = new URL(window.location.pathname || "/connect_xportal.html", baseUrl).href;
         const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
         return {
           name: "TCL Explorer",
@@ -2573,41 +2580,37 @@
         };
       }
 
-      async function fetchAggregatorBuyFallbackTrades(transfers, walletAddress, knownTradeHashes = new Set()) {
+      // Buy-uri prin aggregator (AshSwap/XOXNO/OneDex/xExchange): walletul primeste TCL
+      // printr-un SCR de la aggregator, iar costul USDC intra in pool-ul TCL/USDC in
+      // interiorul tranzactiei root. Citim `operations` DIRECT din randurile Supabase
+      // aduse deja (fetchPnlEntriesByRootHashes) — fara fetch live la MultiversX.
+      // Root-urile sunt enrichuite de worker la sync + /api/enrich per-wallet (rulat
+      // de ensurePnlSupabaseCache inainte de citire).
+      function fetchAggregatorBuyFallbackTrades(transfers, walletAddress, knownTradeHashes = new Set()) {
         const candidates = collectAggregatorBuyCandidates(transfers, walletAddress, knownTradeHashes);
         if (!candidates.length) return [];
 
-        setPnlStatus("Pricing {count} aggregator buys...", {
-          count: candidates.length.toLocaleString(getLocale())
-        });
+        // Index pe txHash al root-urilor care au deja operations in cache-ul Supabase.
+        const rootByHash = new Map();
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          const hash = String(entry?.txHash || "");
+          if (!/^[0-9a-f]{64}$/i.test(hash)) continue;
+          if (!Array.isArray(entry.operations) || !entry.operations.length) continue;
+          if (!rootByHash.has(hash)) rootByHash.set(hash, entry);
+        }
 
-        const batchSize = Math.max(1, Math.floor(readNumber(CONFIG.pnlAggregatorRootBatchSize, 6)));
-        const pauseMs = Math.max(0, readNumber(CONFIG.pnlAggregatorRootPauseMs, 120));
         const trades = [];
-
-        for (let i = 0; i < candidates.length; i += batchSize) {
-          const batch = candidates.slice(i, i + batchSize);
-          const settled = await Promise.allSettled(batch.map(async (candidate) => {
-            const rootTx = await fetchJson(buildApiUrl(`/transactions/${candidate.hash}`, {
-              fields: "txHash,timestamp,status,function,sender,receiver,operations"
-            }), {
-              retries: 1,
-              retryDelayMs: 800,
-              timeoutMs: 18000,
-              timeoutMessage: "Aggregator buy lookup timed out."
-            });
-            return parseAggregatorBuyTradeFromRoot(rootTx, candidate, walletAddress);
-          }));
-
-          settled.forEach((result) => {
-            if (result.status === "fulfilled" && result.value) {
-              trades.push(result.value);
-            }
-          });
-
-          if (pauseMs && i + batchSize < candidates.length) {
-            await wait(pauseMs);
-          }
+        let missingOps = 0;
+        for (const candidate of candidates) {
+          const rootTx = rootByHash.get(candidate.hash);
+          // Root inca neenrichuit (operations=null) => il prinde worker-ul la urmatorul
+          // sync/enrich; il sarim acum ca sa nu lovim MultiversX live.
+          if (!rootTx) { missingOps += 1; continue; }
+          const trade = parseAggregatorBuyTradeFromRoot(rootTx, candidate, walletAddress);
+          if (trade) trades.push(trade);
+        }
+        if (missingOps) {
+          console.warn(`PNL: ${missingOps} root(s) aggregator fara operations in Supabase (vor fi enrichuite la urmatorul sync).`);
         }
 
         return trades.sort((left, right) => left.timestamp - right.timestamp);

@@ -6,7 +6,7 @@ workers_dev = true
 
 [vars]
 SUPABASE_URL        = "https://phhzrfzhwwooeqsdztee.supabase.co"
-ALLOWED_ORIGIN      = "https://axel4ro.github.io"
+ALLOWED_ORIGIN      = "https://tclexplorer.com,https://axel4ro.github.io"
 MVX_API             = "https://api.multiversx.com"
 TCL_TOKEN           = "TCL-fe459d"
 LISTING_TIMESTAMP   = "1718236800"    # 2024-06-13 00:00:00 UTC

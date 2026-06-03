@@ -1,11 +1,13 @@
 const DEFAULT_SOURCE_URLS = [
+  "https://tclexplorer.com/",
+  "https://tclexplorer.com/weekly_events.json",
   "https://axel4ro.github.io/TCLexplorer/",
   "https://axel4ro.github.io/TCLexplorer/weekly_events.json",
   "https://www.thecursedland.com/",
   "https://whitepaper.thecursedland.com/"
 ];
 
-const TCL_EXPLORER_BASE = "https://axel4ro.github.io/TCLexplorer/";
+const TCL_EXPLORER_BASE = "https://tclexplorer.com/";
 const TCL_EXPLORER_PATHS = [
   "",
   "analytics.html",
@@ -180,22 +182,28 @@ function publicSourceUrl(value) {
       }
     }
 
-    if (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/weekly_events.json") {
-      return "https://axel4ro.github.io/TCLexplorer/#events";
+    if ((url.hostname === "tclexplorer.com" && url.pathname === "/weekly_events.json")
+      || (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/weekly_events.json")) {
+      return "https://tclexplorer.com/#events";
     }
-    if (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/data/drop.json") {
-      return "https://axel4ro.github.io/TCLexplorer/loot.html";
+    if ((url.hostname === "tclexplorer.com" && url.pathname === "/data/drop.json")
+      || (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/data/drop.json")) {
+      return "https://tclexplorer.com/loot.html";
     }
-    if (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/data/items_data.json") {
-      return "https://axel4ro.github.io/TCLexplorer/#wiki";
+    if ((url.hostname === "tclexplorer.com" && url.pathname === "/data/items_data.json")
+      || (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/data/items_data.json")) {
+      return "https://tclexplorer.com/#wiki";
     }
-    if (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/data/tcl-analytics.json") {
-      return "https://axel4ro.github.io/TCLexplorer/analytics.html";
+    if ((url.hostname === "tclexplorer.com" && url.pathname === "/data/tcl-analytics.json")
+      || (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/data/tcl-analytics.json")) {
+      return "https://tclexplorer.com/analytics.html";
     }
-    if (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/leaderboard.json") {
-      return "https://axel4ro.github.io/TCLexplorer/";
+    if ((url.hostname === "tclexplorer.com" && url.pathname === "/leaderboard.json")
+      || (url.hostname === "axel4ro.github.io" && url.pathname === "/TCLexplorer/leaderboard.json")) {
+      return "https://tclexplorer.com/";
     }
-    if (url.hostname === "axel4ro.github.io" && /\/TCLexplorer\/lang\/.+\.bundle\.js$/i.test(url.pathname)) {
+    if ((url.hostname === "tclexplorer.com" && /\/lang\/.+\.bundle\.js$/i.test(url.pathname))
+      || (url.hostname === "axel4ro.github.io" && /\/TCLexplorer\/lang\/.+\.bundle\.js$/i.test(url.pathname))) {
       const BUNDLE_PAGES = {
         "events": "#events",
         "wiki": "#wiki",
@@ -220,9 +228,7 @@ function publicSourceUrl(value) {
       const name = (url.pathname.match(/\/lang\/([^/]+)\.bundle\.js$/i) || [])[1]?.toLowerCase();
       const page = name && BUNDLE_PAGES[name];
       if (!page) return "";
-      return page.startsWith("#")
-        ? `https://axel4ro.github.io/TCLexplorer/${page}`
-        : `https://axel4ro.github.io/TCLexplorer/${page}`;
+      return `https://tclexplorer.com/${page}`;
     }
 
     if (/\.(json|png|jpe?g|gif|webp|svg|ico)$/i.test(url.pathname)) return "";
@@ -237,15 +243,15 @@ function publicSourceTitle(title, url) {
   if (url === "https://whitepaper.thecursedland.com/") {
     return "The Cursed Land | Whitepaper";
   }
-  if (url === "https://axel4ro.github.io/TCLexplorer/#events") {
+  if (url === "https://tclexplorer.com/#events" || url === "https://tclexplorer.com/#events") {
     return "TCLexplorer Events";
   }
-  if (url === "https://axel4ro.github.io/TCLexplorer/#wiki") {
+  if (url === "https://tclexplorer.com/#wiki" || url === "https://tclexplorer.com/#wiki") {
     return "TCLexplorer Wiki";
   }
 
-  if (/\.bundle(\.js)?$/i.test(title) && /axel4ro\.github\.io\/TCLexplorer\//i.test(url)) {
-    const page = (url.match(/\/TCLexplorer\/([^/#]+\.html?)(?:[#?]|$)/i) || [])[1];
+  if (/\.bundle(\.js)?$/i.test(title) && (/tclexplorer\.com\//i.test(url) || /axel4ro\.github\.io\/TCLexplorer\//i.test(url))) {
+    const page = (url.match(/(?:\/TCLexplorer\/|tclexplorer\.com\/)([^/#]+\.html?)(?:[#?]|$)/i) || [])[1];
     if (page) {
       const clean = page
         .replace(/\.html?$/i, "")
@@ -269,40 +275,40 @@ function buildActions(question, language, sources = []) {
   const t = (map) => map[language] || map.en;
 
   if (isEventsIntent(question)) {
-    add(t({ en: "Open Events", ro: "Deschide Evenimente", tr: "Etkinlikleri Aç", de: "Events öffnen", es: "Abrir Eventos", fr: "Ouvrir les événements", it: "Apri Eventi", pl: "Otwórz Wydarzenia", pt: "Abrir Eventos" }), "https://axel4ro.github.io/TCLexplorer/#events", "primary");
+    add(t({ en: "Open Events", ro: "Deschide Evenimente", tr: "Etkinlikleri Aç", de: "Events öffnen", es: "Abrir Eventos", fr: "Ouvrir les événements", it: "Apri Eventi", pl: "Otwórz Evenimente", pt: "Abrir Eventos" }), "https://tclexplorer.com/#events", "primary");
   }
   if (/\b(wiki|iteme?|items?\b|obiecte?|blacksmith|upgrade|plusat)\b/i.test(question)) {
-    add(t({ en: "Open Wiki", ro: "Deschide Wiki", tr: "Wiki'yi Aç", de: "Wiki öffnen", es: "Abrir Wiki", fr: "Ouvrir Wiki", it: "Apri Wiki", pl: "Otwórz Wiki", pt: "Abrir Wiki" }), "https://axel4ro.github.io/TCLexplorer/#wiki", "primary");
+    add(t({ en: "Open Wiki", ro: "Deschide Wiki", tr: "Wiki'yi Aç", de: "Wiki öffnen", es: "Abrir Wiki", fr: "Ouvrir Wiki", it: "Apri Wiki", pl: "Otwórz Wiki", pt: "Abrir Wiki" }), "https://tclexplorer.com/#wiki", "primary");
   }
   if (/\b(loot|drop|drops?|clam|moonlight|cufere?|scoici|chest|treasure)\b/i.test(question)) {
-    add(t({ en: "Open Loot", ro: "Deschide Loot", tr: "Loot'u Aç", de: "Loot öffnen", es: "Abrir Loot", fr: "Ouvrir Loot", it: "Apri Loot", pl: "Otwórz Loot", pt: "Abrir Loot" }), "https://axel4ro.github.io/TCLexplorer/loot.html", "primary");
-    add(t({ en: "Open Events", ro: "Deschide Evenimente", tr: "Etkinlikleri Aç", de: "Events öffnen", es: "Abrir Eventos", fr: "Ouvrir les événements", it: "Apri Eventi", pl: "Otwórz Wydarzenia", pt: "Abrir Eventos" }), "https://axel4ro.github.io/TCLexplorer/#events");
+    add(t({ en: "Open Loot", ro: "Deschide Loot", tr: "Loot'u Aç", de: "Loot öffnen", es: "Abrir Loot", fr: "Ouvrir Loot", it: "Apri Loot", pl: "Otwórz Loot", pt: "Abrir Loot" }), "https://tclexplorer.com/loot.html", "primary");
+    add(t({ en: "Open Events", ro: "Deschide Evenimente", tr: "Etkinlikleri Aç", de: "Events öffnen", es: "Abrir Eventos", fr: "Ouvrir les événements", it: "Apri Eventi", pl: "Otwórz Wydarzenia", pt: "Abrir Eventos" }), "https://tclexplorer.com/#events");
   }
   if (isRequirementsIntent(question)) {
-    add(t({ en: "Can I Run It", ro: "Pot Rula Jocul", tr: "Çalıştırabilir miyim", de: "Kann ich es spielen", es: "¿Puedo correrlo?", fr: "Puis-je le lancer", it: "Posso eseguirlo", pl: "Czy uruchomię grę", pt: "Consigo rodar" }), "https://axel4ro.github.io/TCLexplorer/CanIrunIt.html", "primary");
-    add(t({ en: "Game Requirements", ro: "Cerințe Sistem", tr: "Oyun Gereksinimleri", de: "Systemanforderungen", es: "Requisitos del juego", fr: "Config. requise", it: "Requisiti di sistema", pl: "Wymagania systemowe", pt: "Requisitos do jogo" }), "https://axel4ro.github.io/TCLexplorer/Game_Requirements.html");
+    add(t({ en: "Can I Run It", ro: "Pot Rula Jocul", tr: "Çalıştırabilir miyim", de: "Kann ich es spielen", es: "¿Puedo correrlo?", fr: "Puis-je le lancer", it: "Posso eseguirlo", pl: "Czy uruchomię grę", pt: "Consigo rodar" }), "https://tclexplorer.com/CanIrunIt.html", "primary");
+    add(t({ en: "Game Requirements", ro: "Cerințe Sistem", tr: "Oyun Gereksinimleri", de: "Systemanforderungen", es: "Requisitos del juego", fr: "Config. requise", it: "Requisiti di sistema", pl: "Wymagania systemowe", pt: "Requisitos do jogo" }), "https://tclexplorer.com/Game_Requirements.html");
   }
   if (isBuyTokenIntent(question) || isTokenInfoIntent(question)) {
     add("xExchange", "https://xexchange.com/", "primary");
     add("xPortal", "https://xportal.com/");
   }
   if (/\b(nfts?)\b/i.test(question)) {
-    add(t({ en: "Open NFTs", ro: "Deschide NFT-uri", tr: "NFT'leri Aç", de: "NFTs öffnen", es: "Abrir NFTs", fr: "Ouvrir NFTs", it: "Apri NFTs", pl: "Otwórz NFTs", pt: "Abrir NFTs" }), "https://axel4ro.github.io/TCLexplorer/NFTs.html", "primary");
+    add(t({ en: "Open NFTs", ro: "Deschide NFT-uri", tr: "NFT'leri Aç", de: "NFTs öffnen", es: "Abrir NFTs", fr: "Ouvrir NFTs", it: "Apri NFTs", pl: "Otwórz NFTs", pt: "Abrir NFTs" }), "https://tclexplorer.com/NFTs.html", "primary");
   }
   if (/\b(earn|staking|apr\b|reward|recompens|castig|câștig|creator|referral|afiliat|bani|procent|percent|comision|commission|program.creator|creator.program)\b/i.test(question)) {
-    add(t({ en: "Open Earn", ro: "Deschide Earn", tr: "Earn'i Aç", de: "Earn öffnen", es: "Abrir Earn", fr: "Ouvrir Earn", it: "Apri Earn", pl: "Otwórz Earn", pt: "Abrir Earn" }), "https://axel4ro.github.io/TCLexplorer/earn.html", "primary");
+    add(t({ en: "Open Earn", ro: "Deschide Earn", tr: "Earn'i Aç", de: "Earn öffnen", es: "Abrir Earn", fr: "Ouvrir Earn", it: "Apri Earn", pl: "Otwórz Earn", pt: "Abrir Earn" }), "https://tclexplorer.com/earn.html", "primary");
   }
   if (/\b(xportal|portofel|wallet|connect|conectare|web3)\b/i.test(question) && !isBuyTokenIntent(question)) {
-    add(t({ en: "Connect xPortal", ro: "Conectează xPortal", tr: "xPortal Bağla", de: "xPortal verbinden", es: "Conectar xPortal", fr: "Connecter xPortal", it: "Connetti xPortal", pl: "Połącz xPortal", pt: "Conectar xPortal" }), "https://axel4ro.github.io/TCLexplorer/connect_xportal.html");
+    add(t({ en: "Connect xPortal", ro: "Conectează xPortal", tr: "xPortal Bağla", de: "xPortal verbinden", es: "Conectar xPortal", fr: "Connecter xPortal", it: "Connetti xPortal", pl: "Połącz xPortal", pt: "Conectar xPortal" }), "https://tclexplorer.com/connect_xportal.html");
   }
   if (/\b(analytics|statistic|statistici)\b/i.test(question)) {
-    add(t({ en: "Open Analytics", ro: "Deschide Analytics", tr: "Analitikleri Aç", de: "Analytics öffnen", es: "Abrir Analytics", fr: "Ouvrir Analytics", it: "Apri Analytics", pl: "Otwórz Analytics", pt: "Abrir Analytics" }), "https://axel4ro.github.io/TCLexplorer/analytics.html");
+    add(t({ en: "Open Analytics", ro: "Deschide Analytics", tr: "Analitikleri Aç", de: "Analytics öffnen", es: "Abrir Analytics", fr: "Ouvrir Analytics", it: "Apri Analytics", pl: "Otwórz Analytics", pt: "Abrir Analytics" }), "https://tclexplorer.com/analytics.html");
   }
   if (/\b(technicals?|technical.analysis|analiz[aă].tehnic)\b/i.test(question)) {
-    add(t({ en: "Open Technicals", ro: "Analiză Tehnică", tr: "Teknik Analiz", de: "Technicals öffnen", es: "Análisis técnico", fr: "Analyse technique", it: "Analisi tecnica", pl: "Analiza techniczna", pt: "Análise técnica" }), "https://axel4ro.github.io/TCLexplorer/Technicals.html");
+    add(t({ en: "Open Technicals", ro: "Analiză Tehnică", tr: "Teknik Analiz", de: "Technicals öffnen", es: "Análisis técnico", fr: "Analyse technique", it: "Analisi tecnica", pl: "Analiza techniczna", pt: "Análise técnica" }), "https://tclexplorer.com/Technicals.html");
   }
   if (/\b(trade[sd]?|tranzact|volum\b|volume\b)\b/i.test(question) && !isBuyTokenIntent(question)) {
-    add(t({ en: "TCL Trades", ro: "Tranzacții TCL", tr: "TCL İşlemleri", de: "TCL Trades", es: "Trades TCL", fr: "Trades TCL", it: "Trade TCL", pl: "Transakcje TCL", pt: "Trades TCL" }), "https://axel4ro.github.io/TCLexplorer/TCL_trades.html");
+    add(t({ en: "TCL Trades", ro: "Tranzacții TCL", tr: "TCL İşlemleri", de: "TCL Trades", es: "Trades TCL", fr: "Trades TCL", it: "Trade TCL", pl: "Transakcje TCL", pt: "Trades TCL" }), "https://tclexplorer.com/TCL_trades.html");
   }
 
   return actions.slice(0, 4);
@@ -310,7 +316,7 @@ function buildActions(question, language, sources = []) {
 
 function guidedPageResponse(question, language, actions) {
   if (!isBroadEventsIntent(question)) return "";
-  if (!actions.some((action) => action.url === "https://axel4ro.github.io/TCLexplorer/#events")) return "";
+  if (!actions.some((action) => action.url === "https://tclexplorer.com/#events")) return "";
 
   const responses = {
     en: "For events, the clearest view is the live TCLexplorer Events page. It shows the full schedule, your local times, and the current event status.",
@@ -409,7 +415,7 @@ async function fetchDropData() {
   const now = Date.now();
   if (cachedDropData && now - cachedDropDataTs < DROP_DATA_CACHE_TTL_MS) return cachedDropData;
   try {
-    const resp = await fetch("https://axel4ro.github.io/TCLexplorer/data/drop.json",
+    const resp = await fetch("https://tclexplorer.com/data/drop.json",
       { cf: { cacheTtl: 1800, cacheEverything: true } });
     if (!resp.ok) return null;
     cachedDropData = await resp.json();
@@ -424,7 +430,7 @@ async function fetchEventsData() {
   const now = Date.now();
   if (cachedEventsData && now - cachedEventsDataTs < EVENTS_DATA_CACHE_TTL_MS) return cachedEventsData;
   try {
-    const resp = await fetch("https://axel4ro.github.io/TCLexplorer/weekly_events.json",
+    const resp = await fetch("https://tclexplorer.com/weekly_events.json",
       { cf: { cacheTtl: 1800, cacheEverything: true } });
     if (!resp.ok) return null;
     cachedEventsData = await resp.json();
@@ -1487,6 +1493,9 @@ function expandSourceUrl(value) {
 function isTclExplorerRoot(value) {
   try {
     const url = new URL(value);
+    if (url.origin === "https://tclexplorer.com") {
+      return url.pathname === "/" || url.pathname === "" || url.pathname === "/index.html";
+    }
     return url.origin === "https://axel4ro.github.io"
       && (url.pathname === "/TCLexplorer" || url.pathname === "/TCLexplorer/" || url.pathname === "/TCLexplorer/index.html");
   } catch {
@@ -1497,6 +1506,7 @@ function isTclExplorerRoot(value) {
 function isTclExplorerUrl(value) {
   try {
     const url = new URL(value);
+    if (url.origin === "https://tclexplorer.com") return true;
     return url.origin === "https://axel4ro.github.io" && url.pathname.startsWith("/TCLexplorer/");
   } catch {
     return false;
