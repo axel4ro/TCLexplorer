@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support TCLexplorer Infrastructure</title>
+  <meta name="theme-color" content="#07080c">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: #111621;
+      --panel-strong: #171c29;
+      --line: rgba(0, 232, 204, 0.18);
+      --line-strong: rgba(0, 232, 204, 0.38);
+      --text: #e8edf5;
+      --muted: #8f9aae;
+      --soft: #667085;
+      --accent: #00e8cc;
+      --accent-2: #2f75ff;
+      --gold: #f7c35f;
+      --danger: #fb7185;
+      --success: #4ade80;
+      --radius: 8px;
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(13, 19, 30, 0.98) 0%, rgba(7, 9, 14, 0.98) 54%, #04060a 100%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.022) 0, rgba(255, 255, 255, 0.022) 1px, transparent 1px, transparent 66px);
+      color: var(--text);
+      font-family: var(--font-ui);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .page-shell {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 42px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .brand-link,
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .brand-link {
+      gap: 10px;
+    }
+
+    .brand-link img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.05fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .hero-copy,
+    .support-wallet-panel,
+    .connect-panel,
+    .send-panel,
+    .disclaimer-panel,
+    .address-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(22, 27, 40, 0.96), rgba(12, 15, 23, 0.96));
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+    }
+
+    .hero-copy {
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      min-height: 420px;
+      padding: clamp(20px, 4vw, 34px);
+      overflow: hidden;
+    }
+
+    .lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+      min-height: 50px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .lockup img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 100%;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 4vw, 3.4rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
+    }
+
+    .lead {
+      max-width: 650px;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.13rem);
+      line-height: 1.7;
+    }
+
+    .support-list {
+      display: grid;
+      gap: 8px;
+      max-width: 650px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .support-list li {
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .support-thanks {
+      max-width: 650px;
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.65;
+    }
+
+    .support-wallet-panel,
+    .connect-panel,
+    .send-panel,
+    .disclaimer-panel,
+    .address-panel {
+      padding: 18px;
+    }
+
+    .support-stack {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+      align-self: start;
+      align-content: start;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 2vw, 1.45rem);
+      letter-spacing: 0;
+    }
+
+    .panel-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .panel-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 32px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--soft);
+      box-shadow: 0 0 0 4px rgba(102, 112, 133, 0.12);
+    }
+
+    body[data-state="ready"] .status-dot,
+    body[data-state="connected"] .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.12);
+    }
+
+    body[data-state="loading"] .status-dot {
+      background: var(--gold);
+      box-shadow: 0 0 0 4px rgba(247, 195, 95, 0.14);
+    }
+
+    body[data-state="error"] .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12);
+    }
+
+    .qr-wrap {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      margin: 12px 0 14px;
+    }
+
+    .connect-qr-frame {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(100%, 240px);
+    }
+
+    .connect-qr-frame.is-expired .qr-code {
+      opacity: 0.38;
+      filter: grayscale(1);
+    }
+
+    .qr-code {
+      display: grid;
+      place-items: center;
+      width: min(100%, 240px);
+      min-height: 220px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .qr-code canvas,
+    .qr-code img {
+      width: 220px;
+      height: 220px;
+    }
+
+    .qr-refresh-btn {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 18px;
+      border: 1px solid rgba(0, 232, 204, 0.5);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), #55f5df);
+      color: #041210;
+      font-weight: 900;
+      box-shadow: 0 16px 34px rgba(0, 232, 204, 0.28);
+      transform: translate(-50%, -50%);
+    }
+
+    .qr-refresh-btn[hidden] {
+      display: none;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .connect-actions {
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .connect-help {
+      width: fit-content;
+      justify-content: center;
+      align-items: flex-start;
+      max-width: min(460px, 100%);
+      margin: 10px auto 0;
+      text-align: left;
+    }
+
+    .connect-help .status-dot {
+      margin-top: 0.42em;
+    }
+
+    .connect-help #statusText {
+      display: block;
+      max-width: 420px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 800;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+    }
+
+    .btn img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .btn-primary {
+      border-color: rgba(0, 232, 204, 0.46);
+      background: linear-gradient(135deg, var(--accent), #55f5df);
+      color: #041210;
+      box-shadow: 0 12px 28px rgba(0, 232, 204, 0.18);
+    }
+
+    .btn-blue {
+      border-color: rgba(47, 117, 255, 0.58);
+      background: linear-gradient(135deg, #2f75ff, #1640ca);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(47, 117, 255, 0.22);
+    }
+
+    .btn-danger {
+      border-color: rgba(251, 113, 133, 0.3);
+      background: rgba(251, 113, 133, 0.12);
+      color: #fff;
+    }
+
+    .btn:disabled,
+    .btn.is-disabled {
+      pointer-events: none;
+      opacity: 0.55;
+      transform: none;
+    }
+
+    .address-box {
+      display: block;
+      min-height: 64px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(0, 232, 204, 0.14);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--text);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .wallet-balance-card {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid rgba(0, 232, 204, 0.14);
+      border-radius: var(--radius);
+      background: rgba(0, 232, 204, 0.055);
+    }
+
+    .connected-balance-card {
+      margin-bottom: 14px;
+    }
+
+    .wallet-balance-values {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .wallet-balance-egld {
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+      line-height: 1.1;
+    }
+
+    .wallet-balance-usd {
+      color: var(--success);
+      font-size: 0.96rem;
+      font-weight: 800;
+    }
+
+    .connected-actions {
+      margin-top: 12px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin: 14px 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    label,
+    .eyebrow {
+      color: var(--soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(143, 154, 174, 0.22);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.62);
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--line-strong);
+      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
+    }
+
+    .quick-amounts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .quick-amounts button {
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid rgba(247, 195, 95, 0.24);
+      border-radius: var(--radius);
+      background: rgba(247, 195, 95, 0.08);
+      color: #ffe1a2;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .disclaimer-panel {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .disclaimer-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(247, 195, 95, 0.34);
+      border-radius: var(--radius);
+      background: rgba(247, 195, 95, 0.1);
+      color: var(--gold);
+      font-weight: 900;
+    }
+
+    .disclaimer-body {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .disclaimer-title {
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .disclaimer-copy {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .tx-result {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(74, 222, 128, 0.18);
+      border-radius: var(--radius);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .tx-result a {
+      color: #9ff7bd;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 621px) {
+      .connect-actions #connectBtn {
+        display: none;
+      }
+    }
+
+    body[data-state="connected"] .support-stack {
+      gap: 12px;
+    }
+
+    body[data-state="connected"] .support-wallet-panel,
+    body[data-state="connected"] .connect-panel,
+    body[data-state="connected"] .send-panel,
+    body[data-state="connected"] .disclaimer-panel {
+      padding: 14px 16px;
+    }
+
+    body[data-state="connected"] .panel-head {
+      margin-bottom: 10px;
+    }
+
+    body[data-state="connected"] .address-box {
+      min-height: 52px;
+      padding: 10px 12px;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-copy {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page-shell {
+        width: min(100% - 18px, 1120px);
+        padding-top: 14px;
+      }
+
+      .topbar,
+      .btn-row,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+      }
+
+      .brand-link,
+      .top-link,
+      .btn,
+      .field-grid .btn {
+        width: 100%;
+      }
+
+      .field-grid {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body data-state="idle">
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand-link" id="brandLink" href="index.html" aria-label="TCL Explorer">
+        <img src="images/thecursedland.png" alt="">
+        <span>TCL Explorer</span>
+      </a>
+      <a class="top-link" href="connect_xportal.html" data-i18n="xPortal Balance">xPortal Balance</a>
+    </header>
+
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-copy">
+        <div class="lockup">
+          <img src="images/EGLD.png" alt="">
+          <span data-i18n="EGLD Mainnet">EGLD Mainnet</span>
+        </div>
+        <div>
+          <h1 id="pageTitle" data-i18n="🚀 Support TCLexplorer Infrastructure">🚀 Support TCLexplorer Infrastructure</h1>
+          <p class="lead" data-i18n="Help support the ongoing operation and development of TCLexplorer by contributing to essential infrastructure costs, including:">Help support the ongoing operation and development of TCLexplorer by contributing to essential infrastructure costs, including:</p>
+        </div>
+        <ul class="support-list" aria-label="Infrastructure costs">
+          <li data-i18n="🖥️ Server Hosting">🖥️ Server Hosting</li>
+          <li data-i18n="🌐 Domain Renewal">🌐 Domain Renewal</li>
+          <li data-i18n="🤖 AI Services">🤖 AI Services</li>
+          <li data-i18n="🔗 API Access">🔗 API Access</li>
+          <li data-i18n="☁️ Cloud Infrastructure">☁️ Cloud Infrastructure</li>
+          <li data-i18n="🛠️ New Features &amp; Development">🛠️ New Features &amp; Development</li>
+        </ul>
+        <p class="support-thanks" data-i18n="Every contribution helps keep TCLexplorer online, fast, reliable, and continuously improving for the entire community.">Every contribution helps keep TCLexplorer online, fast, reliable, and continuously improving for the entire community.</p>
+        <p class="support-thanks"><strong data-i18n="Thank you for supporting TCLexplorer! ❤️">Thank you for supporting TCLexplorer! ❤️</strong></p>
+      </div>
+
+      <div class="support-stack">
+        <section class="support-wallet-panel" id="supportWalletPanel" aria-labelledby="supportWalletTitle" hidden>
+          <div class="panel-head">
+            <h2 class="panel-title" id="supportWalletTitle" data-i18n="Support TCLexplorer - Wallet Balance">Support TCLexplorer - Wallet Balance</h2>
+            <span class="panel-icon"><img src="images/EGLD.png" alt=""></span>
+          </div>
+          <div class="wallet-balance-card" aria-live="polite">
+            <div class="eyebrow" data-i18n="Wallet Balance">Wallet Balance</div>
+            <div class="wallet-balance-values">
+              <span class="wallet-balance-egld" id="supportBalanceEgld">-- EGLD</span>
+              <span class="wallet-balance-usd" id="supportBalanceUsd">$--</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="connect-panel" aria-labelledby="connectTitle">
+          <div class="panel-head">
+            <h2 class="panel-title" id="connectTitle" data-i18n="Connect xPortal">Connect xPortal</h2>
+            <span class="panel-icon"><img src="images/xPortal.png" alt=""></span>
+          </div>
+
+          <div id="connectView">
+            <div class="qr-wrap">
+              <div class="connect-qr-frame" id="connectQrFrame">
+                <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR code"></div>
+                <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden data-i18n="Refresh">Refresh</button>
+              </div>
+            </div>
+            <div class="btn-row connect-actions">
+              <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer">
+                <img src="images/xPortal.png" alt="">
+                <span data-i18n="Connect xPortal">Connect xPortal</span>
+              </a>
+              <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer" data-i18n="Install xPortal">Install xPortal</a>
+            </div>
+          </div>
+
+          <div id="connectedView" hidden>
+            <div class="wallet-balance-card connected-balance-card" aria-live="polite">
+              <div class="eyebrow" data-i18n="Your Wallet Balance">Your Wallet Balance</div>
+              <div class="wallet-balance-values">
+                <span class="wallet-balance-egld" id="userBalanceEgld">-- EGLD</span>
+                <span class="wallet-balance-usd" id="userBalanceUsd">$--</span>
+              </div>
+            </div>
+            <div class="eyebrow" data-i18n="Connected address">Connected address</div>
+            <code class="address-box" id="connectedAddress">Disconnected</code>
+            <div class="btn-row connected-actions">
+              <a class="btn" id="connectedExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer" data-i18n="Explorer">Explorer</a>
+              <button class="btn btn-danger" id="disconnectBtn" type="button" data-i18n="Disconnect">Disconnect</button>
+            </div>
+          </div>
+
+          <div class="status-line connect-help" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="statusText">Preparing the connection QR...</span>
+          </div>
+        </section>
+
+        <section class="send-panel" id="sendPanel" aria-labelledby="sendTitle" hidden>
+          <div class="panel-head">
+            <h2 class="panel-title" id="sendTitle" data-i18n="Send EGLD">Send EGLD</h2>
+            <span class="panel-icon"><img src="images/EGLD.png" alt=""></span>
+          </div>
+
+          <div class="eyebrow" data-i18n="Recipient address">Recipient address</div>
+          <code class="address-box" id="recipientAddress">erd12v5r5hxrk2rkptrkgemlpak6m5h6q35ant2plr4jan6adw5nfqmshjcvfg</code>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="amountInput" data-i18n="EGLD amount">EGLD amount</label>
+              <input id="amountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.01">
+            </div>
+            <button class="btn btn-primary" id="sendBtn" type="button">Send with xPortal</button>
+          </div>
+
+          <p class="small-note" id="sendStatus">Enter the EGLD amount and confirm the transfer in xPortal.</p>
+          <div class="tx-result" id="txResult" hidden></div>
+        </section>
+
+        <section class="disclaimer-panel" id="disclaimerPanel" hidden>
+          <span class="disclaimer-icon" aria-hidden="true">i</span>
+          <div class="disclaimer-body">
+            <h2 class="disclaimer-title" data-i18n="Important before sending">Important before sending</h2>
+            <p class="disclaimer-copy" data-i18n="Please check the EGLD amount and estimated USD value before confirming in xPortal. Blockchain transfers are final and cannot be refunded.">Please check the EGLD amount and estimated USD value before confirming in xPortal. Blockchain transfers are final and cannot be refunded.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="lib/walletconnect-sign-client.umd.js"></script>
+  <script src="lib/qrcode.min.js"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-9"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const CONFIG = {
+        walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+        relayUrl: "wss://relay.walletconnect.com",
+        chainId: "mvx:1",
+        chainID: "1",
+        apiBase: "https://api.multiversx.com",
+        gatewayBase: "https://gateway.multiversx.com",
+        recipientAddress: "erd12v5r5hxrk2rkptrkgemlpak6m5h6q35ant2plr4jan6adw5nfqmshjcvfg",
+        storageKey: "tclExplorer.xportal.address.v1",
+        sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
+        walletConnectMethods: [
+          "mvx_signTransaction",
+          "mvx_signTransactions",
+          "mvx_signMessage",
+          "mvx_signLoginToken",
+          "mvx_signNativeAuthToken",
+          "mvx_cancelAction"
+        ],
+        egldDecimals: 18,
+        gasPrice: 1000000000,
+        baseGasLimit: 50000,
+        guardedGasExtra: 50000,
+        balancePollMs: 30000,
+        balanceRefreshDelays: [0, 3000, 8000, 15000],
+        minUsd: 1,
+        minAmountDecimals: 4
+      };
+
+      const state = {
+        address: "",
+        sessionTopic: "",
+        pendingUri: "",
+        connecting: false,
+        sending: false,
+        signClient: null,
+        signClientProjectId: "",
+        connectionRunId: 0,
+        egldPrice: 0,
+        minEgldAtomic: 0n,
+        minEgldStr: "",
+        balancePollTimer: null,
+        balanceRefreshTimers: new Set()
+      };
+
+      const dom = {
+        supportWalletPanel: document.getElementById("supportWalletPanel"),
+        connectTitle: document.getElementById("connectTitle"),
+        connectView: document.getElementById("connectView"),
+        connectedView: document.getElementById("connectedView"),
+        sendPanel: document.getElementById("sendPanel"),
+        disclaimerPanel: document.getElementById("disclaimerPanel"),
+        connectQrFrame: document.getElementById("connectQrFrame"),
+        connectQrCode: document.getElementById("connectQrCode"),
+        connectBtn: document.getElementById("connectBtn"),
+        refreshSessionBtn: document.getElementById("refreshSessionBtn"),
+        disconnectBtn: document.getElementById("disconnectBtn"),
+        connectedAddress: document.getElementById("connectedAddress"),
+        connectedExplorerLink: document.getElementById("connectedExplorerLink"),
+        supportBalanceEgld: document.getElementById("supportBalanceEgld"),
+        supportBalanceUsd: document.getElementById("supportBalanceUsd"),
+        userBalanceEgld: document.getElementById("userBalanceEgld"),
+        userBalanceUsd: document.getElementById("userBalanceUsd"),
+        recipientAddress: document.getElementById("recipientAddress"),
+        amountInput: document.getElementById("amountInput"),
+        sendBtn: document.getElementById("sendBtn"),
+        sendStatus: document.getElementById("sendStatus"),
+        statusText: document.getElementById("statusText"),
+        txResult: document.getElementById("txResult"),
+        brandLink: document.getElementById("brandLink")
+      };
+
+      const SUPPORTED_LANGS = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
+      const dynamicText = new Map();
+      let activeLang = normalizePageLang(
+        new URLSearchParams(location.search).get("lang") ||
+        window.localStorage.getItem("lang") ||
+        navigator.language ||
+        "en"
+      );
+
+      function normalizePageLang(lang) {
+        const raw = String(lang || "en").toLowerCase();
+        if (SUPPORTED_LANGS.includes(raw)) return raw;
+        const base = raw.split("-")[0];
+        return SUPPORTED_LANGS.includes(base) ? base : "en";
+      }
+
+      function translateText(source, params = {}) {
+        const raw = String(source || "");
+        const dict = window.TCL_PAGE_I18N?.[activeLang] || {};
+        const translated = activeLang === "en" ? raw : (dict[raw] || raw);
+        return translated.replace(/\{(\w+)\}/g, (_, key) => (
+          Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`
+        ));
+      }
+
+      function setDynamicText(element, source, params = {}) {
+        if (!element) return;
+        dynamicText.set(element, { source, params });
+        element.textContent = translateText(source, params);
+      }
+
+      function applyTranslations() {
+        document.documentElement.lang = activeLang;
+        document.title = translateText("Support TCLexplorer Infrastructure");
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          el.textContent = translateText(el.getAttribute("data-i18n"));
+        });
+        dynamicText.forEach(({ source, params }, el) => {
+          if (document.documentElement.contains(el)) {
+            el.textContent = translateText(source, params);
+          }
+        });
+      }
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.type !== "tcl:set-lang") return;
+        activeLang = normalizePageLang(data.lang);
+        applyTranslations();
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== "lang" || !event.newValue) return;
+        activeLang = normalizePageLang(event.newValue);
+        applyTranslations();
+      });
+
+      function isAddress(value) {
+        return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(value || "").trim());
+      }
+
+      function truncateAddress(address) {
+        const value = String(address || "");
+        if (value.length <= 18) return value;
+        return `${value.slice(0, 10)}...${value.slice(-8)}`;
+      }
+
+      function hasConnectedWallet() {
+        return Boolean(state.address && state.sessionTopic);
+      }
+
+      function setStatus(kind, source, params = {}) {
+        document.body.dataset.state = kind;
+        setDynamicText(dom.statusText, source, params);
+      }
+
+      function setSendStatus(source, params = {}) {
+        setDynamicText(dom.sendStatus, source, params);
+      }
+
+      function getWalletConnectGlobal() {
+        const walletConnect = window["@walletconnect/sign-client"];
+        return walletConnect?.SignClient || walletConnect?.default || null;
+      }
+
+      function getAppMetadata() {
+        const baseUrl = window.location.origin && window.location.origin !== "null"
+          ? window.location.origin
+          : "https://axel4ro.github.io";
+        const appUrl = new URL(window.location.pathname || "/TCLexplorer/SupportTCLexplorer.html", baseUrl).href;
+        const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
+        return {
+          name: "Support TCLexplorer Infrastructure",
+          description: "Send EGLD support through xPortal",
+          url: appUrl,
+          icons: [iconUrl],
+          // Lets xPortal bring the user back to TCLexplorer after confirming.
+          redirect: { native: "", universal: appUrl }
+        };
+      }
+
+      async function getSignClient() {
+        const projectId = String(CONFIG.walletConnectProjectId || "").trim();
+        if (!projectId) {
+          throw new Error("WalletConnect is not configured.");
+        }
+        if (state.signClient && state.signClientProjectId === projectId) {
+          return state.signClient;
+        }
+
+        const SignClient = getWalletConnectGlobal();
+        if (!SignClient?.init) {
+          throw new Error("WalletConnect failed to load.");
+        }
+
+        state.signClient = await SignClient.init({
+          projectId,
+          relayUrl: CONFIG.relayUrl,
+          metadata: getAppMetadata()
+        });
+        state.signClientProjectId = projectId;
+        state.signClient.on("session_delete", clearConnection);
+        return state.signClient;
+      }
+
+      function isIOS() {
+        const ua = navigator.userAgent || "";
+        const platform = navigator.platform || "";
+        return /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      }
+
+      function isAndroid() {
+        return /Android/i.test(navigator.userAgent || "");
+      }
+
+      function isMobileDevice() {
+        return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+      }
+
+      function getXPortalSchemeLink(uri) {
+        return `xportal://wc?uri=${encodeURIComponent(uri)}`;
+      }
+
+      function getXPortalDeepLink(uri) {
+        if (isIOS()) return getXPortalSchemeLink(uri);
+        if (isAndroid()) return uri;
+        return isMobileDevice() ? uri : "https://xportal.com/app";
+      }
+
+      function openXPortalApp() {
+        if (!isMobileDevice()) return;
+        try {
+          window.location.href = "xportal://";
+        } catch (_) {}
+      }
+
+      function renderQr(target, text, size) {
+        if (!window.QRCode) {
+          throw new Error("The QR library failed to load.");
+        }
+        target.innerHTML = "";
+        new window.QRCode(target, {
+          text,
+          width: size,
+          height: size,
+          colorDark: "#020408",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M
+        });
+      }
+
+      function renderRecipientTools() {
+        dom.recipientAddress.textContent = CONFIG.recipientAddress;
+      }
+
+      function setRefreshSessionVisible(isVisible) {
+        if (dom.refreshSessionBtn) dom.refreshSessionBtn.hidden = !isVisible;
+        if (dom.connectQrFrame) dom.connectQrFrame.classList.toggle("is-expired", Boolean(isVisible));
+      }
+
+      function isProposalExpiredError(error) {
+        const message = String(error?.message || error || "").toLowerCase();
+        return message.includes("proposal expired") || message.includes("proposal has expired");
+      }
+
+      function markProposalExpired() {
+        state.pendingUri = "";
+        setRefreshSessionVisible(true);
+        syncButtons();
+        setStatus("error", "Proposal expired. Press Refresh for a new session.");
+      }
+
+      function refreshConnectionSession() {
+        if (state.connecting) return;
+        state.connectionRunId++;
+        state.pendingUri = "";
+        setRefreshSessionVisible(false);
+        if (dom.connectQrCode) dom.connectQrCode.innerHTML = "";
+        setStatus("loading", "Generating xPortal session...");
+        startConnection();
+      }
+
+      function formatEgldDisplayFromAtomic(value) {
+        const amount = Number(formatEgldFromAtomic(value));
+        if (!Number.isFinite(amount)) return `${formatEgldFromAtomic(value)} EGLD`;
+        const maximumFractionDigits = amount >= 1 ? 4 : 6;
+        return `${amount.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits
+        })} EGLD`;
+      }
+
+      function formatUsdDisplay(value) {
+        const amount = Number(value || 0);
+        if (!Number.isFinite(amount) || amount <= 0) return "$--";
+        return `$${amount.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}`;
+      }
+
+      function setSupportWalletBalance(egldText, usdText) {
+        if (dom.supportBalanceEgld) dom.supportBalanceEgld.textContent = egldText;
+        if (dom.supportBalanceUsd) dom.supportBalanceUsd.textContent = usdText;
+      }
+
+      function setUserWalletBalance(egldText, usdText) {
+        if (dom.userBalanceEgld) dom.userBalanceEgld.textContent = egldText;
+        if (dom.userBalanceUsd) dom.userBalanceUsd.textContent = usdText;
+      }
+
+      async function ensureEgldPrice() {
+        if (state.egldPrice > 0) return state.egldPrice;
+        const price = await fetchEgldPrice();
+        if (price > 0) state.egldPrice = price;
+        return state.egldPrice;
+      }
+
+      async function loadSupportWalletBalance(options = {}) {
+        const { showLoading = true, keepOnError = false } = options;
+        if (showLoading) setSupportWalletBalance(translateText("Loading balance..."), "$--");
+        try {
+          const [account, price] = await Promise.all([
+            fetchAccount(CONFIG.recipientAddress),
+            ensureEgldPrice()
+          ]);
+          const balanceAtomic = BigInt(account.balance || "0");
+          const egldText = formatEgldDisplayFromAtomic(balanceAtomic);
+          const egldAmount = Number(formatEgldFromAtomic(balanceAtomic));
+          const usdText = price > 0 ? formatUsdDisplay(egldAmount * price) : "$--";
+          setSupportWalletBalance(egldText, usdText);
+        } catch (error) {
+          console.warn("Could not load support wallet balance", error);
+          if (!keepOnError) setSupportWalletBalance(translateText("Balance unavailable"), "$--");
+        }
+      }
+
+      async function loadUserWalletBalance(options = {}) {
+        const { showLoading = true, keepOnError = false } = options;
+        if (!state.address) {
+          setUserWalletBalance("-- EGLD", "$--");
+          return;
+        }
+
+        if (showLoading) setUserWalletBalance(translateText("Loading balance..."), "$--");
+        try {
+          const [account, price] = await Promise.all([
+            fetchAccount(state.address),
+            ensureEgldPrice()
+          ]);
+          const balanceAtomic = BigInt(account.balance || "0");
+          const egldText = formatEgldDisplayFromAtomic(balanceAtomic);
+          const egldAmount = Number(formatEgldFromAtomic(balanceAtomic));
+          const usdText = price > 0 ? formatUsdDisplay(egldAmount * price) : "$--";
+          setUserWalletBalance(egldText, usdText);
+        } catch (error) {
+          console.warn("Could not load connected wallet balance", error);
+          if (!keepOnError) setUserWalletBalance(translateText("Balance unavailable"), "$--");
+        }
+      }
+
+      async function refreshVisibleBalances(options = {}) {
+        const tasks = [loadSupportWalletBalance(options)];
+        if (state.address) tasks.push(loadUserWalletBalance(options));
+        await Promise.allSettled(tasks);
+      }
+
+      function clearQueuedBalanceRefreshes() {
+        state.balanceRefreshTimers.forEach((timer) => clearTimeout(timer));
+        state.balanceRefreshTimers.clear();
+      }
+
+      function queueBalanceRefreshes() {
+        clearQueuedBalanceRefreshes();
+        CONFIG.balanceRefreshDelays.forEach((delay) => {
+          const refresh = () => {
+            refreshVisibleBalances({
+              showLoading: delay === 0,
+              keepOnError: delay !== 0
+            }).catch((error) => {
+              console.warn("Could not refresh balances after transaction", error);
+            });
+          };
+
+          if (delay <= 0) {
+            refresh();
+            return;
+          }
+
+          const timer = setTimeout(() => {
+            state.balanceRefreshTimers.delete(timer);
+            refresh();
+          }, delay);
+          state.balanceRefreshTimers.add(timer);
+        });
+      }
+
+      function startBalancePolling() {
+        if (state.balancePollTimer) return;
+        state.balancePollTimer = setInterval(() => {
+          refreshVisibleBalances({ showLoading: false, keepOnError: true }).catch((error) => {
+            console.warn("Could not poll balances", error);
+          });
+        }, CONFIG.balancePollMs);
+      }
+
+      function stopBalancePolling() {
+        if (!state.balancePollTimer) return;
+        clearInterval(state.balancePollTimer);
+        state.balancePollTimer = null;
+      }
+
+      function syncConnectionView() {
+        const connected = hasConnectedWallet();
+        if (dom.supportWalletPanel) dom.supportWalletPanel.hidden = !connected;
+        dom.connectView.hidden = connected;
+        dom.connectedView.hidden = !connected;
+        if (dom.sendPanel) dom.sendPanel.hidden = !connected;
+        if (dom.disclaimerPanel) dom.disclaimerPanel.hidden = !connected;
+        setDynamicText(dom.connectTitle, connected ? "xPortal Connected" : "Connect xPortal");
+        if (connected) {
+          dynamicText.delete(dom.connectedAddress);
+          dom.connectedAddress.textContent = state.address;
+        } else {
+          setDynamicText(dom.connectedAddress, "Disconnected");
+        }
+        dom.connectedExplorerLink.href = connected
+          ? `https://explorer.multiversx.com/accounts/${state.address}`
+          : "https://explorer.multiversx.com/";
+        syncButtons();
+      }
+
+      function syncButtons() {
+        const amount = dom.amountInput.value.trim();
+        const canSend = hasConnectedWallet() && isValidAmount(amount) && !state.sending && !state.connecting;
+        dom.sendBtn.disabled = !canSend;
+        setDynamicText(dom.sendBtn, state.sending ? "Sending..." : "Send with xPortal");
+
+        if (state.pendingUri) {
+          dom.connectBtn.classList.remove("is-disabled");
+          dom.connectBtn.href = getXPortalDeepLink(state.pendingUri);
+        } else {
+          dom.connectBtn.classList.add("is-disabled");
+          dom.connectBtn.href = "#";
+        }
+      }
+
+      function saveConnection(address, topic) {
+        state.address = address;
+        state.sessionTopic = topic || "";
+        window.localStorage.setItem(CONFIG.storageKey, state.address);
+        window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
+        syncConnectionView();
+        refreshVisibleBalances({ showLoading: true });
+        startBalancePolling();
+      }
+
+      function clearConnection() {
+        stopBalancePolling();
+        clearQueuedBalanceRefreshes();
+        state.address = "";
+        state.sessionTopic = "";
+        state.pendingUri = "";
+        window.localStorage.removeItem(CONFIG.storageKey);
+        window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        setUserWalletBalance("-- EGLD", "$--");
+        syncConnectionView();
+        setStatus("idle", "xPortal connection closed.");
+        startConnection();
+      }
+
+      function extractAddressFromSession(session) {
+        const namespaces = session?.namespaces || {};
+        const accounts = Object.values(namespaces).flatMap((namespace) => namespace?.accounts || []);
+        const mvxAccount = accounts.find((account) => String(account).startsWith(`${CONFIG.chainId}:`)) ||
+          accounts.find((account) => String(account).includes(":erd1"));
+        const address = String(mvxAccount || "").split(":").pop();
+        return isAddress(address) ? address : "";
+      }
+
+      async function restoreSessionIfPossible() {
+        const storedAddress = window.localStorage.getItem(CONFIG.storageKey) || "";
+        const storedTopic = window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
+        if (!isAddress(storedAddress) || !storedTopic) return false;
+
+        state.address = storedAddress;
+        state.sessionTopic = storedTopic;
+        try {
+          const client = await getSignClient();
+          const session = client.session.get(storedTopic);
+          const sessionAddress = extractAddressFromSession(session);
+          if (sessionAddress) state.address = sessionAddress;
+          saveConnection(state.address, storedTopic);
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(state.address) });
+          setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
+          return true;
+        } catch (_) {
+          clearConnection();
+          return false;
+        }
+      }
+
+      async function startConnection() {
+        if (state.address || state.connecting) return;
+        const runId = ++state.connectionRunId;
+        state.connecting = true;
+        setRefreshSessionVisible(false);
+        syncButtons();
+        setStatus("loading", "Generating xPortal session...");
+
+        try {
+          const client = await getSignClient();
+          const { uri, approval } = await client.connect({
+            optionalNamespaces: {
+              mvx: {
+                chains: [CONFIG.chainId],
+                methods: CONFIG.walletConnectMethods,
+                events: []
+              }
+            }
+          });
+
+          if (!uri) {
+            throw new Error("WalletConnect did not return a QR URI.");
+          }
+
+          state.pendingUri = uri;
+          renderQr(dom.connectQrCode, uri, 220);
+          syncButtons();
+          setStatus("loading", "In xPortal, use the Scan QR Code button in the top-right corner, before notifications.");
+
+          const session = await approval();
+          if (runId !== state.connectionRunId) return;
+
+          const address = extractAddressFromSession(session);
+          if (!address) {
+            throw new Error("xPortal did not return a valid MultiversX address.");
+          }
+
+          state.pendingUri = "";
+          saveConnection(address, session.topic || "");
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(address) });
+          setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
+        } catch (error) {
+          if (runId === state.connectionRunId) {
+            console.error(error);
+            if (isProposalExpiredError(error)) {
+              markProposalExpired();
+            } else {
+              setStatus("error", error?.message || "xPortal connection failed.");
+            }
+          }
+        } finally {
+          if (runId === state.connectionRunId) {
+            state.connecting = false;
+            syncButtons();
+          }
+        }
+      }
+
+      async function disconnectWallet() {
+        const topic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey);
+        const client = state.signClient;
+        state.connectionRunId++;
+        if (client && topic) {
+          client.disconnect({
+            topic,
+            reason: { code: 6000, message: "User disconnected" }
+          }).catch(() => {});
+        }
+        clearConnection();
+      }
+
+      function isValidAmount(value) {
+        const raw = String(value || "").trim().replace(",", ".");
+        if (!/^\d+(\.\d{1,18})?$/.test(raw)) return false;
+        return parseEgldToAtomic(raw) > 0n;
+      }
+
+      async function fetchEgldPrice() {
+        try {
+          const response = await fetch(`${CONFIG.apiBase}/economics`);
+          if (!response.ok) return 0;
+          const data = await response.json();
+          const price = Number(data?.price || 0);
+          return price > 0 ? price : 0;
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function computeMinEgldStr(price) {
+        const decimals = CONFIG.minAmountDecimals;
+        const factor = Math.pow(10, decimals);
+        const minEgld = CONFIG.minUsd / price;
+        // Round up so the amount is always worth at least minUsd.
+        return (Math.ceil(minEgld * factor) / factor).toFixed(decimals);
+      }
+
+      async function applyMinimumAmount() {
+        const price = await ensureEgldPrice();
+        if (!price) {
+          dom.amountInput.placeholder = "0.01";
+          setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
+          return;
+        }
+        state.egldPrice = price;
+        state.minEgldStr = computeMinEgldStr(price);
+        state.minEgldAtomic = parseEgldToAtomic(state.minEgldStr);
+        dom.amountInput.placeholder = state.minEgldStr;
+
+        const current = dom.amountInput.value.trim().replace(",", ".");
+        const currentAtomic = /^\d+(\.\d{1,18})?$/.test(current) ? parseEgldToAtomic(current) : 0n;
+        if (currentAtomic < state.minEgldAtomic) {
+          dom.amountInput.value = state.minEgldStr;
+        }
+
+        updateAmountNote();
+        syncButtons();
+      }
+
+      function updateAmountNote() {
+        if (state.sending || !state.egldPrice) return;
+        const raw = dom.amountInput.value.trim().replace(",", ".");
+
+        if (!/^\d+(\.\d{1,18})?$/.test(raw) || parseEgldToAtomic(raw) <= 0n) {
+          if (state.minEgldStr) {
+            setSendStatus("Enter the EGLD amount · min {min} EGLD (~{usd} $).", { min: state.minEgldStr, usd: CONFIG.minUsd });
+          } else {
+            setSendStatus("Enter the EGLD amount.");
+          }
+          return;
+        }
+
+        const usd = (Number(raw) * state.egldPrice).toFixed(2);
+        const belowMin = state.minEgldAtomic > 0n && parseEgldToAtomic(raw) < state.minEgldAtomic;
+        if (belowMin) {
+          setSendStatus("{amount} EGLD ≈ {usd} $ · min {min} EGLD (~{usdMin} $).", { amount: raw, usd, min: state.minEgldStr, usdMin: CONFIG.minUsd });
+        } else {
+          setSendStatus("{amount} EGLD ≈ {usd} $.", { amount: raw, usd });
+        }
+      }
+
+      function parseEgldToAtomic(value) {
+        const raw = String(value || "").trim().replace(",", ".");
+        if (!/^\d+(\.\d{0,18})?$/.test(raw)) return 0n;
+        const parts = raw.split(".");
+        const whole = parts[0] || "0";
+        const fraction = (parts[1] || "").padEnd(CONFIG.egldDecimals, "0");
+        return BigInt(whole) * 10n ** BigInt(CONFIG.egldDecimals) + BigInt(fraction || "0");
+      }
+
+      function formatEgldFromAtomic(value) {
+        const atomic = BigInt(value || "0");
+        const base = 10n ** BigInt(CONFIG.egldDecimals);
+        const whole = atomic / base;
+        const fraction = String(atomic % base).padStart(CONFIG.egldDecimals, "0").replace(/0+$/, "");
+        return fraction ? `${whole}.${fraction}` : String(whole);
+      }
+
+      async function fetchAccount(address) {
+        const response = await fetch(`${CONFIG.apiBase}/accounts/${address}`);
+        if (!response.ok) {
+          throw new Error("Could not read the connected account.");
+        }
+        return response.json();
+      }
+
+      function getEgldTransferGasLimit(account) {
+        const guarded = account?.isGuarded === true
+          || account?.guarded === true
+          || Boolean(account?.activeGuardian || account?.guardianAddress);
+        return CONFIG.baseGasLimit + (guarded ? CONFIG.guardedGasExtra : 0);
+      }
+
+      async function requestTransactionSignature(transaction) {
+        const client = await getSignClient();
+        const requestPromise = client.request({
+          topic: state.sessionTopic,
+          chainId: CONFIG.chainId,
+          request: {
+            method: "mvx_signTransaction",
+            params: { transaction }
+          }
+        });
+
+        // On mobile, surface xPortal so the user can confirm; it returns here
+        // afterwards via the redirect set in the WalletConnect metadata.
+        openXPortalApp();
+
+        const result = await requestPromise;
+
+        const signed = result?.transaction && typeof result.transaction === "object"
+          ? { ...transaction, ...result.transaction }
+          : { ...transaction, ...result };
+
+        if (!signed.signature) {
+          throw new Error("xPortal did not return the transaction signature.");
+        }
+
+        return signed;
+      }
+
+      async function broadcastTransaction(transaction) {
+        const apiResult = await postJson(`${CONFIG.apiBase}/transactions`, transaction).catch((error) => ({ error }));
+        if (!apiResult.error) {
+          return apiResult.txHash || apiResult.hash || apiResult;
+        }
+
+        const gatewayResult = await postJson(`${CONFIG.gatewayBase}/transaction/send`, transaction);
+        return gatewayResult?.data?.txHash || gatewayResult?.txHash || gatewayResult?.hash || gatewayResult;
+      }
+
+      async function postJson(url, body) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : {};
+        if (!response.ok) {
+          throw new Error(data?.message || data?.error || `Request failed: ${response.status}`);
+        }
+        return data;
+      }
+
+      async function sendEgld() {
+        if (state.sending) return;
+        const amountText = dom.amountInput.value.trim().replace(",", ".");
+        if (!isValidAmount(amountText)) {
+          setSendStatus("Enter a valid EGLD amount.");
+          syncButtons();
+          return;
+        }
+
+        if (!hasConnectedWallet()) {
+          setSendStatus("Connect xPortal before sending.");
+          return;
+        }
+
+        state.sending = true;
+        dom.txResult.hidden = true;
+        syncButtons();
+        setSendStatus("Preparing the EGLD transaction...");
+
+        try {
+          const account = await fetchAccount(state.address);
+          const amountAtomic = parseEgldToAtomic(amountText);
+          const gasLimit = getEgldTransferGasLimit(account);
+          const feeAtomic = BigInt(CONFIG.gasPrice) * BigInt(gasLimit);
+          const balanceAtomic = BigInt(account.balance || "0");
+
+          if (balanceAtomic < amountAtomic + feeAtomic) {
+            setSendStatus("Balance does not cover the amount plus the estimated fee ({fee} EGLD).", { fee: formatEgldFromAtomic(feeAtomic) });
+            return;
+          }
+
+          const transaction = {
+            nonce: Number(account.nonce || 0),
+            value: amountAtomic.toString(),
+            receiver: CONFIG.recipientAddress,
+            sender: state.address,
+            gasPrice: CONFIG.gasPrice,
+            gasLimit,
+            chainID: CONFIG.chainID,
+            version: 1
+          };
+
+          setSendStatus("Confirm the transaction in xPortal.");
+          const signedTransaction = await requestTransactionSignature(transaction);
+          setSendStatus("Signature received. Broadcasting the transaction on MultiversX...");
+          const txHash = await broadcastTransaction(signedTransaction);
+          const txUrl = `https://explorer.multiversx.com/transactions/${txHash}`;
+
+          dom.txResult.innerHTML = `
+            <strong>${translateText("Transaction sent.")}</strong>
+            <a href="${txUrl}" target="_blank" rel="noreferrer">${txHash}</a>
+          `;
+          dom.txResult.hidden = false;
+          setSendStatus("Sent {amount} EGLD to the support address.", { amount: amountText });
+          queueBalanceRefreshes();
+        } catch (error) {
+          console.error(error);
+          setSendStatus(error?.message || "The transfer could not be sent.");
+        } finally {
+          state.sending = false;
+          syncButtons();
+        }
+      }
+
+      function goBackToExplorer(event) {
+        if (window.parent && window.parent !== window) {
+          if (event) event.preventDefault();
+          try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          } catch (_) {
+            window.location.href = "index.html#token";
+          }
+        }
+      }
+
+      function notifyParentReady() {
+        if (window.parent && window.parent !== window) {
+          try {
+            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+          } catch (_) {}
+        }
+      }
+
+      async function boot() {
+        applyTranslations();
+        renderRecipientTools();
+        loadSupportWalletBalance();
+        dom.connectBtn.addEventListener("click", (event) => {
+          if (!state.pendingUri) event.preventDefault();
+        });
+        dom.refreshSessionBtn.addEventListener("click", refreshConnectionSession);
+        dom.disconnectBtn.addEventListener("click", disconnectWallet);
+        dom.sendBtn.addEventListener("click", sendEgld);
+        dom.amountInput.addEventListener("input", () => {
+          syncButtons();
+          updateAmountNote();
+        });
+        if (dom.brandLink) dom.brandLink.addEventListener("click", goBackToExplorer);
+
+        const restored = await restoreSessionIfPossible();
+        if (!restored) startConnection();
+        syncConnectionView();
+        await applyMinimumAmount();
+        notifyParentReady();
+      }
+
+      boot().catch((error) => {
+        console.error(error);
+        setStatus("error", error?.message || "The page could not be initialized.");
+        notifyParentReady();
+      });
+    })();
+  </script>
+</body>
+</html>

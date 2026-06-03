@@ -10,3 +10,9 @@ pnl-worker/.wrangler/
 __pycache__/
 discord_bot/config.py
 discord_bot/config/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
