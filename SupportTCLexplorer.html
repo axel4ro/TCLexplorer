@@ -483,6 +483,33 @@
       background: rgba(0, 232, 204, 0.055);
     }
 
+    .wallet-balance-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .btn-explorer-sm {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border: 1px solid rgba(0, 232, 204, 0.35);
+      border-radius: 999px;
+      background: rgba(0, 232, 204, 0.08);
+      color: var(--accent);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-explorer-sm:hover {
+      background: rgba(0, 232, 204, 0.16);
+      border-color: rgba(0, 232, 204, 0.6);
+    }
+
     .connected-balance-card {
       margin-bottom: 14px;
     }
@@ -769,7 +796,10 @@
 
           <div id="connectedView" hidden>
             <div class="wallet-balance-card connected-balance-card" aria-live="polite">
-              <div class="eyebrow" data-i18n="Your Wallet Balance">Your Wallet Balance</div>
+              <div class="wallet-balance-header">
+                <div class="eyebrow" data-i18n="Your Wallet Balance">Your Wallet Balance</div>
+                <a class="btn-explorer-sm" id="balanceExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
+              </div>
               <div class="wallet-balance-values">
                 <span class="wallet-balance-egld" id="userBalanceEgld">-- EGLD</span>
                 <span class="wallet-balance-usd" id="userBalanceUsd">$--</span>
@@ -887,6 +917,7 @@
         disconnectBtn: document.getElementById("disconnectBtn"),
         connectedAddress: document.getElementById("connectedAddress"),
         connectedExplorerLink: document.getElementById("connectedExplorerLink"),
+        balanceExplorerLink: document.getElementById("balanceExplorerLink"),
         supportBalanceEgld: document.getElementById("supportBalanceEgld"),
         supportBalanceUsd: document.getElementById("supportBalanceUsd"),
         userBalanceEgld: document.getElementById("userBalanceEgld"),
@@ -1248,9 +1279,11 @@
         } else {
           setDynamicText(dom.connectedAddress, "Disconnected");
         }
-        dom.connectedExplorerLink.href = connected
+        const explorerHref = connected
           ? `https://explorer.multiversx.com/accounts/${state.address}`
           : "https://explorer.multiversx.com/";
+        dom.connectedExplorerLink.href = explorerHref;
+        if (dom.balanceExplorerLink) dom.balanceExplorerLink.href = explorerHref;
         syncButtons();
       }
 
