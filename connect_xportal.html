@@ -874,17 +874,44 @@
       place-items: center;
       width: 100%;
       max-width: 240px;
-      min-height: 220px;
+      min-height: 240px;
       padding: 10px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius);
       background: #fff;
+      position: relative;
     }
 
     .qr-code img,
     .qr-code canvas {
       width: 220px;
       height: 220px;
+    }
+
+    .qr-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 220px;
+      height: 220px;
+      color: #555;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .qr-loader__spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(0, 0, 0, 0.12);
+      border-top-color: #0c0e14;
+      border-radius: 50%;
+      animation: qr-spin 0.8s linear infinite;
+    }
+
+    @keyframes qr-spin {
+      to { transform: rotate(360deg); }
     }
 
     .qr-info {
@@ -1007,7 +1034,12 @@
         <!-- QR vizibil cat timp NU esti conectat -->
         <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect QR">
           <div class="eyebrow">Scan with xPortal</div>
-          <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code"></div>
+          <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code">
+            <div class="qr-loader" id="qrLoader">
+              <div class="qr-loader__spinner"></div>
+              <span>Generating QR...</span>
+            </div>
+          </div>
           <!-- Conecteaza = link real (deeplink) sub QR — se taseaza direct pe mobil -->
           <div class="qr-connect-actions">
             <a class="btn btn-connect" id="connectBtn" target="_top" rel="noreferrer" href="#" aria-label="Connect xPortal">Connect xPortal</a>
@@ -1681,6 +1713,8 @@
       function renderWalletConnectUri(uri) {
         state.pendingUri = uri;
         dom.qrCode.innerHTML = "";
+        const loader = document.getElementById("qrLoader");
+        if (loader) loader.remove();
         dom.wcUriText.textContent = uri;
         const deepLink = getXPortalDeepLink(uri);
         dom.xportalDeepLink.href = deepLink;
