@@ -213,6 +213,8 @@
       display: grid;
       gap: 18px;
       min-width: 0;
+      align-self: start;
+      align-content: start;
     }
 
     .panel-head {
@@ -288,6 +290,18 @@
       margin: 12px 0 14px;
     }
 
+    .connect-qr-frame {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(100%, 240px);
+    }
+
+    .connect-qr-frame.is-expired .qr-code {
+      opacity: 0.38;
+      filter: grayscale(1);
+    }
+
     .qr-code {
       display: grid;
       place-items: center;
@@ -305,6 +319,29 @@
       height: 220px;
     }
 
+    .qr-refresh-btn {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 18px;
+      border: 1px solid rgba(0, 232, 204, 0.5);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), #55f5df);
+      color: #041210;
+      font-weight: 900;
+      box-shadow: 0 16px 34px rgba(0, 232, 204, 0.28);
+      transform: translate(-50%, -50%);
+    }
+
+    .qr-refresh-btn[hidden] {
+      display: none;
+    }
+
     .btn-row {
       display: flex;
       flex-wrap: wrap;
@@ -318,10 +355,21 @@
     }
 
     .connect-help {
+      width: fit-content;
       justify-content: center;
-      max-width: 460px;
+      align-items: flex-start;
+      max-width: min(460px, 100%);
       margin: 10px auto 0;
-      text-align: center;
+      text-align: left;
+    }
+
+    .connect-help .status-dot {
+      margin-top: 0.42em;
+    }
+
+    .connect-help #statusText {
+      display: block;
+      max-width: 420px;
     }
 
     .btn {
@@ -390,6 +438,41 @@
       font-family: "Consolas", "SFMono-Regular", monospace;
       font-size: 0.9rem;
       line-height: 1.5;
+    }
+
+    .wallet-balance-card {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid rgba(0, 232, 204, 0.14);
+      border-radius: var(--radius);
+      background: rgba(0, 232, 204, 0.055);
+    }
+
+    .wallet-balance-values {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .wallet-balance-egld {
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+      line-height: 1.1;
+    }
+
+    .wallet-balance-usd {
+      color: var(--success);
+      font-size: 0.96rem;
+      font-weight: 800;
+    }
+
+    .connected-actions {
+      margin-top: 12px;
     }
 
     .field-grid {
@@ -476,6 +559,24 @@
       }
     }
 
+    body[data-state="connected"] .support-stack {
+      gap: 12px;
+    }
+
+    body[data-state="connected"] .connect-panel,
+    body[data-state="connected"] .send-panel {
+      padding: 14px 16px;
+    }
+
+    body[data-state="connected"] .panel-head {
+      margin-bottom: 10px;
+    }
+
+    body[data-state="connected"] .address-box {
+      min-height: 52px;
+      padding: 10px 12px;
+    }
+
     @media (max-width: 900px) {
       .hero {
         grid-template-columns: 1fr;
@@ -556,7 +657,10 @@
 
           <div id="connectView">
             <div class="qr-wrap">
-              <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR code"></div>
+              <div class="connect-qr-frame" id="connectQrFrame">
+                <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR code"></div>
+                <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden data-i18n="Refresh">Refresh</button>
+              </div>
             </div>
             <div class="btn-row connect-actions">
               <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer">
@@ -568,10 +672,16 @@
           </div>
 
           <div id="connectedView" hidden>
+            <div class="wallet-balance-card" aria-live="polite">
+              <div class="eyebrow" data-i18n="Wallet Balance">Wallet Balance</div>
+              <div class="wallet-balance-values">
+                <span class="wallet-balance-egld" id="supportBalanceEgld">-- EGLD</span>
+                <span class="wallet-balance-usd" id="supportBalanceUsd">$--</span>
+              </div>
+            </div>
             <div class="eyebrow" data-i18n="Connected address">Connected address</div>
             <code class="address-box" id="connectedAddress">Disconnected</code>
-            <div class="btn-row" style="margin-top: 12px;">
-              <button class="btn" id="copyConnectedBtn" type="button" data-i18n="Copy">Copy</button>
+            <div class="btn-row connected-actions">
               <a class="btn" id="connectedExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer" data-i18n="Explorer">Explorer</a>
               <button class="btn btn-danger" id="disconnectBtn" type="button" data-i18n="Disconnect">Disconnect</button>
             </div>
@@ -610,7 +720,7 @@
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
-  <script src="lang/support-tcl.bundle.js?v=20260603-1"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-3"></script>
   <script>
     (function () {
       "use strict";
@@ -658,12 +768,15 @@
         connectView: document.getElementById("connectView"),
         connectedView: document.getElementById("connectedView"),
         sendPanel: document.getElementById("sendPanel"),
+        connectQrFrame: document.getElementById("connectQrFrame"),
         connectQrCode: document.getElementById("connectQrCode"),
         connectBtn: document.getElementById("connectBtn"),
+        refreshSessionBtn: document.getElementById("refreshSessionBtn"),
         disconnectBtn: document.getElementById("disconnectBtn"),
-        copyConnectedBtn: document.getElementById("copyConnectedBtn"),
         connectedAddress: document.getElementById("connectedAddress"),
         connectedExplorerLink: document.getElementById("connectedExplorerLink"),
+        supportBalanceEgld: document.getElementById("supportBalanceEgld"),
+        supportBalanceUsd: document.getElementById("supportBalanceUsd"),
         recipientAddress: document.getElementById("recipientAddress"),
         amountInput: document.getElementById("amountInput"),
         sendBtn: document.getElementById("sendBtn"),
@@ -848,6 +961,82 @@
         dom.recipientAddress.textContent = CONFIG.recipientAddress;
       }
 
+      function setRefreshSessionVisible(isVisible) {
+        if (dom.refreshSessionBtn) dom.refreshSessionBtn.hidden = !isVisible;
+        if (dom.connectQrFrame) dom.connectQrFrame.classList.toggle("is-expired", Boolean(isVisible));
+      }
+
+      function isProposalExpiredError(error) {
+        const message = String(error?.message || error || "").toLowerCase();
+        return message.includes("proposal expired") || message.includes("proposal has expired");
+      }
+
+      function markProposalExpired() {
+        state.pendingUri = "";
+        setRefreshSessionVisible(true);
+        syncButtons();
+        setStatus("error", "Proposal expired. Press Refresh for a new session.");
+      }
+
+      function refreshConnectionSession() {
+        if (state.connecting) return;
+        state.connectionRunId++;
+        state.pendingUri = "";
+        setRefreshSessionVisible(false);
+        if (dom.connectQrCode) dom.connectQrCode.innerHTML = "";
+        setStatus("loading", "Generating xPortal session...");
+        startConnection();
+      }
+
+      function formatEgldDisplayFromAtomic(value) {
+        const amount = Number(formatEgldFromAtomic(value));
+        if (!Number.isFinite(amount)) return `${formatEgldFromAtomic(value)} EGLD`;
+        const maximumFractionDigits = amount >= 1 ? 4 : 6;
+        return `${amount.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits
+        })} EGLD`;
+      }
+
+      function formatUsdDisplay(value) {
+        const amount = Number(value || 0);
+        if (!Number.isFinite(amount) || amount <= 0) return "$--";
+        return `$${amount.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}`;
+      }
+
+      function setSupportWalletBalance(egldText, usdText) {
+        if (dom.supportBalanceEgld) dom.supportBalanceEgld.textContent = egldText;
+        if (dom.supportBalanceUsd) dom.supportBalanceUsd.textContent = usdText;
+      }
+
+      async function ensureEgldPrice() {
+        if (state.egldPrice > 0) return state.egldPrice;
+        const price = await fetchEgldPrice();
+        if (price > 0) state.egldPrice = price;
+        return state.egldPrice;
+      }
+
+      async function loadSupportWalletBalance() {
+        setSupportWalletBalance(translateText("Loading balance..."), "$--");
+        try {
+          const [account, price] = await Promise.all([
+            fetchAccount(CONFIG.recipientAddress),
+            ensureEgldPrice()
+          ]);
+          const balanceAtomic = BigInt(account.balance || "0");
+          const egldText = formatEgldDisplayFromAtomic(balanceAtomic);
+          const egldAmount = Number(formatEgldFromAtomic(balanceAtomic));
+          const usdText = price > 0 ? formatUsdDisplay(egldAmount * price) : "$--";
+          setSupportWalletBalance(egldText, usdText);
+        } catch (error) {
+          console.warn("Could not load support wallet balance", error);
+          setSupportWalletBalance(translateText("Balance unavailable"), "$--");
+        }
+      }
+
       function syncConnectionView() {
         const connected = hasConnectedWallet();
         dom.connectView.hidden = connected;
@@ -934,6 +1123,7 @@
         if (state.address || state.connecting) return;
         const runId = ++state.connectionRunId;
         state.connecting = true;
+        setRefreshSessionVisible(false);
         syncButtons();
         setStatus("loading", "Generating xPortal session...");
 
@@ -973,7 +1163,11 @@
         } catch (error) {
           if (runId === state.connectionRunId) {
             console.error(error);
-            setStatus("error", error?.message || "xPortal connection failed.");
+            if (isProposalExpiredError(error)) {
+              markProposalExpired();
+            } else {
+              setStatus("error", error?.message || "xPortal connection failed.");
+            }
           }
         } finally {
           if (runId === state.connectionRunId) {
@@ -1023,7 +1217,7 @@
       }
 
       async function applyMinimumAmount() {
-        const price = await fetchEgldPrice();
+        const price = await ensureEgldPrice();
         if (!price) {
           dom.amountInput.placeholder = "0.01";
           setSendStatus("Enter the EGLD amount and confirm the transfer in xPortal.");
@@ -1081,15 +1275,6 @@
         const whole = atomic / base;
         const fraction = String(atomic % base).padStart(CONFIG.egldDecimals, "0").replace(/0+$/, "");
         return fraction ? `${whole}.${fraction}` : String(whole);
-      }
-
-      async function copyText(text, okMessage) {
-        try {
-          await navigator.clipboard.writeText(text);
-          setSendStatus(okMessage);
-        } catch (_) {
-          setSendStatus("Could not copy automatically. Select the displayed address manually.");
-        }
       }
 
       async function fetchAccount(address) {
@@ -1236,11 +1421,12 @@
       async function boot() {
         applyTranslations();
         renderRecipientTools();
+        loadSupportWalletBalance();
         dom.connectBtn.addEventListener("click", (event) => {
           if (!state.pendingUri) event.preventDefault();
         });
+        dom.refreshSessionBtn.addEventListener("click", refreshConnectionSession);
         dom.disconnectBtn.addEventListener("click", disconnectWallet);
-        dom.copyConnectedBtn.addEventListener("click", () => copyText(state.address, "Connected address copied."));
         dom.sendBtn.addEventListener("click", sendEgld);
         dom.amountInput.addEventListener("input", () => {
           syncButtons();
