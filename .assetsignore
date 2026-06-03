@@ -1,0 +1,10 @@
+.git/
+.git
+cloudflare-worker/
+ai-chat-worker/
+pnl-worker/
+node_modules/
+.wrangler/
+*.pack
+*.log
+.claude/
