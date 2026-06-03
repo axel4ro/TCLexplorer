@@ -312,6 +312,18 @@
       align-items: center;
     }
 
+    .connect-actions {
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .connect-help {
+      justify-content: center;
+      max-width: 460px;
+      margin: 10px auto 0;
+      text-align: center;
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -458,11 +470,10 @@
       overflow-wrap: anywhere;
     }
 
-    .footer-note {
-      color: var(--soft);
-      font-size: 0.82rem;
-      line-height: 1.5;
-      text-align: center;
+    @media (min-width: 621px) {
+      .connect-actions #connectBtn {
+        display: none;
+      }
     }
 
     @media (max-width: 900px) {
@@ -547,7 +558,7 @@
             <div class="qr-wrap">
               <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR code"></div>
             </div>
-            <div class="btn-row">
+            <div class="btn-row connect-actions">
               <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer">
                 <img src="images/xPortal.png" alt="">
                 <span data-i18n="Connect xPortal">Connect xPortal</span>
@@ -566,7 +577,7 @@
             </div>
           </div>
 
-          <div class="status-line" role="status" aria-live="polite">
+          <div class="status-line connect-help" role="status" aria-live="polite">
             <span class="status-dot" aria-hidden="true"></span>
             <span id="statusText">Preparing the connection QR...</span>
           </div>
@@ -595,12 +606,11 @@
       </div>
     </section>
 
-    <p class="footer-note" data-i18n="Always verify the address and amount in xPortal before confirming.">Always verify the address and amount in xPortal before confirming.</p>
   </main>
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
-  <script src="lang/support-tcl.bundle.js?v=20260602-1"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-1"></script>
   <script>
     (function () {
       "use strict";
@@ -649,20 +659,16 @@
         connectedView: document.getElementById("connectedView"),
         sendPanel: document.getElementById("sendPanel"),
         connectQrCode: document.getElementById("connectQrCode"),
-        recipientQrCode: document.getElementById("recipientQrCode"),
         connectBtn: document.getElementById("connectBtn"),
         disconnectBtn: document.getElementById("disconnectBtn"),
         copyConnectedBtn: document.getElementById("copyConnectedBtn"),
-        copyRecipientBtn: document.getElementById("copyRecipientBtn"),
         connectedAddress: document.getElementById("connectedAddress"),
         connectedExplorerLink: document.getElementById("connectedExplorerLink"),
         recipientAddress: document.getElementById("recipientAddress"),
-        recipientExplorerLink: document.getElementById("recipientExplorerLink"),
         amountInput: document.getElementById("amountInput"),
         sendBtn: document.getElementById("sendBtn"),
         sendStatus: document.getElementById("sendStatus"),
         statusText: document.getElementById("statusText"),
-        openXportalBtn: document.getElementById("openXportalBtn"),
         txResult: document.getElementById("txResult"),
         brandLink: document.getElementById("brandLink")
       };
@@ -816,10 +822,6 @@
         return isMobileDevice() ? uri : "https://xportal.com/app";
       }
 
-      function getXPortalAppLink() {
-        return isMobileDevice() ? "xportal://" : "https://xportal.com/app";
-      }
-
       function openXPortalApp() {
         if (!isMobileDevice()) return;
         try {
@@ -843,11 +845,7 @@
       }
 
       function renderRecipientTools() {
-        const explorerUrl = `https://explorer.multiversx.com/accounts/${CONFIG.recipientAddress}`;
         dom.recipientAddress.textContent = CONFIG.recipientAddress;
-        if (dom.recipientExplorerLink) dom.recipientExplorerLink.href = explorerUrl;
-        if (dom.recipientQrCode) renderQr(dom.recipientQrCode, CONFIG.recipientAddress, 220);
-        if (dom.openXportalBtn) dom.openXportalBtn.href = getXPortalAppLink();
       }
 
       function syncConnectionView() {
@@ -958,7 +956,7 @@
           state.pendingUri = uri;
           renderQr(dom.connectQrCode, uri, 220);
           syncButtons();
-          setStatus("loading", "Scan the QR or tap Connect xPortal.");
+          setStatus("loading", "In xPortal, use the Scan QR Code button in the top-right corner, before notifications.");
 
           const session = await approval();
           if (runId !== state.connectionRunId) return;
