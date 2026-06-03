@@ -115,6 +115,7 @@
     .support-wallet-panel,
     .connect-panel,
     .send-panel,
+    .disclaimer-panel,
     .address-panel {
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -210,6 +211,7 @@
     .support-wallet-panel,
     .connect-panel,
     .send-panel,
+    .disclaimer-panel,
     .address-panel {
       padding: 18px;
     }
@@ -545,6 +547,44 @@
       line-height: 1.55;
     }
 
+    .disclaimer-panel {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .disclaimer-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(247, 195, 95, 0.34);
+      border-radius: var(--radius);
+      background: rgba(247, 195, 95, 0.1);
+      color: var(--gold);
+      font-weight: 900;
+    }
+
+    .disclaimer-body {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .disclaimer-title {
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .disclaimer-copy {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
     .tx-result {
       display: grid;
       gap: 10px;
@@ -573,7 +613,8 @@
 
     body[data-state="connected"] .support-wallet-panel,
     body[data-state="connected"] .connect-panel,
-    body[data-state="connected"] .send-panel {
+    body[data-state="connected"] .send-panel,
+    body[data-state="connected"] .disclaimer-panel {
       padding: 14px 16px;
     }
 
@@ -736,6 +777,14 @@
           <p class="small-note" id="sendStatus">Enter the EGLD amount and confirm the transfer in xPortal.</p>
           <div class="tx-result" id="txResult" hidden></div>
         </section>
+
+        <section class="disclaimer-panel" id="disclaimerPanel" hidden>
+          <span class="disclaimer-icon" aria-hidden="true">i</span>
+          <div class="disclaimer-body">
+            <h2 class="disclaimer-title" data-i18n="Important before sending">Important before sending</h2>
+            <p class="disclaimer-copy" data-i18n="Please check the EGLD amount and estimated USD value before confirming in xPortal. Blockchain transfers are final and cannot be refunded.">Please check the EGLD amount and estimated USD value before confirming in xPortal. Blockchain transfers are final and cannot be refunded.</p>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -743,7 +792,7 @@
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
-  <script src="lang/support-tcl.bundle.js?v=20260603-4"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-6"></script>
   <script>
     (function () {
       "use strict";
@@ -768,7 +817,8 @@
         ],
         egldDecimals: 18,
         gasPrice: 1000000000,
-        gasLimit: 50000,
+        baseGasLimit: 50000,
+        guardedGasExtra: 50000,
         minUsd: 1,
         minAmountDecimals: 4
       };
@@ -792,6 +842,7 @@
         connectView: document.getElementById("connectView"),
         connectedView: document.getElementById("connectedView"),
         sendPanel: document.getElementById("sendPanel"),
+        disclaimerPanel: document.getElementById("disclaimerPanel"),
         connectQrFrame: document.getElementById("connectQrFrame"),
         connectQrCode: document.getElementById("connectQrCode"),
         connectBtn: document.getElementById("connectBtn"),
@@ -1097,6 +1148,7 @@
         dom.connectView.hidden = connected;
         dom.connectedView.hidden = !connected;
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
+        if (dom.disclaimerPanel) dom.disclaimerPanel.hidden = !connected;
         if (connected) {
           dynamicText.delete(dom.connectedAddress);
           dom.connectedAddress.textContent = state.address;
@@ -1342,6 +1394,13 @@
         return response.json();
       }
 
+      function getEgldTransferGasLimit(account) {
+        const guarded = account?.isGuarded === true
+          || account?.guarded === true
+          || Boolean(account?.activeGuardian || account?.guardianAddress);
+        return CONFIG.baseGasLimit + (guarded ? CONFIG.guardedGasExtra : 0);
+      }
+
       async function requestTransactionSignature(transaction) {
         const client = await getSignClient();
         const requestPromise = client.request({
@@ -1416,7 +1475,8 @@
         try {
           const account = await fetchAccount(state.address);
           const amountAtomic = parseEgldToAtomic(amountText);
-          const feeAtomic = BigInt(CONFIG.gasPrice) * BigInt(CONFIG.gasLimit);
+          const gasLimit = getEgldTransferGasLimit(account);
+          const feeAtomic = BigInt(CONFIG.gasPrice) * BigInt(gasLimit);
           const balanceAtomic = BigInt(account.balance || "0");
 
           if (balanceAtomic < amountAtomic + feeAtomic) {
@@ -1430,7 +1490,7 @@
             receiver: CONFIG.recipientAddress,
             sender: state.address,
             gasPrice: CONFIG.gasPrice,
-            gasLimit: CONFIG.gasLimit,
+            gasLimit,
             chainID: CONFIG.chainID,
             version: 1
           };
