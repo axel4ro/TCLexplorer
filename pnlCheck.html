@@ -873,6 +873,43 @@
       text-align: center;
     }
 
+    .connect-qr-frame {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      max-width: 240px;
+    }
+
+    .connect-qr-frame.is-expired .qr-code {
+      opacity: 0.38;
+      filter: grayscale(1);
+    }
+
+    .qr-refresh-btn {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 18px;
+      border: 1px solid rgba(0, 232, 204, 0.5);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), #55f5df);
+      color: #041210;
+      font-weight: 900;
+      box-shadow: 0 16px 34px rgba(0, 232, 204, 0.28);
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+    }
+
+    .qr-refresh-btn[hidden] {
+      display: none;
+    }
+
     .qr-code {
       display: grid;
       place-items: center;
@@ -1038,11 +1075,14 @@
         <!-- QR vizibil cat timp NU esti conectat -->
         <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect QR">
           <div class="eyebrow">Scan with xPortal</div>
-          <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code">
-            <div class="qr-loader" id="qrLoader">
-              <div class="qr-loader__spinner"></div>
-              <span>Generating QR...</span>
+          <div class="connect-qr-frame" id="connectQrFrame">
+            <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code">
+              <div class="qr-loader" id="qrLoader">
+                <div class="qr-loader__spinner"></div>
+                <span>Generating QR...</span>
+              </div>
             </div>
+            <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden>Refresh</button>
           </div>
           <!-- Conecteaza = link real (deeplink) sub QR — se taseaza direct pe mobil -->
           <div class="qr-connect-actions">
@@ -1406,6 +1446,8 @@
         qrPanel: document.getElementById("qrPanel"),
         addressPanel: document.getElementById("addressPanel"),
         qrCode: document.getElementById("qrCode"),
+        connectQrFrame: document.getElementById("connectQrFrame"),
+        refreshSessionBtn: document.getElementById("refreshSessionBtn"),
         wcUriText: document.getElementById("wcUriText"),
         xportalDeepLink: document.getElementById("xportalDeepLink"),
         balanceOverlay: document.getElementById("balanceOverlay"),
@@ -1714,6 +1756,35 @@
         return isMobileDevice() ? uri : "https://xportal.com/app";
       }
 
+      function setRefreshSessionVisible(isVisible) {
+        if (dom.refreshSessionBtn) dom.refreshSessionBtn.hidden = !isVisible;
+        if (dom.connectQrFrame) dom.connectQrFrame.classList.toggle("is-expired", Boolean(isVisible));
+      }
+
+      function isProposalExpiredError(error) {
+        const message = String(error?.message || error || "").toLowerCase();
+        return message.includes("proposal expired") || message.includes("proposal has expired");
+      }
+
+      function markProposalExpired() {
+        state.pendingUri = "";
+        setRefreshSessionVisible(true);
+        setStatus("error", "Proposal expired. Press Refresh for a new session.");
+      }
+
+      function refreshConnectionSession() {
+        if (state.connecting) return;
+        state.connectionRunId++;
+        state.pendingUri = "";
+        state.signClient = null;
+        state.signClientProjectId = "";
+        setRefreshSessionVisible(false);
+        if (dom.qrCode) {
+          dom.qrCode.innerHTML = `<div class="qr-loader" id="qrLoader"><div class="qr-loader__spinner"></div><span>Generating QR...</span></div>`;
+        }
+        connectWallet();
+      }
+
       function renderWalletConnectUri(uri) {
         state.pendingUri = uri;
         dom.qrCode.innerHTML = "";
@@ -1809,13 +1880,17 @@
           if (runId === state.connectionRunId) {
             state.signClient = null;
             state.signClientProjectId = "";
-            setStatus("error", error?.message || "xPortal connection failed.");
-            const qrBox = document.getElementById("qrCode");
-            if (qrBox) {
-              qrBox.innerHTML = `<div class="qr-loader" style="color:#c0392b">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span style="font-size:12px;text-align:center;padding:0 8px">Connection failed.<br>Try again.</span>
-              </div>`;
+            if (isProposalExpiredError(error)) {
+              markProposalExpired();
+            } else {
+              setStatus("error", error?.message || "xPortal connection failed.");
+              const qrBox = document.getElementById("qrCode");
+              if (qrBox) {
+                qrBox.innerHTML = `<div class="qr-loader" style="color:#c0392b">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style="font-size:12px;text-align:center;padding:0 8px">Connection failed.<br>Try again.</span>
+                </div>`;
+              }
             }
           }
         } finally {
@@ -3946,6 +4021,7 @@
         dom.copyBtn.addEventListener("click", copyAddress);
         if (dom.copyUriBtn) dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
         if (dom.cancelPairingBtn) dom.cancelPairingBtn.addEventListener("click", cancelPairing);
+        if (dom.refreshSessionBtn) dom.refreshSessionBtn.addEventListener("click", refreshConnectionSession);
         dom.pnlForm.addEventListener("submit", runPnlCheck);
         const brandLink = document.getElementById("brandLink");
         if (brandLink) brandLink.addEventListener("click", goBackToExplorer);
