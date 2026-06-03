@@ -2848,7 +2848,7 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   "support-tcl": {
-    src: "SupportTCLexplorer.html",
+    src: "SupportTCLexplorer.html?v=20260603-4",
     title: "Support TCLexplorer",
     navId: "btn-supportTcl",
     routeKey: "support-tcl",
@@ -3161,7 +3161,7 @@ function loadNonCriticalServices() {
   nonCriticalServicesStarted = true;
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(new URL("sw.js", window.location.href))
+    navigator.serviceWorker.register(new URL("sw.js?v=20260603-4", window.location.href))
       .then((reg) => console.log("✅ SW registered", reg))
       .catch((err) => console.error("❌ SW error", err));
   }
