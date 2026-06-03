@@ -453,6 +453,12 @@
       color: #fff;
     }
 
+    .btn-sm-inline {
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      min-height: 28px;
+    }
+
     .btn:disabled,
     .btn.is-disabled {
       pointer-events: none;
@@ -807,6 +813,7 @@
         <section class="connect-panel" aria-labelledby="connectTitle">
           <div class="panel-head">
             <h2 class="panel-title" id="connectTitle" data-i18n="Connect xPortal">Connect xPortal</h2>
+            <button class="btn btn-danger btn-sm-inline" id="disconnectBtn" type="button" hidden data-i18n="Disconnect">Disconnect</button>
             <span class="panel-icon"><img src="images/xPortal.png" alt=""></span>
           </div>
 
@@ -847,7 +854,6 @@
           <div class="status-line connect-help" role="status" aria-live="polite">
             <span class="status-dot" aria-hidden="true"></span>
             <span id="statusText">Preparing the connection QR...</span>
-            <button class="btn-disconnect-sm" id="disconnectBtn" type="button" hidden data-i18n="Disconnect">Disconnect</button>
           </div>
         </section>
 
