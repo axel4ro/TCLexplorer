@@ -2772,11 +2772,11 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true,
     readyFallbackMs: 120000
   },
-  "pnl-check": {
+  "pnlCheck": {
     src: "pnlCheck.html?v=20260603-1",
     title: "PNL Check",
     navId: "btn-token",
-    routeKey: "pnl-check",
+    routeKey: "pnlCheck",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing PNL Check & wallet balances.",
     waitForReadyMessage: true,
@@ -2847,11 +2847,11 @@ const INTERNAL_PAGE_ROUTES = {
     loadingSubtitle: "Preparing APR rewards calculator.",
     waitForReadyMessage: true
   },
-  "supportTCL": {
+  "Infrastructure": {
     src: "SupportTCLexplorer.html?v=20260603-9",
     title: "Support TCLexplorer",
     navId: "btn-supportTcl",
-    routeKey: "supportTCL",
+    routeKey: "Infrastructure",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing the TCLexplorer support page.",
     waitForReadyMessage: true
@@ -5057,7 +5057,7 @@ function openFlowPage() {
 }
 
 function openPnlCheckPage() {
-  const route = INTERNAL_PAGE_ROUTES["pnl-check"];
+  const route = INTERNAL_PAGE_ROUTES["pnlCheck"];
   openInternalPage(route.src, route.title, route);
 }
 
@@ -5097,7 +5097,7 @@ function openAprRewardsCalculatorPage() {
 }
 
 function openSupportTCLPage() {
-  const route = INTERNAL_PAGE_ROUTES["supportTCL"];
+  const route = INTERNAL_PAGE_ROUTES["Infrastructure"];
   openInternalPage(route.src, route.title, route);
 }
 
