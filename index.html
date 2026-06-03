@@ -2773,7 +2773,7 @@ const INTERNAL_PAGE_ROUTES = {
     readyFallbackMs: 120000
   },
   "pnl-check": {
-    src: "connect_xportal.html?v=20260602-4",
+    src: "pnlCheck.html?v=20260603-1",
     title: "PNL Check",
     navId: "btn-token",
     routeKey: "pnl-check",
@@ -2847,11 +2847,11 @@ const INTERNAL_PAGE_ROUTES = {
     loadingSubtitle: "Preparing APR rewards calculator.",
     waitForReadyMessage: true
   },
-  "support-tcl": {
+  "supportTCL": {
     src: "SupportTCLexplorer.html?v=20260603-9",
     title: "Support TCLexplorer",
     navId: "btn-supportTcl",
-    routeKey: "support-tcl",
+    routeKey: "supportTCL",
     loadingTitle: "Loading <span>TCL Explorer</span>...",
     loadingSubtitle: "Preparing the TCLexplorer support page.",
     waitForReadyMessage: true
@@ -5097,7 +5097,7 @@ function openAprRewardsCalculatorPage() {
 }
 
 function openSupportTCLPage() {
-  const route = INTERNAL_PAGE_ROUTES["support-tcl"];
+  const route = INTERNAL_PAGE_ROUTES["supportTCL"];
   openInternalPage(route.src, route.title, route);
 }
 

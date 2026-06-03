@@ -299,7 +299,7 @@ function buildActions(question, language, sources = []) {
     add(t({ en: "Open Earn", ro: "Deschide Earn", tr: "Earn'i Aç", de: "Earn öffnen", es: "Abrir Earn", fr: "Ouvrir Earn", it: "Apri Earn", pl: "Otwórz Earn", pt: "Abrir Earn" }), "https://tclexplorer.com/earn.html", "primary");
   }
   if (/\b(xportal|portofel|wallet|connect|conectare|web3)\b/i.test(question) && !isBuyTokenIntent(question)) {
-    add(t({ en: "Connect xPortal", ro: "Conectează xPortal", tr: "xPortal Bağla", de: "xPortal verbinden", es: "Conectar xPortal", fr: "Connecter xPortal", it: "Connetti xPortal", pl: "Połącz xPortal", pt: "Conectar xPortal" }), "https://tclexplorer.com/connect_xportal.html");
+    add(t({ en: "Connect xPortal", ro: "Conectează xPortal", tr: "xPortal Bağla", de: "xPortal verbinden", es: "Conectar xPortal", fr: "Connecter xPortal", it: "Connetti xPortal", pl: "Połącz xPortal", pt: "Conectar xPortal" }), "https://tclexplorer.com/pnlCheck.html");
   }
   if (/\b(analytics|statistic|statistici)\b/i.test(question)) {
     add(t({ en: "Open Analytics", ro: "Deschide Analytics", tr: "Analitikleri Aç", de: "Analytics öffnen", es: "Abrir Analytics", fr: "Ouvrir Analytics", it: "Apri Analytics", pl: "Otwórz Analytics", pt: "Abrir Analytics" }), "https://tclexplorer.com/analytics.html");

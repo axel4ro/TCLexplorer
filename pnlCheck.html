@@ -1,0 +1,3988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xPortal Balance - TCL Explorer</title>
+  <meta name="theme-color" content="#07080c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #07080c;
+      --bg-deep: #0c0e14;
+      --bg-panel: #12151f;
+      --bg-elevated: #181c28;
+      --bg-card: #141824;
+      --border-subtle: rgba(0, 245, 212, 0.14);
+      --border-strong: rgba(0, 245, 212, 0.34);
+      --accent: #00e8cc;
+      --accent-strong: #3df7df;
+      --accent-purple: #a855f7;
+      --accent-warn: #fbbf24;
+      --danger: #fb7185;
+      --success: #4be2a3;
+      --text: #e8edf5;
+      --text-muted: #8b95a8;
+      --text-soft: #687287;
+      --shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.38);
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        linear-gradient(180deg, rgba(16, 22, 32, 0.96) 0%, rgba(7, 10, 16, 0.98) 46%, #04060a 100%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 64px);
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    body.is-balance-loading {
+      overflow: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+
+    .page-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(4, 6, 10, 0.72);
+      backdrop-filter: blur(8px);
+      transition: opacity 160ms ease, visibility 160ms ease;
+    }
+
+    .page-loading.is-active {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .loading-dialog {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: min(360px, 100%);
+      padding: 18px 20px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: rgba(18, 21, 31, 0.96);
+      color: var(--text);
+      font-weight: 800;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      border: 3px solid rgba(255, 255, 255, 0.16);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 850ms linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text);
+      font-weight: 800;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .brand-link img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hero,
+    .balances-panel,
+    .pnl-panel {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(20, 24, 36, 0.95), rgba(12, 15, 23, 0.96));
+      box-shadow: var(--shadow-panel);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+      gap: 22px;
+      align-items: stretch;
+      padding: 22px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .hero-main {
+      display: grid;
+      align-content: start;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      width: fit-content;
+      min-height: 48px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .lockup img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: clamp(1rem, 2vw, 1.12rem);
+      line-height: 1.7;
+    }
+
+    .hero-actions,
+    .address-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 800;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .btn-primary {
+      color: #041210;
+      border-color: rgba(0, 245, 212, 0.46);
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 12px 28px rgba(0, 232, 204, 0.18);
+    }
+
+    .btn-danger {
+      color: #fff;
+      border-color: rgba(251, 113, 133, 0.28);
+      background: rgba(251, 113, 133, 0.12);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.56;
+      transform: none;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 32px;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--text-soft);
+      box-shadow: 0 0 0 4px rgba(104, 114, 135, 0.1);
+    }
+
+    body[data-state="connected"] .status-dot,
+    body[data-state="ready"] .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(75, 226, 163, 0.12);
+    }
+
+    body[data-state="loading"] .status-dot {
+      background: var(--accent-warn);
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12);
+    }
+
+    body[data-state="error"] .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12);
+    }
+
+    .address-panel {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .eyebrow {
+      color: var(--text-soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .address-value {
+      display: block;
+      min-height: 58px;
+      padding: 12px;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(0, 245, 212, 0.12);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.18);
+      color: var(--text);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-item {
+      min-height: 106px;
+      padding: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      background: rgba(20, 24, 36, 0.86);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .summary-label {
+      margin: 0 0 8px;
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 3vw, 2.1rem);
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-meta {
+      margin: 7px 0 0;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .balances-panel,
+    .pnl-panel {
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2.4vw, 1.7rem);
+      letter-spacing: 0;
+    }
+
+    .panel-subtitle {
+      margin: 5px 0 0;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .pnl-limit-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: -2px 0 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      border-radius: var(--radius);
+      background: rgba(251, 191, 36, 0.07);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .pnl-limit-note::before {
+      content: "i";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      border-radius: 50%;
+      color: var(--accent-warn);
+      font-size: 0.72rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .token-card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      min-height: 230px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .token-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .token-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.18);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .token-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .token-name {
+      min-width: 0;
+    }
+
+    .token-name h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .token-name p {
+      margin: 4px 0 0;
+      color: var(--text-soft);
+      font-size: 0.84rem;
+      overflow-wrap: anywhere;
+    }
+
+    .token-amount {
+      align-self: center;
+      min-width: 0;
+    }
+
+    .amount {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.28rem, 3vw, 2rem);
+      line-height: 1.18;
+      overflow-wrap: anywhere;
+    }
+
+    .usd-value {
+      margin: 8px 0 0;
+      color: var(--success);
+      font-size: 1.02rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .token-meta {
+      display: grid;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .meta-row span:last-child {
+      color: var(--text);
+      font-weight: 700;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .pnl-panel[hidden] {
+      display: none;
+    }
+
+    .pnl-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .pnl-btns {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .pnl-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .pnl-field label {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .pnl-input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid rgba(139, 149, 168, 0.22);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.64);
+      color: var(--text);
+      outline: none;
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .pnl-input:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(0, 232, 204, 0.08);
+    }
+
+    .pnl-results {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .pnl-card {
+      /* 4 carduri pe rand (~277px) */
+      flex: 1 1 250px;
+      min-width: 0;
+      min-height: 122px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      position: relative;
+    }
+
+    .pnl-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .pnl-card-header .pnl-label { margin: 0; }
+
+    .pnl-info-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 232, 204, 0.4);
+      background: rgba(0, 232, 204, 0.08);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+      line-height: 1;
+    }
+    .pnl-info-btn:hover { background: rgba(0,232,204,0.18); border-color: var(--accent); }
+
+    /* Earned breakdown popup */
+    .earned-popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(3px);
+      align-items: center;
+      justify-content: center;
+    }
+    .earned-popup-overlay.open { display: flex; }
+    .earned-popup {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      width: min(440px, calc(100vw - 32px));
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .earned-popup-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .earned-popup-head h3 { margin:0; font-size:1rem; color:var(--text); font-family:var(--font-display); }
+    .earned-popup-close {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: transparent; color: var(--text-muted);
+      cursor: pointer; font-size: 16px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .earned-popup-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .earned-popup-body {
+      padding: 12px 18px 16px;
+      overflow-y: auto;
+    }
+    .earned-popup-total {
+      padding: 10px 12px;
+      background: rgba(0,232,204,0.07);
+      border: 1px solid rgba(0,232,204,0.18);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+    .earned-popup-total span { color: var(--accent-strong); font-weight: 800; }
+
+    .earned-cat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    @media (min-width: 380px) {
+      .earned-cat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .earned-cat-card {
+      padding: 10px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.025);
+    }
+    .earned-cat-label {
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.03em; color: var(--text-soft); margin-bottom: 5px;
+    }
+    .earned-cat-value {
+      font-family: var(--font-display); font-size: 1.05rem;
+      color: var(--accent-strong); line-height: 1.1;
+    }
+    .earned-cat-value span { font-size: 0.7rem; color: var(--text-muted); }
+    .earned-cat-sub { margin-top: 4px; font-size: 0.7rem; color: var(--text-muted); line-height: 1.3; }
+    .earned-source-link { color: var(--accent-strong); font-weight: 700; text-decoration: none; }
+    .earned-source-link:hover { text-decoration: underline; }
+    .earned-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    .earned-breakdown-table th {
+      text-align: left; padding: 6px 8px 8px;
+      color: var(--text-soft); font-size: 0.76rem;
+      font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .earned-breakdown-table th:last-child { text-align: right; }
+    .earned-breakdown-table td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .earned-breakdown-table td:last-child { text-align: right; color: var(--text-muted); font-size:0.82rem; }
+    .earned-fn-name { color: var(--text); font-weight: 600; }
+    .earned-fn-label { color: var(--text-muted); font-size: 0.78rem; display: block; }
+    .earned-tcl-amount { color: var(--accent-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .earned-bar-wrap { height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-top: 3px; }
+    .earned-bar { height: 3px; background: var(--accent); border-radius: 2px; min-width: 2px; }
+    .earned-detail-total { margin-top: 14px; }
+    .earned-detail-table a.earned-tx-link {
+      color: var(--accent-strong);
+      font-weight: 700;
+      text-decoration: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pnl-label {
+      margin: 0 0 8px;
+      color: var(--text-soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .pnl-value {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.18rem, 2.5vw, 1.75rem);
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .pnl-value.is-positive {
+      color: var(--success);
+    }
+
+    .pnl-value.is-negative {
+      color: var(--danger);
+    }
+
+    .pnl-meta {
+      margin: 7px 0 0;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .pnl-status {
+      min-height: 22px;
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .small-note {
+      margin: 12px 0 0;
+      color: var(--text-soft);
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    .page-disclaimer {
+      margin: 4px 0 20px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    /* Asigura ca atributul hidden ascunde elementele chiar daca .btn seteaza display */
+    [hidden] { display: none !important; }
+
+    .connect-aside {
+      min-width: 0;
+      align-self: stretch;
+    }
+
+    .qr-connect-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      justify-content: center;
+      margin: 2px 0 0;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .btn-connect { display: none; }
+    }
+
+    /* Buton Conecteaza xPortal — devine albastru MultiversX cand QR-ul e gata */
+    .btn-connect {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .btn-connect.is-ready {
+      border-color: #1b61ff;
+      background: linear-gradient(135deg, #2f75ff, #153fca);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 8px 22px rgba(27, 97, 255, 0.36);
+      pointer-events: auto;
+      opacity: 1;
+    }
+    .btn-connect.is-ready:hover,
+    .btn-connect.is-ready:focus-visible {
+      filter: brightness(1.08);
+    }
+
+    .qr-panel {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      align-content: start;
+      padding: 18px;
+      border: 1px solid rgba(0, 245, 212, 0.18);
+      border-radius: var(--radius);
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .qr-panel[hidden],
+    .address-panel[hidden] {
+      display: none;
+    }
+
+    .qr-panel .eyebrow {
+      justify-self: start;
+    }
+
+    .qr-panel .small-note {
+      text-align: center;
+    }
+
+    .qr-code {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      max-width: 240px;
+      min-height: 240px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      background: #fff;
+      position: relative;
+    }
+
+    .qr-code img,
+    .qr-code canvas {
+      width: 220px;
+      height: 220px;
+    }
+
+    .qr-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 220px;
+      height: 220px;
+      color: #555;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .qr-loader__spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(0, 0, 0, 0.12);
+      border-top-color: #0c0e14;
+      border-radius: 50%;
+      animation: qr-spin 0.8s linear infinite;
+    }
+
+    @keyframes qr-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .qr-info {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .qr-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .wc-uri {
+      display: block;
+      max-height: 84px;
+      padding: 10px;
+      overflow: auto;
+      overflow-wrap: anywhere;
+      border: 1px solid rgba(139, 149, 168, 0.18);
+      border-radius: var(--radius);
+      background: rgba(4, 6, 10, 0.64);
+      color: var(--text-muted);
+      font-family: "Consolas", "SFMono-Regular", monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 920px) {
+      .hero,
+      .qr-panel,
+      .summary-grid,
+      .token-grid,
+      .pnl-form {
+        grid-template-columns: 1fr;
+      }
+
+      .pnl-results {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .panel-head {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell {
+        width: min(100% - 18px, 1180px);
+        padding-top: 12px;
+      }
+
+      .topbar,
+      .hero-actions,
+      .address-actions,
+      .qr-actions {
+        align-items: stretch;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .topbar-actions,
+      .brand-link,
+      .btn {
+        width: 100%;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 14vw, 3.2rem);
+      }
+    }
+  </style>
+</head>
+<body data-state="idle">
+  <div class="page-loading" id="balanceOverlay" aria-hidden="true">
+    <div class="loading-dialog" role="status" aria-live="polite">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span id="pageOverlayText">Updating balance...</span>
+    </div>
+  </div>
+
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand-link" id="brandLink" href="index.html" aria-label="TCL Explorer">
+        <img src="images/thecursedland.png" alt="">
+        <span>TCL Explorer</span>
+      </a>
+      <div class="topbar-actions">
+        <button class="btn btn-danger" id="disconnectBtn" type="button" hidden>Disconnect</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-main">
+        <div class="lockup">
+          <img src="images/xPortal.png" alt="">
+          <span>xPortal</span>
+        </div>
+        <div>
+          <h1 id="pageTitle">xPortal Balance</h1>
+          <p class="hero-copy">Connect xPortal and view your EGLD, USDC and TCL balances, with the estimated dollar value next to each amount.</p>
+        </div>
+        <div class="hero-actions" id="heroActions"></div>
+        <div class="status-line" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusText">Disconnected</span>
+        </div>
+      </div>
+
+      <aside class="connect-aside" id="connectAside" aria-label="Connect xPortal">
+        <!-- QR vizibil cat timp NU esti conectat -->
+        <section class="qr-panel" id="qrPanel" aria-label="xPortal WalletConnect QR">
+          <div class="eyebrow">Scan with xPortal</div>
+          <div class="qr-code" id="qrCode" aria-label="WalletConnect QR code">
+            <div class="qr-loader" id="qrLoader">
+              <div class="qr-loader__spinner"></div>
+              <span>Generating QR...</span>
+            </div>
+          </div>
+          <!-- Conecteaza = link real (deeplink) sub QR — se taseaza direct pe mobil -->
+          <div class="qr-connect-actions">
+            <a class="btn btn-connect" id="connectBtn" target="_top" rel="noreferrer" href="#" aria-label="Connect xPortal">Connect xPortal</a>
+            <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Install xPortal</a>
+          </div>
+          <p class="small-note" id="qrNote">In xPortal, use the Scan QR Code button in the top-right corner, before notifications.</p>
+          <div hidden aria-hidden="true">
+            <a id="xportalDeepLink" href="#" rel="noreferrer"></a>
+            <code id="wcUriText"></code>
+            <button id="copyUriBtn" type="button"></button>
+            <button id="cancelPairingBtn" type="button"></button>
+          </div>
+        </section>
+
+        <!-- Adresa conectata apare in locul QR-ului dupa conectare -->
+        <aside class="address-panel" id="addressPanel" aria-label="Wallet address" hidden>
+          <div>
+            <div class="eyebrow">Connected address</div>
+            <code class="address-value" id="addressText">Disconnected</code>
+          </div>
+          <div class="address-actions">
+            <button class="btn" id="copyBtn" type="button">Copy</button>
+            <a class="btn" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
+          </div>
+        </aside>
+      </aside>
+    </section>
+
+    <section class="pnl-panel" id="pnlPanel" aria-labelledby="pnlTitle" hidden>
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title" id="pnlTitle">PNL Check</h2>
+          <p class="panel-subtitle">TCL swaps valued in USDC $ for the selected wallet.</p>
+        </div>
+      </div>
+      <p class="pnl-limit-note">P2P buy and sell transactions are not included in this PNL calculation.</p>
+
+      <form class="pnl-form" id="pnlForm">
+        <div class="pnl-field">
+          <label for="pnlAddressInput">Wallet</label>
+          <input class="pnl-input" id="pnlAddressInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="erd1..." required>
+        </div>
+        <div class="pnl-btns">
+          <button class="btn btn-primary" id="pnlRunBtn" type="submit">Run</button>
+          <a class="btn" id="pnlFilterBtn" target="_blank" rel="noreferrer noopener" href="#" tabindex="0">Filter</a>
+        </div>
+      </form>
+
+      <div class="pnl-results" aria-live="polite">
+        <article class="pnl-card">
+          <p class="pnl-label">TCL bought</p>
+          <p class="pnl-value" id="pnlBoughtTcl">--</p>
+          <p class="pnl-meta" id="pnlBoughtUsd">Cost: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">Infinity Offers</p>
+          <p class="pnl-value" id="pnlInfinityTcl">--</p>
+          <p class="pnl-meta" id="pnlInfinityUsd">Cost: --</p>
+        </article>
+        <article class="pnl-card">
+          <div class="pnl-card-header">
+            <p class="pnl-label">Staking</p>
+            <button class="pnl-info-btn" id="stakingInfoBtn" type="button" title="Staking sources (NFT, Loan, Infinity)" style="display:none">i</button>
+          </div>
+          <p class="pnl-value" id="pnlStakingTcl">--</p>
+          <p class="pnl-meta" id="pnlStakingUsd">Value: --</p>
+        </article>
+        <article class="pnl-card">
+          <div class="pnl-card-header">
+            <p class="pnl-label">Earned TCL $</p>
+            <button class="pnl-info-btn" id="earnedInfoBtn" type="button" title="Earned TCL source details" style="display:none">i</button>
+          </div>
+          <p class="pnl-value" id="pnlEarnedTcl">--</p>
+          <p class="pnl-meta" id="pnlEarnedUsd">Value: --</p>
+        </article>
+        <article class="pnl-card">
+          <div class="pnl-card-header">
+            <p class="pnl-label">Presale</p>
+            <button class="pnl-info-btn" id="presaleInfoBtn" type="button" title="Presale sources (Seed Zero, Seed, Public Sale)" style="display:none">i</button>
+          </div>
+          <p class="pnl-value" id="pnlPresaleTcl">--</p>
+          <p class="pnl-meta" id="pnlPresaleUsd">Cost: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">Wallet Balance</p>
+          <p class="pnl-value" id="pnlWalletTcl">--</p>
+          <p class="pnl-meta" id="pnlWalletUsd">Value: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">TCL sold</p>
+          <p class="pnl-value" id="pnlSoldTcl">--</p>
+          <p class="pnl-meta" id="pnlSoldUsd">Received: --</p>
+        </article>
+        <article class="pnl-card">
+          <p class="pnl-label">PNL $ USDC</p>
+          <p class="pnl-value" id="pnlNetUsd">--</p>
+          <p class="pnl-meta" id="pnlTradeCount">Trades: --</p>
+        </article>
+      </div>
+      <p class="pnl-status" id="pnlStatus">Connect xPortal for PNL Check.</p>
+    </section>
+
+    <section class="summary-grid" aria-label="Portfolio summary">
+      <article class="summary-item">
+        <p class="summary-label">Estimated total</p>
+        <p class="summary-value" id="totalUsd">--</p>
+        <p class="summary-meta">EGLD + USDC + TCL</p>
+      </article>
+      <article class="summary-item">
+        <p class="summary-label">TCL price</p>
+        <p class="summary-value" id="tclPrice">--</p>
+        <p class="summary-meta">Source: DexScreener / MultiversX</p>
+      </article>
+      <article class="summary-item">
+        <p class="summary-label">Last update</p>
+        <p class="summary-value" id="updatedAt">--</p>
+        <p class="summary-meta">Live API data</p>
+      </article>
+    </section>
+
+    <section class="balances-panel" aria-labelledby="balancesTitle">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title" id="balancesTitle">Balances</h2>
+          <p class="panel-subtitle">Token amount and approximate USD value.</p>
+        </div>
+      </div>
+
+      <div class="token-grid">
+        <article class="token-card" data-token-card="egld">
+          <div class="token-head">
+            <div class="token-icon"><img src="images/EGLD.png" alt=""></div>
+            <div class="token-name">
+              <h3>EGLD</h3>
+              <p>Native MultiversX</p>
+            </div>
+          </div>
+          <div class="token-amount">
+            <p class="amount" data-token-amount="egld">--</p>
+            <p class="usd-value" data-token-usd="egld">--</p>
+          </div>
+          <div class="token-meta">
+            <div class="meta-row"><span>Price</span><span data-token-price="egld">--</span></div>
+            <div class="meta-row"><span>Token</span><span>EGLD</span></div>
+          </div>
+        </article>
+
+        <article class="token-card" data-token-card="usdc">
+          <div class="token-head">
+            <div class="token-icon" id="usdcIcon">USDC</div>
+            <div class="token-name">
+              <h3>USDC</h3>
+              <p>USDC-c76f1f</p>
+            </div>
+          </div>
+          <div class="token-amount">
+            <p class="amount" data-token-amount="usdc">--</p>
+            <p class="usd-value" data-token-usd="usdc">--</p>
+          </div>
+          <div class="token-meta">
+            <div class="meta-row"><span>Price</span><span data-token-price="usdc">--</span></div>
+            <div class="meta-row"><span>Token</span><span>USDC-c76f1f</span></div>
+          </div>
+        </article>
+
+        <article class="token-card" data-token-card="tcl">
+          <div class="token-head">
+            <div class="token-icon"><img src="images/tcl_icon.png" alt=""></div>
+            <div class="token-name">
+              <h3>TCL</h3>
+              <p>TCL-fe459d</p>
+            </div>
+          </div>
+          <div class="token-amount">
+            <p class="amount" data-token-amount="tcl">--</p>
+            <p class="usd-value" data-token-usd="tcl">--</p>
+          </div>
+          <div class="token-meta">
+            <div class="meta-row"><span>Price</span><span data-token-price="tcl">--</span></div>
+            <div class="meta-row"><span>Token</span><span>TCL-fe459d</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <p class="page-disclaimer">This tool is still in active development and may display incorrect or incomplete information. Please double-check important results before making decisions.</p>
+
+    <!-- Earned TCL breakdown popup -->
+    <div class="earned-popup-overlay" id="earnedPopupOverlay">
+      <div class="earned-popup">
+        <div class="earned-popup-head">
+          <h3>Earned TCL Sources</h3>
+          <button class="earned-popup-close" id="earnedPopupClose">✕</button>
+        </div>
+        <div class="earned-popup-body" id="earnedPopupBody">
+          <p style="color:var(--text-muted);font-size:0.88rem">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staking breakdown popup -->
+    <div class="earned-popup-overlay" id="stakingPopupOverlay">
+      <div class="earned-popup">
+        <div class="earned-popup-head">
+          <h3>Staking Sources</h3>
+          <button class="earned-popup-close" id="stakingPopupClose">✕</button>
+        </div>
+        <div class="earned-popup-body" id="stakingPopupBody">
+          <p style="color:var(--text-muted);font-size:0.88rem">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presale breakdown popup -->
+    <div class="earned-popup-overlay" id="presalePopupOverlay">
+      <div class="earned-popup">
+        <div class="earned-popup-head">
+          <h3>Presale Sources</h3>
+          <button class="earned-popup-close" id="presalePopupClose">x</button>
+        </div>
+        <div class="earned-popup-body" id="presalePopupBody">
+          <p style="color:var(--text-muted);font-size:0.88rem">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="lang/page-common.bundle.js?v=20260515-3"></script>
+  <script src="lang/connect-xportal.bundle.js?v=20260529-3"></script>
+  <script src="js/page-i18n.js?v=20260529-1"></script>
+  <script src="lib/walletconnect-sign-client.umd.js"></script>
+  <script src="lib/qrcode.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      const CONFIG = {
+        walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+        apiBase: "https://api.multiversx.com",
+        dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
+        // Worker Supabase sync — seteaza dupa deploy
+        pnlSyncWorkerUrl: "https://tcl-pnl-sync.axel4ro.workers.dev",
+        pnlSupabaseUrl: "https://phhzrfzhwwooeqsdztee.supabase.co",
+        pnlSupabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoaHpyZnpod3dvb2Vxc2R6dGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODI2MzksImV4cCI6MjA5NTQ1ODYzOX0.TPJ2e5FbbWNqthkgHAC-r2WsMiP29CbfNkBaMFyf-yw",
+        listingDate: "2024-06-13T00:00:00Z",
+        pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        // Aggregatorii MultiversX care ruteaza TCL (descoperiti scanand /tokens/TCL-fe459d/transfers).
+        // Un buy prin oricare din ei e detectat ca TCL primit de la aceste adrese; costul USDC
+        // se ia din leg-ul USDC intrat in pool-ul TCL/USDC (pnlPairAddress) in interiorul tx-ului.
+        pnlAggregatorAddresses: [
+          "erd1qqqqqqqqqqqqqpgqcc69ts8409p3h77q5chsaqz57y6hugvc4fvs64k74v", // AshSwap: Aggregator v2
+          "erd1qqqqqqqqqqqqqpgq5rf2sppxk2xu4m0pkmugw2es4gak3rgjah0sxvajva", // XOXNO: Swap Aggregator
+          "erd1qqqqqqqqqqqqqpgqn7wy983tdh5katf5yn5nl2gcdflf4azh6jtsggjx9a", // OneDex: Aggregator
+          "erd1qqqqqqqqqqqqqpgqq66xk9gfr4esuhem3jru86wg5hvp33a62jps2fy57p", // xExchange: Router
+          "erd1qqqqqqqqqqqqqpgqsytkvnexypp7argk02l0rasnj57sxa542jpshkl7df"  // xExchange: Tasks Composer
+        ],
+        pnlGameContract: "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
+        // Infinity Offers: functia buyStakingOffer pe game contract (USDC platit -> TCL burnat)
+        pnlInfinityFunction: "buyStakingOffer",
+        pnlInfinityMaxPages: 10,
+        // Staking (NFT + Loan + Infinity) — precalculat in leaderboard.json (top stakers)
+        pnlStakingLeaderboardUrls: [
+          "/leaderboard.json",
+          "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json",
+          "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
+        ],
+        pnlPresaleSources: [
+          {
+            key: "seedZero",
+            label: "Seed Zero",
+            address: "erd1qqqqqqqqqqqqqpgqk9yf8y32wzwupjy7724j5wm3rk737ph20ufslxuppr",
+            priceUsd: 0.005
+          },
+          {
+            key: "seed",
+            label: "Seed",
+            address: "erd1qqqqqqqqqqqqqpgq97axlw2euvr3kenudu6xlch8zwmz2ah50ufspnfks0",
+            priceUsd: 0.005
+          },
+          {
+            key: "publicSale",
+            label: "BHero Public Sale",
+            address: "erd1qqqqqqqqqqqqqpgq5xu6me8xveumsunfyq9352pa0hpkplsqsyxszfw8sd",
+            priceUsd: 0.006
+          }
+        ],
+        pnlPresalePageSize: 100,
+        pnlPresaleMaxPages: 20,
+        pnlPageSize: 50,
+        pnlMaxPages: 220,
+        pnlPairMaxPages: 20,
+        pnlFunctionMaxPages: 80,
+        pnlSwapMaxPages: 80,
+        pnlTokenScanPageSize: 1000,
+        pnlTokenScanMaxPages: 12,
+        pnlPagePauseMs: 300,
+        pnlSourcePauseMs: 400,
+        pnlMaxRetries: 6,
+        pnlRetryDelayMs: 4000,
+        pnlRequestTimeoutMs: 35000,
+        pnlAggregatorBuyMinTcl: 0.001,
+        pnlAggregatorBuyRootLimit: 180,
+        pnlAggregatorRootBatchSize: 6,
+        pnlAggregatorRootPauseMs: 120,
+        pnlSwapFunctions: [
+          "swapTokensFixedInput",
+          "swapTokensFixedOutput",
+          "multiPairSwap",
+          "multiPairSwapTokensFixedInput",
+          "swap",
+          "aggregateEsdt",
+          "aggregateEgld",
+          "xo",
+          "buySwap",
+          "composeTasks"
+        ],
+        storageKey: "tclExplorer.xportal.address.v1",
+        sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
+        relayUrl: "wss://relay.walletconnect.com",
+        chainId: "mvx:1",
+        walletConnectMethods: [
+          "mvx_signMessage",
+          "mvx_signLoginToken"
+        ],
+        tokens: {
+          egld: { symbol: "EGLD", decimals: 18 },
+          usdc: { symbol: "USDC", identifier: "USDC-c76f1f", decimals: 6 },
+          tcl: { symbol: "TCL", identifier: "TCL-fe459d", decimals: 18 }
+        },
+        requestTimeoutMs: 30000
+      };
+
+      const state = {
+        address: "",
+        sessionTopic: "",
+        pendingUri: "",
+        signClient: null,
+        signClientProjectId: "",
+        connectionRunId: 0,
+        prices: { egld: 0, usdc: 1, tcl: 0 },
+        connecting: false,
+        balanceLoading: false,
+        pnlLoading: false,
+        loading: false
+      };
+
+      const dom = {
+        connectBtn: document.getElementById("connectBtn"),
+        heroActions: document.getElementById("heroActions"),
+        refreshBtn: document.getElementById("refreshBtn"),
+        disconnectBtn: document.getElementById("disconnectBtn"),
+        copyBtn: document.getElementById("copyBtn"),
+        copyUriBtn: document.getElementById("copyUriBtn"),
+        cancelPairingBtn: document.getElementById("cancelPairingBtn"),
+        addressText: document.getElementById("addressText"),
+        explorerLink: document.getElementById("explorerLink"),
+        statusText: document.getElementById("statusText"),
+        qrPanel: document.getElementById("qrPanel"),
+        addressPanel: document.getElementById("addressPanel"),
+        qrCode: document.getElementById("qrCode"),
+        wcUriText: document.getElementById("wcUriText"),
+        xportalDeepLink: document.getElementById("xportalDeepLink"),
+        balanceOverlay: document.getElementById("balanceOverlay"),
+        pageOverlayText: document.getElementById("pageOverlayText"),
+        totalUsd: document.getElementById("totalUsd"),
+        tclPrice: document.getElementById("tclPrice"),
+        updatedAt: document.getElementById("updatedAt"),
+        usdcIcon: document.getElementById("usdcIcon"),
+        pnlPanel: document.getElementById("pnlPanel"),
+        pnlForm: document.getElementById("pnlForm"),
+        pnlAddressInput: document.getElementById("pnlAddressInput"),
+        pnlRunBtn: document.getElementById("pnlRunBtn"),
+        pnlFilterBtn: document.getElementById("pnlFilterBtn"),
+        pnlBoughtTcl: document.getElementById("pnlBoughtTcl"),
+        pnlBoughtUsd: document.getElementById("pnlBoughtUsd"),
+        pnlSoldTcl: document.getElementById("pnlSoldTcl"),
+        pnlSoldUsd: document.getElementById("pnlSoldUsd"),
+        pnlNetUsd: document.getElementById("pnlNetUsd"),
+        pnlTradeCount: document.getElementById("pnlTradeCount"),
+        pnlEarnedTcl: document.getElementById("pnlEarnedTcl"),
+        pnlEarnedUsd: document.getElementById("pnlEarnedUsd"),
+        pnlInfinityTcl: document.getElementById("pnlInfinityTcl"),
+        pnlInfinityUsd: document.getElementById("pnlInfinityUsd"),
+        pnlStakingTcl: document.getElementById("pnlStakingTcl"),
+        pnlStakingUsd: document.getElementById("pnlStakingUsd"),
+        pnlPresaleTcl: document.getElementById("pnlPresaleTcl"),
+        pnlPresaleUsd: document.getElementById("pnlPresaleUsd"),
+        pnlWalletTcl: document.getElementById("pnlWalletTcl"),
+        pnlWalletUsd: document.getElementById("pnlWalletUsd"),
+        pnlStatus: document.getElementById("pnlStatus")
+      };
+
+      const SUPPORTED_LANGS = ["en", "ro", "tr", "de", "es", "fr", "it", "pl", "pt"];
+      const LOCALE_BY_LANG = {
+        en: "en-US",
+        ro: "ro-RO",
+        tr: "tr-TR",
+        de: "de-DE",
+        es: "es-ES",
+        fr: "fr-FR",
+        it: "it-IT",
+        pl: "pl-PL",
+        pt: "pt-PT"
+      };
+      const dynamicText = new Map();
+      let activeLang = normalizePageLang(new URLSearchParams(location.search).get("lang") || localStorage.getItem("lang") || navigator.language || "en");
+
+      function normalizePageLang(lang) {
+        const raw = String(lang || "en").toLowerCase();
+        if (SUPPORTED_LANGS.includes(raw)) return raw;
+        const base = raw.split("-")[0];
+        return SUPPORTED_LANGS.includes(base) ? base : "en";
+      }
+
+      function getLocale() {
+        return LOCALE_BY_LANG[activeLang] || LOCALE_BY_LANG.en;
+      }
+
+      function translateText(source, params = {}) {
+        const raw = String(source || "");
+        const dict = window.TCL_PAGE_I18N?.[activeLang] || {};
+        const translated = activeLang === "en" ? raw : (dict[raw] || raw);
+        return translated.replace(/\{(\w+)\}/g, (_, key) => (
+          Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`
+        ));
+      }
+
+      function setDynamicText(element, source, params = {}) {
+        if (!element) return;
+        dynamicText.set(element, { source, params });
+        element.textContent = translateText(source, params);
+      }
+
+      function refreshDynamicText() {
+        document.documentElement.lang = activeLang;
+        dynamicText.forEach(({ source, params }, element) => {
+          if (document.documentElement.contains(element)) {
+            element.textContent = translateText(source, params);
+          }
+        });
+        syncPageOverlay();
+      }
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.type !== "tcl:set-lang") return;
+        activeLang = normalizePageLang(data.lang);
+        refreshDynamicText();
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== "lang" || !event.newValue) return;
+        activeLang = normalizePageLang(event.newValue);
+        refreshDynamicText();
+      });
+
+      function setStatus(kind, message, params = {}) {
+        document.body.dataset.state = kind;
+        setDynamicText(dom.statusText, message, params);
+      }
+
+      function setPnlStatus(message, params = {}) {
+        setDynamicText(dom.pnlStatus, message, params);
+      }
+
+      function updatePnlFilterHref(address) {
+        const valid = isAddress(String(address || "").trim());
+        if (dom.pnlFilterBtn) {
+          if (valid) {
+            dom.pnlFilterBtn.href = `https://dexscreener.com/multiversx/${CONFIG.pnlPairAddress}?maker=${String(address).trim()}`;
+            dom.pnlFilterBtn.removeAttribute("aria-disabled");
+            dom.pnlFilterBtn.style.opacity = "";
+            dom.pnlFilterBtn.style.pointerEvents = "";
+          } else {
+            dom.pnlFilterBtn.href = "#";
+            dom.pnlFilterBtn.setAttribute("aria-disabled", "true");
+            dom.pnlFilterBtn.style.opacity = "0.45";
+            dom.pnlFilterBtn.style.pointerEvents = "none";
+          }
+        }
+      }
+
+      function syncLoadingState() {
+        const isLoading = state.connecting || state.balanceLoading || state.pnlLoading;
+        state.loading = isLoading;
+        if (dom.refreshBtn) dom.refreshBtn.disabled = isLoading || !hasConnectedWallet();
+        // connectBtn = deschide xPortal prin deeplink → activ de indata ce exista URI
+        dom.connectBtn.disabled = state.connecting && !state.pendingUri;
+        if (dom.cancelPairingBtn) dom.cancelPairingBtn.disabled = !state.connecting && !state.pendingUri;
+        dom.pnlRunBtn.disabled = isLoading || !hasConnectedWallet() || !isAddress(dom.pnlAddressInput.value);
+        updatePnlFilterHref(dom.pnlAddressInput.value);
+      }
+
+      function setConnectionLoading(isLoading) {
+        state.connecting = Boolean(isLoading);
+        syncLoadingState();
+      }
+
+      function setBalanceLoading(isLoading) {
+        state.balanceLoading = Boolean(isLoading);
+        syncPageOverlay();
+        syncLoadingState();
+      }
+
+      function setPnlLoading(isLoading) {
+        state.pnlLoading = Boolean(isLoading);
+        syncPageOverlay();
+        syncLoadingState();
+      }
+
+      function syncPageOverlay() {
+        const isActive = state.balanceLoading || state.pnlLoading;
+        setDynamicText(dom.pageOverlayText, state.pnlLoading ? "Calculating PNL..." : "Updating balance...");
+        dom.balanceOverlay.classList.toggle("is-active", isActive);
+        dom.balanceOverlay.setAttribute("aria-hidden", String(!isActive));
+        document.body.classList.toggle("is-balance-loading", isActive);
+      }
+
+      function isAddress(value) {
+        return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(value || "").trim());
+      }
+
+      function hasConnectedWallet() {
+        return Boolean(state.address && state.sessionTopic);
+      }
+
+      function getConfiguredProjectId() {
+        return String(CONFIG.walletConnectProjectId || "").trim();
+      }
+
+      function getWalletConnectGlobal() {
+        const walletConnect = window["@walletconnect/sign-client"];
+        return walletConnect?.SignClient || walletConnect?.default || null;
+      }
+
+      function getAppMetadata() {
+        const baseUrl = window.location.origin && window.location.origin !== "null"
+          ? window.location.origin
+          : "https://tclexplorer.com";
+        const appUrl = new URL(window.location.pathname || "/connect_xportal.html", baseUrl).href;
+        const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
+        return {
+          name: "TCL Explorer",
+          description: "xPortal balance reader for EGLD, USDC and TCL",
+          url: appUrl,
+          icons: [iconUrl]
+        };
+      }
+
+      async function getSignClient() {
+        const projectId = getConfiguredProjectId();
+        if (!projectId) {
+          throw new Error("WalletConnect connection is not configured.");
+        }
+        if (state.signClient && state.signClientProjectId === projectId) {
+          return state.signClient;
+        }
+
+        const SignClient = getWalletConnectGlobal();
+        if (!SignClient?.init) {
+          throw new Error("WalletConnect did not load. Check your internet connection.");
+        }
+
+        state.signClient = await SignClient.init({
+          projectId,
+          relayUrl: CONFIG.relayUrl,
+          metadata: getAppMetadata()
+        });
+        state.signClientProjectId = projectId;
+        state.signClient.on("session_delete", () => {
+          setConnectionLoading(false);
+          setBalanceLoading(false);
+          setPnlLoading(false);
+          state.sessionTopic = "";
+          state.address = "";
+          window.localStorage.removeItem(CONFIG.sessionTopicKey);
+          window.localStorage.removeItem(CONFIG.storageKey);
+          renderAddress();
+          renderEmptyBalances();
+          renderEmptyPnl();
+          setStatus("idle", "The xPortal session was closed.");
+        });
+        return state.signClient;
+      }
+
+      // Comuta intre QR (neconectat) si cardul Adresa conectata (conectat)
+      function updateConnectionView() {
+        const connected = hasConnectedWallet();
+        if (dom.qrPanel) dom.qrPanel.hidden = connected;
+        if (dom.addressPanel) dom.addressPanel.hidden = !connected;
+      }
+
+      function showQrPanel() {
+        updateConnectionView();
+      }
+
+      function hideQrPanel() {
+        dom.qrCode.innerHTML = "";
+        if (dom.wcUriText) dom.wcUriText.textContent = "";
+        if (dom.xportalDeepLink) dom.xportalDeepLink.href = "#";
+        if (dom.connectBtn) {
+          dom.connectBtn.href = "#";
+          dom.connectBtn.classList.remove("is-ready");
+        }
+        state.pendingUri = "";
+        updateConnectionView();
+      }
+
+      // "Conecteaza xPortal" = deschide aplicatia xPortal prin deeplink
+      // Deschide deeplink-ul escapand iframe-ul (target _top) ca OS-ul sa intercepteze
+      // si sa deschida aplicatia xPortal. Pe desktop deschide intr-un tab nou.
+      function launchXPortalDeepLink(uri) {
+        const link = getXPortalDeepLink(uri);
+        if (isMobileDevice()) {
+          const a = document.createElement("a");
+          a.href = link;
+          a.target = "_top";
+          a.rel = "noreferrer";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } else {
+          window.open(link, "_blank", "noreferrer");
+        }
+      }
+
+      function openXPortalApp(event) {
+        if (hasConnectedWallet()) { if (event) event.preventDefault(); return; }
+        if (state.pendingUri) {
+          // connectBtn este <a> cu href = deeplink (setat in renderWalletConnectUri).
+          // Lasam navigarea reala a link-ului (tap real → OS deschide xPortal pe mobil).
+          return;
+        }
+        // URI inca negenerat — blocheaza navigarea, genereaza sesiunea, apoi deschide deeplink
+        if (event) event.preventDefault();
+        setStatus("loading", "Generating xPortal session...");
+        connectWallet().then(() => {
+          if (state.pendingUri && !hasConnectedWallet()) {
+            launchXPortalDeepLink(state.pendingUri);
+          }
+        });
+      }
+
+      function isIOS() {
+        const ua = navigator.userAgent || "";
+        const platform = navigator.platform || "";
+        return /iPad|iPhone|iPod/.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      }
+
+      function isAndroid() {
+        return /Android/i.test(navigator.userAgent || "");
+      }
+
+      function isMobileDevice() {
+        return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+      }
+
+      function getXPortalSchemeLink(uri) {
+        return `xportal://wc?uri=${encodeURIComponent(uri)}`;
+      }
+
+      // xPortal WalletConnect: iOS foloseste schema xportal, Android intercepteaza URI-ul wc: direct.
+      function getXPortalDeepLink(uri) {
+        if (isIOS()) return getXPortalSchemeLink(uri);
+        if (isAndroid()) return uri;
+        return isMobileDevice() ? uri : "https://xportal.com/app";
+      }
+
+      function renderWalletConnectUri(uri) {
+        state.pendingUri = uri;
+        dom.qrCode.innerHTML = "";
+        const loader = document.getElementById("qrLoader");
+        if (loader) loader.remove();
+        dom.wcUriText.textContent = uri;
+        const deepLink = getXPortalDeepLink(uri);
+        dom.xportalDeepLink.href = deepLink;
+        // Activeaza butonul Conecteaza (link real) → albastru MultiversX
+        if (dom.connectBtn) {
+          dom.connectBtn.href = deepLink;
+          dom.connectBtn.classList.add("is-ready");
+        }
+
+        if (!window.QRCode) {
+          throw new Error("The QR library did not load.");
+        }
+
+        new window.QRCode(dom.qrCode, {
+          text: uri,
+          width: 220,
+          height: 220,
+          colorDark: "#020408",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M
+        });
+      }
+
+      function extractAddressFromSession(session) {
+        const namespaces = session?.namespaces || {};
+        const accounts = Object.values(namespaces).flatMap((namespace) => namespace?.accounts || []);
+        const mvxAccount = accounts.find((account) => String(account).startsWith(`${CONFIG.chainId}:`)) ||
+          accounts.find((account) => String(account).includes(":erd1"));
+        const address = String(mvxAccount || "").split(":").pop();
+        return isAddress(address) ? address : "";
+      }
+
+      async function connectWallet() {
+        if (state.address || state.connecting) return;
+        const projectId = getConfiguredProjectId();
+        updateConnectionView();
+
+        if (!projectId) {
+          setStatus("error", "WalletConnect connection is not configured.");
+          return;
+        }
+
+        const runId = ++state.connectionRunId;
+        setConnectionLoading(true);
+        setStatus("loading", "Generating WalletConnect session...");
+
+        try {
+          const client = await getSignClient();
+          const { uri, approval } = await client.connect({
+            optionalNamespaces: {
+              mvx: {
+                chains: [CONFIG.chainId],
+                methods: CONFIG.walletConnectMethods,
+                events: []
+              }
+            }
+          });
+
+          if (!uri) {
+            throw new Error("WalletConnect did not return a URI for the QR.");
+          }
+
+          renderWalletConnectUri(uri);
+          setStatus("loading", "Scan the QR with xPortal and approve the connection.");
+
+          const session = await approval();
+          if (runId !== state.connectionRunId) return;
+
+          const address = extractAddressFromSession(session);
+          if (!address) {
+            throw new Error("xPortal did not return a valid MultiversX address.");
+          }
+
+          state.address = address;
+          state.sessionTopic = session.topic || "";
+          window.localStorage.setItem(CONFIG.storageKey, address);
+          if (state.sessionTopic) {
+            window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
+          }
+
+          hideQrPanel();
+          renderAddress();
+          setConnectionLoading(false);
+          setStatus("loading", "Connected with xPortal. Updating balance for {address}...", { address: truncateAddress(address) });
+          await loadBalances();
+        } catch (error) {
+          console.error(error);
+          if (runId === state.connectionRunId) {
+            state.signClient = null;
+            state.signClientProjectId = "";
+            setStatus("error", error?.message || "xPortal connection failed.");
+            const qrBox = document.getElementById("qrCode");
+            if (qrBox) {
+              qrBox.innerHTML = `<div class="qr-loader" style="color:#c0392b">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span style="font-size:12px;text-align:center;padding:0 8px">Connection failed.<br>Try again.</span>
+              </div>`;
+            }
+          }
+        } finally {
+          if (runId === state.connectionRunId) {
+            setConnectionLoading(false);
+            renderAddress();
+          }
+        }
+      }
+
+      function disconnectWallet() {
+        const topic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey);
+        const client = state.signClient;
+        if (client && topic) {
+          client.disconnect({
+            topic,
+            reason: {
+              code: 6000,
+              message: "User disconnected"
+            }
+          }).catch(() => {});
+        }
+        state.connectionRunId++;
+        setConnectionLoading(false);
+        setBalanceLoading(false);
+        setPnlLoading(false);
+        state.address = "";
+        state.sessionTopic = "";
+        window.localStorage.removeItem(CONFIG.storageKey);
+        window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        hideQrPanel();
+        renderAddress();
+        renderEmptyBalances();
+        renderEmptyPnl();
+        setStatus("idle", "Disconnected");
+        // Regenereaza QR-ul pentru o noua conectare
+        connectWallet();
+      }
+
+      function getInitialAddress() {
+        const saved = window.localStorage.getItem(CONFIG.storageKey);
+        const savedTopic = window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
+        state.sessionTopic = savedTopic;
+        if (isAddress(saved) && savedTopic) return saved;
+        window.localStorage.removeItem(CONFIG.storageKey);
+        window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        state.sessionTopic = "";
+        return "";
+      }
+
+      function truncateAddress(address) {
+        if (!address) return translateText("Disconnected");
+        return `${address.slice(0, 12)}...${address.slice(-10)}`;
+      }
+
+      function renderAddress() {
+        const address = state.address;
+        const connected = hasConnectedWallet();
+        if (connected) {
+          dynamicText.delete(dom.addressText);
+          dom.addressText.textContent = address;
+        }
+        else setDynamicText(dom.addressText, "Disconnected");
+        dom.heroActions.hidden = connected;
+        updateConnectionView();
+        dom.copyBtn.disabled = !connected;
+        dom.disconnectBtn.disabled = !connected;
+        dom.disconnectBtn.hidden = !connected;
+        dom.pnlPanel.hidden = !connected;
+        if (connected && (dom.pnlAddressInput.dataset.mode !== "manual" || !dom.pnlAddressInput.value.trim())) {
+          dom.pnlAddressInput.value = address;
+          dom.pnlAddressInput.dataset.mode = "auto";
+        }
+        if (!connected) {
+          dom.pnlAddressInput.value = "";
+          dom.pnlAddressInput.dataset.mode = "auto";
+          setPnlStatus("Connect xPortal for PNL Check.");
+        }
+        if (dom.refreshBtn) dom.refreshBtn.disabled = !connected || state.loading;
+        dom.explorerLink.href = connected
+          ? `https://explorer.multiversx.com/accounts/${address}`
+          : "https://explorer.multiversx.com/";
+        syncLoadingState();
+      }
+
+      async function copyAddress() {
+        if (!hasConnectedWallet()) return;
+        try {
+          await navigator.clipboard.writeText(state.address);
+          setStatus("ready", "Copied: {address}", { address: truncateAddress(state.address) });
+        } catch (_) {
+          setStatus("error", "Could not copy the address to clipboard.");
+        }
+      }
+
+      function buildApiUrl(path, params = {}) {
+        const url = new URL(path, CONFIG.apiBase);
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            url.searchParams.set(key, String(value));
+          }
+        });
+        return url.toString();
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => window.setTimeout(resolve, ms));
+      }
+
+      async function fetchJson(url, options = {}) {
+        const maxRetries = Math.max(0, Number(options.retries) || 0);
+        const retryDelayMs = Math.max(0, Number(options.retryDelayMs ?? CONFIG.pnlRetryDelayMs) || 0);
+        const timeoutMs = Math.max(1000, Number(options.timeoutMs ?? CONFIG.requestTimeoutMs) || CONFIG.requestTimeoutMs);
+        const timeoutMessage = options.timeoutMessage || "API timeout. The response took too long.";
+
+        for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+          const controller = new AbortController();
+          const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+          try {
+            const response = await fetch(url, {
+              cache: "no-store",
+              headers: { Accept: "application/json" },
+              signal: controller.signal
+            });
+
+            if (response.ok) {
+              return response.json();
+            }
+
+            const retryableStatus = [429, 500, 502, 503, 504].includes(response.status);
+            if (retryableStatus && attempt < maxRetries) {
+              const retryAfter = Number(response.headers.get("Retry-After"));
+              const delay = Number.isFinite(retryAfter) && retryAfter > 0
+                ? retryAfter * 1000
+                : retryDelayMs * (attempt + 1);
+              await wait(delay);
+              continue;
+            }
+
+            throw new Error(`HTTP ${response.status}`);
+          } catch (error) {
+            const canRetry = attempt < maxRetries;
+            if (!canRetry) {
+              if (error?.name === "AbortError") {
+                throw new Error(timeoutMessage);
+              }
+              throw error;
+            }
+            await wait(retryDelayMs * (attempt + 1));
+          } finally {
+            window.clearTimeout(timer);
+          }
+        }
+
+        throw new Error("The API request failed after retries.");
+      }
+
+      function readNumber(value, fallback = 0) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : fallback;
+      }
+
+      async function fetchPrices() {
+        const economicsUrl = buildApiUrl("/economics");
+        const tokenUrl = buildApiUrl(`/tokens/${CONFIG.tokens.usdc.identifier}`);
+        const tclTokenUrl = buildApiUrl(`/tokens/${CONFIG.tokens.tcl.identifier}`);
+
+        const [economics, dexPair, usdcToken, tclToken] = await Promise.allSettled([
+          fetchJson(economicsUrl),
+          fetchJson(CONFIG.dexPairUrl),
+          fetchJson(tokenUrl),
+          fetchJson(tclTokenUrl)
+        ]);
+
+        const egldPrice = economics.status === "fulfilled" ? readNumber(economics.value.price, 0) : 0;
+        const usdcPrice = usdcToken.status === "fulfilled" ? readNumber(usdcToken.value.price, 1) : 1;
+        const tclDexPrice = dexPair.status === "fulfilled" ? readNumber(dexPair.value?.pair?.priceUsd, 0) : 0;
+        const tclApiPrice = tclToken.status === "fulfilled" ? readNumber(tclToken.value.price, 0) : 0;
+
+        state.prices = {
+          egld: egldPrice,
+          usdc: usdcPrice || 1,
+          tcl: tclDexPrice || tclApiPrice
+        };
+
+        if (usdcToken.status === "fulfilled" && usdcToken.value?.assets?.pngUrl) {
+          dom.usdcIcon.innerHTML = `<img src="${usdcToken.value.assets.pngUrl}" alt="">`;
+        }
+      }
+
+      function rawToNumber(raw, decimals) {
+        const clean = String(raw || "0").replace(/[^\d]/g, "");
+        if (!clean) return 0;
+        if (!decimals) return Number(clean);
+        const padded = clean.padStart(decimals + 1, "0");
+        const whole = padded.slice(0, -decimals);
+        const fraction = padded.slice(-decimals);
+        return Number(`${whole}.${fraction}`);
+      }
+
+      function rawToDisplay(raw, decimals, maxFractionDigits) {
+        const clean = String(raw || "0").replace(/[^\d]/g, "") || "0";
+        const precision = Math.max(0, Number(maxFractionDigits) || 0);
+
+        if (!decimals) {
+          return addCommas(clean);
+        }
+
+        const base = 10n ** BigInt(decimals);
+        const value = BigInt(clean);
+        const whole = value / base;
+        const fraction = value % base;
+        const wholeText = addCommas(whole.toString());
+        let fractionText = fraction.toString().padStart(decimals, "0").slice(0, precision);
+        fractionText = fractionText.replace(/0+$/, "");
+
+        return fractionText ? `${wholeText}.${fractionText}` : wholeText;
+      }
+
+      function addCommas(value) {
+        return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
+      function formatUsd(value) {
+        const amount = readNumber(value, 0);
+        const decimals = Math.abs(amount) < 1 && amount !== 0 ? 4 : 2;
+        return new Intl.NumberFormat(getLocale(), {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(amount);
+      }
+
+      function formatPrice(value) {
+        const amount = readNumber(value, 0);
+        const decimals = amount > 0 && amount < 0.01 ? 8 : 4;
+        return new Intl.NumberFormat(getLocale(), {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }).format(amount);
+      }
+
+      function formatTokenAmount(value) {
+        const amount = readNumber(value, 0);
+        const decimals = Math.abs(amount) < 1000 && amount !== 0 ? 4 : 2;
+        return new Intl.NumberFormat(getLocale(), {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: decimals
+        }).format(amount);
+      }
+
+      function formatSignedUsd(value) {
+        const amount = readNumber(value, 0);
+        const text = formatUsd(Math.abs(amount));
+        if (amount > 0) return `+${text}`;
+        if (amount < 0) return `-${text}`;
+        return text;
+      }
+
+      function setTokenRender(key, amount, usdValue, price) {
+        const amountEl = document.querySelector(`[data-token-amount="${key}"]`);
+        const usdEl = document.querySelector(`[data-token-usd="${key}"]`);
+        const priceEl = document.querySelector(`[data-token-price="${key}"]`);
+
+        if (amountEl) amountEl.textContent = amount;
+        if (usdEl) usdEl.textContent = formatUsd(usdValue);
+        if (priceEl) priceEl.textContent = formatPrice(price);
+      }
+
+      function renderEmptyBalances() {
+        ["egld", "usdc", "tcl"].forEach((key) => {
+          const amountEl = document.querySelector(`[data-token-amount="${key}"]`);
+          const usdEl = document.querySelector(`[data-token-usd="${key}"]`);
+          const priceEl = document.querySelector(`[data-token-price="${key}"]`);
+          if (amountEl) amountEl.textContent = "--";
+          if (usdEl) usdEl.textContent = "--";
+          if (priceEl) priceEl.textContent = "--";
+        });
+        dom.totalUsd.textContent = "--";
+        dom.tclPrice.textContent = "--";
+        dom.updatedAt.textContent = "--";
+      }
+
+      function renderEmptyPnl() {
+        dom.pnlBoughtTcl.textContent = "--";
+        setDynamicText(dom.pnlBoughtUsd, "Cost: --");
+        dom.pnlSoldTcl.textContent = "--";
+        setDynamicText(dom.pnlSoldUsd, "Received: --");
+        dom.pnlNetUsd.textContent = "--";
+        dom.pnlNetUsd.classList.remove("is-positive", "is-negative");
+        setDynamicText(dom.pnlTradeCount, "Trades: --");
+        dom.pnlEarnedTcl.textContent = "--";
+        setDynamicText(dom.pnlEarnedUsd, "Value: --");
+        dom.pnlInfinityTcl.textContent = "--";
+        setDynamicText(dom.pnlInfinityUsd, "Cost: --");
+        dom.pnlStakingTcl.textContent = "--";
+        setDynamicText(dom.pnlStakingUsd, "Value: --");
+        dom.pnlPresaleTcl.textContent = "--";
+        setDynamicText(dom.pnlPresaleUsd, "Cost: --");
+        const presaleInfoBtn = document.getElementById("presaleInfoBtn");
+        if (presaleInfoBtn) presaleInfoBtn.style.display = "none";
+        dom.pnlWalletTcl.textContent = "--";
+        setDynamicText(dom.pnlWalletUsd, "Value: --");
+      }
+
+      function getTokenByIdentifier(tokens, identifier) {
+        return tokens.find((token) => token.identifier === identifier) || null;
+      }
+
+      async function loadBalances() {
+        if (!state.address || state.balanceLoading) return;
+
+        setBalanceLoading(true);
+        setStatus("loading", "Reading balances...");
+
+        try {
+          await fetchPrices();
+
+          const accountUrl = buildApiUrl(`/accounts/${state.address}`);
+          const tokensUrl = buildApiUrl(`/accounts/${state.address}/tokens`, {
+            identifiers: `${CONFIG.tokens.usdc.identifier},${CONFIG.tokens.tcl.identifier}`
+          });
+
+          const [account, walletTokens] = await Promise.all([
+            fetchJson(accountUrl),
+            fetchJson(tokensUrl)
+          ]);
+
+          const tokens = Array.isArray(walletTokens) ? walletTokens : [];
+          const egldRaw = account?.balance || "0";
+          const usdcToken = getTokenByIdentifier(tokens, CONFIG.tokens.usdc.identifier);
+          const tclToken = getTokenByIdentifier(tokens, CONFIG.tokens.tcl.identifier);
+          const usdcRaw = usdcToken?.balance || "0";
+          const tclRaw = tclToken?.balance || "0";
+
+          const egldAmount = rawToNumber(egldRaw, CONFIG.tokens.egld.decimals);
+          const usdcAmount = rawToNumber(usdcRaw, CONFIG.tokens.usdc.decimals);
+          const tclAmount = rawToNumber(tclRaw, CONFIG.tokens.tcl.decimals);
+
+          const egldUsd = egldAmount * state.prices.egld;
+          const usdcUsd = usdcAmount * state.prices.usdc;
+          const tclUsd = tclAmount * state.prices.tcl;
+          const total = egldUsd + usdcUsd + tclUsd;
+
+          setTokenRender("egld", rawToDisplay(egldRaw, CONFIG.tokens.egld.decimals, 5), egldUsd, state.prices.egld);
+          setTokenRender("usdc", rawToDisplay(usdcRaw, CONFIG.tokens.usdc.decimals, 4), usdcUsd, state.prices.usdc);
+          setTokenRender("tcl", rawToDisplay(tclRaw, CONFIG.tokens.tcl.decimals, 2), tclUsd, state.prices.tcl);
+
+          dom.totalUsd.textContent = formatUsd(total);
+          dom.tclPrice.textContent = formatPrice(state.prices.tcl);
+          dom.updatedAt.textContent = new Intl.DateTimeFormat(getLocale(), {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          }).format(new Date());
+
+          setStatus("ready", "Balances updated for {address}", { address: truncateAddress(state.address) });
+        } catch (error) {
+          console.error(error);
+          setStatus("error", "Could not read balances. Reconnect xPortal and try again.");
+        } finally {
+          setBalanceLoading(false);
+          renderAddress();
+        }
+      }
+
+      function decimalStringToNumber(value, decimals) {
+        const raw = String(value || "").replace(/[^\d]/g, "");
+        if (!raw) return Number.NaN;
+        const precision = Math.max(0, Number(decimals) || 0);
+        if (!precision) return Number(raw);
+        const padded = raw.padStart(precision + 1, "0");
+        const whole = padded.slice(0, -precision);
+        const fraction = padded.slice(-precision);
+        const amount = Number(`${whole}.${fraction}`);
+        return Number.isFinite(amount) ? amount : Number.NaN;
+      }
+
+      function normalizePnlTradeTransfer(transfer) {
+        const token = transfer?.token || transfer?.identifier || "";
+        if (!token || !transfer?.value) return null;
+        const decimals = Number(transfer.decimals ?? (
+          token === CONFIG.tokens.usdc.identifier
+            ? CONFIG.tokens.usdc.decimals
+            : CONFIG.tokens.tcl.decimals
+        ));
+        const amount = decimalStringToNumber(transfer.value, decimals);
+        if (!Number.isFinite(amount) || amount <= 0) return null;
+        return { token, amount };
+      }
+
+      function normalizePnlOperation(operation) {
+        if (operation?.action && operation.action !== "transfer") return null;
+        const token = operation?.identifier || operation?.token || (operation?.type === "egld" ? "EGLD" : "");
+        if (!token || !operation?.value) return null;
+        if (operation?.esdtType && operation.esdtType !== "FungibleESDT") return null;
+        const decimals = Number(operation.decimals ?? (
+          token === CONFIG.tokens.usdc.identifier
+            ? CONFIG.tokens.usdc.decimals
+            : (token === "EGLD" ? CONFIG.tokens.egld.decimals : CONFIG.tokens.tcl.decimals)
+        ));
+        const amount = decimalStringToNumber(operation.value, decimals);
+        if (!Number.isFinite(amount) || amount <= 0) return null;
+
+        const valueUsd = token === CONFIG.tokens.usdc.identifier
+          ? amount
+          : readNumber(operation.valueUSD, Number.NaN);
+
+        return {
+          token,
+          amount,
+          valueUsd,
+          sender: operation.sender || "",
+          receiver: operation.receiver || "",
+          key: [
+            operation.id || "",
+            operation.action || "",
+            operation.type || "",
+            token,
+            operation.sender || "",
+            operation.receiver || "",
+            String(operation.value || "")
+          ].join("|")
+        };
+      }
+
+      function getPnlRootHash(entry) {
+        return String(entry?.originalTxHash || entry?.txHash || "");
+      }
+
+      function groupPnlTransfers(transfers) {
+        const groups = new Map();
+
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+          const rootHash = getPnlRootHash(entry);
+          if (!rootHash) continue;
+
+          let group = groups.get(rootHash);
+          const timestamp = Number(entry.timestamp) || 0;
+          if (!group) {
+            group = {
+              hash: rootHash,
+              timestamp,
+              entries: []
+            };
+            groups.set(rootHash, group);
+          } else if (timestamp && (!group.timestamp || timestamp < group.timestamp)) {
+            group.timestamp = timestamp;
+          }
+
+          group.entries.push(entry);
+        }
+
+        return groups;
+      }
+
+      function parsePnlTradesFromOperations(transfers, walletAddress) {
+        const trades = [];
+        const transferGroups = groupPnlTransfers(transfers);
+
+        for (const group of transferGroups.values()) {
+          const seenOperations = new Set();
+          const operations = [];
+
+          for (const entry of group.entries) {
+            if (!Array.isArray(entry.operations)) continue;
+
+            for (const rawOperation of entry.operations) {
+              const operation = normalizePnlOperation(rawOperation);
+              if (!operation || seenOperations.has(operation.key)) continue;
+              seenOperations.add(operation.key);
+              operations.push(operation);
+            }
+          }
+
+          if (!operations.length) continue;
+
+          const tclSent = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.sender === walletAddress)
+            .reduce((sum, operation) => sum + operation.amount, 0);
+          const tclReceived = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress)
+            .reduce((sum, operation) => sum + operation.amount, 0);
+          const usdSent = operations
+            .filter((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.sender === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const usdReceived = operations
+            .filter((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const tclSentUsd = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.sender === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const tclReceivedUsd = operations
+            .filter((operation) => operation.token === CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress && Number.isFinite(operation.valueUsd))
+            .reduce((sum, operation) => sum + operation.valueUsd, 0);
+          const hasNonTclSent = operations
+            .some((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.sender === walletAddress);
+          const hasNonTclReceived = operations
+            .some((operation) => operation.token !== CONFIG.tokens.tcl.identifier && operation.receiver === walletAddress);
+          const pairInvolved = group.entries
+            .some((entry) => entry.sender === CONFIG.pnlPairAddress || entry.receiver === CONFIG.pnlPairAddress)
+            || operations.some((operation) => operation.sender === CONFIG.pnlPairAddress || operation.receiver === CONFIG.pnlPairAddress);
+          const groupFunctions = group.entries
+            .map((entry) => String(entry?.function || entry?.action?.name || ""))
+            .filter(Boolean);
+          const hasKnownSwapFunction = groupFunctions
+            .some((name) => CONFIG.pnlSwapFunctions.includes(name) || /^swap/i.test(name));
+
+          let side = "";
+          let tclAmount = 0;
+          let volumeUsd = 0;
+          const netTcl = tclReceived - tclSent;
+          const netUsd = usdReceived - usdSent;
+          // Fallback relaxat: orice protocol DEX (xo, aggregateEsdt, etc.)
+          // inclusiv cand plata nu e vizibila in operatii (routing indirect, xo protocol)
+          const buyFallbackUsd  = hasKnownSwapFunction && tclReceivedUsd > 0 ? tclReceivedUsd : 0;
+          const sellFallbackUsd = hasKnownSwapFunction && tclSentUsd > 0 ? tclSentUsd : 0;
+
+          if (netTcl > 0 && netUsd < 0) {
+            side = "buy";
+            tclAmount = netTcl;
+            volumeUsd = Math.abs(netUsd);
+          } else if (netTcl < 0 && netUsd > 0) {
+            side = "sell";
+            tclAmount = Math.abs(netTcl);
+            volumeUsd = netUsd;
+          } else if (netTcl > 0 && buyFallbackUsd > 0) {
+            side = "buy";
+            tclAmount = netTcl;
+            volumeUsd = buyFallbackUsd;
+          } else if (netTcl < 0 && sellFallbackUsd > 0) {
+            side = "sell";
+            tclAmount = Math.abs(netTcl);
+            volumeUsd = sellFallbackUsd;
+          } else if (tclReceived > 0 && usdSent > 0) {
+            side = "buy";
+            tclAmount = tclReceived;
+            volumeUsd = usdSent;
+          } else if (tclSent > 0 && usdReceived > 0) {
+            side = "sell";
+            tclAmount = tclSent;
+            volumeUsd = usdReceived;
+          }
+
+          if (!side || !Number.isFinite(tclAmount) || tclAmount <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+          trades.push({
+            hash: group.hash,
+            timestamp: group.timestamp,
+            side,
+            tclAmount,
+            volumeUsd,
+            price: volumeUsd / tclAmount,
+            description: "Swap TCL"
+          });
+        }
+
+        return trades;
+      }
+
+      function parsePnlTradesFromPairTransfers(transfers, walletAddress) {
+        const groupedSwaps = new Map();
+
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+
+          const transferList = entry?.action?.arguments?.transfers;
+          if (!Array.isArray(transferList) || !transferList.length) continue;
+
+          const primaryTransfer = normalizePnlTradeTransfer(transferList[0]);
+          if (!primaryTransfer) continue;
+
+          const timestamp = Number(entry.timestamp);
+          if (!Number.isFinite(timestamp)) continue;
+
+          const groupHash = getPnlRootHash(entry);
+          if (!groupHash) continue;
+
+          let groupedSwap = groupedSwaps.get(groupHash);
+          if (!groupedSwap) {
+            groupedSwap = {
+              hash: groupHash,
+              timestamp,
+              inputToken: null,
+              inputAmount: 0,
+              outputToken: null,
+              outputAmount: 0,
+              // Output stocat inline in action_transfers al tranzactiei swap (fara SCR
+              // separat pair->wallet). Folosit doar daca operations lipseste si nu
+              // exista un output SCR — evita dublarea pe swap-urile deja enrichuite.
+              inlineOutputToken: null,
+              inlineOutputAmount: 0,
+              description: "",
+              invalid: false
+            };
+            groupedSwaps.set(groupHash, groupedSwap);
+          } else if (timestamp < groupedSwap.timestamp) {
+            groupedSwap.timestamp = timestamp;
+          }
+
+          const description = String(entry?.action?.description || "");
+          if (description && (!groupedSwap.description || groupedSwap.description === "Transfer" || description !== "Transfer")) {
+            groupedSwap.description = description;
+          }
+
+          const isSwapInput =
+            entry.sender === walletAddress &&
+            entry.receiver === CONFIG.pnlPairAddress &&
+            (/^swap/i.test(String(entry.function || "")) || entry?.action?.name === "swap");
+
+          if (isSwapInput) {
+            if (groupedSwap.inputToken && groupedSwap.inputToken !== primaryTransfer.token) {
+              groupedSwap.invalid = true;
+              continue;
+            }
+            groupedSwap.inputToken = primaryTransfer.token;
+            groupedSwap.inputAmount += primaryTransfer.amount;
+            // Unele swap-uri (cele cu operations=null, neenrichuite) au output-ul
+            // (TCL/USDC primit) inline in action_transfers, nu intr-un SCR pair->wallet.
+            for (let i = 1; i < transferList.length; i += 1) {
+              const extra = normalizePnlTradeTransfer(transferList[i]);
+              if (!extra || extra.token === primaryTransfer.token) continue;
+              if (extra.token !== CONFIG.tokens.tcl.identifier && extra.token !== CONFIG.tokens.usdc.identifier) continue;
+              if (groupedSwap.inlineOutputToken && groupedSwap.inlineOutputToken !== extra.token) continue;
+              groupedSwap.inlineOutputToken = extra.token;
+              groupedSwap.inlineOutputAmount += extra.amount;
+            }
+            continue;
+          }
+
+          const isPairOutput =
+            entry.sender === CONFIG.pnlPairAddress &&
+            entry.receiver === walletAddress &&
+            entry.function !== "depositSwapFees" &&
+            (primaryTransfer.token === CONFIG.tokens.tcl.identifier || primaryTransfer.token === CONFIG.tokens.usdc.identifier);
+
+          if (!isPairOutput) continue;
+
+          if (groupedSwap.outputToken && groupedSwap.outputToken !== primaryTransfer.token) {
+            groupedSwap.invalid = true;
+            continue;
+          }
+
+          groupedSwap.outputToken = primaryTransfer.token;
+          groupedSwap.outputAmount += primaryTransfer.amount;
+        }
+
+        const trades = [];
+        for (const groupedSwap of groupedSwaps.values()) {
+          if (groupedSwap.invalid) continue;
+          // Fallback: daca nu am gasit un output SCR pair->wallet, foloseste output-ul
+          // inline din tranzactia swap (cazul operations=null, swap neenrichuit).
+          if ((!groupedSwap.outputToken || groupedSwap.outputAmount <= 0) && groupedSwap.inlineOutputToken && groupedSwap.inlineOutputAmount > 0) {
+            groupedSwap.outputToken = groupedSwap.inlineOutputToken;
+            groupedSwap.outputAmount = groupedSwap.inlineOutputAmount;
+          }
+          if (!groupedSwap.inputToken || !groupedSwap.outputToken || groupedSwap.inputAmount <= 0 || groupedSwap.outputAmount <= 0) continue;
+
+          let side = "";
+          let tclAmount = 0;
+          let volumeUsd = 0;
+
+          if (groupedSwap.inputToken === CONFIG.tokens.usdc.identifier && groupedSwap.outputToken === CONFIG.tokens.tcl.identifier) {
+            side = "buy";
+            tclAmount = groupedSwap.outputAmount;
+            volumeUsd = groupedSwap.inputAmount;
+          } else if (groupedSwap.inputToken === CONFIG.tokens.tcl.identifier && groupedSwap.outputToken === CONFIG.tokens.usdc.identifier) {
+            side = "sell";
+            tclAmount = groupedSwap.inputAmount;
+            volumeUsd = groupedSwap.outputAmount;
+          } else {
+            continue;
+          }
+
+          const price = volumeUsd / tclAmount;
+          if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+
+          trades.push({
+            hash: groupedSwap.hash,
+            timestamp: groupedSwap.timestamp,
+            side,
+            tclAmount,
+            volumeUsd,
+            price,
+            description: groupedSwap.description
+          });
+        }
+
+        return trades.sort((left, right) => left.timestamp - right.timestamp);
+      }
+
+      function parsePnlTrades(transfers, walletAddress) {
+        const operationTrades = parsePnlTradesFromOperations(transfers, walletAddress);
+        const fallbackTrades = parsePnlTradesFromPairTransfers(transfers, walletAddress);
+        const merged = new Map();
+
+        fallbackTrades.forEach((trade) => {
+          merged.set(trade.hash, trade);
+        });
+        operationTrades.forEach((trade) => {
+          merged.set(trade.hash, trade);
+        });
+
+        return Array.from(merged.values()).sort((left, right) => left.timestamp - right.timestamp);
+      }
+
+      // ── Helper: pagineaza prin toate randurile Supabase (depaseste limita 1000) ──
+      function sumPnlEntryTokenAmount(entry, tokenId) {
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList)) return 0;
+        return transferList.reduce((sum, transfer) => {
+          const normalized = normalizePnlTradeTransfer(transfer);
+          return normalized?.token === tokenId ? sum + normalized.amount : sum;
+        }, 0);
+      }
+
+      function getPnlAggregatorSet() {
+        return new Set((CONFIG.pnlAggregatorAddresses || []).map((address) => String(address).trim()).filter(Boolean));
+      }
+
+      function collectAggregatorBuyCandidates(transfers, walletAddress, knownTradeHashes = new Set()) {
+        const aggregators = getPnlAggregatorSet();
+        if (!aggregators.size) return [];
+
+        const minTcl = Math.max(0, readNumber(CONFIG.pnlAggregatorBuyMinTcl, 0));
+        const candidates = new Map();
+
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          if (entry?.status !== "success") continue;
+          if (entry.receiver !== walletAddress || !aggregators.has(entry.sender)) continue;
+
+          const rootHash = getPnlRootHash(entry);
+          if (!/^[0-9a-f]{64}$/i.test(rootHash) || knownTradeHashes.has(rootHash)) continue;
+
+          const tclAmount = sumPnlEntryTokenAmount(entry, CONFIG.tokens.tcl.identifier);
+          if (!Number.isFinite(tclAmount) || tclAmount <= minTcl) continue;
+
+          const timestamp = Number(entry.timestamp) || 0;
+          const existing = candidates.get(rootHash);
+          if (existing) {
+            existing.tclAmount += tclAmount;
+            if (timestamp && (!existing.timestamp || timestamp < existing.timestamp)) {
+              existing.timestamp = timestamp;
+            }
+          } else {
+            candidates.set(rootHash, {
+              hash: rootHash,
+              timestamp,
+              tclAmount
+            });
+          }
+        }
+
+        const limit = Math.max(1, Math.floor(readNumber(CONFIG.pnlAggregatorBuyRootLimit, 180)));
+        return Array.from(candidates.values())
+          .sort((left, right) => right.timestamp - left.timestamp)
+          .slice(0, limit);
+      }
+
+      function parseAggregatorBuyTradeFromRoot(rootTx, candidate, walletAddress) {
+        if (!rootTx || (rootTx.status && rootTx.status !== "success")) return null;
+
+        const aggregators = getPnlAggregatorSet();
+        if (rootTx.sender !== walletAddress || !aggregators.has(rootTx.receiver)) return null;
+
+        const operations = Array.isArray(rootTx.operations)
+          ? rootTx.operations.map(normalizePnlOperation).filter(Boolean)
+          : [];
+        if (!operations.length) return null;
+
+        const tclToWallet = operations
+          .filter((operation) =>
+            operation.token === CONFIG.tokens.tcl.identifier &&
+            operation.receiver === walletAddress &&
+            aggregators.has(operation.sender)
+          )
+          .reduce((sum, operation) => sum + operation.amount, 0);
+        const tclAmount = tclToWallet > 0 ? tclToWallet : candidate.tclAmount;
+        if (!Number.isFinite(tclAmount) || tclAmount <= readNumber(CONFIG.pnlAggregatorBuyMinTcl, 0)) return null;
+
+        const usdcIntoPair = operations
+          .filter((operation) =>
+            operation.token === CONFIG.tokens.usdc.identifier &&
+            operation.receiver === CONFIG.pnlPairAddress
+          )
+          .reduce((sum, operation) => sum + operation.amount, 0);
+        if (!Number.isFinite(usdcIntoPair) || usdcIntoPair <= 0) return null;
+
+        const tclIntoPair = operations
+          .filter((operation) =>
+            operation.token === CONFIG.tokens.tcl.identifier &&
+            operation.receiver === CONFIG.pnlPairAddress
+          )
+          .reduce((sum, operation) => sum + operation.amount, 0);
+        if (tclIntoPair > tclAmount) return null;
+
+        return {
+          hash: candidate.hash,
+          timestamp: candidate.timestamp || Number(rootTx.timestamp) || 0,
+          side: "buy",
+          tclAmount,
+          volumeUsd: usdcIntoPair,
+          price: usdcIntoPair / tclAmount,
+          description: "Aggregator TCL buy"
+        };
+      }
+
+      // Buy-uri prin aggregator (AshSwap/XOXNO/OneDex/xExchange): walletul primeste TCL
+      // printr-un SCR de la aggregator, iar costul USDC intra in pool-ul TCL/USDC in
+      // interiorul tranzactiei root. Citim `operations` DIRECT din randurile Supabase
+      // aduse deja (fetchPnlEntriesByRootHashes) — fara fetch live la MultiversX.
+      // Root-urile sunt enrichuite de worker la sync + /api/enrich per-wallet (rulat
+      // de ensurePnlSupabaseCache inainte de citire).
+      function fetchAggregatorBuyFallbackTrades(transfers, walletAddress, knownTradeHashes = new Set()) {
+        const candidates = collectAggregatorBuyCandidates(transfers, walletAddress, knownTradeHashes);
+        if (!candidates.length) return [];
+
+        // Index pe txHash al root-urilor care au deja operations in cache-ul Supabase.
+        const rootByHash = new Map();
+        for (const entry of Array.isArray(transfers) ? transfers : []) {
+          const hash = String(entry?.txHash || "");
+          if (!/^[0-9a-f]{64}$/i.test(hash)) continue;
+          if (!Array.isArray(entry.operations) || !entry.operations.length) continue;
+          if (!rootByHash.has(hash)) rootByHash.set(hash, entry);
+        }
+
+        const trades = [];
+        let missingOps = 0;
+        for (const candidate of candidates) {
+          const rootTx = rootByHash.get(candidate.hash);
+          // Root inca neenrichuit (operations=null) => il prinde worker-ul la urmatorul
+          // sync/enrich; il sarim acum ca sa nu lovim MultiversX live.
+          if (!rootTx) { missingOps += 1; continue; }
+          const trade = parseAggregatorBuyTradeFromRoot(rootTx, candidate, walletAddress);
+          if (trade) trades.push(trade);
+        }
+        if (missingOps) {
+          console.warn(`PNL: ${missingOps} root(s) aggregator fara operations in Supabase (vor fi enrichuite la urmatorul sync).`);
+        }
+
+        return trades.sort((left, right) => left.timestamp - right.timestamp);
+      }
+
+      async function supabaseFetchAll(path, params = {}, anonKey) {
+        const key = anonKey || CONFIG.pnlSupabaseAnonKey;
+        if (!key || key === "SUPABASE_ANON_KEY_HERE") return null;
+        const PAGE = 1000;
+        const MAX_RETRIES = 3;       // Supabase intoarce 500 tranzitoriu (statement timeout / load)
+        const all  = [];
+        let offset = 0;
+        let fetched = false;
+        while (true) {
+          const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/${path}`);
+          for (const [k, v] of Object.entries(params)) {
+            if (Array.isArray(v)) { for (const item of v) url.searchParams.append(k, item); }
+            else url.searchParams.set(k, v);
+          }
+          url.searchParams.set("limit",  String(PAGE));
+          url.searchParams.set("offset", String(offset));
+
+          // Reincearca pagina pe erori tranzitorii (500/502/503/504/timeout)
+          let res = null;
+          for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+            res = await fetch(url.toString(), {
+              headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+              signal: AbortSignal.timeout(30000)
+            }).catch(() => null);
+            if (res && res.ok) break;
+            const transient = !res || res.status >= 500;
+            if (!transient || attempt === MAX_RETRIES) break;
+            await wait(600 * (attempt + 1));  // backoff: 600ms, 1.2s, 1.8s
+          }
+
+          if (!res || !res.ok) break;
+          fetched = true;
+          const rows = await res.json().catch(() => null);
+          if (!Array.isArray(rows) || rows.length === 0) break;
+          all.push(...rows);
+          if (rows.length < PAGE) break;
+          offset += PAGE;
+        }
+        return fetched ? all : null;  // [] = valid empty, null = fetch error
+      }
+
+      const PNL_TRANSFER_SELECT = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
+
+      function supabaseRowToPnlEntry(row) {
+        return {
+          txHash:         row.tx_hash,
+          originalTxHash: row.original_tx_hash || undefined,
+          type:           row.type || undefined,
+          sender:         row.sender,
+          receiver:       row.receiver,
+          timestamp:      row.ts,
+          function:       row.function || undefined,
+          status:         row.status || "success",
+          action:         row.action_transfers ? { arguments: { transfers: row.action_transfers } } : undefined,
+          operations:     row.operations || undefined
+        };
+      }
+
+      async function fetchPnlEntriesByRootHashes(rootHashes) {
+        const hashes = Array.from(new Set((rootHashes || []).filter((hash) => /^[0-9a-f]{64}$/i.test(String(hash)))));
+        if (!hashes.length) return [];
+
+        const rows = [];
+        const chunkSize = 80;
+        for (let i = 0; i < hashes.length; i += chunkSize) {
+          const chunk = hashes.slice(i, i + chunkSize).join(",");
+          const chunkRows = await supabaseFetchAll("tcl_transfers", {
+            or:     `(tx_hash.in.(${chunk}),original_tx_hash.in.(${chunk}))`,
+            order:  "ts.desc",
+            select: PNL_TRANSFER_SELECT
+          });
+          if (Array.isArray(chunkRows)) rows.push(...chunkRows);
+        }
+
+        const seen = new Set();
+        return rows.map(supabaseRowToPnlEntry).filter((entry) => {
+          const key = `${entry.txHash || ""}|${entry.originalTxHash || ""}|${entry.type || ""}|${entry.sender || ""}|${entry.receiver || ""}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      // ── Supabase: fetch swap-urile DEX pentru wallet (toti protocoalele) ─────────
+      // SELLS: wallet apeleaza direct functii swap (aggregateEsdt, xo, swapTokensFixed...)
+      // BUYS:  wallet primeste TCL printr-un SCR (original_tx_hash != null, sender != game/self)
+      async function fetchSwapEntriesFromSupabase(walletAddress) {
+        const gameContract = CONFIG.pnlGameContract || "";
+        const swapFns      = (CONFIG.pnlSwapFunctions || []).join(",");
+
+        // Sells si Buys ruleaza in paralel pentru viteza
+        // Buy query: doua param 'sender' = AND in PostgREST (like + neq game contract)
+        const buySenderFilter = gameContract
+          ? [`like.erd1qqqq*`, `neq.${gameContract}`]
+          : `like.erd1qqqq*`;
+        // NB: fara order=ts.desc — combinat cu un filtru selectiv, planner-ul Postgres
+        // alege indexul global pe ts si scaneaza toata tabela cautand 1000 randuri
+        // care nu exista (wallet doar cu earned) => statement timeout => 500.
+        // Ordinea nu conteaza: dedupem dupa hash si calculam oldestTimestamp cu Math.min.
+        const [sellRows, allBuyRows] = await Promise.all([
+          supabaseFetchAll("tcl_transfers", {
+            sender:   `eq.${walletAddress}`,
+            function: `in.(${swapFns})`,
+            select:   PNL_TRANSFER_SELECT
+          }),
+          supabaseFetchAll("tcl_transfers", {
+            receiver: `eq.${walletAddress}`,
+            sender:   buySenderFilter,
+            select:   PNL_TRANSFER_SELECT
+          })
+        ]);
+        // Pastreaza doar contracte MVX (sender incepe cu 'erd1qqqq') si exclude self-transfer
+        const buyRows = Array.isArray(allBuyRows)
+          ? allBuyRows.filter(r => r.sender !== walletAddress && r.sender !== gameContract && r.sender.startsWith("erd1qqqq"))
+          : allBuyRows;
+
+        const sellEntries = Array.isArray(sellRows)
+          ? sellRows.filter((row) => {
+              const firstTransfer = Array.isArray(row.action_transfers) ? row.action_transfers[0] : null;
+              return (firstTransfer?.token || firstTransfer?.identifier) === CONFIG.tokens.tcl.identifier;
+            })
+          : [];
+        const buyEntries  = Array.isArray(buyRows)  ? buyRows.filter(r => r.sender !== walletAddress) : [];
+
+        return [...sellEntries, ...buyEntries].map(supabaseRowToPnlEntry);
+      }
+
+      // ── Supabase: citeste transferurile unui wallet din cache global ──────────
+      async function fetchTransfersFromSupabase(walletAddress) {
+        const anonKey = CONFIG.pnlSupabaseAnonKey;
+        if (!anonKey || anonKey === "SUPABASE_ANON_KEY_HERE") return null;
+
+        const url = new URL(`${CONFIG.pnlSupabaseUrl}/rest/v1/tcl_transfers`);
+        url.searchParams.set("or", `(sender.eq.${walletAddress},receiver.eq.${walletAddress})`);
+        url.searchParams.set("order", "ts.desc");
+        url.searchParams.set("limit", "100000");
+        url.searchParams.set("select", "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations");
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            Accept: "application/json"
+          },
+          signal: AbortSignal.timeout(15000)
+        }).catch(() => null);
+
+        if (!res || !res.ok) return null;
+        const rows = await res.json().catch(() => null);
+        if (!Array.isArray(rows)) return null;
+
+        // Transforma randurile Supabase in formatul MultiversX API
+        return rows.map(supabaseRowToPnlEntry);
+      }
+
+      // Verifica starea sync-ului in worker
+      async function fetchSyncStatus() {
+        const workerUrl = CONFIG.pnlSyncWorkerUrl;
+        if (!workerUrl || workerUrl.includes("workers.dev") === false) return null;
+        try {
+          const res = await fetch(`${workerUrl}/api/status`, {
+            signal: AbortSignal.timeout(5000)
+          });
+          if (!res.ok) return null;
+          return res.json();
+        } catch {
+          return null;
+        }
+      }
+
+      async function ensurePnlSupabaseCache(walletAddress) {
+        const workerUrl = CONFIG.pnlSyncWorkerUrl;
+        if (!workerUrl || workerUrl.includes("workers.dev") === false) return null;
+
+        let lastResult = null;
+        let totalUpserted = 0;
+        let cursor = 0;
+        const maxPasses = 80;
+
+        for (let pass = 0; pass < maxPasses; pass += 1) {
+          const url = new URL(`${workerUrl}/api/enrich`);
+          url.searchParams.set("wallet", walletAddress);
+          url.searchParams.set("limit", "300");
+          url.searchParams.set("cursor", String(cursor));
+
+          if (pass === 0) {
+            setPnlStatus("Preparing this wallet's transaction history...");
+          } else {
+            setPnlStatus("Preparing transaction history... {count} transactions checked", {
+              count: totalUpserted.toLocaleString(getLocale())
+            });
+          }
+
+          const res = await fetch(url.toString(), {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(70000)
+          }).catch(() => null);
+
+          if (!res || !res.ok) {
+            throw new Error("Could not prepare the transaction history for this wallet.");
+          }
+
+          const data = await res.json().catch(() => null);
+          if (!data?.ok) {
+            console.warn("PNL history preparation failed", data?.error || data);
+            throw new Error("Could not prepare the transaction history for this wallet.");
+          }
+
+          lastResult = data;
+          totalUpserted += Math.max(0, Number(data.upserted) || 0);
+
+          const remaining = Math.max(0, Number(data.remaining) || 0);
+          const nextCursor = Math.max(0, Number(data.nextCursor) || 0);
+          if (data.done || remaining === 0) {
+            return { ...data, totalUpserted };
+          }
+          if (nextCursor <= cursor) {
+            throw new Error("Could not prepare the transaction history for this wallet.");
+          }
+
+          cursor = nextCursor;
+          await wait(250);
+        }
+
+        if (lastResult && Number(lastResult.remaining) > 0) {
+          throw new Error("Transaction history is still being prepared. Try again in a few seconds.");
+        }
+
+        return lastResult ? { ...lastResult, totalUpserted } : null;
+      }
+
+      // PNL: calculeaza swap-urile doar din cache-ul Supabase.
+      async function fetchPnlFromSupabase(walletAddress) {
+        const swapEntries = (await fetchSwapEntriesFromSupabase(walletAddress)) ?? [];
+
+        const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
+        let oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
+
+        if (swapEntries.length === 0) {
+          return { buyTcl:0, buyCost:0, sellTcl:0, sellReceived:0,
+                   tradeCount:0, buyCount:0, sellCount:0,
+                   reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
+        }
+
+        setPnlStatus("{count} swaps found. Calculating PNL...", {
+          count: swapEntries.length.toLocaleString(getLocale())
+        });
+
+        const rootHashes = Array.from(new Set(swapEntries.map((entry) => entry.originalTxHash || entry.txHash).filter(Boolean)));
+        const relatedEntries = await fetchPnlEntriesByRootHashes(rootHashes);
+
+        // Construim lista de transferuri numai din randurile Supabase.
+        const transfers = [];
+        const seen = new Set();
+        [...relatedEntries, ...swapEntries].forEach((e, i) => {
+          const hash = String(e.txHash || e.originalTxHash || `sb:${i}`);
+          const key = `${hash}|${e.type || ""}|${e.sender || ""}|${e.receiver || ""}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            transfers.push(e);
+          }
+        });
+
+        // parsePnlTrades foloseste operations/action_transfers stocate in Supabase.
+        let trades = parsePnlTrades(transfers, walletAddress);
+        const aggregatorBuyTrades = await fetchAggregatorBuyFallbackTrades(
+          transfers,
+          walletAddress,
+          new Set(trades.map((trade) => trade.hash).filter(Boolean))
+        );
+        if (aggregatorBuyTrades.length) {
+          const mergedTrades = new Map();
+          [...trades, ...aggregatorBuyTrades].forEach((trade) => {
+            if (trade?.hash) mergedTrades.set(trade.hash, trade);
+          });
+          trades = Array.from(mergedTrades.values()).sort((left, right) => left.timestamp - right.timestamp);
+          const aggregatorTimestamps = aggregatorBuyTrades.map((trade) => Number(trade.timestamp)).filter(Number.isFinite);
+          if (aggregatorTimestamps.length) {
+            const aggregatorOldest = Math.min(...aggregatorTimestamps);
+            oldestTimestamp = oldestTimestamp === null ? aggregatorOldest : Math.min(oldestTimestamp, aggregatorOldest);
+          }
+        }
+        const totals = aggregatePnlTrades(trades);
+
+        return {
+          buyTcl:    totals.buyTcl,
+          buyCost:   totals.buyUsd,
+          sellTcl:   totals.sellTcl,
+          sellReceived: totals.sellUsd,
+          tradeCount: totals.tradeCount,
+          buyCount:   totals.buyCount,
+          sellCount:  totals.sellCount,
+          reachedListingStart: oldestTimestamp !== null && oldestTimestamp <= listingTs,
+          checkedSwaps: swapEntries.length,
+          oldestTimestamp,
+          source: "supabase"
+        };
+      }
+
+      // Pastrat pentru compatibilitate cu runPnlCheck (nu mai scaneaza blockchain)
+      async function fetchWalletTransferHistory(walletAddress) {
+        setPnlStatus("Searching for TCL swaps...");
+        const swapEntries = await fetchSwapEntriesFromSupabase(walletAddress);
+        const listingTimestamp = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
+        const transactionHashes = new Set();
+
+        if (!Array.isArray(swapEntries) || swapEntries.length === 0) {
+          setPnlStatus("No TCL swaps found for this wallet.");
+          return { transfers: [], checkedTransactions: 0, reachedListingStart: false,
+                   hitPageLimit: false, exhaustedHistory: true, oldestTimestamp: null, source: "supabase-empty" };
+        }
+
+        swapEntries.forEach(e => { const r = e.originalTxHash || e.txHash; if (r) transactionHashes.add(r); });
+        const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
+        const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
+        const reachedListingStart = oldestTimestamp !== null && oldestTimestamp <= listingTimestamp;
+
+        setPnlStatus("{count} swaps found.", {
+          count: swapEntries.length.toLocaleString(getLocale())
+        });
+        return {
+          transfers: swapEntries,
+          checkedTransactions: transactionHashes.size,
+          reachedListingStart,
+          hitPageLimit: !reachedListingStart,
+          exhaustedHistory: reachedListingStart,
+          oldestTimestamp,
+          source: "supabase"
+        };
+      }
+
+      function aggregatePnlTrades(trades) {
+        return trades.reduce((totals, trade) => {
+          if (trade.side === "buy") {
+            totals.buyCount += 1;
+            totals.buyTcl += trade.tclAmount;
+            totals.buyUsd += trade.volumeUsd;
+          } else if (trade.side === "sell") {
+            totals.sellCount += 1;
+            totals.sellTcl += trade.tclAmount;
+            totals.sellUsd += trade.volumeUsd;
+          }
+          totals.tradeCount += 1;
+          return totals;
+        }, {
+          tradeCount: 0,
+          buyCount: 0,
+          sellCount: 0,
+          buyTcl: 0,
+          sellTcl: 0,
+          buyUsd: 0,
+          sellUsd: 0
+        });
+      }
+
+      function createEmptyPnlData() {
+        return {
+          buyTcl: 0,
+          buyCost: 0,
+          sellTcl: 0,
+          sellReceived: 0,
+          tradeCount: 0,
+          buyCount: 0,
+          sellCount: 0,
+          reachedListingStart: false,
+          checkedSwaps: 0,
+          oldestTimestamp: null,
+          source: "supabase"
+        };
+      }
+
+      function readEarnedTotal(earnedTcl) {
+        if (earnedTcl && typeof earnedTcl === "object") return readNumber(earnedTcl.total, 0);
+        return readNumber(earnedTcl, 0);
+      }
+
+      function normalizePnlTotals(totals) {
+        return {
+          tradeCount: Math.max(0, Math.floor(readNumber(totals?.tradeCount, 0))),
+          buyCount: Math.max(0, Math.floor(readNumber(totals?.buyCount, 0))),
+          sellCount: Math.max(0, Math.floor(readNumber(totals?.sellCount, 0))),
+          buyTcl: readNumber(totals?.buyTcl, 0),
+          sellTcl: readNumber(totals?.sellTcl, 0),
+          buyUsd: readNumber(totals?.buyUsd, 0),
+          sellUsd: readNumber(totals?.sellUsd, 0)
+        };
+      }
+
+      async function fetchFastPnl(walletAddress) {
+        if (!CONFIG.pnlFastUrl) return null;
+
+        const url = new URL(CONFIG.pnlFastUrl);
+        url.searchParams.set("wallet", walletAddress);
+
+        const payload = await fetchJson(url.toString(), {
+          retries: 1,
+          retryDelayMs: 1500,
+          timeoutMs: 60000,
+          timeoutMessage: "The fast PNL endpoint timed out."
+        });
+
+        if (!payload?.ok) {
+          throw new Error(payload?.error || "The fast PNL endpoint is unavailable.");
+        }
+
+        return {
+          totals: normalizePnlTotals(payload.totals),
+          meta: {
+            ...(payload.meta || {}),
+            sourceLabel: payload.meta?.sourceLabel || "DexScreener",
+            transfers: []
+          }
+        };
+      }
+
+      // ── Earned TCL: Supabase + breakdown complet pe functii ─────────────────────
+      // Doar reward-uri reale si cashback/referral. Return/refund/withdraw nu intra in Earned.
+      // Reward-uri claim (borrow, lending, infinity, staking, auto-claim)
+      const EARNED_REWARD_FNS = new Set([
+        "claimRewards",
+        "claimBorrowingRewards",
+        "claimLendingRewards",
+        "claimInfinityRewards",
+        "claimReferralRewards",
+        "claimManagerRewards",
+        "referral",
+        "addDaysAutoClaim"
+      ]);
+      // Cashback/referral 5% pe interactiuni NFT + ItemShop (buyCoins/buySft)
+      const EARNED_CASHBACK_5_FNS = new Set([
+        "buyCoins",
+        "buySft",
+        "upgradeNft",
+        "mintNft",
+        "addBonus",
+        "changeBonus",
+        "addCrystal",
+        "changeCrystal",
+        "addSocket",
+        "addRefinement",
+        "addStorage"
+      ]);
+      // Private Shop: withdrawBalancePrivateShop distribuie TCL (vanzator + referral 2%).
+      // NU addBalancePrivateShop (acela e DEPOZIT — wallet-ul trimite TCL, nu primeste).
+      const EARNED_CASHBACK_2_FNS = new Set(["withdrawBalancePrivateShop"]);
+
+      // ItemShop = cumparare valuta in joc (Karma) / SFT-uri
+      const EARNED_ITEMSHOP_FNS = new Set(["buyCoins", "buySft"]);
+
+      function getEarnedSourceInfo(fn) {
+        if (EARNED_REWARD_FNS.has(fn)) return { kind: "reward", rate: "reward" };
+        if (EARNED_CASHBACK_5_FNS.has(fn)) {
+          return { kind: EARNED_ITEMSHOP_FNS.has(fn) ? "itemshop" : "nft", rate: "5%" };
+        }
+        if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "shop", rate: "2%" };
+        return null;
+      }
+
+      // Verifica daca wallet-ul detine un cod de referral (setReferralCodeOwner)
+      // → distinge venit din referral (owner) vs cashback (invitee) la Private Shop.
+      async function walletOwnsReferralCode(walletAddress) {
+        const gameContract = CONFIG.pnlGameContract;
+        if (!gameContract) return false;
+        try {
+          const txs = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transactions`, {
+            receiver: gameContract,
+            function: "setReferralCodeOwner",
+            size: 1,
+            fields: "txHash"
+          }), { retries: 1, retryDelayMs: 800, timeoutMs: 8000 });
+          return Array.isArray(txs) && txs.length > 0;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function fetchEarnedTcl(walletAddress) {
+        const gameContract = CONFIG.pnlGameContract;
+        if (!gameContract) return { total: 0, breakdown: {} };
+        try {
+          const rows = await supabaseFetchAll("tcl_transfers", {
+            sender:   `eq.${gameContract}`,
+            receiver: `eq.${walletAddress}`,
+            select:   "tx_hash,original_tx_hash,function,action_transfers,ts"
+          });
+          if (!Array.isArray(rows)) return { total: 0, breakdown: {} };
+
+          // Grupeaza TCL pe root hash si foloseste functia deja salvata in Supabase.
+          const rootTcl = new Map();
+          const rootFn = new Map();
+          const rootTs = new Map();
+          const rootSender = new Map();  // cine a initiat tranzactia (platitorul)
+          const roots = new Set();
+          for (const row of rows) {
+            const root = row.original_tx_hash || row.tx_hash;
+            if (!root) continue;
+            roots.add(root);
+            if (row.ts && !rootTs.has(root)) rootTs.set(root, Number(row.ts) || 0);
+            const fn = String(row.function || "").trim();
+            if (fn && (!rootFn.has(root) || rootFn.get(root) === "_other")) {
+              rootFn.set(root, fn);
+            }
+            for (const t of (row.action_transfers || [])) {
+              if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+              const norm = normalizePnlTradeTransfer(t);
+              if (!norm) continue;
+              rootTcl.set(root, (rootTcl.get(root) || 0) + norm.amount);
+            }
+          }
+
+          const relatedEntries = await fetchPnlEntriesByRootHashes(Array.from(roots));
+          // rootTotalDist = total TCL distribuit de game in acel root (toti destinatarii)
+          // → folosit pentru cota wallet-ului la Private Shop (90% vanzare vs 2% cashback/referral)
+          const rootTotalDist = new Map();
+          relatedEntries.forEach((entry) => {
+            const root = entry.originalTxHash || entry.txHash;
+            const fn = String(entry.function || "").trim();
+            // Tranzactia root (nu SCR) ne da functia reala + cine a platit (sender)
+            if (root && !entry.originalTxHash) {
+              if (fn) rootFn.set(root, fn);
+              if (entry.timestamp) rootTs.set(root, Number(entry.timestamp) || 0);
+              if (entry.sender) rootSender.set(root, entry.sender);
+            }
+            // Insumeaza toate iesirile de TCL ale game-ului (catre orice destinatar)
+            if (root && entry.sender === gameContract) {
+              for (const t of (entry.action?.arguments?.transfers || [])) {
+                if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+                const norm = normalizePnlTradeTransfer(t);
+                if (norm) rootTotalDist.set(root, (rootTotalDist.get(root) || 0) + norm.amount);
+              }
+            }
+          });
+
+          // Avem nevoie de statusul de owner doar daca exista intrari Private Shop
+          let isOwner = false;
+          let needOwnerCheck = false;
+          for (const [root] of rootTcl) {
+            if (getEarnedSourceInfo(rootFn.get(root) || "")?.kind === "shop") { needOwnerCheck = true; break; }
+          }
+          if (needOwnerCheck) isOwner = await walletOwnsReferralCode(walletAddress);
+
+          // Agrega doar sursele earned legitime; return/refund/withdraw sunt excluse.
+          // Etichete fine: sursa (NFT/ItemShop/PrivateShop) × tip (Cashback propriu / Referral / Vanzare).
+          const breakdown = {};
+          const excludedBreakdown = {};
+          const details = [];
+          let total = 0, excluded = 0;
+          let cashbackTotal = 0, referralTotal = 0, rewardTotal = 0, saleTotal = 0;
+
+          for (const [root, tcl] of rootTcl) {
+            const fn = rootFn.get(root) || "_other";
+            const sourceInfo = getEarnedSourceInfo(fn);
+            if (!sourceInfo) {
+              excluded += tcl;
+              excludedBreakdown[fn] = (excludedBreakdown[fn] || 0) + tcl;
+              continue;
+            }
+
+            const payer = rootSender.get(root) || "";
+            const isSelf = payer && payer === walletAddress;  // propria achizitie
+            let label, category, rate = "";
+
+            if (sourceInfo.kind === "reward") {
+              label = "Reward Pool"; category = "reward"; rewardTotal += tcl;
+            } else if (sourceInfo.kind === "nft") {
+              rate = "5%";
+              if (isSelf) { label = "NFTs - Cashback"; category = "cashback"; cashbackTotal += tcl; }
+              else        { label = "NFTs - Referral"; category = "referral"; referralTotal += tcl; }
+            } else if (sourceInfo.kind === "itemshop") {
+              rate = "5%";
+              if (isSelf) { label = "ItemShop - Karma Cashback"; category = "cashback"; cashbackTotal += tcl; }
+              else        { label = "ItemShop - Karma Referral"; category = "referral"; referralTotal += tcl; }
+            } else { // shop = Private Shop Web3
+              const dist = rootTotalDist.get(root) || tcl;
+              const share = dist > 0 ? tcl / dist : 1;
+              if (share >= 0.5) {
+                // Cota dominanta (~90%) = proceeds din vanzare
+                label = "Private Shop - Sale"; category = "sale"; rate = "sale"; saleTotal += tcl;
+              } else if (isOwner) {
+                // Cota mica + wallet detine cod referral = venit referral
+                label = "Private Shop - Referral"; category = "referral"; rate = "2%"; referralTotal += tcl;
+              } else {
+                // Cota mica + wallet e invitat = cashback pe propria cumparare
+                label = "Private Shop Web3 - Cashback"; category = "cashback"; rate = "2%"; cashbackTotal += tcl;
+              }
+            }
+
+            breakdown[label] = (breakdown[label] || 0) + tcl;
+            total += tcl;
+            details.push({
+              hash: root, function: fn, label, amount: tcl,
+              category, rate, timestamp: rootTs.get(root) || 0
+            });
+          }
+
+          details.sort((left, right) => (right.timestamp || 0) - (left.timestamp || 0));
+
+          return {
+            total, breakdown, excluded, excludedBreakdown, details,
+            categories: { reward: rewardTotal, sale: saleTotal, cashback: cashbackTotal, referral: referralTotal }
+          };
+        } catch (_) {
+          return { total: 0, breakdown: {} };
+        }
+      }
+
+      // ── Infinity Offers (buyStakingOffer): USDC platit + TCL cumparat ───────────
+      // Wallet-ul plateste USDC catre game contract; contractul face localBurn de TCL,
+      // deci TCL-ul NU ajunge in wallet => nu apare in buy/sell PnL. Citim direct din
+      // API tranzactiile buyStakingOffer ale wallet-ului si insumam. Query live la
+      // fiecare rulare => se actualizeaza singur cand mai cumpara (fara worker/Supabase).
+      function decodeTxData(b64) {
+        if (!b64) return "";
+        try { return atob(String(b64)); } catch (_) { return ""; }
+      }
+
+      function hexToAscii(hex) {
+        const clean = String(hex || "");
+        let out = "";
+        for (let i = 0; i + 1 < clean.length; i += 2) {
+          out += String.fromCharCode(parseInt(clean.slice(i, i + 2), 16));
+        }
+        return out;
+      }
+
+      function hexToTokenAmount(hex, decimals) {
+        if (!/^[0-9a-fA-F]+$/.test(String(hex || ""))) return 0;
+        try { return rawToNumber(BigInt("0x" + hex).toString(), decimals); }
+        catch (_) { return 0; }
+      }
+
+      async function fetchInfinityOffers(walletAddress) {
+        const empty = { tcl: 0, usdc: 0, count: 0 };
+        const gameContract = CONFIG.pnlGameContract;
+        const fn = CONFIG.pnlInfinityFunction;
+        if (!gameContract || !fn) return empty;
+        const usdcId = CONFIG.tokens.usdc.identifier;
+        const pageSize = 50;
+        try {
+          let tcl = 0, usdc = 0, count = 0, from = 0;
+          for (let page = 0; page < CONFIG.pnlInfinityMaxPages; page++) {
+            const rows = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transactions`, {
+              receiver: gameContract,
+              function: fn,
+              size: pageSize,
+              from,
+              fields: "sender,status,data"
+            }), { retries: 2, retryDelayMs: 800, timeoutMs: 12000 });
+            if (!Array.isArray(rows) || rows.length === 0) break;
+            for (const row of rows) {
+              if (row.status !== "success") continue;       // exclude tranzactiile esuate
+              if (row.sender !== walletAddress) continue;    // doar platile facute de wallet
+              // data = ESDTTransfer@<tokenHex>@<usdcHex>@buyStakingOffer@<offerId>@<tclHex>
+              const parts = decodeTxData(row.data).split("@");
+              if (parts[0] !== "ESDTTransfer" || parts.length < 6) continue;
+              if (hexToAscii(parts[1]) !== usdcId) continue; // plata trebuie sa fie in USDC
+              usdc += hexToTokenAmount(parts[2], CONFIG.tokens.usdc.decimals);
+              tcl  += hexToTokenAmount(parts[parts.length - 1], CONFIG.tokens.tcl.decimals);
+              count++;
+            }
+            if (rows.length < pageSize) break;
+            from += pageSize;
+          }
+          return { tcl, usdc, count };
+        } catch (_) {
+          return empty;
+        }
+      }
+
+      function renderInfinityOffers(infinity) {
+        const data = infinity && typeof infinity === "object" ? infinity : { tcl: 0, usdc: 0, count: 0 };
+        const tcl = readNumber(data.tcl, 0);
+        const usdc = readNumber(data.usdc, 0);
+        dom.pnlInfinityTcl.textContent = `${formatTokenAmount(tcl)} TCL`;
+        setDynamicText(dom.pnlInfinityUsd, "Cost: {value} USDC", { value: formatUsd(usdc) });
+      }
+
+      // ── Staking (NFT + Loan + Infinity) din leaderboard.json ─────────────────────
+      // Datele de staking sunt precalculate in leaderboard.json (~top stakers), generat
+      // periodic de task-ul de analytics. Nu exista query live per-wallet, deci un wallet
+      // din afara topului apare cu 0 (necunoscut din aceasta sursa).
+      async function fetchStaking(walletAddress) {
+        const empty = { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+        const urls = CONFIG.pnlStakingLeaderboardUrls || [];
+        let data = null;
+        for (const url of urls) {
+          try {
+            const sep = url.includes("?") ? "&" : "?";
+            data = await fetchJson(`${url}${sep}t=${Date.now()}`, { retries: 0, timeoutMs: 9000 });
+            if (data && typeof data === "object") break;
+            data = null;
+          } catch (_) { data = null; }
+        }
+        if (!data || typeof data !== "object") return empty;
+        const entry = data[walletAddress];
+        if (!entry || typeof entry !== "object") return empty;
+        const toTcl = (v) => { const n = Number(v) / 1e18; return Number.isFinite(n) ? n : 0; };
+        const nft = toTcl(entry.nft);
+        const loan = toTcl(entry.loan);
+        const infinity = toTcl(entry.infinity);
+        const total = entry.total != null ? toTcl(entry.total) : (nft + loan + infinity);
+        return { nft, loan, infinity, total, found: true };
+      }
+
+      function renderStaking(staking) {
+        const data = staking && typeof staking === "object" ? staking : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+        const total = readNumber(data.total, 0);
+        const usd = total * readNumber(state.prices.tcl, 0);
+        dom.pnlStakingTcl.textContent = `${formatTokenAmount(total)} TCL`;
+        setDynamicText(dom.pnlStakingUsd, "Value: {value} USDC", { value: formatUsd(usd) });
+
+        const btn = document.getElementById("stakingInfoBtn");
+        if (btn) {
+          const hasBreakdown = total > 0;
+          btn.style.display = hasBreakdown ? "inline-flex" : "none";
+          if (hasBreakdown) btn.onclick = () => showStakingBreakdown(data);
+        }
+      }
+
+      // Presale: TCL primit din Seed Zero, Seed si BHero Public Sale.
+      // Costul fix este scazut din PNL; valoarea actuala intra prin sold, staking sau wallet.
+      function createEmptyPresaleData() {
+        const sources = (CONFIG.pnlPresaleSources || []).map((source) => ({
+          key: source.key,
+          label: source.label,
+          address: source.address,
+          priceUsd: readNumber(source.priceUsd, 0),
+          tcl: 0,
+          cost: 0,
+          count: 0
+        }));
+        return { totalTcl: 0, totalCost: 0, totalCount: 0, sources };
+      }
+
+      function readTclAmountFromPresaleTransfer(entry) {
+        const transferList = entry?.action?.arguments?.transfers;
+        if (!Array.isArray(transferList)) return 0;
+        return transferList.reduce((sum, transfer) => {
+          const normalized = normalizePnlTradeTransfer(transfer);
+          return normalized?.token === CONFIG.tokens.tcl.identifier
+            ? sum + normalized.amount
+            : sum;
+        }, 0);
+      }
+
+      async function fetchPresaleSource(walletAddress, source) {
+        const result = {
+          key: source.key,
+          label: source.label,
+          address: source.address,
+          priceUsd: readNumber(source.priceUsd, 0),
+          tcl: 0,
+          cost: 0,
+          count: 0
+        };
+        if (!isAddress(walletAddress) || !isAddress(source.address)) return result;
+
+        const pageSize = Math.max(1, Number(CONFIG.pnlPresalePageSize) || 100);
+        const maxPages = Math.max(1, Number(CONFIG.pnlPresaleMaxPages) || 10);
+        const seen = new Set();
+
+        try {
+          let from = 0;
+          for (let page = 0; page < maxPages; page += 1) {
+            const rows = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/transfers`, {
+              sender: source.address,
+              receiver: walletAddress,
+              token: CONFIG.tokens.tcl.identifier,
+              size: pageSize,
+              from
+            }), { retries: 2, retryDelayMs: 800, timeoutMs: 12000 });
+
+            if (!Array.isArray(rows) || rows.length === 0) break;
+
+            for (const row of rows) {
+              if (row.status !== "success") continue;
+              if (row.sender !== source.address || row.receiver !== walletAddress) continue;
+
+              const amount = readTclAmountFromPresaleTransfer(row);
+              if (!Number.isFinite(amount) || amount <= 0) continue;
+
+              const key = `${row.txHash || ""}|${row.originalTxHash || ""}|${amount}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+
+              result.tcl += amount;
+              result.count += 1;
+            }
+
+            if (rows.length < pageSize) break;
+            from += pageSize;
+          }
+        } catch (_) {
+          result.cost = result.tcl * result.priceUsd;
+          return result;
+        }
+
+        result.cost = result.tcl * result.priceUsd;
+        return result;
+      }
+
+      async function fetchPresale(walletAddress) {
+        const sources = CONFIG.pnlPresaleSources || [];
+        if (!sources.length) return createEmptyPresaleData();
+
+        const sourceResults = await Promise.all(sources.map((source) => fetchPresaleSource(walletAddress, source)));
+        return sourceResults.reduce((total, source) => {
+          total.totalTcl += readNumber(source.tcl, 0);
+          total.totalCost += readNumber(source.cost, 0);
+          total.totalCount += Math.max(0, Math.floor(readNumber(source.count, 0)));
+          total.sources.push(source);
+          return total;
+        }, { totalTcl: 0, totalCost: 0, totalCount: 0, sources: [] });
+      }
+
+      function renderPresale(presale) {
+        const data = presale && typeof presale === "object" ? presale : createEmptyPresaleData();
+        const totalTcl = readNumber(data.totalTcl, 0);
+        const totalCost = readNumber(data.totalCost, 0);
+        dom.pnlPresaleTcl.textContent = `${formatTokenAmount(totalTcl)} TCL`;
+        setDynamicText(dom.pnlPresaleUsd, "Cost: {value} USDC", { value: formatUsd(totalCost) });
+
+        const btn = document.getElementById("presaleInfoBtn");
+        if (btn) {
+          const hasSources = Array.isArray(data.sources) && data.sources.length > 0;
+          btn.style.display = hasSources ? "inline-flex" : "none";
+          if (hasSources) btn.onclick = () => showPresaleBreakdown(data);
+        }
+      }
+
+      // ── Wallet Balance: TCL lichid detinut acum in wallet ───────────────────────
+      // Tokenii disponibili (neblocati) din wallet, cititi live din API. Conteaza ca
+      // valoare detinuta in PNL.
+      async function fetchWalletBalance(walletAddress) {
+        try {
+          const tokens = await fetchJson(buildApiUrl(`/accounts/${walletAddress}/tokens`, {
+            identifiers: CONFIG.tokens.tcl.identifier
+          }), { retries: 1, retryDelayMs: 800, timeoutMs: 10000 });
+          const tcl = getTokenByIdentifier(Array.isArray(tokens) ? tokens : [], CONFIG.tokens.tcl.identifier);
+          return { tcl: tcl ? rawToNumber(tcl.balance, CONFIG.tokens.tcl.decimals) : 0 };
+        } catch (_) {
+          return { tcl: 0 };
+        }
+      }
+
+      function renderWalletBalance(wallet) {
+        const data = wallet && typeof wallet === "object" ? wallet : { tcl: 0 };
+        const tcl = readNumber(data.tcl, 0);
+        const usd = tcl * readNumber(state.prices.tcl, 0);
+        dom.pnlWalletTcl.textContent = `${formatTokenAmount(tcl)} TCL`;
+        setDynamicText(dom.pnlWalletUsd, "Value: {value} USDC", { value: formatUsd(usd) });
+      }
+
+      function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null, staking = null, presale = null, wallet = null) {
+        dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
+        setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC", { value: formatUsd(totals.buyUsd) });
+        dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
+        setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC", { value: formatUsd(totals.sellUsd) });
+
+        const tclPrice = readNumber(state.prices.tcl, 0);
+        // Valoarea TCL earned + TCL staked (la pretul curent), plus costurile Presale si Infinity Offers.
+        const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
+        const earnedAmount = readNumber(earnedData.total, 0);
+        const earnedUsd = earnedAmount * tclPrice;
+        const infinityCost = infinity && typeof infinity === "object" ? readNumber(infinity.usdc, 0) : 0;
+        const stakingValue = staking && typeof staking === "object" ? readNumber(staking.total, 0) * tclPrice : 0;
+        const presaleCost = presale && typeof presale === "object" ? readNumber(presale.totalCost, 0) : 0;
+        const walletValue = wallet && typeof wallet === "object" ? readNumber(wallet.tcl, 0) * tclPrice : 0;
+
+        // PNL net = vanzari + valoarea TCL earned + TCL staked + TCL din wallet - cost cumparari - Presale - Infinity Offers
+        const pnlUsd = totals.sellUsd - totals.buyUsd + earnedUsd + stakingValue + walletValue - presaleCost - infinityCost;
+        dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
+        dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
+        dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
+        setDynamicText(dom.pnlTradeCount, "Trades: {total} ({buy} buy / {sell} sell)", {
+          total: totals.tradeCount.toLocaleString(getLocale()),
+          buy: totals.buyCount.toLocaleString(getLocale()),
+          sell: totals.sellCount.toLocaleString(getLocale())
+        });
+
+        dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
+        setDynamicText(dom.pnlEarnedUsd, "Value: {value} USDC", { value: formatUsd(earnedUsd) });
+
+        // Buton info breakdown — vizibil daca avem date
+        const infoBtn = document.getElementById("earnedInfoBtn");
+        if (infoBtn) {
+          const hasBreakdown = earnedAmount > 0 && Object.keys(earnedData.breakdown || {}).length > 0;
+          infoBtn.style.display = hasBreakdown ? "inline-flex" : "none";
+          if (hasBreakdown) {
+            infoBtn.onclick = () => showEarnedBreakdown(earnedData.breakdown, earnedAmount, earnedData.details || [], earnedData.categories || null);
+          }
+        }
+
+        const isSupabase = historyMeta.source === "supabase";
+        let coverage;
+        if (isSupabase) {
+          if (historyMeta.reachedListingStart) {
+            coverage = translateText("Transaction history checked since listing.");
+          } else if (historyMeta.oldestTimestamp) {
+            const oldestDate = new Date(historyMeta.oldestTimestamp * 1000).toISOString().slice(0, 10);
+            coverage = translateText("Transaction history checked since {date}.", { date: oldestDate });
+          } else {
+            coverage = translateText("Transaction history checked.");
+          }
+        } else {
+          coverage = historyMeta.hitPageLimit
+            ? translateText("MultiversX scan limit reached; the result may be partial.")
+            : (historyMeta.reachedListingStart || historyMeta.exhaustedHistory
+                ? translateText("Complete MultiversX scan for the TCL period.")
+                : translateText("MultiversX scan up to API limit."));
+        }
+        const checkedCount = Number(historyMeta.checkedTransactions)
+          || Number(historyMeta.checkedLogs)
+          || (Array.isArray(historyMeta.transfers) ? historyMeta.transfers.length : 0);
+        setPnlStatus("{coverage} TCL transactions: {count}.", {
+          coverage,
+          count: checkedCount.toLocaleString(getLocale())
+        });
+      }
+
+      async function runPnlCheck(event) {
+        event.preventDefault();
+        const walletAddress = dom.pnlAddressInput.value.trim();
+
+        if (!isAddress(walletAddress)) {
+          renderEmptyPnl();
+          setPnlStatus("The wallet address is not valid.");
+          syncLoadingState();
+          return;
+        }
+
+        setPnlLoading(true);
+        renderEmptyPnl();
+        setPnlStatus("Loading transaction history...");
+
+        try {
+          // Asigura ca operations sunt enrichuite in Supabase pentru acest wallet
+          // inainte de citire. Fara asta, swap-urile prin aggregator/router (si cele
+          // foarte noi) au operations=null si nu pot fi parsate => apar cu 0 in PNL.
+          // E rapid la rulari repetate (gaseste 0 root-uri lipsa) si non-fatal.
+          try {
+            await ensurePnlSupabaseCache(walletAddress);
+          } catch (prepErr) {
+            console.warn("PNL cache preparation incomplete", prepErr);
+          }
+
+          const [pnlResult, earnedResult, infinityResult, stakingResult, presaleResult, walletResult] = await Promise.allSettled([
+            fetchPnlFromSupabase(walletAddress),
+            fetchEarnedTcl(walletAddress),
+            fetchInfinityOffers(walletAddress),
+            fetchStaking(walletAddress),
+            fetchPresale(walletAddress),
+            fetchWalletBalance(walletAddress)
+          ]);
+
+          if (pnlResult.status === "rejected") {
+            console.warn("PNL buy/sell lookup failed", pnlResult.reason);
+          }
+          if (earnedResult.status === "rejected") {
+            console.warn("Earned TCL lookup failed", earnedResult.reason);
+          }
+          if (infinityResult.status === "rejected") {
+            console.warn("Infinity Offers lookup failed", infinityResult.reason);
+          }
+          if (stakingResult.status === "rejected") {
+            console.warn("Staking lookup failed", stakingResult.reason);
+          }
+          if (presaleResult.status === "rejected") {
+            console.warn("Presale lookup failed", presaleResult.reason);
+          }
+          if (walletResult.status === "rejected") {
+            console.warn("Wallet balance lookup failed", walletResult.reason);
+          }
+
+          const pnlData = (pnlResult.status === "fulfilled" && pnlResult.value)
+            ? pnlResult.value
+            : createEmptyPnlData();
+          const earnedTcl = (earnedResult.status === "fulfilled" && earnedResult.value)
+            ? earnedResult.value
+            : { total: 0, breakdown: {} };
+          const infinity = (infinityResult.status === "fulfilled" && infinityResult.value)
+            ? infinityResult.value
+            : { tcl: 0, usdc: 0, count: 0 };
+          const staking = (stakingResult.status === "fulfilled" && stakingResult.value)
+            ? stakingResult.value
+            : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+          const presale = (presaleResult.status === "fulfilled" && presaleResult.value)
+            ? presaleResult.value
+            : createEmptyPresaleData();
+          const wallet = (walletResult.status === "fulfilled" && walletResult.value)
+            ? walletResult.value
+            : { tcl: 0 };
+
+          // Construieste totals in formatul asteptat de renderPnlResult
+          const totals = {
+            tradeCount: pnlData.tradeCount,
+            buyCount:   pnlData.buyCount,
+            sellCount:  pnlData.sellCount,
+            buyTcl:     pnlData.buyTcl,
+            sellTcl:    pnlData.sellTcl,
+            buyUsd:     pnlData.buyCost,
+            sellUsd:    pnlData.sellReceived
+          };
+
+          const historyMeta = {
+            source:              "supabase",
+            reachedListingStart: pnlData.reachedListingStart,
+            hitPageLimit:        !pnlData.reachedListingStart,
+            exhaustedHistory:    pnlData.reachedListingStart,
+            checkedTransactions: pnlData.checkedSwaps,
+            oldestTimestamp:     pnlData.oldestTimestamp
+          };
+
+          renderPnlResult(totals, historyMeta, earnedTcl, infinity, staking, presale, wallet);
+          renderInfinityOffers(infinity);
+          renderStaking(staking);
+          renderPresale(presale);
+          renderWalletBalance(wallet);
+
+          const earnedAmount = readEarnedTotal(earnedTcl);
+          const infinityCount = readNumber(infinity.count, 0);
+          const presaleAmount = readNumber(presale.totalTcl, 0);
+          const pnlUnavailable = pnlResult.status !== "fulfilled" || !pnlResult.value;
+          if (pnlUnavailable && earnedAmount > 0) {
+            setPnlStatus("Could not load buy/sell swaps. Earned TCL was still checked.");
+          } else if (pnlUnavailable) {
+            setPnlStatus("PNL Check completed with the data currently available.");
+          } else if (pnlData.tradeCount === 0 && earnedAmount > 0) {
+            setPnlStatus("No buy/sell swaps found. Earned TCL was still calculated.");
+          } else if (pnlData.tradeCount === 0 && infinityCount > 0) {
+            setPnlStatus("No buy/sell swaps found. Infinity Offers were still calculated.");
+          } else if (pnlData.tradeCount === 0 && presaleAmount > 0) {
+            setPnlStatus("No buy/sell swaps found. Presale was still calculated.");
+          } else if (pnlData.tradeCount === 0) {
+            setPnlStatus("No buy/sell swaps or earned TCL found for this wallet. Checked records: {count}.", {
+              count: Number(pnlData.checkedSwaps || 0).toLocaleString(getLocale())
+            });
+          }
+        } catch (error) {
+          console.error(error);
+          renderEmptyPnl();
+          setPnlStatus(error?.message || "PNL Check failed.");
+          setStatus("error", "PNL Check failed. Try again.");
+        } finally {
+          setPnlLoading(false);
+        }
+      }
+
+      // ── Earned TCL breakdown popup ────────────────────────────────────────────
+      const EARNED_FN_LABELS = {
+        claimRewards:              "Claim Rewards",
+        claimBorrowingRewards:     "Borrowing Rewards",
+        claimLendingRewards:       "Lending Rewards",
+        claimInfinityRewards:      "Infinity Staking",
+        claimReferralRewards:      "Referral Rewards",
+        referral:                  "Referral Rewards",
+        claimManagerRewards:       "Manager Rewards",
+        addDaysAutoClaim:          "Auto-Claim Rewards",
+        withdrawBalancePrivateShop:"Private Shop (sale + 2% referral)",
+        buyCoins:                  "Buy Coins 5%",
+        buySft:                    "Buy SFT 5%",
+        upgradeNft:                "Upgrade NFT 5%",
+        mintNft:                   "Mint NFT 5%",
+        addBonus:                  "Add Bonus 5%",
+        changeBonus:               "Change Bonus 5%",
+        addCrystal:                "Add Crystal 5%",
+        changeCrystal:             "Change Crystal 5%",
+        addSocket:                 "Add Socket 5%",
+        addRefinement:             "Add Refinement 5%",
+        addStorage:                "Add Storage 5%",
+        _other:                    "Other"
+      };
+
+      function esc(s) {
+        return String(s || "").replace(/[&<>"']/g, c =>
+          ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      }
+
+      function showEarnedBreakdown(breakdown, total, details = [], categories = null) {
+        const overlay = document.getElementById("earnedPopupOverlay");
+        const body    = document.getElementById("earnedPopupBody");
+        if (!overlay || !body) return;
+
+        const entries = Object.entries(breakdown)
+          .sort((a, b) => b[1] - a[1])
+          .filter(([, v]) => v > 0.001);
+
+        const maxVal = entries[0]?.[1] || 1;
+
+        let html = `<div class="earned-popup-total">${esc(translateText("Total earned:"))} <span>${formatTokenAmount(total)} TCL</span></div>`;
+
+        // Sumar pe categorii: reward pool / cashback propriu / referral
+        if (categories) {
+          const cats = [
+            { key: "reward",   label: "Reward Pool",       sub: "claims and daily rewards" },
+            { key: "sale",     label: "Private Shop Sale", sub: "owned sales (90%)" },
+            { key: "cashback", label: "Cashback",          sub: "guest: 5% NFT/ItemShop, 2% Private Shop" },
+            { key: "referral", label: "Referral",          sub: "code owner: 5%/2% from guests" }
+          ];
+          let catHtml = "";
+          for (const c of cats) {
+            const val = readNumber(categories[c.key], 0);
+            if (val <= 0.001) continue;
+            const pct = total > 0 ? (val / total * 100) : 0;
+            catHtml += `<div class="earned-cat-card">
+              <div class="earned-cat-label">${esc(translateText(c.label))}</div>
+              <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
+              <div class="earned-cat-sub">${esc(translateText(c.sub))} · ${pct.toFixed(0)}%</div>
+            </div>`;
+          }
+          if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
+        }
+        html += `<table class="earned-breakdown-table">
+          <thead><tr>
+            <th>${esc(translateText("Source"))}</th>
+            <th style="text-align:right">TCL</th>
+            <th style="text-align:right">%</th>
+          </tr></thead><tbody>`;
+
+        for (const [label, tcl] of entries) {
+          const pct     = total > 0 ? (tcl / total * 100) : 0;
+          const barW    = Math.round(tcl / maxVal * 100);
+          html += `<tr>
+            <td>
+              <span class="earned-fn-name">${esc(translateText(label))}</span>
+              <div class="earned-bar-wrap"><div class="earned-bar" style="width:${barW}%"></div></div>
+            </td>
+            <td><span class="earned-tcl-amount">${formatTokenAmount(tcl)}</span></td>
+            <td>${pct.toFixed(1)}%</td>
+          </tr>`;
+        }
+        html += `</tbody></table>`;
+
+        body.innerHTML = html;
+        overlay.classList.add("open");
+      }
+
+      // Breakdown Staking pe cele 3 surse: NFT, Loan, Infinity
+      function showStakingBreakdown(staking) {
+        const overlay = document.getElementById("stakingPopupOverlay");
+        const body    = document.getElementById("stakingPopupBody");
+        if (!overlay || !body) return;
+
+        const total = readNumber(staking?.total, 0);
+        const price = readNumber(state.prices.tcl, 0);
+        const sources = [
+          { key: "nft",      label: "NFT Staking" },
+          { key: "loan",     label: "Loan Staking" },
+          { key: "infinity", label: "Infinity Staking" }
+        ];
+
+        let html = `<div class="earned-popup-total">${esc(translateText("Total staked:"))} <span>${formatTokenAmount(total)} TCL</span></div>`;
+        let catHtml = "";
+        for (const s of sources) {
+          const val = readNumber(staking?.[s.key], 0);
+          if (val <= 0) continue;
+          const pct = total > 0 ? (val / total * 100) : 0;
+          const usdText = price ? `≈ ${formatUsd(val * price)} · ` : "";
+          catHtml += `<div class="earned-cat-card">
+            <div class="earned-cat-label">${esc(translateText(s.label))}</div>
+            <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
+            <div class="earned-cat-sub">${usdText}${pct.toFixed(0)}%</div>
+          </div>`;
+        }
+        if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
+        html += `<p style="color:var(--text-muted);font-size:0.78rem;margin-top:10px;line-height:1.4">${esc(translateText("Source: Top Staking leaderboard, updated periodically. Wallets outside the top stakers may show 0."))}</p>`;
+
+        body.innerHTML = html;
+        overlay.classList.add("open");
+      }
+
+      // Breakdown Presale pe cele 3 surse: Seed Zero, Seed, BHero Public Sale
+      function showPresaleBreakdown(presale) {
+        const overlay = document.getElementById("presalePopupOverlay");
+        const body    = document.getElementById("presalePopupBody");
+        if (!overlay || !body) return;
+
+        const data = presale && typeof presale === "object" ? presale : createEmptyPresaleData();
+        const fallbackSources = createEmptyPresaleData().sources;
+        const sources = Array.isArray(data.sources) && data.sources.length ? data.sources : fallbackSources;
+        const totalTcl = readNumber(data.totalTcl, 0);
+        const totalCost = readNumber(data.totalCost, 0);
+        const unitPrice = (price) => `$${readNumber(price, 0).toFixed(3)}`;
+
+        let html = `<div class="earned-popup-total">${esc(translateText("Total presale:"))} <span>${formatTokenAmount(totalTcl)} TCL</span>
+          <div class="earned-cat-sub">${esc(translateText("Cost basis:"))} ${formatUsd(totalCost)} USDC</div>
+        </div>`;
+
+        let catHtml = "";
+        for (const source of sources) {
+          const val = readNumber(source.tcl, 0);
+          const cost = readNumber(source.cost, 0);
+          const pct = totalTcl > 0 ? (val / totalTcl * 100) : 0;
+          const explorerUrl = `https://explorer.multiversx.com/accounts/${source.address}`;
+          const pctText = totalTcl > 0 ? ` - ${pct.toFixed(0)}%` : "";
+          catHtml += `<div class="earned-cat-card">
+            <div class="earned-cat-label">${esc(translateText(source.label))}</div>
+            <div class="earned-cat-value">${formatTokenAmount(val)} <span>TCL</span></div>
+            <div class="earned-cat-sub">${formatUsd(cost)} USDC @ ${unitPrice(source.priceUsd)} / TCL${pctText}</div>
+            <div class="earned-cat-sub"><a class="earned-source-link" href="${esc(explorerUrl)}" target="_blank" rel="noreferrer noopener">${esc(translateText("Explorer"))}</a></div>
+          </div>`;
+        }
+        if (catHtml) html += `<div class="earned-cat-grid">${catHtml}</div>`;
+        html += `<p style="color:var(--text-muted);font-size:0.78rem;margin-top:10px;line-height:1.4">${esc(translateText("Seed Zero and Seed are valued at $0.005 per TCL. BHero Public Sale is valued at $0.006 per TCL."))}</p>`;
+
+        body.innerHTML = html;
+        overlay.classList.add("open");
+      }
+
+      // Popup close logic - se initializeaza la boot
+      function initEarnedPopup() {
+        const overlay = document.getElementById("earnedPopupOverlay");
+        const closeBtn = document.getElementById("earnedPopupClose");
+        const stOverlay = document.getElementById("stakingPopupOverlay");
+        const stClose = document.getElementById("stakingPopupClose");
+        const presaleOverlay = document.getElementById("presalePopupOverlay");
+        const presaleClose = document.getElementById("presalePopupClose");
+        if (overlay) {
+          overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
+        }
+        if (closeBtn) {
+          closeBtn.addEventListener("click", () => overlay?.classList.remove("open"));
+        }
+        if (stOverlay) {
+          stOverlay.addEventListener("click", (e) => { if (e.target === stOverlay) stOverlay.classList.remove("open"); });
+        }
+        if (stClose) {
+          stClose.addEventListener("click", () => stOverlay?.classList.remove("open"));
+        }
+        if (presaleOverlay) {
+          presaleOverlay.addEventListener("click", (e) => { if (e.target === presaleOverlay) presaleOverlay.classList.remove("open"); });
+        }
+        if (presaleClose) {
+          presaleClose.addEventListener("click", () => presaleOverlay?.classList.remove("open"));
+        }
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") { overlay?.classList.remove("open"); stOverlay?.classList.remove("open"); presaleOverlay?.classList.remove("open"); }
+        });
+      }
+
+      async function copyWalletConnectUri() {
+        if (!state.pendingUri) return;
+        try {
+          await navigator.clipboard.writeText(state.pendingUri);
+          setStatus("loading", "WalletConnect URI copied. Paste it in xPortal if needed.");
+        } catch (_) {
+          setStatus("error", "Could not copy WalletConnect URI.");
+        }
+      }
+
+      function cancelPairing() {
+        state.connectionRunId++;
+        hideQrPanel();
+        setConnectionLoading(false);
+        const connected = hasConnectedWallet();
+        setStatus(
+          connected ? "connected" : "idle",
+          connected ? "Connected: {address}" : "The xPortal connection was canceled.",
+          connected ? { address: truncateAddress(state.address) } : {}
+        );
+      }
+
+      function boot() {
+        state.address = getInitialAddress();
+        renderAddress();
+        renderEmptyBalances();
+        renderEmptyPnl();
+
+        if (state.address) {
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(state.address) });
+          loadBalances();
+        } else {
+          // Genereaza automat QR-ul de conectare la incarcarea paginii
+          connectWallet();
+        }
+
+        dom.connectBtn.addEventListener("click", openXPortalApp);
+        if (dom.refreshBtn) dom.refreshBtn.addEventListener("click", loadBalances);
+        dom.disconnectBtn.addEventListener("click", disconnectWallet);
+        dom.copyBtn.addEventListener("click", copyAddress);
+        if (dom.copyUriBtn) dom.copyUriBtn.addEventListener("click", copyWalletConnectUri);
+        if (dom.cancelPairingBtn) dom.cancelPairingBtn.addEventListener("click", cancelPairing);
+        dom.pnlForm.addEventListener("submit", runPnlCheck);
+        const brandLink = document.getElementById("brandLink");
+        if (brandLink) brandLink.addEventListener("click", goBackToExplorer);
+        initEarnedPopup();
+        dom.pnlAddressInput.addEventListener("input", () => {
+          dom.pnlAddressInput.dataset.mode = "manual";
+          syncLoadingState();
+        });
+
+        // Anunta pagina parinte (index.html) ca embed-ul e gata → ascunde splash-ul
+        notifyParentReady();
+      }
+
+      function notifyParentReady() {
+        if (window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); }
+          catch (_) {}
+        }
+      }
+
+      // Brand "TCL Explorer": cand pagina e embed in index.html (iframe), nu incarca
+      // index.html in interiorul iframe-ului (ar da doua pagini suprapuse). In schimb
+      // cere parintelui sa inchida embed-ul si sa revina la pagina TCL Token — la fel
+      // ca butoanele "Back to TCL Token" din celelalte pagini.
+      function goBackToExplorer(event) {
+        if (window.parent && window.parent !== window) {
+          if (event) event.preventDefault();
+          try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          } catch (_) {
+            window.location.href = "index.html#token";
+          }
+        }
+      }
+
+      boot();
+    })();
+  </script>
+</body>
+</html>
