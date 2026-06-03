@@ -892,7 +892,7 @@
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
-  <script src="lang/support-tcl.bundle.js?v=20260603-9"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-10"></script>
   <script>
     (function () {
       "use strict";
@@ -1310,6 +1310,7 @@
         dom.connectedView.hidden = !connected;
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
         if (dom.disclaimerPanel) dom.disclaimerPanel.hidden = !connected;
+        if (dom.disconnectBtn) dom.disconnectBtn.hidden = !connected;
         setDynamicText(dom.connectTitle, connected ? "xPortal Connected" : "Connect xPortal");
         if (dom.connectedAddress) {
           if (connected) {
