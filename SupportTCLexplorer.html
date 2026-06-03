@@ -522,7 +522,7 @@
       margin: 0;
     }
 
-    .ads-egld-note span {
+    .ads-egld-note .ads-connect-hint {
       color: var(--accent);
       font-weight: 700;
     }
@@ -906,12 +906,12 @@
             </div>
 
             <div class="ads-support-card">
-              <div class="ads-support-title">💙 Support Free – Watch Ads</div>
+              <div class="ads-support-title" data-i18n="💙 Support Free – Watch Ads">💙 Support Free – Watch Ads</div>
               <p class="ads-support-desc">
-                Load one or more optional ads to support TCLexplorer for free.<br>
-                Every impression helps keep the platform running. <strong>No click needed, no sign-up.</strong>
+                <span data-i18n="Load one or more optional ads to support TCLexplorer for free.">Load one or more optional ads to support TCLexplorer for free.</span><br>
+                <span data-i18n="Every impression helps keep the platform running.">Every impression helps keep the platform running.</span> <strong data-i18n="No click needed, no sign-up.">No click needed, no sign-up.</strong>
               </p>
-              <button class="btn-watch-ad" id="watchAdBtn" type="button">
+              <button class="btn-watch-ad" id="watchAdBtn" type="button" data-i18n="💙 Load a Support Ad">
                 💙 Load a Support Ad
               </button>
               <div id="adSlotContainer" hidden style="margin-top:8px;min-height:100px;background:rgba(0,0,0,0.18);border-radius:var(--radius);overflow:hidden">
@@ -922,7 +922,7 @@
                   data-ad-format="auto"
                   data-full-width-responsive="true"></ins>
               </div>
-              <p class="ads-egld-note">or <span>Connect xPortal</span> above to support directly with EGLD $</p>
+              <p class="ads-egld-note"><span data-i18n="or">or</span> <span class="ads-connect-hint" data-i18n="Connect xPortal">Connect xPortal</span> <span data-i18n="above to support directly with EGLD $">above to support directly with EGLD $</span></p>
             </div>
           </div>
 
@@ -1823,7 +1823,7 @@
               try {
                 (window.adsbygoogle = window.adsbygoogle || []).push({});
               } catch (_) {}
-              watchAdBtn.textContent = "❤️ Thank you for supporting!";
+              watchAdBtn.textContent = translateText("❤️ Thank you for supporting!");
               watchAdBtn.disabled = true;
               watchAdBtn.style.opacity = "0.7";
             }

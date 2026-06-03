@@ -61,7 +61,15 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "WalletConnect nu a returnat un URI pentru QR.",
     "xPortal did not return a valid MultiversX address.": "xPortal nu a returnat o adresă MultiversX validă.",
     "Could not read the connected account.": "Nu am putut citi contul conectat.",
-    "xPortal did not return the transaction signature.": "xPortal nu a returnat semnătura tranzacției."
+    "xPortal did not return the transaction signature.": "xPortal nu a returnat semnătura tranzacției.",
+    "💙 Support Free – Watch Ads": "💙 Support Gratuit – Vizionează Reclame",
+    "Load one or more optional ads to support TCLexplorer for free.": "Încarcă una sau mai multe reclame opționale pentru a susține TCLexplorer gratuit.",
+    "Every impression helps keep the platform running.": "Fiecare afișare ajută platforma să funcționeze.",
+    "No click needed, no sign-up.": "Fără click, fără înregistrare.",
+    "💙 Load a Support Ad": "💙 Încarcă o Reclamă de Suport",
+    "❤️ Thank you for supporting!": "❤️ Mulțumim pentru suport!",
+    "or": "sau",
+    "above to support directly with EGLD $": "pentru a suporta direct cu EGLD $"
   },
   "tr": {
     "Support TCLexplorer Infrastructure": "TCLexplorer Altyapısını Destekle",
@@ -125,7 +133,15 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "WalletConnect bir QR URI'si döndürmedi.",
     "xPortal did not return a valid MultiversX address.": "xPortal geçerli bir MultiversX adresi döndürmedi.",
     "Could not read the connected account.": "Bağlı hesap okunamadı.",
-    "xPortal did not return the transaction signature.": "xPortal işlem imzasını döndürmedi."
+    "xPortal did not return the transaction signature.": "xPortal işlem imzasını döndürmedi.",
+    "💙 Support Free – Watch Ads": "💙 Ücretsiz Destek – Reklam Yükle",
+    "Load one or more optional ads to support TCLexplorer for free.": "TCLexplorer'ı ücretsiz desteklemek için bir veya daha fazla reklam yükleyin.",
+    "Every impression helps keep the platform running.": "Her gösterim platformun çalışmasına yardımcı olur.",
+    "No click needed, no sign-up.": "Tıklama gerekmez, kayıt gerekmez.",
+    "💙 Load a Support Ad": "💙 Destek Reklamı Yükle",
+    "❤️ Thank you for supporting!": "❤️ Desteğiniz için teşekkürler!",
+    "or": "veya",
+    "above to support directly with EGLD $": "yukarıdan doğrudan EGLD $ ile desteklemek için"
   },
   "de": {
     "Support TCLexplorer Infrastructure": "TCLexplorer-Infrastruktur unterstützen",
@@ -189,7 +205,15 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "WalletConnect hat keine QR-URI zurückgegeben.",
     "xPortal did not return a valid MultiversX address.": "xPortal hat keine gültige MultiversX-Adresse zurückgegeben.",
     "Could not read the connected account.": "Das verbundene Konto konnte nicht gelesen werden.",
-    "xPortal did not return the transaction signature.": "xPortal hat die Transaktionssignatur nicht zurückgegeben."
+    "xPortal did not return the transaction signature.": "xPortal hat die Transaktionssignatur nicht zurückgegeben.",
+    "💙 Support Free – Watch Ads": "💙 Kostenlos unterstützen – Werbung laden",
+    "Load one or more optional ads to support TCLexplorer for free.": "Lade eine oder mehrere optionale Werbeanzeigen, um TCLexplorer kostenlos zu unterstützen.",
+    "Every impression helps keep the platform running.": "Jeder Aufruf hilft, die Plattform am Laufen zu halten.",
+    "No click needed, no sign-up.": "Kein Klick nötig, keine Anmeldung.",
+    "💙 Load a Support Ad": "💙 Support-Werbung laden",
+    "❤️ Thank you for supporting!": "❤️ Danke für deine Unterstützung!",
+    "or": "oder",
+    "above to support directly with EGLD $": "oben, um direkt mit EGLD $ zu unterstützen"
   },
   "es": {
     "Support TCLexplorer Infrastructure": "Apoya la infraestructura de TCLexplorer",
@@ -253,7 +277,15 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "WalletConnect no devolvió una URI para el QR.",
     "xPortal did not return a valid MultiversX address.": "xPortal no devolvió una dirección MultiversX válida.",
     "Could not read the connected account.": "No se pudo leer la cuenta conectada.",
-    "xPortal did not return the transaction signature.": "xPortal no devolvió la firma de la transacción."
+    "xPortal did not return the transaction signature.": "xPortal no devolvió la firma de la transacción.",
+    "💙 Support Free – Watch Ads": "💙 Apoya Gratis – Ver Anuncios",
+    "Load one or more optional ads to support TCLexplorer for free.": "Carga uno o más anuncios opcionales para apoyar TCLexplorer gratis.",
+    "Every impression helps keep the platform running.": "Cada impresión ayuda a mantener la plataforma activa.",
+    "No click needed, no sign-up.": "Sin clic, sin registro.",
+    "💙 Load a Support Ad": "💙 Cargar un Anuncio de Apoyo",
+    "❤️ Thank you for supporting!": "❤️ ¡Gracias por apoyar!",
+    "or": "o",
+    "above to support directly with EGLD $": "arriba para apoyar directamente con EGLD $"
   },
   "fr": {
     "Support TCLexplorer Infrastructure": "Soutenir l'infrastructure de TCLexplorer",
@@ -381,7 +413,15 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "WalletConnect non ha restituito un URI per il QR.",
     "xPortal did not return a valid MultiversX address.": "xPortal non ha restituito un indirizzo MultiversX valido.",
     "Could not read the connected account.": "Impossibile leggere l'account connesso.",
-    "xPortal did not return the transaction signature.": "xPortal non ha restituito la firma della transazione."
+    "xPortal did not return the transaction signature.": "xPortal non ha restituito la firma della transazione.",
+    "💙 Support Free – Watch Ads": "💙 Supporto Gratuito – Carica Annunci",
+    "Load one or more optional ads to support TCLexplorer for free.": "Carica uno o più annunci opzionali per supportare TCLexplorer gratuitamente.",
+    "Every impression helps keep the platform running.": "Ogni visualizzazione aiuta a mantenere la piattaforma attiva.",
+    "No click needed, no sign-up.": "Nessun clic necessario, nessuna registrazione.",
+    "💙 Load a Support Ad": "💙 Carica un Annuncio di Supporto",
+    "❤️ Thank you for supporting!": "❤️ Grazie per il tuo supporto!",
+    "or": "o",
+    "above to support directly with EGLD $": "sopra per supportare direttamente con EGLD $"
   },
   "pl": {
     "Support TCLexplorer Infrastructure": "Wesprzyj infrastrukturę TCLexplorer",
@@ -445,7 +485,15 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "WalletConnect nie zwrócił identyfikatora URI dla kodu QR.",
     "xPortal did not return a valid MultiversX address.": "xPortal nie zwrócił prawidłowego adresu MultiversX.",
     "Could not read the connected account.": "Nie udało się odczytać połączonego konta.",
-    "xPortal did not return the transaction signature.": "xPortal nie zwrócił podpisu transakcji."
+    "xPortal did not return the transaction signature.": "xPortal nie zwrócił podpisu transakcji.",
+    "💙 Support Free – Watch Ads": "💙 Bezpłatne Wsparcie – Załaduj Reklamy",
+    "Load one or more optional ads to support TCLexplorer for free.": "Załaduj jedną lub więcej opcjonalnych reklam, aby bezpłatnie wspierać TCLexplorer.",
+    "Every impression helps keep the platform running.": "Każde wyświetlenie pomaga utrzymać platformę.",
+    "No click needed, no sign-up.": "Bez kliknięcia, bez rejestracji.",
+    "💙 Load a Support Ad": "💙 Załaduj Reklamę Wsparcia",
+    "❤️ Thank you for supporting!": "❤️ Dziękujemy za wsparcie!",
+    "or": "lub",
+    "above to support directly with EGLD $": "powyżej, aby wspierać bezpośrednio z EGLD $"
   },
   "pt": {
     "Support TCLexplorer Infrastructure": "Apoie a infraestrutura do TCLexplorer",
@@ -509,6 +557,14 @@ window.TCL_PAGE_I18N=window.TCL_PAGE_I18N||{};(function(data){for(const lang in 
     "WalletConnect did not return a QR URI.": "O WalletConnect não devolveu um URI para o QR.",
     "xPortal did not return a valid MultiversX address.": "O xPortal não devolveu um endereço MultiversX válido.",
     "Could not read the connected account.": "Não foi possível ler a conta conectada.",
-    "xPortal did not return the transaction signature.": "O xPortal não devolveu a assinatura da transação."
+    "xPortal did not return the transaction signature.": "O xPortal não devolveu a assinatura da transação.",
+    "💙 Support Free – Watch Ads": "💙 Suporte Grátis – Ver Anúncios",
+    "Load one or more optional ads to support TCLexplorer for free.": "Carregue um ou mais anúncios opcionais para apoiar o TCLexplorer gratuitamente.",
+    "Every impression helps keep the platform running.": "Cada impressão ajuda a manter a plataforma a funcionar.",
+    "No click needed, no sign-up.": "Sem clique necessário, sem cadastro.",
+    "💙 Load a Support Ad": "💙 Carregar um Anúncio de Apoio",
+    "❤️ Thank you for supporting!": "❤️ Obrigado pelo seu apoio!",
+    "or": "ou",
+    "above to support directly with EGLD $": "acima para apoiar diretamente com EGLD $"
   }
 });
