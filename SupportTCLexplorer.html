@@ -1305,17 +1305,19 @@
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
         if (dom.disclaimerPanel) dom.disclaimerPanel.hidden = !connected;
         setDynamicText(dom.connectTitle, connected ? "xPortal Connected" : "Connect xPortal");
-        if (connected) {
-          dynamicText.delete(dom.connectedAddress);
-          const a = state.address;
-          dom.connectedAddress.textContent = a.length > 6 ? `${a.slice(0, 3)}...${a.slice(-3)}` : a;
-        } else {
-          setDynamicText(dom.connectedAddress, "Disconnected");
+        if (dom.connectedAddress) {
+          if (connected) {
+            dynamicText.delete(dom.connectedAddress);
+            const a = state.address;
+            dom.connectedAddress.textContent = a.length > 6 ? `${a.slice(0, 3)}...${a.slice(-3)}` : a;
+          } else {
+            setDynamicText(dom.connectedAddress, "Disconnected");
+          }
         }
         const explorerHref = connected
           ? `https://explorer.multiversx.com/accounts/${state.address}`
           : "https://explorer.multiversx.com/";
-        dom.connectedExplorerLink.href = explorerHref;
+        if (dom.connectedExplorerLink) dom.connectedExplorerLink.href = explorerHref;
         if (dom.balanceExplorerLink) dom.balanceExplorerLink.href = explorerHref;
         syncButtons();
       }
