@@ -459,6 +459,73 @@
       min-height: 28px;
     }
 
+    .ads-support-card {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid rgba(47, 117, 255, 0.28);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(47, 117, 255, 0.07), rgba(0, 232, 204, 0.05));
+      display: grid;
+      gap: 10px;
+    }
+
+    .ads-support-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .ads-support-desc {
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .ads-support-desc strong {
+      color: var(--accent);
+    }
+
+    .btn-watch-ad {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 8px 18px;
+      border: 1px solid rgba(47, 117, 255, 0.45);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(47, 117, 255, 0.18), rgba(0, 232, 204, 0.10));
+      color: #e8edf5;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.12s;
+      width: 100%;
+    }
+
+    .btn-watch-ad:hover {
+      background: linear-gradient(135deg, rgba(47, 117, 255, 0.28), rgba(0, 232, 204, 0.16));
+      border-color: rgba(47, 117, 255, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .ads-egld-note {
+      font-size: 0.78rem;
+      color: var(--soft);
+      text-align: center;
+      margin: 0;
+    }
+
+    .ads-egld-note span {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     .btn:disabled,
     .btn.is-disabled {
       pointer-events: none;
@@ -835,6 +902,18 @@
                 <span data-i18n="Connect xPortal">Connect xPortal</span>
               </a>
               <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer" data-i18n="Install xPortal">Install xPortal</a>
+            </div>
+
+            <div class="ads-support-card">
+              <div class="ads-support-title">💙 Support Free – Watch Ads</div>
+              <p class="ads-support-desc">
+                Watch one or more optional ads to support TCLexplorer for free.<br>
+                Every view helps keep the platform running. <strong>No sign-up needed.</strong>
+              </p>
+              <button class="btn-watch-ad" id="watchAdBtn" type="button">
+                ▶ Watch an Ad
+              </button>
+              <p class="ads-egld-note">or <span>Connect xPortal</span> above to support directly with EGLD $</p>
             </div>
           </div>
 
@@ -1725,6 +1804,12 @@
         });
         dom.refreshSessionBtn.addEventListener("click", refreshConnectionSession);
         dom.disconnectBtn.addEventListener("click", disconnectWallet);
+        const watchAdBtn = document.getElementById("watchAdBtn");
+        if (watchAdBtn) {
+          watchAdBtn.addEventListener("click", function() {
+            window.open("https://go.coinzilla.io/click?pid=1&campid=TCLexplorer", "_blank", "noopener,noreferrer");
+          });
+        }
         dom.sendBtn.addEventListener("click", sendEgld);
         dom.amountInput.addEventListener("input", () => {
           syncButtons();
