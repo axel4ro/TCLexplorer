@@ -792,7 +792,7 @@
 
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
-  <script src="lang/support-tcl.bundle.js?v=20260603-6"></script>
+  <script src="lang/support-tcl.bundle.js?v=20260603-9"></script>
   <script>
     (function () {
       "use strict";
@@ -819,6 +819,8 @@
         gasPrice: 1000000000,
         baseGasLimit: 50000,
         guardedGasExtra: 50000,
+        balancePollMs: 30000,
+        balanceRefreshDelays: [0, 3000, 8000, 15000],
         minUsd: 1,
         minAmountDecimals: 4
       };
@@ -834,11 +836,14 @@
         connectionRunId: 0,
         egldPrice: 0,
         minEgldAtomic: 0n,
-        minEgldStr: ""
+        minEgldStr: "",
+        balancePollTimer: null,
+        balanceRefreshTimers: new Set()
       };
 
       const dom = {
         supportWalletPanel: document.getElementById("supportWalletPanel"),
+        connectTitle: document.getElementById("connectTitle"),
         connectView: document.getElementById("connectView"),
         connectedView: document.getElementById("connectedView"),
         sendPanel: document.getElementById("sendPanel"),
@@ -1101,8 +1106,9 @@
         return state.egldPrice;
       }
 
-      async function loadSupportWalletBalance() {
-        setSupportWalletBalance(translateText("Loading balance..."), "$--");
+      async function loadSupportWalletBalance(options = {}) {
+        const { showLoading = true, keepOnError = false } = options;
+        if (showLoading) setSupportWalletBalance(translateText("Loading balance..."), "$--");
         try {
           const [account, price] = await Promise.all([
             fetchAccount(CONFIG.recipientAddress),
@@ -1115,17 +1121,18 @@
           setSupportWalletBalance(egldText, usdText);
         } catch (error) {
           console.warn("Could not load support wallet balance", error);
-          setSupportWalletBalance(translateText("Balance unavailable"), "$--");
+          if (!keepOnError) setSupportWalletBalance(translateText("Balance unavailable"), "$--");
         }
       }
 
-      async function loadUserWalletBalance() {
+      async function loadUserWalletBalance(options = {}) {
+        const { showLoading = true, keepOnError = false } = options;
         if (!state.address) {
           setUserWalletBalance("-- EGLD", "$--");
           return;
         }
 
-        setUserWalletBalance(translateText("Loading balance..."), "$--");
+        if (showLoading) setUserWalletBalance(translateText("Loading balance..."), "$--");
         try {
           const [account, price] = await Promise.all([
             fetchAccount(state.address),
@@ -1138,8 +1145,59 @@
           setUserWalletBalance(egldText, usdText);
         } catch (error) {
           console.warn("Could not load connected wallet balance", error);
-          setUserWalletBalance(translateText("Balance unavailable"), "$--");
+          if (!keepOnError) setUserWalletBalance(translateText("Balance unavailable"), "$--");
         }
+      }
+
+      async function refreshVisibleBalances(options = {}) {
+        const tasks = [loadSupportWalletBalance(options)];
+        if (state.address) tasks.push(loadUserWalletBalance(options));
+        await Promise.allSettled(tasks);
+      }
+
+      function clearQueuedBalanceRefreshes() {
+        state.balanceRefreshTimers.forEach((timer) => clearTimeout(timer));
+        state.balanceRefreshTimers.clear();
+      }
+
+      function queueBalanceRefreshes() {
+        clearQueuedBalanceRefreshes();
+        CONFIG.balanceRefreshDelays.forEach((delay) => {
+          const refresh = () => {
+            refreshVisibleBalances({
+              showLoading: delay === 0,
+              keepOnError: delay !== 0
+            }).catch((error) => {
+              console.warn("Could not refresh balances after transaction", error);
+            });
+          };
+
+          if (delay <= 0) {
+            refresh();
+            return;
+          }
+
+          const timer = setTimeout(() => {
+            state.balanceRefreshTimers.delete(timer);
+            refresh();
+          }, delay);
+          state.balanceRefreshTimers.add(timer);
+        });
+      }
+
+      function startBalancePolling() {
+        if (state.balancePollTimer) return;
+        state.balancePollTimer = setInterval(() => {
+          refreshVisibleBalances({ showLoading: false, keepOnError: true }).catch((error) => {
+            console.warn("Could not poll balances", error);
+          });
+        }, CONFIG.balancePollMs);
+      }
+
+      function stopBalancePolling() {
+        if (!state.balancePollTimer) return;
+        clearInterval(state.balancePollTimer);
+        state.balancePollTimer = null;
       }
 
       function syncConnectionView() {
@@ -1149,6 +1207,7 @@
         dom.connectedView.hidden = !connected;
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
         if (dom.disclaimerPanel) dom.disclaimerPanel.hidden = !connected;
+        setDynamicText(dom.connectTitle, connected ? "xPortal Connected" : "Connect xPortal");
         if (connected) {
           dynamicText.delete(dom.connectedAddress);
           dom.connectedAddress.textContent = state.address;
@@ -1182,10 +1241,13 @@
         window.localStorage.setItem(CONFIG.storageKey, state.address);
         window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
         syncConnectionView();
-        loadUserWalletBalance();
+        refreshVisibleBalances({ showLoading: true });
+        startBalancePolling();
       }
 
       function clearConnection() {
+        stopBalancePolling();
+        clearQueuedBalanceRefreshes();
         state.address = "";
         state.sessionTopic = "";
         state.pendingUri = "";
@@ -1507,6 +1569,7 @@
           `;
           dom.txResult.hidden = false;
           setSendStatus("Sent {amount} EGLD to the support address.", { amount: amountText });
+          queueBalanceRefreshes();
         } catch (error) {
           console.error(error);
           setSendStatus(error?.message || "The transfer could not be sent.");

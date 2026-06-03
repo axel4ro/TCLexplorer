@@ -2848,7 +2848,7 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true
   },
   "support-tcl": {
-    src: "SupportTCLexplorer.html?v=20260603-6",
+    src: "SupportTCLexplorer.html?v=20260603-9",
     title: "Support TCLexplorer",
     navId: "btn-supportTcl",
     routeKey: "support-tcl",
@@ -3161,7 +3161,7 @@ function loadNonCriticalServices() {
   nonCriticalServicesStarted = true;
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(new URL("sw.js?v=20260603-6", window.location.href))
+    navigator.serviceWorker.register(new URL("sw.js?v=20260603-9", window.location.href))
       .then((reg) => console.log("✅ SW registered", reg))
       .catch((err) => console.error("❌ SW error", err));
   }
@@ -3688,8 +3688,25 @@ function showPage(id, options = {}) {
   schedulePageFits();
 }
 
+function getInternalPageSrcWithLang(src) {
+  const rawSrc = String(src || "");
+  if (!rawSrc || !isSupportedLang(currentLang)) return rawSrc;
+
+  try {
+    const url = new URL(rawSrc, window.location.href);
+    if (url.origin === window.location.origin || window.location.protocol === "file:") {
+      url.searchParams.set("lang", currentLang);
+      return url.href;
+    }
+  } catch (_) {}
+
+  const joiner = rawSrc.includes("?") ? "&" : "?";
+  return `${rawSrc}${joiner}lang=${encodeURIComponent(currentLang)}`;
+}
+
 function openInternalPage(src, title, options = {}) {
-  internalPageState.src = src;
+  const frameSrc = getInternalPageSrcWithLang(src);
+  internalPageState.src = frameSrc;
   internalPageState.title = title || "Explorer Page";
   internalPageState.navId = options.navId || "";
   internalPageState.routeKey = options.routeKey || "";
@@ -3731,7 +3748,7 @@ function openInternalPage(src, title, options = {}) {
       schedulePageFits();
     }, { once: true });
 
-    frame.src = src;
+    frame.src = frameSrc;
   }
 
   if (internalPageState.waitForReadyMessage) {
