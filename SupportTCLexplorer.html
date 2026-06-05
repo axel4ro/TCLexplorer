@@ -1145,10 +1145,10 @@
       }
 
       function getAppMetadata() {
-        const baseUrl = window.location.origin && window.location.origin !== "null"
-          ? window.location.origin
-          : "https://tclexplorer.com";
-        const appUrl = new URL(window.location.pathname || "/SupportTCLexplorer.html", baseUrl).href;
+        const isLocalFile = !window.location.origin || window.location.origin === "null";
+        const baseUrl = isLocalFile ? "https://tclexplorer.com" : window.location.origin;
+        const pagePath = isLocalFile ? "/SupportTCLexplorer.html" : (window.location.pathname || "/SupportTCLexplorer.html");
+        const appUrl = new URL(pagePath, baseUrl).href;
         const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
         return {
           name: "Support TCLexplorer Infrastructure",
@@ -1657,28 +1657,73 @@
       }
 
       async function fetchAccount(address) {
-        const response = await fetch(`${CONFIG.apiBase}/accounts/${address}`);
+        const response = await fetch(`${CONFIG.apiBase}/accounts/${address}?withGuardianInfo=true`);
         if (!response.ok) {
           throw new Error("Could not read the connected account.");
         }
         return response.json();
       }
 
-      function getEgldTransferGasLimit(account) {
-        const guarded = account?.isGuarded === true
-          || account?.guarded === true
-          || Boolean(account?.activeGuardian || account?.guardianAddress);
-        return CONFIG.baseGasLimit + (guarded ? CONFIG.guardedGasExtra : 0);
+      function getGuardianAddress(account) {
+        const candidates = [
+          account?.activeGuardian,
+          account?.guardianAddress,
+          account?.guardian,
+          account?.guardianData?.activeGuardian,
+          account?.guardianData?.guardianAddress
+        ];
+        for (const value of candidates) {
+          if (typeof value === "string" && isAddress(value)) return value;
+          if (value && typeof value === "object") {
+            const address = value.address || value.bech32 || value.value;
+            if (isAddress(address)) return address;
+          }
+        }
+        return "";
       }
 
-      async function requestTransactionSignature(transaction) {
+      function isGuardedAccount(account) {
+        return account?.isGuarded === true
+          || account?.guarded === true
+          || account?.guardianData?.guarded === true;
+      }
+
+      function getEgldTransferGasLimit(account) {
+        return CONFIG.baseGasLimit + (isGuardedAccount(account) ? CONFIG.guardedGasExtra : 0);
+      }
+
+      function normalizeTransactionForSigning(transaction, account) {
+        const tx = {
+          ...transaction,
+          nonce: Number(transaction.nonce || 0),
+          value: String(transaction.value ?? "0"),
+          gasPrice: Number(transaction.gasPrice),
+          gasLimit: Number(transaction.gasLimit),
+          chainID: String(transaction.chainID || CONFIG.chainID),
+          version: Number(transaction.version || 1)
+        };
+
+        if (isGuardedAccount(account)) {
+          const guardian = getGuardianAddress(account);
+          if (guardian) {
+            tx.guardian = guardian;
+            tx.version = Math.max(tx.version, 2);
+            tx.options = Number(tx.options || 0) | 2;
+          }
+        }
+
+        return tx;
+      }
+
+      async function requestTransactionSignature(transaction, account) {
+        const signingTransaction = normalizeTransactionForSigning(transaction, account);
         const client = await getSignClient();
         const requestPromise = client.request({
           topic: state.sessionTopic,
           chainId: CONFIG.chainId,
           request: {
             method: "mvx_signTransaction",
-            params: { transaction }
+            params: { transaction: signingTransaction }
           }
         });
 
@@ -1689,8 +1734,8 @@
         const result = await requestPromise;
 
         const signed = result?.transaction && typeof result.transaction === "object"
-          ? { ...transaction, ...result.transaction }
-          : { ...transaction, ...result };
+          ? { ...signingTransaction, ...result.transaction }
+          : { ...signingTransaction, ...result };
 
         if (!signed.signature) {
           throw new Error("xPortal did not return the transaction signature.");
@@ -1766,7 +1811,7 @@
           };
 
           setSendStatus("Confirm the transaction in xPortal.");
-          const signedTransaction = await requestTransactionSignature(transaction);
+          const signedTransaction = await requestTransactionSignature(transaction, account);
           setSendStatus("Signature received. Broadcasting the transaction on MultiversX...");
           const txHash = await broadcastTransaction(signedTransaction);
           const txUrl = `https://explorer.multiversx.com/transactions/${txHash}`;

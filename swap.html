@@ -635,6 +635,13 @@
     try { return atob(b64); } catch { return ""; }
   }
 
+  function utf8ToBase64(value) {
+    const bytes = new TextEncoder().encode(String(value || ""));
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  }
+
   // Decode bech32 address to 32-byte pubkey hex (for SC args)
   function bech32ToHex(addr) {
     const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
@@ -716,7 +723,7 @@
   }
 
   async function fetchAccount(address) {
-    const r = await fetch(`${CONFIG.apiBase}/accounts/${address}`);
+    const r = await fetch(`${CONFIG.apiBase}/accounts/${address}?withGuardianInfo=true`);
     if (!r.ok) throw new Error("Cannot fetch account");
     return r.json();
   }
@@ -1045,8 +1052,10 @@
     if (S.signClient && S.signClientProjectId === pid) return S.signClient;
     const SC = getWCGlobal();
     if (!SC?.init) throw new Error("WalletConnect library not loaded");
-    const baseUrl = location.origin && location.origin !== "null" ? location.origin : "https://tclexplorer.com";
-    const appUrl  = new URL(location.pathname || "/swap.html", baseUrl).href;
+    const isLocalFile = !location.origin || location.origin === "null";
+    const baseUrl = isLocalFile ? "https://tclexplorer.com" : location.origin;
+    const pagePath = isLocalFile ? "/swap.html" : (location.pathname || "/swap.html");
+    const appUrl = new URL(pagePath, baseUrl).href;
     S.signClient = await SC.init({
       projectId: pid,
       relayUrl: CONFIG.relayUrl,
@@ -1379,18 +1388,70 @@
   }
 
   // ─── SIGN & BROADCAST ─────────────────────────────────────────────────────
-  async function signTx(tx) {
+  function getGuardianAddress(account) {
+    const candidates = [
+      account?.activeGuardian,
+      account?.guardianAddress,
+      account?.guardian,
+      account?.guardianData?.activeGuardian,
+      account?.guardianData?.guardianAddress
+    ];
+    for (const value of candidates) {
+      if (typeof value === "string" && isAddress(value)) return value;
+      if (value && typeof value === "object") {
+        const address = value.address || value.bech32 || value.value;
+        if (isAddress(address)) return address;
+      }
+    }
+    return "";
+  }
+
+  function isGuardedAccount(account) {
+    return account?.isGuarded === true
+      || account?.guarded === true
+      || account?.guardianData?.guarded === true;
+  }
+
+  function normalizeTransactionForSigning(tx, account) {
+    const normalized = {
+      ...tx,
+      nonce: Number(tx.nonce || 0),
+      value: String(tx.value ?? "0"),
+      gasPrice: Number(tx.gasPrice),
+      gasLimit: Number(tx.gasLimit),
+      chainID: String(tx.chainID || CONFIG.chainID),
+      version: Number(tx.version || 1)
+    };
+
+    if (normalized.data) {
+      normalized.data = utf8ToBase64(normalized.data);
+    }
+
+    if (isGuardedAccount(account)) {
+      const guardian = getGuardianAddress(account);
+      if (guardian) {
+        normalized.guardian = guardian;
+        normalized.version = Math.max(normalized.version, 2);
+        normalized.options = Number(normalized.options || 0) | 2;
+      }
+    }
+
+    return normalized;
+  }
+
+  async function signTx(tx, account) {
+    const signingTx = normalizeTransactionForSigning(tx, account);
     const client = await getSignClient();
     const reqPromise = client.request({
       topic: S.sessionTopic,
       chainId: CONFIG.chainId,
-      request: { method: "mvx_signTransaction", params: { transaction: tx } }
+      request: { method: "mvx_signTransaction", params: { transaction: signingTx } }
     });
     openXPortal();
     const result = await reqPromise;
     const signed = result?.transaction && typeof result.transaction === "object"
-      ? { ...tx, ...result.transaction }
-      : { ...tx, ...result };
+      ? { ...signingTx, ...result.transaction }
+      : { ...signingTx, ...result };
     if (!signed.signature) throw new Error("xPortal did not return a signature.");
     return signed;
   }
@@ -1444,7 +1505,7 @@
       if (pairKey === "USDC-TCL") {
         setSwapMsg("Sign the swap in xPortal…");
         const tx = buildEsdtSwapTx(account, CONFIG.USDC_ID, amountIn, CONFIG.TCL_ID, quote.minOut, CONFIG.TCL_USDC_PAIR);
-        const signed = await signTx(tx);
+        const signed = await signTx(tx, account);
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "USDC → TCL swap sent!");
@@ -1455,7 +1516,7 @@
       else if (pairKey === "TCL-USDC") {
         setSwapMsg("Sign the swap in xPortal…");
         const tx = buildEsdtSwapTx(account, CONFIG.TCL_ID, amountIn, CONFIG.USDC_ID, quote.minOut, CONFIG.TCL_USDC_PAIR);
-        const signed = await signTx(tx);
+        const signed = await signTx(tx, account);
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "TCL → USDC swap sent!");
@@ -1471,7 +1532,7 @@
           { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.USDC_ID, minOut: minUsdc },
           { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.TCL_ID,  minOut: quote.minOut },
         ]);
-        const signed = await signTx(tx);
+        const signed = await signTx(tx, account);
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "WEGLD → TCL swap sent!");
@@ -1487,7 +1548,7 @@
           { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.USDC_ID,  minOut: minUsdc },
           { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.WEGLD_ID, minOut: quote.minOut },
         ]);
-        const signed = await signTx(tx);
+        const signed = await signTx(tx, account);
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "TCL → WEGLD swap sent!");
@@ -1499,7 +1560,7 @@
         if (S.multiStepPhase === 0) {
           setSwapMsg("Step 1/2: Sign wrapEgld in xPortal…");
           const tx = buildWrapEgldTx(account, amountIn);
-          const signed = await signTx(tx);
+          const signed = await signTx(tx, account);
           setSwapMsg("Broadcasting wrap transaction…");
           const hash = await broadcastTx(signed);
           S.multiStepPhase = 1;
@@ -1518,7 +1579,7 @@
             { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.USDC_ID, minOut: minUsdc },
             { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.TCL_ID,  minOut: q2.minOut },
           ]);
-          const signed = await signTx(tx);
+          const signed = await signTx(tx, acc2);
           setSwapMsg("Broadcasting swap transaction…");
           const hash = await broadcastTx(signed);
           S.multiStepPhase = 2;
@@ -1538,7 +1599,7 @@
             { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.USDC_ID,  minOut: minUsdc },
             { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.WEGLD_ID, minOut: quote.minOut },
           ]);
-          const signed = await signTx(tx);
+          const signed = await signTx(tx, account);
           setSwapMsg("Broadcasting transaction…");
           const hash = await broadcastTx(signed);
           S.multiStepPhase = 1;
@@ -1551,7 +1612,7 @@
           setSwapMsg("Step 2/2: Sign unwrapEgld in xPortal…");
           const acc2 = await fetchAccount(S.address);
           const tx   = buildUnwrapEgldTx(acc2, wegldAmount);
-          const signed = await signTx(tx);
+          const signed = await signTx(tx, acc2);
           setSwapMsg("Broadcasting unwrap transaction…");
           const hash = await broadcastTx(signed);
           S.multiStepPhase = 2;
