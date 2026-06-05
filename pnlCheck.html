@@ -1317,12 +1317,15 @@
   <script src="js/page-i18n.js?v=20260529-1"></script>
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
+  <script src="js/xportal-session.js?v=20260605-1"></script>
   <script>
     (function () {
       "use strict";
 
+      const XPORTAL = window.TCLXPortal;
+
       const CONFIG = {
-        walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+        walletConnectProjectId: XPORTAL.CONFIG.projectId,
         apiBase: "https://api.multiversx.com",
         dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
@@ -1402,14 +1405,11 @@
           "buySwap",
           "composeTasks"
         ],
-        storageKey: "tclExplorer.xportal.address.v1",
-        sessionTopicKey: "tclExplorer.xportal.sessionTopic.v1",
-        relayUrl: "wss://relay.walletconnect.com",
-        chainId: "mvx:1",
-        walletConnectMethods: [
-          "mvx_signMessage",
-          "mvx_signLoginToken"
-        ],
+        storageKey: XPORTAL.CONFIG.storageKey,
+        sessionTopicKey: XPORTAL.CONFIG.sessionTopicKey,
+        relayUrl: XPORTAL.CONFIG.relayUrl,
+        chainId: XPORTAL.CONFIG.chainId,
+        walletConnectMethods: XPORTAL.CONFIG.methods,
         tokens: {
           egld: { symbol: "EGLD", decimals: 18 },
           usdc: { symbol: "USDC", identifier: "USDC-c76f1f", decimals: 6 },
@@ -1619,22 +1619,28 @@
       }
 
       function getWalletConnectGlobal() {
-        const walletConnect = window["@walletconnect/sign-client"];
-        return walletConnect?.SignClient || walletConnect?.default || null;
+        return XPORTAL.getWalletConnectGlobal();
       }
 
       function getAppMetadata() {
-        const baseUrl = window.location.origin && window.location.origin !== "null"
-          ? window.location.origin
-          : "https://tclexplorer.com";
-        const appUrl = new URL(window.location.pathname || "/connect_xportal.html", baseUrl).href;
-        const iconUrl = new URL("images/tcl_icon.png", appUrl).href;
-        return {
+        return XPORTAL.createMetadata({
           name: "TCL Explorer",
           description: "xPortal balance reader for EGLD, USDC and TCL",
-          url: appUrl,
-          icons: [iconUrl]
-        };
+          fallbackPath: "/pnlCheck.html",
+          iconPath: "images/tcl_icon.png"
+        });
+      }
+
+      function handleXPortalSessionDelete() {
+        setConnectionLoading(false);
+        setBalanceLoading(false);
+        setPnlLoading(false);
+        state.sessionTopic = "";
+        state.address = "";
+        renderAddress();
+        renderEmptyBalances();
+        renderEmptyPnl();
+        setStatus("idle", "The xPortal session was closed.");
       }
 
       async function getSignClient() {
@@ -1646,30 +1652,13 @@
           return state.signClient;
         }
 
-        const SignClient = getWalletConnectGlobal();
-        if (!SignClient?.init) {
-          throw new Error("WalletConnect did not load. Check your internet connection.");
-        }
-
-        state.signClient = await SignClient.init({
+        state.signClient = await XPORTAL.getClient({
           projectId,
           relayUrl: CONFIG.relayUrl,
+          onSessionDelete: handleXPortalSessionDelete,
           metadata: getAppMetadata()
         });
         state.signClientProjectId = projectId;
-        state.signClient.on("session_delete", () => {
-          setConnectionLoading(false);
-          setBalanceLoading(false);
-          setPnlLoading(false);
-          state.sessionTopic = "";
-          state.address = "";
-          window.localStorage.removeItem(CONFIG.sessionTopicKey);
-          window.localStorage.removeItem(CONFIG.storageKey);
-          renderAddress();
-          renderEmptyBalances();
-          renderEmptyPnl();
-          setStatus("idle", "The xPortal session was closed.");
-        });
         return state.signClient;
       }
 
@@ -1751,9 +1740,7 @@
 
       // xPortal WalletConnect: iOS foloseste schema xportal, Android intercepteaza URI-ul wc: direct.
       function getXPortalDeepLink(uri) {
-        if (isIOS()) return getXPortalSchemeLink(uri);
-        if (isAndroid()) return uri;
-        return isMobileDevice() ? uri : "https://xportal.com/app";
+        return XPORTAL.getDeepLink(uri);
       }
 
       function setRefreshSessionVisible(isVisible) {
@@ -1799,27 +1786,11 @@
           dom.connectBtn.classList.add("is-ready");
         }
 
-        if (!window.QRCode) {
-          throw new Error("The QR library did not load.");
-        }
-
-        new window.QRCode(dom.qrCode, {
-          text: uri,
-          width: 220,
-          height: 220,
-          colorDark: "#020408",
-          colorLight: "#ffffff",
-          correctLevel: window.QRCode.CorrectLevel.M
-        });
+        XPORTAL.renderQr(dom.qrCode, uri, 220, "qrLoader");
       }
 
       function extractAddressFromSession(session) {
-        const namespaces = session?.namespaces || {};
-        const accounts = Object.values(namespaces).flatMap((namespace) => namespace?.accounts || []);
-        const mvxAccount = accounts.find((account) => String(account).startsWith(`${CONFIG.chainId}:`)) ||
-          accounts.find((account) => String(account).includes(":erd1"));
-        const address = String(mvxAccount || "").split(":").pop();
-        return isAddress(address) ? address : "";
+        return XPORTAL.extractAddress(session);
       }
 
       async function connectWallet() {
@@ -1837,16 +1808,16 @@
         setStatus("loading", "Generating WalletConnect session...");
 
         try {
-          const client = await getSignClient();
-          const { uri, approval } = await client.connect({
-            optionalNamespaces: {
-              mvx: {
-                chains: [CONFIG.chainId],
-                methods: CONFIG.walletConnectMethods,
-                events: []
-              }
-            }
+          const pairing = await XPORTAL.startPairing({
+            projectId: CONFIG.walletConnectProjectId,
+            relayUrl: CONFIG.relayUrl,
+            methods: CONFIG.walletConnectMethods,
+            onSessionDelete: handleXPortalSessionDelete,
+            metadata: getAppMetadata()
           });
+          const { uri } = pairing;
+          state.signClient = pairing.client;
+          state.signClientProjectId = CONFIG.walletConnectProjectId;
 
           if (!uri) {
             throw new Error("WalletConnect did not return a URI for the QR.");
@@ -1855,25 +1826,17 @@
           renderWalletConnectUri(uri);
           setStatus("loading", "Scan the QR with xPortal and approve the connection.");
 
-          const session = await approval();
+          const approved = await XPORTAL.approvePairing(pairing, { methods: CONFIG.walletConnectMethods });
           if (runId !== state.connectionRunId) return;
 
-          const address = extractAddressFromSession(session);
-          if (!address) {
-            throw new Error("xPortal did not return a valid MultiversX address.");
-          }
-
-          state.address = address;
-          state.sessionTopic = session.topic || "";
-          window.localStorage.setItem(CONFIG.storageKey, address);
-          if (state.sessionTopic) {
-            window.localStorage.setItem(CONFIG.sessionTopicKey, state.sessionTopic);
-          }
+          state.address = approved.address;
+          state.sessionTopic = approved.topic;
+          XPORTAL.saveSession(state.address, state.sessionTopic);
 
           hideQrPanel();
           renderAddress();
           setConnectionLoading(false);
-          setStatus("loading", "Connected with xPortal. Updating balance for {address}...", { address: truncateAddress(address) });
+          setStatus("loading", "Connected with xPortal. Updating balance for {address}...", { address: truncateAddress(state.address) });
           await loadBalances();
         } catch (error) {
           console.error(error);
@@ -1901,26 +1864,16 @@
         }
       }
 
-      function disconnectWallet() {
+      async function disconnectWallet() {
         const topic = state.sessionTopic || window.localStorage.getItem(CONFIG.sessionTopicKey);
         const client = state.signClient;
-        if (client && topic) {
-          client.disconnect({
-            topic,
-            reason: {
-              code: 6000,
-              message: "User disconnected"
-            }
-          }).catch(() => {});
-        }
+        await XPORTAL.disconnect({ client, topic });
         state.connectionRunId++;
         setConnectionLoading(false);
         setBalanceLoading(false);
         setPnlLoading(false);
         state.address = "";
         state.sessionTopic = "";
-        window.localStorage.removeItem(CONFIG.storageKey);
-        window.localStorage.removeItem(CONFIG.sessionTopicKey);
         hideQrPanel();
         renderAddress();
         renderEmptyBalances();
@@ -1931,14 +1884,32 @@
       }
 
       function getInitialAddress() {
-        const saved = window.localStorage.getItem(CONFIG.storageKey);
-        const savedTopic = window.localStorage.getItem(CONFIG.sessionTopicKey) || "";
-        state.sessionTopic = savedTopic;
-        if (isAddress(saved) && savedTopic) return saved;
-        window.localStorage.removeItem(CONFIG.storageKey);
-        window.localStorage.removeItem(CONFIG.sessionTopicKey);
+        const saved = XPORTAL.getStoredSession();
+        state.sessionTopic = saved.topic || "";
+        if (isAddress(saved.address) && saved.topic) return saved.address;
+        XPORTAL.clearStoredSession();
         state.sessionTopic = "";
         return "";
+      }
+
+      async function restoreSessionIfPossible() {
+        const restored = await XPORTAL.restore({
+          projectId: CONFIG.walletConnectProjectId,
+          relayUrl: CONFIG.relayUrl,
+          methods: CONFIG.walletConnectMethods,
+          onSessionDelete: handleXPortalSessionDelete,
+          metadata: getAppMetadata()
+        });
+        if (!restored) {
+          state.address = "";
+          state.sessionTopic = "";
+          return false;
+        }
+        state.signClient = restored.client;
+        state.signClientProjectId = CONFIG.walletConnectProjectId;
+        state.address = restored.address;
+        state.sessionTopic = restored.topic;
+        return true;
       }
 
       function truncateAddress(address) {
@@ -4001,20 +3972,7 @@
         );
       }
 
-      function boot() {
-        state.address = getInitialAddress();
-        renderAddress();
-        renderEmptyBalances();
-        renderEmptyPnl();
-
-        if (state.address) {
-          setStatus("connected", "Connected: {address}", { address: truncateAddress(state.address) });
-          loadBalances();
-        } else {
-          // Genereaza automat QR-ul de conectare la incarcarea paginii
-          connectWallet();
-        }
-
+      async function boot() {
         dom.connectBtn.addEventListener("click", openXPortalApp);
         if (dom.refreshBtn) dom.refreshBtn.addEventListener("click", loadBalances);
         dom.disconnectBtn.addEventListener("click", disconnectWallet);
@@ -4030,6 +3988,22 @@
           dom.pnlAddressInput.dataset.mode = "manual";
           syncLoadingState();
         });
+
+        state.address = getInitialAddress();
+        renderAddress();
+        renderEmptyBalances();
+        renderEmptyPnl();
+
+        const restored = state.address ? await restoreSessionIfPossible() : false;
+        renderAddress();
+
+        if (restored) {
+          setStatus("connected", "Connected: {address}", { address: truncateAddress(state.address) });
+          loadBalances();
+        } else {
+          // Genereaza automat QR-ul de conectare la incarcarea paginii
+          connectWallet();
+        }
 
         // Anunta pagina parinte (index.html) ca embed-ul e gata → ascunde splash-ul
         notifyParentReady();
