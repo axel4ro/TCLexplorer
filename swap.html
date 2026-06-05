@@ -176,13 +176,26 @@
 
     .swap-toast {
       position: fixed;
-      right: clamp(14px, 3vw, 28px);
-      bottom: clamp(14px, 3vw, 28px);
+      inset: 0;
       z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      min-height: 100dvh;
+      padding: 22px;
+      background: rgba(3, 6, 12, 0.68);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .swap-toast[hidden] { display: none; }
+    .swap-toast-card {
       display: grid;
-      gap: 10px;
-      width: min(420px, calc(100vw - 28px));
-      padding: 16px;
+      gap: 12px;
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100dvh - 44px);
+      overflow: auto;
+      padding: 18px;
       border: 1px solid rgba(74,222,128,0.34);
       border-radius: var(--radius);
       background: linear-gradient(180deg, rgba(18,28,25,0.98), rgba(8,13,16,0.98));
@@ -338,6 +351,8 @@
       .qr-popover .qr-code { max-width: 260px; min-height: 260px; }
       .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 236px; height: 236px; }
       .qr-popover .qr-loader { width: 236px; height: 236px; }
+      .swap-toast { padding: 14px; }
+      .swap-toast-card { width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 14px; }
       .connected-info-card .wallet-addr-row { padding: 8px 12px; }
       .balance-strip { padding: 8px 12px; gap: 4px; }
       .bs-item { padding: 1px 4px; }
@@ -541,14 +556,16 @@
 
 </main>
 
-<div class="swap-toast" id="swapToast" role="dialog" aria-labelledby="swapToastTitle" aria-live="polite" hidden>
-  <div class="swap-toast-head">
-    <h3 class="swap-toast-title" id="swapToastTitle">Swap complete</h3>
-    <button class="swap-toast-close" id="swapToastClose" type="button" aria-label="Close notification">X</button>
+<div class="swap-toast" id="swapToast" role="dialog" aria-modal="true" aria-labelledby="swapToastTitle" aria-live="polite" hidden>
+  <div class="swap-toast-card">
+    <div class="swap-toast-head">
+      <h3 class="swap-toast-title" id="swapToastTitle">Swap complete</h3>
+      <button class="swap-toast-close" id="swapToastClose" type="button" aria-label="Close notification">X</button>
+    </div>
+    <div class="swap-toast-received" id="swapToastReceived"></div>
+    <div class="swap-toast-meta" id="swapToastMeta"></div>
+    <a class="swap-toast-link" id="swapToastLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">View transaction</a>
   </div>
-  <div class="swap-toast-received" id="swapToastReceived"></div>
-  <div class="swap-toast-meta" id="swapToastMeta"></div>
-  <a class="swap-toast-link" id="swapToastLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">View transaction</a>
 </div>
 
 <script src="lib/walletconnect-sign-client.umd.js"></script>
@@ -2053,6 +2070,9 @@
     D.amountIn.addEventListener("input", () => { syncSwapBtn(); scheduleQuote(); });
     D.swapBtn.addEventListener("click", executeSwap);
     D.swapToastClose?.addEventListener("click", hideSwapToast);
+    D.swapToast?.addEventListener("click", (event) => {
+      if (event.target === D.swapToast) hideSwapToast();
+    });
     D.maxBtn.addEventListener("click", setMax);
     D.refreshSessionBtn.addEventListener("click", () => {
       S.connectionRunId++;
