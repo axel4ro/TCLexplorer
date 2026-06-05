@@ -174,6 +174,38 @@
     .tx-result-title { font-weight: 900; color: var(--success); }
     .tx-error { padding: 12px; border: 1px solid rgba(251,113,133,0.2); border-radius: var(--radius); background: rgba(251,113,133,0.07); color: var(--danger); font-size: 0.88rem; }
 
+    .swap-toast {
+      position: fixed;
+      right: clamp(14px, 3vw, 28px);
+      bottom: clamp(14px, 3vw, 28px);
+      z-index: 500;
+      display: grid;
+      gap: 10px;
+      width: min(420px, calc(100vw - 28px));
+      padding: 16px;
+      border: 1px solid rgba(74,222,128,0.34);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(18,28,25,0.98), rgba(8,13,16,0.98));
+      box-shadow: 0 22px 58px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,232,204,0.08);
+    }
+    .swap-toast-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .swap-toast-title { margin: 0; color: var(--success); font-weight: 900; font-size: 1rem; }
+    .swap-toast-close {
+      display: grid; place-items: center;
+      width: 30px; height: 30px; flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .swap-toast-close:hover { border-color: rgba(255,255,255,0.25); color: var(--text); background: rgba(255,255,255,0.09); }
+    .swap-toast-received { color: var(--text); font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+    .swap-toast-meta { color: var(--muted); font-size: 0.82rem; line-height: 1.4; overflow-wrap: anywhere; }
+    .swap-toast-link { color: #9ff7bd; font-weight: 800; font-size: 0.86rem; overflow-wrap: anywhere; }
+
     /* ── Topbar right cluster ────────────────────────────────── */
     .topbar { justify-content: space-between; }
     .topbar-right { display: flex; align-items: center; gap: 10px; }
@@ -204,15 +236,35 @@
     /* ── Connect popover ─────────────────────────────────────── */
     .connect-wrap { position: relative; }
     .qr-popover {
-      position: absolute; top: calc(100% + 10px); right: 0; z-index: 200;
-      width: 296px;
+      position: fixed;
+      inset: 0;
+      z-index: 420;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      min-height: 100dvh;
+      padding: 22px;
+      border: 0;
+      background: rgba(3, 6, 12, 0.68);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: none;
+    }
+    .qr-modal-card {
+      display: grid;
+      gap: 14px;
+      width: min(380px, calc(100vw - 32px));
+      max-height: calc(100dvh - 44px);
+      overflow: auto;
+      padding: 18px;
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
       background: linear-gradient(180deg, rgba(20,26,40,0.99), rgba(10,14,22,0.99));
-      border: 1px solid var(--line-strong); border-radius: 12px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.55);
-      padding: 16px; display: grid; gap: 12px;
+      box-shadow: 0 28px 84px rgba(0,0,0,0.62);
     }
     .qr-popover-head { display: flex; align-items: center; justify-content: space-between; }
-    .qr-popover-title { font-weight: 800; font-size: 0.92rem; }
+    .qr-popover-title { font-weight: 900; font-size: 1rem; }
     .qr-close-btn {
       display: grid; place-items: center; width: 28px; height: 28px;
       border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
@@ -220,6 +272,10 @@
       font-size: 0.8rem; cursor: pointer;
     }
     .qr-popover .qr-wrap { margin: 0; }
+    .qr-popover .connect-qr-frame { width: 100%; }
+    .qr-popover .qr-code { width: 100%; max-width: 284px; min-height: 284px; padding: 12px; }
+    .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 260px; height: 260px; }
+    .qr-popover .qr-loader { width: 260px; height: 260px; }
     .qr-popover .btn-row { gap: 8px; margin: 0; }
     .qr-popover .status-line { font-size: 0.82rem; margin: 0; }
 
@@ -266,12 +322,22 @@
     .rate-details { display: grid; gap: 7px; }
     .rate-details[hidden] { display: none; }
 
+    @media (min-width: 641px) {
+      .qr-popover #connectBtn {
+        display: none;
+      }
+    }
+
     @media (max-width: 640px) {
       .page-shell  { width: calc(100% - 16px); padding-top: 8px; }
       .swap-center { gap: 7px; padding-bottom: 16px; }
       .topbar      { margin-bottom: 10px; }
       .topbar-right { flex-wrap: wrap; }
-      .qr-popover  { right: auto; left: 0; width: min(296px, calc(100vw - 36px)); }
+      .qr-popover  { padding: 14px; }
+      .qr-modal-card { width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 14px; }
+      .qr-popover .qr-code { max-width: 260px; min-height: 260px; }
+      .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 236px; height: 236px; }
+      .qr-popover .qr-loader { width: 236px; height: 236px; }
       .connected-info-card .wallet-addr-row { padding: 8px 12px; }
       .balance-strip { padding: 8px 12px; gap: 4px; }
       .bs-item { padding: 1px 4px; }
@@ -305,32 +371,34 @@
           <img src="images/xPortal.png" alt="" width="16" height="16">
           <span id="connectTitle">Connect xPortal</span>
         </button>
-        <div class="qr-popover" id="qrPopover" hidden>
-          <div class="qr-popover-head">
-            <span class="qr-popover-title">Scan with xPortal</span>
-            <button class="qr-close-btn" id="qrCloseBtn" type="button">✕</button>
-          </div>
-          <div class="qr-wrap">
-            <div class="connect-qr-frame" id="connectQrFrame">
-              <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR">
-                <div class="qr-loader" id="connectQrLoader">
-                  <div class="qr-loader__spinner"></div>
-                  <span>Generating QR…</span>
-                </div>
-              </div>
-              <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden>Refresh</button>
+        <div class="qr-popover" id="qrPopover" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle" hidden>
+          <div class="qr-modal-card">
+            <div class="qr-popover-head">
+              <span class="qr-popover-title" id="qrModalTitle">Scan with xPortal</span>
+              <button class="qr-close-btn" id="qrCloseBtn" type="button" aria-label="Close xPortal connection">X</button>
             </div>
-          </div>
-          <div class="btn-row" style="margin:0;">
-            <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer" style="flex:1;">
-              <img src="images/xPortal.png" alt="" width="16" height="16">
-              Open xPortal
-            </a>
-            <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Install</a>
-          </div>
-          <div class="status-line" role="status" aria-live="polite">
-            <span class="status-dot" aria-hidden="true"></span>
-            <span id="statusText">Preparing connection…</span>
+            <div class="qr-wrap">
+              <div class="connect-qr-frame" id="connectQrFrame">
+                <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR">
+                  <div class="qr-loader" id="connectQrLoader">
+                    <div class="qr-loader__spinner"></div>
+                    <span>Generating QR…</span>
+                  </div>
+                </div>
+                <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden>Refresh</button>
+              </div>
+            </div>
+            <div class="btn-row" style="margin:0;">
+              <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer" style="flex:1;">
+                <img src="images/xPortal.png" alt="" width="16" height="16">
+                Open xPortal
+              </a>
+              <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Install</a>
+            </div>
+            <div class="status-line" role="status" aria-live="polite">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="statusText">Preparing connection…</span>
+            </div>
           </div>
         </div>
       </div>
@@ -473,6 +541,16 @@
 
 </main>
 
+<div class="swap-toast" id="swapToast" role="dialog" aria-labelledby="swapToastTitle" aria-live="polite" hidden>
+  <div class="swap-toast-head">
+    <h3 class="swap-toast-title" id="swapToastTitle">Swap complete</h3>
+    <button class="swap-toast-close" id="swapToastClose" type="button" aria-label="Close notification">X</button>
+  </div>
+  <div class="swap-toast-received" id="swapToastReceived"></div>
+  <div class="swap-toast-meta" id="swapToastMeta"></div>
+  <a class="swap-toast-link" id="swapToastLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">View transaction</a>
+</div>
+
 <script src="lib/walletconnect-sign-client.umd.js"></script>
 <script src="lib/qrcode.min.js"></script>
 <script src="js/xportal-session.js?v=20260605-1"></script>
@@ -608,6 +686,11 @@
     priceImpactText:document.getElementById("priceImpactText"),
     avgPriceText:   document.getElementById("avgPriceText"),
     priceAfterText: document.getElementById("priceAfterText"),
+    swapToast:      document.getElementById("swapToast"),
+    swapToastClose: document.getElementById("swapToastClose"),
+    swapToastReceived: document.getElementById("swapToastReceived"),
+    swapToastMeta:  document.getElementById("swapToastMeta"),
+    swapToastLink:  document.getElementById("swapToastLink"),
   };
 
   // ─── HEX / ENCODING UTILS ─────────────────────────────────────────────────
@@ -1207,7 +1290,7 @@
       S.signClientProjectId = CONFIG.walletConnectProjectId;
       if (!uri) throw new Error("WalletConnect did not return a URI.");
       S.pendingUri = uri;
-      renderQr(D.connectQrCode, uri, 220);
+      renderQr(D.connectQrCode, uri, 260);
       D.connectBtn.classList.remove("is-disabled");
       D.connectBtn.href = xportalDeepLink(uri);
       setStatus("loading", "Scan with xPortal → top-right Scan QR button.");
@@ -1586,6 +1669,78 @@
     throw new Error(`${label} is not available yet. Try again in a few seconds.`);
   }
 
+  function tokenIdForKey(tokenKey) {
+    if (tokenKey === "EGLD") return "EGLD";
+    if (tokenKey === "WEGLD") return CONFIG.WEGLD_ID;
+    if (tokenKey === "TCL") return CONFIG.TCL_ID;
+    if (tokenKey === "USDC") return CONFIG.USDC_ID;
+    return tokenKey;
+  }
+
+  function readAtomicValue(value) {
+    const raw = String(value ?? "");
+    return /^\d+$/.test(raw) ? BigInt(raw) : 0n;
+  }
+
+  function getReceivedAmount(tx, tokenKey, fallbackAmount) {
+    const tokenId = tokenIdForKey(tokenKey);
+    let total = 0n;
+
+    for (const op of tx?.operations || []) {
+      if (op?.receiver !== S.address) continue;
+      if (tokenKey === "EGLD") {
+        if (!op.identifier && (op.type === "egld" || op.action === "transfer")) total += readAtomicValue(op.value);
+      } else if (op.identifier === tokenId) {
+        total += readAtomicValue(op.value);
+      }
+    }
+
+    return total > 0n ? total : BigInt(fallbackAmount || 0n);
+  }
+
+  function hideSwapToast() {
+    if (D.swapToast) D.swapToast.hidden = true;
+  }
+
+  function resetSwapInputsAfterSuccess() {
+    clearTimeout(quoteTimer);
+    _quoteSeq++;
+    S.lastQuote = null;
+    D.amountIn.value = "0";
+    D.amountOut.value = "0";
+    D.rateBox.hidden = true;
+    if (D.fromUsd) D.fromUsd.textContent = "";
+    if (D.toUsd) D.toUsd.textContent = "";
+    syncSwapBtn();
+  }
+
+  function showSwapToast({ pairKey, hash, receivedAmount, tokenKey }) {
+    if (!D.swapToast) return;
+    const meta = TOKEN_META[tokenKey] || { symbol: tokenKey, decimals: 18 };
+    const amountText = formatAmount(receivedAmount, meta.decimals, meta.decimals === 6 ? 6 : 6);
+    const url = `https://explorer.multiversx.com/transactions/${hash}`;
+
+    D.swapToastReceived.textContent = `Received ${amountText} ${meta.symbol}`;
+    D.swapToastMeta.textContent = `${pairKey} confirmed on-chain. Transaction: ${hash}`;
+    D.swapToastLink.href = url;
+    D.swapToastLink.textContent = "View transaction";
+    D.swapToast.hidden = false;
+  }
+
+  async function finishSwap(hash, pairKey, tokenKey, fallbackAmount, label) {
+    setSwapMsg("Waiting for swap confirmation...");
+    const confirmedTx = await waitForTxSuccess(hash, "Swap transaction");
+    const receivedAmount = getReceivedAmount(confirmedTx, tokenKey, fallbackAmount);
+    const meta = TOKEN_META[tokenKey] || { symbol: tokenKey, decimals: 18 };
+    const amountText = formatAmount(receivedAmount, meta.decimals, meta.decimals === 6 ? 6 : 6);
+
+    showTxResult(hash, label || `${pairKey} complete!`);
+    showSwapToast({ pairKey, hash, receivedAmount, tokenKey });
+    resetSwapInputsAfterSuccess();
+    setSwapMsg(`Swap complete. Received ${amountText} ${meta.symbol}.`);
+    return confirmedTx;
+  }
+
   function showTxResult(hash, label) {
     const url = `https://explorer.multiversx.com/transactions/${hash}`;
     D.txResult.innerHTML = `
@@ -1613,6 +1768,7 @@
 
     S.swapping = true;
     D.txResult.hidden = true;
+    hideSwapToast();
     syncSwapBtn();
 
     try {
@@ -1629,7 +1785,7 @@
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "USDC → TCL swap sent!");
-        setSwapMsg("Swap broadcast. Confirm on explorer.");
+        await finishSwap(hash, pairKey, pair.to, quote.amountOut, "USDC → TCL complete!");
       }
 
       // ── TCL → USDC (direct pair) ──────────────────────
@@ -1640,7 +1796,7 @@
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "TCL → USDC swap sent!");
-        setSwapMsg("Swap broadcast. Confirm on explorer.");
+        await finishSwap(hash, pairKey, pair.to, quote.amountOut, "TCL → USDC complete!");
       }
 
       // ── WEGLD → TCL (2-hop via router: WEGLD→USDC→TCL) ─
@@ -1656,7 +1812,7 @@
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "WEGLD → TCL swap sent!");
-        setSwapMsg("Swap broadcast. Confirm on explorer.");
+        await finishSwap(hash, pairKey, pair.to, quote.amountOut, "WEGLD → TCL complete!");
       }
 
       // ── TCL → WEGLD (2-hop via router: TCL→USDC→WEGLD) ─
@@ -1672,7 +1828,7 @@
         setSwapMsg("Broadcasting transaction…");
         const hash = await broadcastTx(signed);
         showTxResult(hash, "TCL → WEGLD swap sent!");
-        setSwapMsg("Swap broadcast. Confirm on explorer.");
+        await finishSwap(hash, pairKey, pair.to, quote.amountOut, "TCL → WEGLD complete!");
       }
 
       // ── EGLD → TCL (step1: wrap, step2: multiPairSwap WEGLD→USDC→TCL)
@@ -1707,11 +1863,8 @@
         showTxResult(swapHash, "Step 2/2 sent: final swap broadcast.");
 
         setSwapMsg("Step 2/2: Waiting for final swap confirmation…");
-        await waitForTxSuccess(swapHash, "Final swap");
+        await finishSwap(swapHash, pairKey, pair.to, q2.amountOut, "EGLD → TCL complete!");
         S.multiStepPhase = 2;
-
-        showTxResult(swapHash, "EGLD → TCL complete!");
-        setSwapMsg("Swap complete. Check the explorer for confirmation.");
       }
 
       // ── TCL → EGLD (step1: multiPairSwap TCL→USDC→WEGLD, step2: unwrap)
@@ -1745,11 +1898,8 @@
         showTxResult(unwrapHash, "Step 2/2 sent: unwrap broadcast.");
 
         setSwapMsg("Step 2/2: Waiting for unwrap confirmation…");
-        await waitForTxSuccess(unwrapHash, "Unwrap transaction");
+        await finishSwap(unwrapHash, pairKey, pair.to, quote.amountOut, "TCL → EGLD complete!");
         S.multiStepPhase = 2;
-
-        showTxResult(unwrapHash, "TCL → EGLD complete!");
-        setSwapMsg("Swap complete. Check the explorer for confirmation.");
       }
 
       // Refresh balances after swap
@@ -1805,6 +1955,7 @@
     });
     D.amountIn.addEventListener("input", () => { syncSwapBtn(); scheduleQuote(); });
     D.swapBtn.addEventListener("click", executeSwap);
+    D.swapToastClose?.addEventListener("click", hideSwapToast);
     D.maxBtn.addEventListener("click", setMax);
     D.refreshSessionBtn.addEventListener("click", () => {
       S.connectionRunId++;
@@ -1839,6 +1990,14 @@
     if (D.qrCloseBtn) {
       D.qrCloseBtn.addEventListener("click", () => { if (D.qrPopover) D.qrPopover.hidden = true; });
     }
+    if (D.qrPopover) {
+      D.qrPopover.addEventListener("click", (e) => {
+        if (e.target === D.qrPopover) D.qrPopover.hidden = true;
+      });
+    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && D.qrPopover && !D.qrPopover.hidden) D.qrPopover.hidden = true;
+    });
     document.addEventListener("click", (e) => {
       if (D.qrPopover && !D.qrPopover.hidden) {
         const wrap = D.connectView;
