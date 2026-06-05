@@ -2126,7 +2126,7 @@
       document.getElementById("brandLink").addEventListener("click", e => {
         if (window.parent && window.parent !== window) {
           e.preventDefault();
-          try { window.parent.postMessage({ type: "tcl:navigate", page: "swap" }, "*"); } catch(_) {}
+          try { window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*"); } catch(_) {}
         }
       });
     }

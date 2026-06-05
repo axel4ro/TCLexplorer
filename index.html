@@ -408,6 +408,7 @@
       </h2>
       <button type="button" class="token-flow-link" onclick="openFlowPage()" aria-label="Open TCL Flow Chart">Flow</button>
       <button type="button" class="token-flow-link" onclick="openPnlCheckPage()" aria-label="Open PNL Check">PNL Check</button>
+      <button type="button" class="token-flow-link" onclick="openSwapPage()" aria-label="Open TCL Swap">💱 Swap</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
@@ -2796,6 +2797,16 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true,
     readyFallbackMs: 20000
   },
+  swap: {
+    src: "swap.html?v=20260605-2",
+    title: "Swap",
+    navId: "btn-token",
+    routeKey: "swap",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL swap.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 20000
+  },
   signal: {
     src: "signal.html",
     title: "Signal",
@@ -5086,6 +5097,11 @@ function openFlowPage() {
 
 function openPnlCheckPage() {
   const route = INTERNAL_PAGE_ROUTES["pnlCheck"];
+  openInternalPage(route.src, route.title, route);
+}
+
+function openSwapPage() {
+  const route = INTERNAL_PAGE_ROUTES.swap;
   openInternalPage(route.src, route.title, route);
 }
 
