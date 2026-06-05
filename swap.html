@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCL Swap – xExchange</title>
+  <meta name="theme-color" content="#07080c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: #111621;
+      --panel-strong: #171c29;
+      --line: rgba(0,232,204,0.18);
+      --line-strong: rgba(0,232,204,0.38);
+      --text: #e8edf5;
+      --muted: #8f9aae;
+      --soft: #667085;
+      --accent: #00e8cc;
+      --accent-2: #2f75ff;
+      --gold: #f7c35f;
+      --danger: #fb7185;
+      --success: #4ade80;
+      --radius: 8px;
+      --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(13,19,30,0.98) 0%, rgba(7,9,14,0.98) 54%, #04060a 100%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.022) 0, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 66px);
+      color: var(--text);
+      font-family: var(--font-ui);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; cursor: pointer; }
+    input { cursor: text; }
+    [hidden] { display: none !important; }
+
+    .page-shell { width: min(1120px, calc(100% - 28px)); margin: 0 auto; padding: 24px 0 56px; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 22px; }
+    .brand-link, .top-link {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 42px; padding: 9px 13px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius);
+      background: rgba(255,255,255,0.04); color: var(--text); font-weight: 800;
+    }
+    .brand-link { gap: 10px; }
+    .brand-link img { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(22,27,40,0.96), rgba(12,15,23,0.96));
+      box-shadow: 0 18px 48px rgba(0,0,0,0.36);
+      padding: 18px;
+    }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; margin-bottom: 14px;
+    }
+    .panel-title { font-family: var(--font-display); font-size: clamp(1rem,2vw,1.3rem); margin: 0; }
+    .panel-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); background: rgba(0,0,0,0.18); }
+    .panel-icon img { width: 28px; height: 28px; object-fit: contain; }
+
+    /* Status / QR */
+    .status-line { display: flex; align-items: center; gap: 10px; min-height: 32px; color: var(--muted); font-size: 0.9rem; }
+    .status-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--soft); box-shadow: 0 0 0 4px rgba(102,112,133,0.12); }
+    body[data-state="connected"] .status-dot, body[data-state="ready"] .status-dot { background: var(--success); box-shadow: 0 0 0 4px rgba(74,222,128,0.12); }
+    body[data-state="loading"] .status-dot { background: var(--gold); box-shadow: 0 0 0 4px rgba(247,195,95,0.14); }
+    body[data-state="error"] .status-dot { background: var(--danger); box-shadow: 0 0 0 4px rgba(251,113,133,0.12); }
+
+    .qr-wrap { display: grid; gap: 12px; justify-items: center; margin: 12px 0 14px; }
+    .connect-qr-frame { position: relative; display: grid; place-items: center; width: min(100%,240px); }
+    .connect-qr-frame.is-expired .qr-code { opacity: 0.38; filter: grayscale(1); }
+    .qr-code { display: grid; place-items: center; width: min(100%,240px); min-height: 240px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); background: #fff; position: relative; }
+    .qr-code canvas, .qr-code img { width: 220px; height: 220px; }
+    .qr-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 220px; height: 220px; color: #555; font-size: 13px; font-family: inherit; }
+    .qr-loader__spinner { width: 36px; height: 36px; border: 3px solid rgba(0,0,0,0.12); border-top-color: #0c0e14; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .qr-refresh-btn { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 18px; border: 1px solid rgba(0,232,204,0.5); border-radius: var(--radius); background: linear-gradient(135deg, var(--accent), #55f5df); color: #041210; font-weight: 900; transform: translate(-50%,-50%); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 10px 15px; border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius); background: rgba(255,255,255,0.04); color: var(--text); font-weight: 800; transition: transform 0.18s, border-color 0.18s, background 0.18s, opacity 0.18s; }
+    .btn img { width: 18px; height: 18px; object-fit: contain; }
+    .btn:hover { transform: translateY(-1px); border-color: var(--line-strong); background: rgba(255,255,255,0.07); }
+    .btn-primary { border-color: rgba(0,232,204,0.46); background: linear-gradient(135deg, var(--accent), #55f5df); color: #041210; box-shadow: 0 12px 28px rgba(0,232,204,0.18); width: 100%; font-size: 1rem; }
+    .btn-blue { border-color: rgba(47,117,255,0.58); background: linear-gradient(135deg, #2f75ff, #1640ca); color: #fff; }
+    .btn-danger { border-color: rgba(251,113,133,0.3); background: rgba(251,113,133,0.12); color: #fff; }
+    .btn-sm { padding: 4px 12px; font-size: 0.78rem; min-height: 28px; }
+    .btn:disabled { pointer-events: none; opacity: 0.48; transform: none; }
+    .btn.is-disabled { pointer-events: none; opacity: 0.48; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+
+    .wallet-balance-card { display: grid; gap: 8px; padding: 12px; border: 1px solid rgba(0,232,204,0.14); border-radius: var(--radius); background: rgba(0,232,204,0.055); margin-bottom: 12px; }
+    .wallet-balance-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .eyebrow { color: var(--soft); font-size: 0.76rem; font-weight: 800; text-transform: uppercase; }
+    .btn-explorer-sm { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(0,232,204,0.35); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); white-space: nowrap; }
+    .btn-disconnect-sm { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(220,53,69,0.35); border-radius: 999px; background: rgba(220,53,69,0.08); color: #e87a85; cursor: pointer; white-space: nowrap; }
+    .wallet-balance-values { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .wallet-balance-egld { color: var(--text); font-family: var(--font-display); font-size: clamp(1.1rem,2vw,1.35rem); }
+    .wallet-balance-usd { color: var(--success); font-size: 0.96rem; font-weight: 800; }
+
+    /* Swap UI */
+    .swap-card { display: flex; flex-direction: column; gap: 14px; }
+    .slippage-tag { padding: 4px 10px; border: 1px solid rgba(0,232,204,0.28); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); font-size: 0.78rem; font-weight: 800; }
+
+    .pair-select-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .pair-select-row select {
+      flex: 1; min-height: 42px; padding: 10px 12px;
+      border: 1px solid rgba(143,154,174,0.22); border-radius: var(--radius);
+      background: rgba(4,6,10,0.62); color: var(--text); outline: none;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238f9aae' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .pair-select-row select:focus { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(0,232,204,0.08); }
+
+    .token-box {
+      padding: 14px; border: 1px solid rgba(143,154,174,0.2); border-radius: var(--radius);
+      background: rgba(4,6,10,0.5); display: grid; gap: 8px;
+    }
+    .token-box.to-box { background: rgba(0,232,204,0.04); border-color: rgba(0,232,204,0.18); }
+    .token-box-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .token-label-main { display: flex; align-items: center; gap: 8px; }
+    .token-icon { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+    .token-symbol { font-weight: 800; font-size: 0.96rem; }
+    .token-balance-note { color: var(--muted); font-size: 0.8rem; }
+    .btn-max { padding: 2px 8px; font-size: 0.72rem; min-height: 22px; border: 1px solid rgba(0,232,204,0.3); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); font-weight: 800; cursor: pointer; }
+    .token-amount-input {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-size: clamp(1.3rem,3vw,1.8rem); font-weight: 700;
+      padding: 0;
+    }
+    .token-amount-input::placeholder { color: var(--soft); }
+    .token-amount-input[readonly] { color: var(--accent); cursor: default; }
+    .usd-value-note { color: var(--soft); font-size: 0.8rem; min-height: 15px; line-height: 1.3; }
+
+    .swap-arrow-row { display: flex; justify-content: center; }
+    .swap-arrow-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border: 1px solid rgba(0,232,204,0.25);
+      border-radius: 50%; background: rgba(0,232,204,0.08); color: var(--accent);
+      font-size: 1.2rem; transition: background 0.18s, transform 0.2s;
+      cursor: default;
+    }
+
+    .rate-info-box {
+      padding: 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius);
+      background: rgba(255,255,255,0.03); display: grid; gap: 7px;
+    }
+    .rate-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.84rem; }
+    .rate-label { color: var(--muted); }
+    .rate-value { color: var(--text); font-weight: 700; text-align: right; }
+    .rate-value.accent { color: var(--accent); }
+
+    /* ── Swap status / tx ───────────────────────────────────── */
+    .swap-status-msg { color: var(--muted); font-size: 0.86rem; line-height: 1.55; min-height: 20px; }
+    .tx-result { display: grid; gap: 10px; padding: 12px; border: 1px solid rgba(74,222,128,0.18); border-radius: var(--radius); background: rgba(74,222,128,0.08); }
+    .tx-result a { color: #9ff7bd; font-weight: 800; overflow-wrap: anywhere; }
+    .tx-result-title { font-weight: 900; color: var(--success); }
+    .tx-error { padding: 12px; border: 1px solid rgba(251,113,133,0.2); border-radius: var(--radius); background: rgba(251,113,133,0.07); color: var(--danger); font-size: 0.88rem; }
+
+    /* ── Topbar right cluster ────────────────────────────────── */
+    .topbar { justify-content: space-between; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    /* ── Topbar disconnect button ────────────────────────────── */
+    .btn-disconnect-topbar {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border: 1px solid rgba(251,113,133,0.4);
+      border-radius: var(--radius); background: rgba(251,113,133,0.08);
+      color: #fb7185; font: inherit; font-weight: 800; font-size: 0.88rem;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-disconnect-topbar:hover { background: rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.65); }
+
+    /* ── Connected info card (address + balances above swap) ──── */
+    .connected-info-card {
+      width: 100%; max-width: 600px;
+      border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;
+      background: rgba(255,255,255,0.025); overflow: hidden;
+    }
+    .wallet-addr-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .wallet-addr-text { font-family: "Consolas","SFMono-Regular",monospace; font-size: 0.86rem; font-weight: 700; color: var(--text); flex: 1; }
+
+    /* ── Connect popover ─────────────────────────────────────── */
+    .connect-wrap { position: relative; }
+    .qr-popover {
+      position: absolute; top: calc(100% + 10px); right: 0; z-index: 200;
+      width: 296px;
+      background: linear-gradient(180deg, rgba(20,26,40,0.99), rgba(10,14,22,0.99));
+      border: 1px solid var(--line-strong); border-radius: 12px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+      padding: 16px; display: grid; gap: 12px;
+    }
+    .qr-popover-head { display: flex; align-items: center; justify-content: space-between; }
+    .qr-popover-title { font-weight: 800; font-size: 0.92rem; }
+    .qr-close-btn {
+      display: grid; place-items: center; width: 28px; height: 28px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      background: rgba(255,255,255,0.05); color: var(--muted);
+      font-size: 0.8rem; cursor: pointer;
+    }
+    .qr-popover .qr-wrap { margin: 0; }
+    .qr-popover .btn-row { gap: 8px; margin: 0; }
+    .qr-popover .status-line { font-size: 0.82rem; margin: 0; }
+
+    /* ── Balance strip ───────────────────────────────────────── */
+    .balance-strip {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; flex-wrap: wrap;
+      width: 100%;
+      padding: 10px 16px;
+    }
+    .bs-item { display: flex; align-items: center; gap: 7px; padding: 2px 8px; }
+    .bs-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+    .bs-info { display: grid; gap: 0; }
+    .bs-amount { font-size: 0.83rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .bs-usd    { font-size: 0.72rem; font-weight: 700; color: var(--success); line-height: 1.2; }
+    .bs-sep    { color: rgba(255,255,255,0.15); font-size: 1.1rem; line-height: 1; }
+
+    /* ── Centered layout ─────────────────────────────────────── */
+    .swap-layout {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; padding: 8px 0 48px;
+    }
+    .swap-right { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 600px; }
+    .swap-card {
+      width: 100%;
+      border: 1px solid var(--line); border-radius: 16px;
+      background: linear-gradient(180deg, rgba(18,23,36,0.97), rgba(10,13,21,0.97));
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+      padding: 24px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .swap-card-head { display: flex; align-items: center; justify-content: space-between; }
+    .swap-card-title { font-family: var(--font-display); font-size: 1.25rem; margin: 0; }
+
+    /* ── Rate details toggle ─────────────────────────────────── */
+    .rate-toggle-btn {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      width: 100%; padding: 6px 0 2px; margin-top: 2px;
+      border: none; border-top: 1px solid rgba(255,255,255,0.06);
+      background: transparent; color: var(--muted);
+      font: inherit; font-size: 0.76rem; font-weight: 800;
+      cursor: pointer; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .rate-toggle-btn:hover { color: var(--text); }
+    .rate-details { display: grid; gap: 7px; }
+    .rate-details[hidden] { display: none; }
+
+    @media (max-width: 640px) {
+      .page-shell  { width: calc(100% - 16px); padding-top: 8px; }
+      .swap-center { gap: 7px; padding-bottom: 16px; }
+      .topbar      { margin-bottom: 10px; }
+      .topbar-right { flex-wrap: wrap; }
+      .qr-popover  { right: auto; left: 0; width: min(296px, calc(100vw - 36px)); }
+      .connected-info-card .wallet-addr-row { padding: 8px 12px; }
+      .balance-strip { padding: 8px 12px; gap: 4px; }
+      .bs-item { padding: 1px 4px; }
+      .bs-amount { font-size: 0.76rem; }
+      .bs-usd    { font-size: 0.68rem; }
+      .swap-card { padding: 14px; gap: 9px; }
+      .pair-select-row select { min-height: 38px; }
+      .token-box { padding: 10px 12px; }
+      .token-amount-input { font-size: 1.4rem; }
+      .rate-info-box { gap: 5px; padding: 10px; }
+      .rate-row  { font-size: 0.78rem; }
+      .swap-card-title { font-size: 1rem; }
+      .usd-value-note  { font-size: 0.74rem; }
+      .swap-status-msg { font-size: 0.8rem; min-height: 16px; }
+    }
+  </style>
+</head>
+<body data-state="idle">
+<main class="page-shell">
+
+  <header class="topbar">
+    <a class="brand-link" id="brandLink" href="index.html">
+      <img src="images/thecursedland.png" alt="">
+      <span>TCL Explorer</span>
+    </a>
+    <div class="topbar-right">
+
+      <!-- ── Connect button + QR popover (hidden when connected) -->
+      <div class="connect-wrap" id="connectView">
+        <button class="btn btn-blue" id="connectTriggerBtn" type="button">
+          <img src="images/xPortal.png" alt="" width="16" height="16">
+          <span id="connectTitle">Connect xPortal</span>
+        </button>
+        <div class="qr-popover" id="qrPopover" hidden>
+          <div class="qr-popover-head">
+            <span class="qr-popover-title">Scan with xPortal</span>
+            <button class="qr-close-btn" id="qrCloseBtn" type="button">✕</button>
+          </div>
+          <div class="qr-wrap">
+            <div class="connect-qr-frame" id="connectQrFrame">
+              <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR">
+                <div class="qr-loader" id="connectQrLoader">
+                  <div class="qr-loader__spinner"></div>
+                  <span>Generating QR…</span>
+                </div>
+              </div>
+              <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden>Refresh</button>
+            </div>
+          </div>
+          <div class="btn-row" style="margin:0;">
+            <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer" style="flex:1;">
+              <img src="images/xPortal.png" alt="" width="16" height="16">
+              Open xPortal
+            </a>
+            <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer">Install</a>
+          </div>
+          <div class="status-line" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="statusText">Preparing connection…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Disconnect button (hidden when not connected) -->
+      <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" hidden>
+        Disconnect <span>✕</span>
+      </button>
+      <span id="userBalanceEgld" hidden></span>
+      <span id="userBalanceUsd"  hidden></span>
+      <button id="disconnectBtn2" type="button" hidden></button>
+    </div>
+  </header>
+
+  <div class="swap-layout">
+    <div class="swap-right">
+    <div class="swap-right">
+
+      <!-- Connected info card (hidden when not connected) -->
+      <div class="connected-info-card" id="connectedView" hidden>
+        <div class="wallet-addr-row">
+          <span class="wallet-addr-text" id="walletAddr"></span>
+          <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
+        </div>
+        <div class="balance-strip" id="balanceStrip">
+          <div class="bs-item">
+            <img class="bs-icon" id="stripEgldIcon" src="images/EGLD.png" alt="EGLD">
+            <div class="bs-info">
+              <span class="bs-amount" id="stripEgldAmount">-- EGLD</span>
+              <span class="bs-usd"    id="stripEgldUsd">$--</span>
+            </div>
+          </div>
+          <span class="bs-sep">|</span>
+          <div class="bs-item">
+            <img class="bs-icon" id="stripUsdcIcon" src="" alt="USDC">
+            <div class="bs-info">
+              <span class="bs-amount" id="stripUsdcAmount">-- USDC</span>
+              <span class="bs-usd"    id="stripUsdcUsd">$--</span>
+            </div>
+          </div>
+          <span class="bs-sep">|</span>
+          <div class="bs-item">
+            <img class="bs-icon" id="stripTclIcon" src="images/thecursedland.png" alt="TCL">
+            <div class="bs-info">
+              <span class="bs-amount" id="stripTclAmount">-- TCL</span>
+              <span class="bs-usd"    id="stripTclUsd">$--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Swap card -->
+      <section class="swap-card" aria-labelledby="swapTitle">
+        <div class="swap-card-head">
+          <h2 class="swap-card-title" id="swapTitle">Swap</h2>
+          <span class="slippage-tag">Slippage 1%</span>
+        </div>
+
+        <div class="pair-select-row">
+          <select id="pairSelect" aria-label="Select swap pair">
+            <option value="EGLD-TCL">EGLD → TCL</option>
+            <option value="WEGLD-TCL">WEGLD → TCL</option>
+            <option value="TCL-EGLD">TCL → EGLD</option>
+            <option value="TCL-WEGLD">TCL → WEGLD</option>
+            <option value="USDC-TCL">USDC → TCL</option>
+            <option value="TCL-USDC">TCL → USDC</option>
+          </select>
+        </div>
+
+        <div class="token-box">
+          <div class="token-box-header">
+            <div class="token-label-main">
+              <img class="token-icon" id="fromIcon" src="images/EGLD.png" alt="">
+              <span class="token-symbol" id="fromSymbol">EGLD</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="token-balance-note" id="fromBalanceLabel">Balance: --</span>
+              <button class="btn-max" id="maxBtn" type="button">MAX</button>
+            </div>
+          </div>
+          <input class="token-amount-input" id="amountIn" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0">
+          <div class="usd-value-note" id="fromUsd"></div>
+        </div>
+
+        <div class="swap-arrow-row">
+          <div class="swap-arrow-btn" aria-hidden="true">↓</div>
+        </div>
+
+        <div class="token-box to-box">
+          <div class="token-box-header">
+            <div class="token-label-main">
+              <img class="token-icon" id="toIcon" src="images/thecursedland.png" alt="">
+              <span class="token-symbol" id="toSymbol">TCL</span>
+            </div>
+            <span class="token-balance-note" id="toBalanceLabel">Balance: --</span>
+          </div>
+          <input class="token-amount-input" id="amountOut" readonly placeholder="0.0">
+          <div class="usd-value-note" id="toUsd"></div>
+        </div>
+
+        <div class="rate-info-box" id="rateBox" hidden>
+          <div class="rate-row">
+            <span class="rate-label">Rate</span>
+            <span class="rate-value accent" id="rateText">--</span>
+          </div>
+          <div class="rate-row">
+            <span class="rate-label">Price impact</span>
+            <span class="rate-value" id="priceImpactText">--</span>
+          </div>
+          <div class="rate-details" id="rateDetails">
+            <div class="rate-row">
+              <span class="rate-label">Avg. execution price</span>
+              <span class="rate-value" id="avgPriceText">--</span>
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">Price after swap</span>
+              <span class="rate-value" id="priceAfterText">--</span>
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">Min. received (1% slippage)</span>
+              <span class="rate-value" id="minReceivedText">--</span>
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">Route</span>
+              <span class="rate-value" id="routeText">--</span>
+            </div>
+          </div>
+          <button class="rate-toggle-btn" id="rateToggleBtn" type="button">
+            Details <span id="rateToggleIcon">▼</span>
+          </button>
+        </div>
+
+        <p class="swap-status-msg" id="swapStatus" role="status" aria-live="polite">Connect xPortal to swap.</p>
+        <button class="btn btn-primary" id="swapBtn" type="button" disabled>Swap</button>
+        <div id="txResult" hidden></div>
+      </section>
+
+    </div>
+  </div>
+
+</main>
+
+<script src="lib/walletconnect-sign-client.umd.js"></script>
+<script src="lib/qrcode.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ─── CONFIG ───────────────────────────────────────────────────────────────
+  const CONFIG = {
+    walletConnectProjectId: "3b2862ec02219f2359a7d54b5f0f46ff",
+    relayUrl: "wss://relay.walletconnect.com",
+    chainId: "mvx:1",
+    chainID: "1",
+    apiBase: "https://api.multiversx.com",
+    gatewayBase: "https://gateway.multiversx.com",
+    storageKey: "tclSwap.xportal.address.v1",
+    sessionTopicKey: "tclSwap.xportal.sessionTopic.v1",
+    walletConnectMethods: [
+      "mvx_signTransaction", "mvx_signTransactions",
+      "mvx_signMessage", "mvx_signLoginToken",
+      "mvx_signNativeAuthToken", "mvx_cancelAction"
+    ],
+
+    // xExchange contracts
+    TCL_USDC_PAIR:   "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff", // USDC/TCL direct pair
+    USDC_WEGLD_PAIR: "erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq", // USDC/WEGLD pair
+    XEXCHANGE_ROUTER:"erd1qqqqqqqqqqqqqpgqsc6fz0038ya459duj358pptzg9s3ssrfngqqnhh39s",
+    WEGLD_WRAPPERS: [
+      "erd1qqqqqqqqqqqqqpgqpv09kfzry5y4sj05udcngesat07d2daan0gsn4ztm9",
+      "erd1qqqqqqqqqqqqqpgqhe8t5jewej70zupmh44jurgpower6af37eq57k2fy",
+      "erd1qqqqqqqqqqqqqpgqmuk0q2saj0mgutxm4teywre6exc424pkf9ysk5dze"
+    ],
+
+    // Token identifiers
+    WEGLD_ID: "WEGLD-bd4d79",
+    TCL_ID:   "TCL-fe459d",
+    USDC_ID:  "USDC-c76f1f",
+
+    SLIPPAGE_BPS: 100,  // 1%
+    GAS_SWAP:  50_000_000,
+    GAS_WRAP:  10_000_000,
+    GAS_MULTI: 100_000_000,
+    GAS_PRICE: 1_000_000_000,
+
+    balancePollMs: 30_000,
+  };
+
+  // ─── TOKEN METADATA ───────────────────────────────────────────────────────
+  const TOKEN_META = {
+    EGLD:  { symbol: "EGLD",  decimals: 18, icon: "images/EGLD.png",           native: true  },
+    WEGLD: { symbol: "WEGLD", decimals: 18, icon: "images/EGLD.png",           native: false },
+    TCL:   { symbol: "TCL",   decimals: 18, icon: "images/thecursedland.png",  native: false },
+    USDC:  { symbol: "USDC",  decimals: 6,  icon: "images/USDC.png",           native: false },
+  };
+
+  // ─── PAIR DEFINITIONS ─────────────────────────────────────────────────────
+  const PAIRS = {
+    "EGLD-TCL":  { from: "EGLD",  to: "TCL",  multiStep: true,  steps: ["Wrap EGLD → WEGLD", "Swap WEGLD → USDC → TCL"] },
+    "WEGLD-TCL": { from: "WEGLD", to: "TCL",  multiStep: false, route: "WEGLD → USDC → TCL (via Router)" },
+    "TCL-EGLD":  { from: "TCL",   to: "EGLD", multiStep: true,  steps: ["Swap TCL → USDC → WEGLD", "Unwrap WEGLD → EGLD"] },
+    "TCL-WEGLD": { from: "TCL",   to: "WEGLD",multiStep: false, route: "TCL → USDC → WEGLD (via Router)" },
+    "USDC-TCL":  { from: "USDC",  to: "TCL",  multiStep: false, route: "Direct (USDC/TCL Pair)" },
+    "TCL-USDC":  { from: "TCL",   to: "USDC", multiStep: false, route: "Direct (TCL/USDC Pair)" },
+  };
+
+  // ─── STATE ────────────────────────────────────────────────────────────────
+  const S = {
+    address: "", sessionTopic: "", pendingUri: "",
+    connecting: false, swapping: false,
+    signClient: null, signClientProjectId: "",
+    connectionRunId: 0,
+    egldPrice: 0,
+    tokenBalances: {},    // { EGLD: BigInt, WEGLD: BigInt, TCL: BigInt, USDC: BigInt }
+    pairReserves: {},     // cached reserves
+    tclDecimals: 18,
+    balancePollTimer: null,
+    multiStepPhase: 0,    // 0=none, 1=step1 done, 2=done
+    lastQuote: null,
+    tokenPrices: { EGLD: 0, WEGLD: 0, TCL: 0, USDC: 1 },
+  };
+
+  // ─── DOM ──────────────────────────────────────────────────────────────────
+  const D = {
+    connectQrFrame:    document.getElementById("connectQrFrame"),
+    connectQrCode:     document.getElementById("connectQrCode"),
+    connectBtn:        document.getElementById("connectBtn"),
+    connectTriggerBtn: document.getElementById("connectTriggerBtn"),
+    qrPopover:         document.getElementById("qrPopover"),
+    qrCloseBtn:        document.getElementById("qrCloseBtn"),
+    refreshSessionBtn: document.getElementById("refreshSessionBtn"),
+    disconnectBtn:     document.getElementById("disconnectBtn"),
+    disconnectBtn2:    document.getElementById("disconnectBtn2"),
+    connectView:       document.getElementById("connectView"),
+    connectedView:     document.getElementById("connectedView"),
+    explorerLink:      document.getElementById("explorerLink"),
+    walletAddr:        document.getElementById("walletAddr"),
+    userBalanceEgld:   document.getElementById("userBalanceEgld"),
+    userBalanceUsd:    document.getElementById("userBalanceUsd"),
+    statusText:        document.getElementById("statusText"),
+    connectTitle:      document.getElementById("connectTitle"),
+
+    pairSelect:     document.getElementById("pairSelect"),
+    fromIcon:       document.getElementById("fromIcon"),
+    fromSymbol:     document.getElementById("fromSymbol"),
+    fromBalanceLabel: document.getElementById("fromBalanceLabel"),
+    maxBtn:         document.getElementById("maxBtn"),
+    amountIn:       document.getElementById("amountIn"),
+    toIcon:         document.getElementById("toIcon"),
+    toSymbol:       document.getElementById("toSymbol"),
+    toBalanceLabel: document.getElementById("toBalanceLabel"),
+    amountOut:      document.getElementById("amountOut"),
+    rateBox:        document.getElementById("rateBox"),
+    rateText:       document.getElementById("rateText"),
+    minReceivedText:document.getElementById("minReceivedText"),
+    routeText:      document.getElementById("routeText"),
+    swapStatus:     document.getElementById("swapStatus"),
+    swapBtn:        document.getElementById("swapBtn"),
+    txResult:       document.getElementById("txResult"),
+    fromUsd:        document.getElementById("fromUsd"),
+    toUsd:          document.getElementById("toUsd"),
+    balanceStrip:   document.getElementById("balanceStrip"),
+    stripEgldIcon:  document.getElementById("stripEgldIcon"),
+    stripEgldAmount:document.getElementById("stripEgldAmount"),
+    stripEgldUsd:   document.getElementById("stripEgldUsd"),
+    stripUsdcIcon:  document.getElementById("stripUsdcIcon"),
+    stripUsdcAmount:document.getElementById("stripUsdcAmount"),
+    stripUsdcUsd:   document.getElementById("stripUsdcUsd"),
+    stripTclIcon:   document.getElementById("stripTclIcon"),
+    stripTclAmount: document.getElementById("stripTclAmount"),
+    stripTclUsd:    document.getElementById("stripTclUsd"),
+    priceImpactText:document.getElementById("priceImpactText"),
+    avgPriceText:   document.getElementById("avgPriceText"),
+    priceAfterText: document.getElementById("priceAfterText"),
+  };
+
+  // ─── HEX / ENCODING UTILS ─────────────────────────────────────────────────
+  function strToHex(str) {
+    return Array.from(new TextEncoder().encode(str))
+      .map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function bigintToHex(n) {
+    if (n <= 0n) return "00";
+    let h = n.toString(16);
+    if (h.length % 2 !== 0) h = "0" + h;
+    return h;
+  }
+
+  function base64ToBigInt(b64) {
+    if (!b64) return 0n;
+    try {
+      const bin = atob(b64);
+      let hex = "";
+      for (let i = 0; i < bin.length; i++) hex += bin.charCodeAt(i).toString(16).padStart(2, "0");
+      return hex ? BigInt("0x" + hex) : 0n;
+    } catch { return 0n; }
+  }
+
+  function base64ToString(b64) {
+    if (!b64) return "";
+    try { return atob(b64); } catch { return ""; }
+  }
+
+  // Decode bech32 address to 32-byte pubkey hex (for SC args)
+  function bech32ToHex(addr) {
+    const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+    const lower = addr.toLowerCase();
+    const sep = lower.lastIndexOf("1");
+    if (sep < 1) return "";
+    const dataPart = lower.slice(sep + 1, -6); // strip HRP and 6-char checksum
+    const fiveBit = Array.from(dataPart).map(c => CHARSET.indexOf(c));
+    if (fiveBit.some(v => v < 0)) return "";
+    let acc = 0, bits = 0;
+    const bytes = [];
+    for (const v of fiveBit) {
+      acc = (acc << 5) | v;
+      bits += 5;
+      while (bits >= 8) { bits -= 8; bytes.push((acc >> bits) & 0xff); }
+    }
+    return bytes.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // Get user shard from address (for WEGLD wrapper selection)
+  function getAddressShard(addr) {
+    const bytes = bech32ToHex(addr);
+    if (!bytes || bytes.length < 64) return 1;
+    const lastByte = parseInt(bytes.slice(62, 64), 16);
+    return lastByte % 3;
+  }
+
+  function getWegldWrapper() {
+    const shard = S.address ? getAddressShard(S.address) : 1;
+    return CONFIG.WEGLD_WRAPPERS[shard] || CONFIG.WEGLD_WRAPPERS[1];
+  }
+
+  // ─── AMOUNT PARSING / FORMATTING ──────────────────────────────────────────
+  function parseAmount(val, decimals) {
+    const raw = String(val || "").trim().replace(",", ".");
+    if (!/^\d+(\.\d*)?$/.test(raw)) return 0n;
+    const [whole, frac = ""] = raw.split(".");
+    const f = frac.padEnd(decimals, "0").slice(0, decimals);
+    return BigInt(whole || "0") * (10n ** BigInt(decimals)) + BigInt(f || "0");
+  }
+
+  function formatAmount(atomic, decimals, maxFrac = 6) {
+    if (atomic <= 0n) return "0";
+    const base = 10n ** BigInt(decimals);
+    const whole = atomic / base;
+    const fracRaw = String(atomic % base).padStart(decimals, "0");
+    const frac = fracRaw.replace(/0+$/, "").slice(0, maxFrac);
+    const num = frac ? `${whole}.${frac}` : `${whole}`;
+    return parseFloat(num).toLocaleString("en-US", { maximumFractionDigits: maxFrac });
+  }
+
+  function applySlippage(amount) {
+    return amount * (10000n - BigInt(CONFIG.SLIPPAGE_BPS)) / 10000n;
+  }
+
+  // ─── AMM FORMULA ──────────────────────────────────────────────────────────
+  function ammOut(amountIn, reserveIn, reserveOut) {
+    if (amountIn <= 0n || reserveIn <= 0n || reserveOut <= 0n) return 0n;
+    const withFee = amountIn * 997n;
+    return (withFee * reserveOut) / (reserveIn * 1000n + withFee);
+  }
+
+  // ─── BLOCKCHAIN QUERIES ───────────────────────────────────────────────────
+  async function postJson(url, body) {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const text = await r.text();
+    const data = text ? JSON.parse(text) : {};
+    if (!r.ok) throw new Error(data?.message || data?.error || `HTTP ${r.status}`);
+    return data;
+  }
+
+  async function vmQuery(scAddress, funcName, args = []) {
+    const data = await postJson(`${CONFIG.apiBase}/vm-values/query`, { scAddress, funcName, args });
+    return data?.data?.data?.returnData || data?.data?.returnData || [];
+  }
+
+  async function fetchAccount(address) {
+    const r = await fetch(`${CONFIG.apiBase}/accounts/${address}`);
+    if (!r.ok) throw new Error("Cannot fetch account");
+    return r.json();
+  }
+
+  async function fetchTokenBalance(address, tokenId) {
+    try {
+      const r = await fetch(`${CONFIG.apiBase}/accounts/${address}/tokens/${tokenId}`);
+      if (!r.ok) return 0n;
+      const data = await r.json();
+      return BigInt(data?.balance || "0");
+    } catch { return 0n; }
+  }
+
+  async function fetchEgldPrice() {
+    try {
+      const r = await fetch(`${CONFIG.apiBase}/economics`);
+      if (!r.ok) return 0;
+      const d = await r.json();
+      return Number(d?.price || 0);
+    } catch { return 0; }
+  }
+
+  async function fetchTclDecimals() {
+    try {
+      const r = await fetch(`${CONFIG.apiBase}/tokens/${CONFIG.TCL_ID}`);
+      if (!r.ok) return 18;
+      const d = await r.json();
+      const dec = Number(d?.decimals ?? 18);
+      return Number.isFinite(dec) && dec >= 0 ? dec : 18;
+    } catch { return 18; }
+  }
+
+  async function fetchTokenPrices() {
+    try {
+      const [tclRes, usdcRes, wegldRes, econRes] = await Promise.all([
+        fetch(`${CONFIG.apiBase}/tokens/${CONFIG.TCL_ID}`).then(r  => r.json()).catch(() => ({})),
+        fetch(`${CONFIG.apiBase}/tokens/${CONFIG.USDC_ID}`).then(r => r.json()).catch(() => ({})),
+        fetch(`${CONFIG.apiBase}/tokens/${CONFIG.WEGLD_ID}`).then(r=> r.json()).catch(() => ({})),
+        S.egldPrice > 0 ? Promise.resolve({ price: S.egldPrice }) : fetch(`${CONFIG.apiBase}/economics`).then(r => r.json()).catch(() => ({})),
+      ]);
+      const egldPrice = Number(econRes?.price || S.egldPrice || 0);
+      if (egldPrice > 0) S.egldPrice = egldPrice;
+      S.tokenPrices = {
+        EGLD:  egldPrice,
+        WEGLD: egldPrice,
+        TCL:   Number(tclRes?.price  || 0),
+        USDC:  Number(usdcRes?.price || 1),
+      };
+      // Update token logos from API assets
+      function bestIcon(res, fallback) {
+        return res?.assets?.pngUrl || res?.assets?.svgUrl || fallback;
+      }
+      TOKEN_META.TCL.icon   = bestIcon(tclRes,  TOKEN_META.TCL.icon);
+      TOKEN_META.USDC.icon  = bestIcon(usdcRes, TOKEN_META.USDC.icon);
+      TOKEN_META.WEGLD.icon = bestIcon(wegldRes,TOKEN_META.WEGLD.icon);
+      TOKEN_META.EGLD.icon  = bestIcon(wegldRes,"https://media.multiversx.com/tokens/asset/EGLD/logo.png");
+      // Sync strip icons
+      if (D.stripEgldIcon && TOKEN_META.EGLD.icon) D.stripEgldIcon.src = TOKEN_META.EGLD.icon;
+      if (D.stripUsdcIcon && TOKEN_META.USDC.icon) D.stripUsdcIcon.src = TOKEN_META.USDC.icon;
+      if (D.stripTclIcon  && TOKEN_META.TCL.icon)  D.stripTclIcon.src  = TOKEN_META.TCL.icon;
+    } catch { /* keep existing prices/icons */ }
+  }
+
+  async function updatePoolInfo() {
+    try {
+      const { reserve0, reserve1, token0 } = await getPairReserves(CONFIG.TCL_USDC_PAIR);
+      const [usdcR, tclR] = token0 === CONFIG.USDC_ID ? [reserve0, reserve1] : [reserve1, reserve0];
+      const usdcNum = Number(usdcR) / 1e6;
+      const tclNum  = Number(tclR)  / Math.pow(10, S.tclDecimals || 18);
+      const price   = tclNum > 0 ? usdcNum / tclNum : 0;
+      const tvl     = usdcNum * 2;
+      const fmt = (n, dec=2) => n.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+      const el = (id) => document.getElementById(id);
+      if (el("infoTclPrice")) el("infoTclPrice").textContent = price > 0 ? `$${price.toLocaleString("en-US", { maximumFractionDigits: 6 })}` : "$--";
+      if (el("infoPoolTcl"))  el("infoPoolTcl").textContent  = tclNum  > 0 ? `${tclNum.toLocaleString("en-US",  { maximumFractionDigits: 0 })} TCL`  : "--";
+      if (el("infoPoolUsdc")) el("infoPoolUsdc").textContent = usdcNum > 0 ? `${usdcNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDC` : "--";
+      if (el("infoTvl"))      el("infoTvl").textContent      = tvl     > 0 ? `$${fmt(tvl)}` : "$--";
+      if (el("infoTclLogo") && TOKEN_META.TCL.icon) el("infoTclLogo").src = TOKEN_META.TCL.icon;
+    } catch(e) { console.warn("updatePoolInfo failed", e); }
+  }
+
+  function fmtUsd(amount, decimals, price) {
+    if (!price || price <= 0) return "";
+    const usd = (Number(amount) / Math.pow(10, decimals)) * price;
+    if (!Number.isFinite(usd) || usd <= 0) return "";
+    return `≈ $${usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: usd < 0.01 ? 6 : 2 })}`;
+  }
+
+  // Token IDs per pair never change — cache them after first load
+  const _pairTokenCache = {};
+  async function getPairTokenIds(pairAddr) {
+    if (_pairTokenCache[pairAddr]) return _pairTokenCache[pairAddr];
+    const [t0Data, t1Data] = await Promise.all([
+      vmQuery(pairAddr, "getFirstTokenId", []),
+      vmQuery(pairAddr, "getSecondTokenId", [])
+    ]);
+    const result = { token0: base64ToString(t0Data[0]), token1: base64ToString(t1Data[0]) };
+    _pairTokenCache[pairAddr] = result;
+    return result;
+  }
+
+  async function getPairReserves(pairAddr) {
+    const [resData, { token0, token1 }] = await Promise.all([
+      vmQuery(pairAddr, "getReservesAndTotalSupply", []),
+      getPairTokenIds(pairAddr)
+    ]);
+    return {
+      reserve0: base64ToBigInt(resData[0]),
+      reserve1: base64ToBigInt(resData[1]),
+      token0, token1,
+    };
+  }
+
+  async function getDirectSwapOut(pairAddr, tokenIn, amountIn, tokenOut) {
+    const { reserve0, reserve1, token0, token1 } = await getPairReserves(pairAddr);
+    let rIn, rOut;
+    if (token0 === tokenIn && token1 === tokenOut) {
+      rIn = reserve0; rOut = reserve1;
+    } else if (token1 === tokenIn && token0 === tokenOut) {
+      rIn = reserve1; rOut = reserve0;
+    } else {
+      throw new Error(`Pair doesn't contain tokens ${tokenIn}/${tokenOut}`);
+    }
+    const amountOut = ammOut(amountIn, rIn, rOut);
+    // Price impact: share of the pool consumed by this trade
+    const impactPct = rIn > 0n ? Number(amountIn * 10000n / (rIn + amountIn)) / 100 : 0;
+    // Spot price (out per in, in raw BigInt terms, scaled ×1e6 for precision)
+    const spotScaled = rIn > 0n ? Number(rOut * 1_000_000n / rIn) / 1_000_000 : 0;
+    // New reserves after swap
+    const newRIn  = rIn  + amountIn;
+    const newROut = rOut - amountOut;
+    const newSpotScaled = newRIn > 0n ? Number(newROut * 1_000_000n / newRIn) / 1_000_000 : 0;
+    return { amountOut, impactPct, spotScaled, newSpotScaled, rIn, rOut };
+  }
+
+  function combineImpacts(...impacts) {
+    return (1 - impacts.reduce((acc, i) => acc * (1 - i / 100), 1)) * 100;
+  }
+
+  // ─── QUOTE ENGINE ─────────────────────────────────────────────────────────
+  async function computeQuote(pairKey, amountInAtomic) {
+    if (amountInAtomic <= 0n) return null;
+    const pair = PAIRS[pairKey];
+
+    // USDC ↔ TCL: direct on TCL_USDC_PAIR
+    if (pairKey === "USDC-TCL") {
+      const h = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR, CONFIG.USDC_ID, amountInAtomic, CONFIG.TCL_ID);
+      return { amountOut: h.amountOut, minOut: applySlippage(h.amountOut), hops: 1,
+               priceImpact: h.impactPct, spotScaled: h.spotScaled, newSpotScaled: h.newSpotScaled };
+    }
+
+    if (pairKey === "TCL-USDC") {
+      const h = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR, CONFIG.TCL_ID, amountInAtomic, CONFIG.USDC_ID);
+      return { amountOut: h.amountOut, minOut: applySlippage(h.amountOut), hops: 1,
+               priceImpact: h.impactPct, spotScaled: h.spotScaled, newSpotScaled: h.newSpotScaled };
+    }
+
+    // WEGLD ↔ TCL: 2-hop via router
+    if (pairKey === "WEGLD-TCL") {
+      const h1 = await getDirectSwapOut(CONFIG.USDC_WEGLD_PAIR, CONFIG.WEGLD_ID, amountInAtomic,  CONFIG.USDC_ID);
+      const h2 = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR,   CONFIG.USDC_ID,  h1.amountOut,    CONFIG.TCL_ID);
+      return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 2,
+               intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+    }
+
+    if (pairKey === "TCL-WEGLD") {
+      const h1 = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR,   CONFIG.TCL_ID,  amountInAtomic, CONFIG.USDC_ID);
+      const h2 = await getDirectSwapOut(CONFIG.USDC_WEGLD_PAIR, CONFIG.USDC_ID, h1.amountOut,   CONFIG.WEGLD_ID);
+      return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 2,
+               intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+    }
+
+    // EGLD ↔ TCL: wrap/unwrap + 2-hop router
+    if (pairKey === "EGLD-TCL") {
+      const h1 = await getDirectSwapOut(CONFIG.USDC_WEGLD_PAIR, CONFIG.WEGLD_ID, amountInAtomic, CONFIG.USDC_ID);
+      const h2 = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR,   CONFIG.USDC_ID,  h1.amountOut,   CONFIG.TCL_ID);
+      return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 3,
+               intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+    }
+
+    if (pairKey === "TCL-EGLD") {
+      const h1 = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR,   CONFIG.TCL_ID,  amountInAtomic, CONFIG.USDC_ID);
+      const h2 = await getDirectSwapOut(CONFIG.USDC_WEGLD_PAIR, CONFIG.USDC_ID, h1.amountOut,   CONFIG.WEGLD_ID);
+      return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 3,
+               intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+    }
+
+    return null;
+  }
+
+  // ─── TRANSACTION BUILDERS ─────────────────────────────────────────────────
+  function buildEsdtSwapTx(account, tokenIn, amountIn, tokenOut, minAmountOut, receiver) {
+    const data = [
+      "ESDTTransfer",
+      strToHex(tokenIn),
+      bigintToHex(amountIn),
+      strToHex("swapTokensFixedInput"),
+      strToHex(tokenOut),
+      bigintToHex(minAmountOut)
+    ].join("@");
+    return {
+      nonce: Number(account.nonce || 0),
+      value: "0",
+      receiver,
+      sender: S.address,
+      gasPrice: CONFIG.GAS_PRICE,
+      gasLimit: CONFIG.GAS_SWAP,
+      data,
+      chainID: CONFIG.chainID,
+      version: 1,
+    };
+  }
+
+  function buildWrapEgldTx(account, amountIn) {
+    return {
+      nonce: Number(account.nonce || 0),
+      value: amountIn.toString(),
+      receiver: getWegldWrapper(),
+      sender: S.address,
+      gasPrice: CONFIG.GAS_PRICE,
+      gasLimit: CONFIG.GAS_WRAP,
+      data: "wrapEgld",
+      chainID: CONFIG.chainID,
+      version: 1,
+    };
+  }
+
+  function buildUnwrapEgldTx(account, amountIn) {
+    const data = [
+      "ESDTTransfer",
+      strToHex(CONFIG.WEGLD_ID),
+      bigintToHex(amountIn),
+      strToHex("unwrapEgld")
+    ].join("@");
+    return {
+      nonce: Number(account.nonce || 0),
+      value: "0",
+      receiver: getWegldWrapper(),
+      sender: S.address,
+      gasPrice: CONFIG.GAS_PRICE,
+      gasLimit: CONFIG.GAS_WRAP,
+      data,
+      chainID: CONFIG.chainID,
+      version: 1,
+    };
+  }
+
+  function buildMultiPairSwapTx(account, tokenIn, amountIn, pairs) {
+    // pairs = [{ pairAddr, tokenOut, minOut }]
+    const parts = [
+      "ESDTTransfer",
+      strToHex(tokenIn),
+      bigintToHex(amountIn),
+      strToHex("multiPairSwap"),
+    ];
+    for (const { pairAddr, tokenOut, minOut } of pairs) {
+      parts.push(bech32ToHex(pairAddr));
+      parts.push(strToHex("swapTokensFixedInput"));
+      parts.push(strToHex(tokenOut));
+      parts.push(bigintToHex(minOut));
+    }
+    return {
+      nonce: Number(account.nonce || 0),
+      value: "0",
+      receiver: CONFIG.XEXCHANGE_ROUTER,
+      sender: S.address,
+      gasPrice: CONFIG.GAS_PRICE,
+      gasLimit: CONFIG.GAS_MULTI,
+      data: parts.join("@"),
+      chainID: CONFIG.chainID,
+      version: 1,
+    };
+  }
+
+  // ─── WALLET CONNECT ───────────────────────────────────────────────────────
+  function getWCGlobal() {
+    const wc = window["@walletconnect/sign-client"];
+    return wc?.SignClient || wc?.default || null;
+  }
+
+  function isAddress(v) {
+    return /^erd1[023456789acdefghjklmnpqrstuvwxyz]{58}$/.test(String(v || "").trim());
+  }
+
+  function truncAddr(a) {
+    return a.length > 18 ? `${a.slice(0, 10)}…${a.slice(-8)}` : a;
+  }
+
+  function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+  function isAndroid() { return /Android/i.test(navigator.userAgent); }
+  function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
+
+  function xportalDeepLink(uri) {
+    if (isIOS()) return `xportal://wc?uri=${encodeURIComponent(uri)}`;
+    if (isAndroid()) return uri;
+    return isMobile() ? uri : "https://xportal.com/app";
+  }
+
+  function openXPortal() {
+    if (isMobile()) { try { window.location.href = "xportal://"; } catch(_) {} }
+  }
+
+  function renderQr(target, text, size) {
+    if (!window.QRCode) throw new Error("QR library not loaded");
+    target.innerHTML = "";
+    const loader = document.getElementById("connectQrLoader");
+    if (loader) loader.remove();
+    new window.QRCode(target, { text, width: size, height: size, colorDark: "#020408", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.M });
+  }
+
+  function setRefreshVisible(v) {
+    if (D.refreshSessionBtn) D.refreshSessionBtn.hidden = !v;
+    if (D.connectQrFrame) D.connectQrFrame.classList.toggle("is-expired", Boolean(v));
+  }
+
+  function isExpiredError(err) {
+    return /proposal expired/i.test(String(err?.message || err));
+  }
+
+  async function getSignClient() {
+    const pid = CONFIG.walletConnectProjectId;
+    if (S.signClient && S.signClientProjectId === pid) return S.signClient;
+    const SC = getWCGlobal();
+    if (!SC?.init) throw new Error("WalletConnect library not loaded");
+    const baseUrl = location.origin && location.origin !== "null" ? location.origin : "https://tclexplorer.com";
+    const appUrl  = new URL(location.pathname || "/swap.html", baseUrl).href;
+    S.signClient = await SC.init({
+      projectId: pid,
+      relayUrl: CONFIG.relayUrl,
+      metadata: { name: "TCL Swap", description: "Swap TCL on xExchange via xPortal", url: appUrl, icons: [new URL("images/thecursedland.png", appUrl).href], redirect: { native: "", universal: appUrl } }
+    });
+    S.signClientProjectId = pid;
+    S.signClient.on("session_delete", clearConnection);
+    return S.signClient;
+  }
+
+  function extractAddress(session) {
+    const accounts = Object.values(session?.namespaces || {}).flatMap(ns => ns?.accounts || []);
+    const mvx = accounts.find(a => String(a).startsWith(`${CONFIG.chainId}:`)) || accounts.find(a => String(a).includes(":erd1"));
+    const addr = String(mvx || "").split(":").pop();
+    return isAddress(addr) ? addr : "";
+  }
+
+  function setStatus(kind, text) {
+    document.body.dataset.state = kind;
+    D.statusText.textContent = text;
+  }
+
+  function setSwapMsg(text) {
+    D.swapStatus.textContent = text;
+  }
+
+  function syncConnectView() {
+    const ok = Boolean(S.address && S.sessionTopic);
+    D.connectView.hidden = ok;
+    D.connectedView.hidden = !ok;
+    if (ok) {
+      if (D.qrPopover)    D.qrPopover.hidden = true;
+      if (D.walletAddr)   D.walletAddr.textContent = truncAddr(S.address);
+      if (D.explorerLink) D.explorerLink.href = `https://explorer.multiversx.com/accounts/${S.address}`;
+    }
+    if (D.disconnectBtn) D.disconnectBtn.hidden = !ok;
+    syncSwapBtn();
+  }
+
+  function syncSwapBtn() {
+    const val = D.amountIn.value.trim();
+    const pairKey = D.pairSelect.value;
+    const pair = PAIRS[pairKey];
+    const fromMeta = TOKEN_META[pair?.from];
+    const amountIn = fromMeta ? parseAmount(val, fromMeta.decimals) : 0n;
+    const canSwap = Boolean(S.address && S.sessionTopic) && amountIn > 0n && !S.swapping;
+    D.swapBtn.disabled = !canSwap;
+
+    D.swapBtn.textContent = S.swapping ? "Swapping…" : "Swap";
+
+    if (!S.address) setSwapMsg("Connect xPortal to swap.");
+    else if (!val || amountIn <= 0n) setSwapMsg("Enter an amount to swap.");
+  }
+
+  function saveConnection(address, topic) {
+    S.address = address; S.sessionTopic = topic || "";
+    localStorage.setItem(CONFIG.storageKey, S.address);
+    localStorage.setItem(CONFIG.sessionTopicKey, S.sessionTopic);
+    syncConnectView();
+    loadAllBalances();
+    startBalancePoll();
+  }
+
+  function clearConnection() {
+    stopBalancePoll();
+    S.address = ""; S.sessionTopic = ""; S.pendingUri = "";
+    localStorage.removeItem(CONFIG.storageKey);
+    localStorage.removeItem(CONFIG.sessionTopicKey);
+    syncConnectView();
+    setStatus("idle", "xPortal disconnected.");
+    updatePairUI();
+    startConnection();
+  }
+
+  async function restoreSession() {
+    const addr  = localStorage.getItem(CONFIG.storageKey) || "";
+    const topic = localStorage.getItem(CONFIG.sessionTopicKey) || "";
+    if (!isAddress(addr) || !topic) return false;
+    S.address = addr; S.sessionTopic = topic;
+    try {
+      const client = await getSignClient();
+      const session = client.session.get(topic);
+      const a = extractAddress(session);
+      if (a) S.address = a;
+      saveConnection(S.address, topic);
+      setStatus("connected", `Connected: ${truncAddr(S.address)}`);
+      return true;
+    } catch(_) { clearConnection(); return false; }
+  }
+
+  async function startConnection() {
+    if (S.address || S.connecting) return;
+    const runId = ++S.connectionRunId;
+    S.connecting = true;
+    setRefreshVisible(false);
+    syncSwapBtn();
+    setStatus("loading", "Generating xPortal session…");
+    try {
+      const client = await getSignClient();
+      const { uri, approval } = await client.connect({
+        optionalNamespaces: {
+          mvx: { chains: [CONFIG.chainId], methods: CONFIG.walletConnectMethods, events: [] }
+        }
+      });
+      if (!uri) throw new Error("WalletConnect did not return a URI.");
+      S.pendingUri = uri;
+      renderQr(D.connectQrCode, uri, 220);
+      D.connectBtn.classList.remove("is-disabled");
+      D.connectBtn.href = xportalDeepLink(uri);
+      setStatus("loading", "Scan with xPortal → top-right Scan QR button.");
+
+      const session = await approval();
+      if (runId !== S.connectionRunId) return;
+      const address = extractAddress(session);
+      if (!address) throw new Error("xPortal did not return a valid address.");
+      S.pendingUri = "";
+      saveConnection(address, session.topic || "");
+      setStatus("connected", `Connected: ${truncAddr(address)}`);
+    } catch(err) {
+      if (runId !== S.connectionRunId) return;
+      S.signClient = null; S.signClientProjectId = "";
+      if (isExpiredError(err)) {
+        S.pendingUri = "";
+        setRefreshVisible(true);
+        setStatus("error", "Session expired. Press Refresh.");
+      } else {
+        setStatus("error", err?.message || "Connection failed.");
+        if (D.connectQrCode) D.connectQrCode.innerHTML = `<div class="qr-loader" style="color:#c0392b"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-size:12px;text-align:center">Connection failed</span></div>`;
+      }
+    } finally {
+      if (runId === S.connectionRunId) { S.connecting = false; syncSwapBtn(); }
+    }
+  }
+
+  async function disconnectWallet() {
+    const topic = S.sessionTopic || localStorage.getItem(CONFIG.sessionTopicKey);
+    const client = S.signClient;
+    S.connectionRunId++;
+    if (client && topic) client.disconnect({ topic, reason: { code: 6000, message: "User disconnected" } }).catch(()=>{});
+    clearConnection();
+  }
+
+  // ─── BALANCE LOADING ──────────────────────────────────────────────────────
+  function stopBalancePoll() {
+    if (S.balancePollTimer) { clearInterval(S.balancePollTimer); S.balancePollTimer = null; }
+  }
+
+  function startBalancePoll() {
+    if (S.balancePollTimer) return;
+    S.balancePollTimer = setInterval(() => loadAllBalances(false), CONFIG.balancePollMs);
+  }
+
+  async function loadAllBalances(showLoading = true) {
+    if (!S.address) return;
+    try {
+      const [account, wegld, tcl, usdc] = await Promise.all([
+        fetchAccount(S.address),
+        fetchTokenBalance(S.address, CONFIG.WEGLD_ID),
+        fetchTokenBalance(S.address, CONFIG.TCL_ID),
+        fetchTokenBalance(S.address, CONFIG.USDC_ID),
+      ]);
+      await fetchTokenPrices();
+      S.tokenBalances = {
+        EGLD:  BigInt(account.balance || "0"),
+        WEGLD: wegld,
+        TCL:   tcl,
+        USDC:  usdc,
+      };
+      // Update topbar wallet chip
+      const egldNum = Number(S.tokenBalances.EGLD) / 1e18;
+      const egldP   = S.tokenPrices.EGLD || S.egldPrice;
+      D.userBalanceEgld.textContent = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
+      D.userBalanceUsd.textContent  = egldP > 0 ? `$${(egldNum * egldP).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$--";
+
+      // Update balance strip
+      const usdcNum = Number(S.tokenBalances.USDC) / 1e6;
+      const tclNum  = Number(S.tokenBalances.TCL)  / Math.pow(10, S.tclDecimals);
+      const usdcP   = S.tokenPrices.USDC || 1;
+      const tclP    = S.tokenPrices.TCL  || 0;
+      const fmt2    = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (D.stripEgldAmount) D.stripEgldAmount.textContent = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
+      if (D.stripEgldUsd)    D.stripEgldUsd.textContent    = egldP > 0 ? `$${fmt2(egldNum * egldP)}` : "$--";
+      if (D.stripUsdcAmount) D.stripUsdcAmount.textContent = `${usdcNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDC`;
+      if (D.stripUsdcUsd)    D.stripUsdcUsd.textContent    = `$${fmt2(usdcNum * usdcP)}`;
+      if (D.stripTclAmount)  D.stripTclAmount.textContent  = `${tclNum.toLocaleString("en-US", { maximumFractionDigits: 0 })} TCL`;
+      if (D.stripTclUsd)     D.stripTclUsd.textContent     = tclP > 0 ? `$${fmt2(tclNum * tclP)}` : "$--";
+      updatePairUI();
+    } catch(e) {
+      console.warn("loadAllBalances failed", e);
+    }
+  }
+
+  // ─── PAIR UI ──────────────────────────────────────────────────────────────
+  function updatePairUI() {
+    const pairKey = D.pairSelect.value;
+    const pair = PAIRS[pairKey];
+    if (!pair) return;
+
+    const fromMeta = TOKEN_META[pair.from];
+    const toMeta   = TOKEN_META[pair.to];
+
+    D.fromIcon.src    = fromMeta.icon;
+    D.fromSymbol.textContent = fromMeta.symbol;
+    D.toIcon.src      = toMeta.icon;
+    D.toSymbol.textContent   = toMeta.symbol;
+
+    const fromBal = S.tokenBalances[pair.from];
+    const toBal   = S.tokenBalances[pair.to];
+    D.fromBalanceLabel.textContent = fromBal !== undefined ? `Balance: ${formatAmount(fromBal, fromMeta.decimals, 4)} ${fromMeta.symbol}` : "Balance: --";
+    D.toBalanceLabel.textContent   = toBal !== undefined   ? `Balance: ${formatAmount(toBal, toMeta.decimals, 4)} ${toMeta.symbol}` : "Balance: --";
+
+    D.amountOut.value = "";
+    D.rateBox.hidden  = true;
+    D.txResult.hidden = true;
+    if (D.fromUsd) D.fromUsd.textContent = "";
+    if (D.toUsd)   D.toUsd.textContent   = "";
+    S.multiStepPhase = 0;
+    syncSwapBtn();
+    scheduleQuote();
+  }
+
+  // ─── QUOTE ENGINE ─────────────────────────────────────────────────────────
+  let quoteTimer = null;
+  let _quoteSeq  = 0;
+
+  function scheduleQuote() {
+    clearTimeout(quoteTimer);
+    quoteTimer = setTimeout(doQuote, 500);
+  }
+
+  async function doQuote() {
+    const mySeq   = ++_quoteSeq;
+    const pairKey = D.pairSelect.value;
+    const pair    = PAIRS[pairKey];
+    const fromMeta = TOKEN_META[pair.from];
+    const toMeta   = TOKEN_META[pair.to];
+    const rawIn    = D.amountIn.value.trim();
+    const amountIn = parseAmount(rawIn, fromMeta.decimals);
+
+    if (amountIn <= 0n) {
+      D.amountOut.value = "";
+      D.rateBox.hidden  = true;
+      if (D.fromUsd) D.fromUsd.textContent = "";
+      if (D.toUsd)   D.toUsd.textContent   = "";
+      S.lastQuote = null;
+      setSwapMsg(S.address ? "Enter an amount to swap." : "Connect xPortal to swap.");
+      return;
+    }
+
+    // Show from-USD immediately while waiting for quote
+    if (D.fromUsd) D.fromUsd.textContent = fmtUsd(amountIn, fromMeta.decimals, S.tokenPrices[pair.from]);
+    setSwapMsg("Fetching quote…");
+
+    // Attempt quote with one automatic retry on network failure
+    let quote = null;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        quote = await computeQuote(pairKey, amountIn);
+        lastErr = null;
+        break;
+      } catch(e) {
+        lastErr = e;
+        if (mySeq !== _quoteSeq) return; // newer request started — discard
+        if (attempt === 0) await new Promise(r => setTimeout(r, 600)); // wait before retry
+      }
+    }
+
+    // Discard if a newer quote has started since this one began
+    if (mySeq !== _quoteSeq) return;
+
+    if (lastErr) {
+      console.warn("Quote failed after retry", lastErr);
+      setSwapMsg("Quote failed — check network.");
+      D.amountOut.value = "";
+      if (D.toUsd) D.toUsd.textContent = "";
+      D.rateBox.hidden = true;
+      return;
+    }
+
+    if (!quote || quote.amountOut <= 0n) {
+      setSwapMsg("No liquidity or pair unavailable.");
+      D.amountOut.value = "";
+      if (D.toUsd) D.toUsd.textContent = "";
+      D.rateBox.hidden = true;
+      return;
+    }
+
+    S.lastQuote = { pairKey, amountIn, ...quote };
+    D.amountOut.value = formatAmount(quote.amountOut, toMeta.decimals, 6);
+
+    // USD values
+    if (D.fromUsd) D.fromUsd.textContent = fmtUsd(amountIn,        fromMeta.decimals, S.tokenPrices[pair.from]);
+    if (D.toUsd)   D.toUsd.textContent   = fmtUsd(quote.amountOut, toMeta.decimals,   S.tokenPrices[pair.to]);
+
+    // Rate: 1 FROM = X TO
+    const rateRaw = Number(quote.amountOut) / Number(amountIn) * (10 ** fromMeta.decimals) / (10 ** toMeta.decimals);
+    D.rateText.textContent = `1 ${fromMeta.symbol} ≈ ${rateRaw.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${toMeta.symbol}`;
+
+    // Price impact (same formula as TCL Transaction Simulator)
+    const impact = quote.priceImpact || 0;
+    D.priceImpactText.textContent = `${impact.toFixed(2)}%`;
+    D.priceImpactText.style.color = impact < 1 ? "var(--success)" : impact < 3 ? "var(--gold)" : "var(--danger)";
+
+    // Average execution price
+    const execPriceRaw = Number(amountIn) / Number(quote.amountOut)
+      * Math.pow(10, toMeta.decimals - fromMeta.decimals);
+    const execFmt = execPriceRaw < 0.0001
+      ? execPriceRaw.toExponential(4)
+      : execPriceRaw.toLocaleString("en-US", { maximumFractionDigits: execPriceRaw < 1 ? 6 : 4 });
+    D.avgPriceText.textContent = `1 ${toMeta.symbol} = ${execFmt} ${fromMeta.symbol}`;
+
+    // Price after swap on TCL/USDC pair (in USDC per TCL)
+    if (quote.newSpotScaled && quote.newSpotScaled > 0) {
+      const decAdj = Math.pow(10, TOKEN_META.TCL.decimals - TOKEN_META.USDC.decimals); // 1e12
+      const newPriceUsdc = quote.newSpotScaled / decAdj;
+      const delta = quote.spotScaled ? (quote.newSpotScaled - quote.spotScaled) / quote.spotScaled * 100 : 0;
+      const deltaStr = Math.abs(delta) > 0.001 ? ` (${delta > 0 ? "+" : ""}${delta.toFixed(2)}%)` : "";
+      D.priceAfterText.textContent = `1 TCL = ${newPriceUsdc.toLocaleString("en-US", { maximumFractionDigits: 6 })} USDC${deltaStr}`;
+    } else {
+      D.priceAfterText.textContent = "--";
+    }
+
+    D.minReceivedText.textContent = `${formatAmount(quote.minOut, toMeta.decimals, 6)} ${toMeta.symbol}`;
+    D.routeText.textContent = pair.route || (pair.multiStep ? pair.steps.join(" → ") : "Direct");
+    D.rateBox.hidden = false;
+
+    setSwapMsg(S.address ? "Ready to swap." : "Connect xPortal to swap.");
+    syncSwapBtn();
+  }
+
+  // ─── SIGN & BROADCAST ─────────────────────────────────────────────────────
+  async function signTx(tx) {
+    const client = await getSignClient();
+    const reqPromise = client.request({
+      topic: S.sessionTopic,
+      chainId: CONFIG.chainId,
+      request: { method: "mvx_signTransaction", params: { transaction: tx } }
+    });
+    openXPortal();
+    const result = await reqPromise;
+    const signed = result?.transaction && typeof result.transaction === "object"
+      ? { ...tx, ...result.transaction }
+      : { ...tx, ...result };
+    if (!signed.signature) throw new Error("xPortal did not return a signature.");
+    return signed;
+  }
+
+  async function broadcastTx(tx) {
+    try {
+      const d = await postJson(`${CONFIG.apiBase}/transactions`, tx);
+      return d.txHash || d.hash || d;
+    } catch(_) {
+      const d = await postJson(`${CONFIG.gatewayBase}/transaction/send`, tx);
+      return d?.data?.txHash || d?.txHash || d?.hash || d;
+    }
+  }
+
+  function showTxResult(hash, label) {
+    const url = `https://explorer.multiversx.com/transactions/${hash}`;
+    D.txResult.innerHTML = `
+      <div class="tx-result-title">✓ ${label || "Transaction sent"}</div>
+      <a href="${url}" target="_blank" rel="noreferrer">${hash}</a>
+    `;
+    D.txResult.hidden = false;
+  }
+
+  function showTxError(msg) {
+    D.txResult.innerHTML = `<div class="tx-error">✗ ${msg}</div>`;
+    D.txResult.hidden = false;
+  }
+
+  // ─── SWAP EXECUTION ───────────────────────────────────────────────────────
+  async function executeSwap() {
+    if (S.swapping || !S.address || !S.sessionTopic) return;
+    const pairKey  = D.pairSelect.value;
+    const pair     = PAIRS[pairKey];
+    const fromMeta = TOKEN_META[pair.from];
+    const toMeta   = TOKEN_META[pair.to];
+    const rawIn    = D.amountIn.value.trim();
+    const amountIn = parseAmount(rawIn, fromMeta.decimals);
+    if (amountIn <= 0n) return;
+
+    S.swapping = true;
+    D.txResult.hidden = true;
+    syncSwapBtn();
+
+    try {
+      // Refresh quote for accurate minOut
+      const quote = await computeQuote(pairKey, amountIn);
+      if (!quote || quote.amountOut <= 0n) throw new Error("No liquidity available.");
+      const account = await fetchAccount(S.address);
+
+      // ── USDC → TCL (direct pair) ──────────────────────
+      if (pairKey === "USDC-TCL") {
+        setSwapMsg("Sign the swap in xPortal…");
+        const tx = buildEsdtSwapTx(account, CONFIG.USDC_ID, amountIn, CONFIG.TCL_ID, quote.minOut, CONFIG.TCL_USDC_PAIR);
+        const signed = await signTx(tx);
+        setSwapMsg("Broadcasting transaction…");
+        const hash = await broadcastTx(signed);
+        showTxResult(hash, "USDC → TCL swap sent!");
+        setSwapMsg("Swap broadcast. Confirm on explorer.");
+      }
+
+      // ── TCL → USDC (direct pair) ──────────────────────
+      else if (pairKey === "TCL-USDC") {
+        setSwapMsg("Sign the swap in xPortal…");
+        const tx = buildEsdtSwapTx(account, CONFIG.TCL_ID, amountIn, CONFIG.USDC_ID, quote.minOut, CONFIG.TCL_USDC_PAIR);
+        const signed = await signTx(tx);
+        setSwapMsg("Broadcasting transaction…");
+        const hash = await broadcastTx(signed);
+        showTxResult(hash, "TCL → USDC swap sent!");
+        setSwapMsg("Swap broadcast. Confirm on explorer.");
+      }
+
+      // ── WEGLD → TCL (2-hop via router: WEGLD→USDC→TCL) ─
+      else if (pairKey === "WEGLD-TCL") {
+        const usdcOut  = quote.intermediate || 0n;
+        const minUsdc  = applySlippage(usdcOut);
+        setSwapMsg("Sign the multi-hop swap in xPortal…");
+        const tx = buildMultiPairSwapTx(account, CONFIG.WEGLD_ID, amountIn, [
+          { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.USDC_ID, minOut: minUsdc },
+          { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.TCL_ID,  minOut: quote.minOut },
+        ]);
+        const signed = await signTx(tx);
+        setSwapMsg("Broadcasting transaction…");
+        const hash = await broadcastTx(signed);
+        showTxResult(hash, "WEGLD → TCL swap sent!");
+        setSwapMsg("Swap broadcast. Confirm on explorer.");
+      }
+
+      // ── TCL → WEGLD (2-hop via router: TCL→USDC→WEGLD) ─
+      else if (pairKey === "TCL-WEGLD") {
+        const usdcOut  = quote.intermediate || 0n;
+        const minUsdc  = applySlippage(usdcOut);
+        setSwapMsg("Sign the multi-hop swap in xPortal…");
+        const tx = buildMultiPairSwapTx(account, CONFIG.TCL_ID, amountIn, [
+          { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.USDC_ID,  minOut: minUsdc },
+          { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.WEGLD_ID, minOut: quote.minOut },
+        ]);
+        const signed = await signTx(tx);
+        setSwapMsg("Broadcasting transaction…");
+        const hash = await broadcastTx(signed);
+        showTxResult(hash, "TCL → WEGLD swap sent!");
+        setSwapMsg("Swap broadcast. Confirm on explorer.");
+      }
+
+      // ── EGLD → TCL (step1: wrap, step2: multiPairSwap WEGLD→USDC→TCL)
+      else if (pairKey === "EGLD-TCL") {
+        if (S.multiStepPhase === 0) {
+          setSwapMsg("Step 1/2: Sign wrapEgld in xPortal…");
+          const tx = buildWrapEgldTx(account, amountIn);
+          const signed = await signTx(tx);
+          setSwapMsg("Broadcasting wrap transaction…");
+          const hash = await broadcastTx(signed);
+          S.multiStepPhase = 1;
+
+          showTxResult(hash, "Step 1 done: EGLD wrapped to WEGLD.");
+          setSwapMsg("Step 1 done! Wait for confirmation, then click Step 2.");
+        } else {
+          // Step 2: WEGLD → USDC → TCL via router
+          setSwapMsg("Step 2/2: Sign WEGLD → USDC → TCL swap in xPortal…");
+          const acc2   = await fetchAccount(S.address);
+          const q2     = await computeQuote("WEGLD-TCL", amountIn);
+          if (!q2) throw new Error("Cannot quote WEGLD → TCL.");
+          const usdcOut = q2.intermediate || 0n;
+          const minUsdc = applySlippage(usdcOut);
+          const tx = buildMultiPairSwapTx(acc2, CONFIG.WEGLD_ID, amountIn, [
+            { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.USDC_ID, minOut: minUsdc },
+            { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.TCL_ID,  minOut: q2.minOut },
+          ]);
+          const signed = await signTx(tx);
+          setSwapMsg("Broadcasting swap transaction…");
+          const hash = await broadcastTx(signed);
+          S.multiStepPhase = 2;
+
+          showTxResult(hash, "EGLD → TCL complete!");
+          setSwapMsg("All done! Check the explorer for confirmation.");
+        }
+      }
+
+      // ── TCL → EGLD (step1: multiPairSwap TCL→USDC→WEGLD, step2: unwrap)
+      else if (pairKey === "TCL-EGLD") {
+        if (S.multiStepPhase === 0) {
+          setSwapMsg("Step 1/2: Sign TCL → USDC → WEGLD swap in xPortal…");
+          const usdcOut  = quote.intermediate || 0n;
+          const minUsdc  = applySlippage(usdcOut);
+          const tx = buildMultiPairSwapTx(account, CONFIG.TCL_ID, amountIn, [
+            { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.USDC_ID,  minOut: minUsdc },
+            { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.WEGLD_ID, minOut: quote.minOut },
+          ]);
+          const signed = await signTx(tx);
+          setSwapMsg("Broadcasting transaction…");
+          const hash = await broadcastTx(signed);
+          S.multiStepPhase = 1;
+          S._pendingWegld = quote.amountOut;
+
+          showTxResult(hash, "Step 1 done: TCL swapped to WEGLD.");
+          setSwapMsg("Step 1 done! Wait for confirmation, then click Step 2 to unwrap.");
+        } else {
+          const wegldAmount = S._pendingWegld || quote.amountOut;
+          setSwapMsg("Step 2/2: Sign unwrapEgld in xPortal…");
+          const acc2 = await fetchAccount(S.address);
+          const tx   = buildUnwrapEgldTx(acc2, wegldAmount);
+          const signed = await signTx(tx);
+          setSwapMsg("Broadcasting unwrap transaction…");
+          const hash = await broadcastTx(signed);
+          S.multiStepPhase = 2;
+
+          showTxResult(hash, "TCL → EGLD complete!");
+          setSwapMsg("All done! Check the explorer for confirmation.");
+        }
+      }
+
+      // Refresh balances after swap
+      setTimeout(() => loadAllBalances(false), 4000);
+      setTimeout(() => loadAllBalances(false), 12000);
+
+    } catch(err) {
+      console.error(err);
+      showTxError(err?.message || "Swap failed.");
+      setSwapMsg(err?.message || "Swap failed. Try again.");
+    } finally {
+      S.swapping = false;
+      syncSwapBtn();
+    }
+  }
+
+  // ─── MAX BUTTON ───────────────────────────────────────────────────────────
+  function setMax() {
+    const pairKey  = D.pairSelect.value;
+    const pair     = PAIRS[pairKey];
+    const fromMeta = TOKEN_META[pair?.from];
+    if (!fromMeta || !S.address) return;
+    let bal = S.tokenBalances[pair.from] || 0n;
+    if (pair.from === "EGLD" && bal > 0n) {
+      // Reserve ~0.01 EGLD for gas
+      const reserve = 10_000_000_000_000_000n; // 0.01 EGLD in atomic
+      bal = bal > reserve ? bal - reserve : 0n;
+    }
+    if (bal <= 0n) return;
+    D.amountIn.value = formatAmount(bal, fromMeta.decimals, fromMeta.decimals === 6 ? 6 : 8).replace(/,/g, "");
+    scheduleQuote();
+  }
+
+  // ─── BOOT ─────────────────────────────────────────────────────────────────
+  async function boot() {
+    // Load TCL decimals and token prices/icons in parallel
+    const [tclDec] = await Promise.all([fetchTclDecimals(), fetchTokenPrices()]);
+    S.tclDecimals = tclDec;
+    TOKEN_META.TCL.decimals = S.tclDecimals;
+    updatePairUI();
+    updatePoolInfo();
+
+    // Wire events
+    D.pairSelect.addEventListener("change", () => {
+      S.multiStepPhase = 0;
+      updatePairUI();
+    });
+    D.amountIn.addEventListener("input", () => { syncSwapBtn(); scheduleQuote(); });
+    D.swapBtn.addEventListener("click", executeSwap);
+    D.maxBtn.addEventListener("click", setMax);
+    D.refreshSessionBtn.addEventListener("click", () => {
+      S.connectionRunId++;
+      S.pendingUri = "";
+      setRefreshVisible(false);
+      if (D.connectQrCode) D.connectQrCode.innerHTML = "";
+      setStatus("loading", "Generating new session…");
+      startConnection();
+    });
+    D.disconnectBtn.addEventListener("click", disconnectWallet);
+    if (D.disconnectBtn2) D.disconnectBtn2.addEventListener("click", disconnectWallet);
+
+    // Rate details toggle — collapsed by default on mobile
+    const rateDetails    = document.getElementById("rateDetails");
+    const rateToggleBtn  = document.getElementById("rateToggleBtn");
+    const rateToggleIcon = document.getElementById("rateToggleIcon");
+    if (rateDetails && rateToggleBtn) {
+      rateDetails.hidden = true; // always collapsed by default
+      rateToggleBtn.addEventListener("click", () => {
+        rateDetails.hidden = !rateDetails.hidden;
+        rateToggleIcon.textContent = rateDetails.hidden ? "▼" : "▲";
+      });
+    }
+
+    // Popover toggle
+    if (D.connectTriggerBtn) {
+      D.connectTriggerBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (D.qrPopover) D.qrPopover.hidden = !D.qrPopover.hidden;
+      });
+    }
+    if (D.qrCloseBtn) {
+      D.qrCloseBtn.addEventListener("click", () => { if (D.qrPopover) D.qrPopover.hidden = true; });
+    }
+    document.addEventListener("click", (e) => {
+      if (D.qrPopover && !D.qrPopover.hidden) {
+        const wrap = D.connectView;
+        if (wrap && !wrap.contains(e.target)) D.qrPopover.hidden = true;
+      }
+    });
+
+    if (document.getElementById("brandLink")) {
+      document.getElementById("brandLink").addEventListener("click", e => {
+        if (window.parent && window.parent !== window) {
+          e.preventDefault();
+          try { window.parent.postMessage({ type: "tcl:navigate", page: "swap" }, "*"); } catch(_) {}
+        }
+      });
+    }
+
+    updatePairUI();
+
+    const restored = await restoreSession();
+    if (!restored) startConnection();
+    syncConnectView();
+
+    // Notify parent frame
+    if (window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); } catch(_) {}
+    }
+  }
+
+  boot().catch(err => {
+    console.error(err);
+    setStatus("error", err?.message || "Page failed to initialize.");
+  });
+
+})();
+</script>
+</body>
+</html>
