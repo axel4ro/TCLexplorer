@@ -497,11 +497,11 @@
     // xExchange contracts
     TCL_USDC_PAIR:   "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff", // USDC/TCL direct pair
     USDC_WEGLD_PAIR: "erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq", // USDC/WEGLD pair
-    XEXCHANGE_ROUTER:"erd1qqqqqqqqqqqqqpgqsc6fz0038ya459duj358pptzg9s3ssrfngqqnhh39s",
+    XEXCHANGE_ROUTER:"erd1qqqqqqqqqqqqqpgqq66xk9gfr4esuhem3jru86wg5hvp33a62jps2fy57p",
     WEGLD_WRAPPERS: [
-      "erd1qqqqqqqqqqqqqpgqpv09kfzry5y4sj05udcngesat07d2daan0gsn4ztm9",
-      "erd1qqqqqqqqqqqqqpgqhe8t5jewej70zupmh44jurgpower6af37eq57k2fy",
-      "erd1qqqqqqqqqqqqqpgqmuk0q2saj0mgutxm4teywre6exc424pkf9ysk5dze"
+      "erd1qqqqqqqqqqqqqpgqvc7gdl0p4s97guh498wgz75k8sav6sjfjlwqh679jy",
+      "erd1qqqqqqqqqqqqqpgqhe8t5jewej70zupmh44jurgn29psua5l2jps3ntjj3",
+      "erd1qqqqqqqqqqqqqpgqmuk0q2saj0mgutxm4teywre6dl8wqf58xamqdrukln"
     ],
 
     // Token identifiers
@@ -514,6 +514,7 @@
     GAS_WRAP:  10_000_000,
     GAS_MULTI: 100_000_000,
     GAS_PRICE: 1_000_000_000,
+    SIGN_TIMEOUT_MS: 60_000,
 
     balancePollMs: 30_000,
   };
@@ -641,14 +642,42 @@
     return btoa(binary);
   }
 
+  function bech32Polymod(values) {
+    const generators = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+    let chk = 1;
+    for (const value of values) {
+      const top = chk >> 25;
+      chk = ((chk & 0x1ffffff) << 5) ^ value;
+      for (let i = 0; i < 5; i++) {
+        if ((top >> i) & 1) chk ^= generators[i];
+      }
+    }
+    return chk >>> 0;
+  }
+
+  function bech32HrpExpand(hrp) {
+    const out = [];
+    for (let i = 0; i < hrp.length; i++) out.push(hrp.charCodeAt(i) >> 5);
+    out.push(0);
+    for (let i = 0; i < hrp.length; i++) out.push(hrp.charCodeAt(i) & 31);
+    return out;
+  }
+
   // Decode bech32 address to 32-byte pubkey hex (for SC args)
   function bech32ToHex(addr) {
     const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-    const lower = addr.toLowerCase();
+    const raw = String(addr || "").trim();
+    if (raw !== raw.toLowerCase()) return "";
+    const lower = raw.toLowerCase();
     const sep = lower.lastIndexOf("1");
-    if (sep < 1) return "";
-    const dataPart = lower.slice(sep + 1, -6); // strip HRP and 6-char checksum
-    const fiveBit = Array.from(dataPart).map(c => CHARSET.indexOf(c));
+    if (sep < 1 || sep + 7 > lower.length) return "";
+    const hrp = lower.slice(0, sep);
+    if (hrp !== "erd") return "";
+    const fullData = Array.from(lower.slice(sep + 1)).map(c => CHARSET.indexOf(c));
+    if (fullData.some(v => v < 0)) return "";
+    if (bech32Polymod([...bech32HrpExpand(hrp), ...fullData]) !== 1) return "";
+
+    const fiveBit = fullData.slice(0, -6);
     if (fiveBit.some(v => v < 0)) return "";
     let acc = 0, bits = 0;
     const bytes = [];
@@ -657,6 +686,7 @@
       bits += 5;
       while (bits >= 8) { bits -= 8; bytes.push((acc >> bits) & 0xff); }
     }
+    if (bytes.length !== 32) return "";
     return bytes.map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
@@ -671,6 +701,11 @@
   function getWegldWrapper() {
     const shard = S.address ? getAddressShard(S.address) : 1;
     return CONFIG.WEGLD_WRAPPERS[shard] || CONFIG.WEGLD_WRAPPERS[1];
+  }
+
+  function assertValidAddress(addr, label) {
+    if (!bech32ToHex(addr)) throw new Error(`${label} address is invalid.`);
+    return addr;
   }
 
   // ─── AMOUNT PARSING / FORMATTING ──────────────────────────────────────────
@@ -919,6 +954,7 @@
 
   // ─── TRANSACTION BUILDERS ─────────────────────────────────────────────────
   function buildEsdtSwapTx(account, tokenIn, amountIn, tokenOut, minAmountOut, receiver) {
+    const pairReceiver = assertValidAddress(receiver, "Swap pair");
     const data = [
       "ESDTTransfer",
       strToHex(tokenIn),
@@ -930,7 +966,7 @@
     return {
       nonce: Number(account.nonce || 0),
       value: "0",
-      receiver,
+      receiver: pairReceiver,
       sender: S.address,
       gasPrice: CONFIG.GAS_PRICE,
       gasLimit: CONFIG.GAS_SWAP,
@@ -941,10 +977,11 @@
   }
 
   function buildWrapEgldTx(account, amountIn) {
+    const wrapper = assertValidAddress(getWegldWrapper(), "WEGLD wrapper");
     return {
       nonce: Number(account.nonce || 0),
       value: amountIn.toString(),
-      receiver: getWegldWrapper(),
+      receiver: wrapper,
       sender: S.address,
       gasPrice: CONFIG.GAS_PRICE,
       gasLimit: CONFIG.GAS_WRAP,
@@ -955,6 +992,7 @@
   }
 
   function buildUnwrapEgldTx(account, amountIn) {
+    const wrapper = assertValidAddress(getWegldWrapper(), "WEGLD wrapper");
     const data = [
       "ESDTTransfer",
       strToHex(CONFIG.WEGLD_ID),
@@ -964,7 +1002,7 @@
     return {
       nonce: Number(account.nonce || 0),
       value: "0",
-      receiver: getWegldWrapper(),
+      receiver: wrapper,
       sender: S.address,
       gasPrice: CONFIG.GAS_PRICE,
       gasLimit: CONFIG.GAS_WRAP,
@@ -975,6 +1013,7 @@
   }
 
   function buildMultiPairSwapTx(account, tokenIn, amountIn, pairs) {
+    const router = assertValidAddress(CONFIG.XEXCHANGE_ROUTER, "xExchange router");
     // pairs = [{ pairAddr, tokenOut, minOut }]
     const parts = [
       "ESDTTransfer",
@@ -983,7 +1022,9 @@
       strToHex("multiPairSwap"),
     ];
     for (const { pairAddr, tokenOut, minOut } of pairs) {
-      parts.push(bech32ToHex(pairAddr));
+      const pairHex = bech32ToHex(pairAddr);
+      if (!pairHex) throw new Error("Swap route pair address is invalid.");
+      parts.push(pairHex);
       parts.push(strToHex("swapTokensFixedInput"));
       parts.push(strToHex(tokenOut));
       parts.push(bigintToHex(minOut));
@@ -991,7 +1032,7 @@
     return {
       nonce: Number(account.nonce || 0),
       value: "0",
-      receiver: CONFIG.XEXCHANGE_ROUTER,
+      receiver: router,
       sender: S.address,
       gasPrice: CONFIG.GAS_PRICE,
       gasLimit: CONFIG.GAS_MULTI,
@@ -1438,6 +1479,22 @@
     return normalized;
   }
 
+  function withTimeout(promise, ms, message) {
+    let timer = null;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  }
+
+  function getSwapErrorMessage(err) {
+    const msg = String(err?.message || err || "").trim();
+    if (!msg) return "Swap failed. Try again.";
+    if (/no signature received/i.test(msg)) return msg;
+    if (/user rejected|rejected|cancel/i.test(msg)) return "Transaction canceled in xPortal.";
+    return msg;
+  }
+
   async function signTx(tx, account) {
     const signingTx = normalizeTransactionForSigning(tx, account);
     const client = await getSignClient();
@@ -1447,7 +1504,11 @@
       request: { method: "mvx_signTransaction", params: { transaction: signingTx } }
     });
     openXPortal();
-    const result = await reqPromise;
+    const result = await withTimeout(
+      reqPromise,
+      CONFIG.SIGN_TIMEOUT_MS,
+      "No signature received from xPortal. Swap canceled."
+    );
     const signed = result?.transaction && typeof result.transaction === "object"
       ? { ...signingTx, ...result.transaction }
       : { ...signingTx, ...result };
@@ -1627,8 +1688,9 @@
 
     } catch(err) {
       console.error(err);
-      showTxError(err?.message || "Swap failed.");
-      setSwapMsg(err?.message || "Swap failed. Try again.");
+      const msg = getSwapErrorMessage(err);
+      showTxError(msg);
+      setSwapMsg(msg);
     } finally {
       S.swapping = false;
       syncSwapBtn();
