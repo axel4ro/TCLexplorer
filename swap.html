@@ -588,6 +588,8 @@
     USDC_ID:  "USDC-c76f1f",
 
     SLIPPAGE_BPS: 100,  // 1%
+    FEE_RESERVE_USD: 0.20,
+    FEE_RESERVE_FALLBACK_EGLD: "0.1",
     GAS_SWAP:  50_000_000,
     GAS_WRAP:  10_000_000,
     GAS_MULTI: 100_000_000,
@@ -815,6 +817,70 @@
 
   function applySlippage(amount) {
     return amount * (10000n - BigInt(CONFIG.SLIPPAGE_BPS)) / 10000n;
+  }
+
+  function gasCostAtomic(gasLimit) {
+    return BigInt(gasLimit || 0) * BigInt(CONFIG.GAS_PRICE || 0);
+  }
+
+  function estimatedNativeGasForPair(pairKey) {
+    if (pairKey === "EGLD-TCL") return gasCostAtomic(CONFIG.GAS_WRAP) + gasCostAtomic(CONFIG.GAS_MULTI);
+    if (pairKey === "TCL-EGLD") return gasCostAtomic(CONFIG.GAS_MULTI) + gasCostAtomic(CONFIG.GAS_WRAP);
+    if (pairKey === "WEGLD-TCL" || pairKey === "TCL-WEGLD") return gasCostAtomic(CONFIG.GAS_MULTI);
+    if (pairKey === "USDC-TCL" || pairKey === "TCL-USDC") return gasCostAtomic(CONFIG.GAS_SWAP);
+    return 0n;
+  }
+
+  function isReserveProtectedToken(tokenKey) {
+    return tokenKey === "EGLD" || tokenKey === "WEGLD";
+  }
+
+  function reserveAtomicForToken(tokenKey) {
+    const meta = TOKEN_META[tokenKey];
+    if (!meta || !isReserveProtectedToken(tokenKey)) return 0n;
+    const price = Number(S.tokenPrices[tokenKey] || S.tokenPrices.EGLD || S.egldPrice || 0);
+    if (price > 0) {
+      const reserve = CONFIG.FEE_RESERVE_USD / price;
+      return parseAmount(reserve.toFixed(meta.decimals), meta.decimals) + 1n;
+    }
+    return parseAmount(CONFIG.FEE_RESERVE_FALLBACK_EGLD, meta.decimals);
+  }
+
+  function reserveLabelForToken(tokenKey) {
+    const meta = TOKEN_META[tokenKey];
+    if (!meta) return `$${CONFIG.FEE_RESERVE_USD.toFixed(2)}`;
+    return `${formatAmount(reserveAtomicForToken(tokenKey), meta.decimals, 6)} ${meta.symbol} (~$${CONFIG.FEE_RESERVE_USD.toFixed(2)})`;
+  }
+
+  function protectedMaxSpend(pairKey) {
+    const pair = PAIRS[pairKey];
+    const balance = pair ? S.tokenBalances[pair.from] : undefined;
+    if (!pair || balance === undefined) return 0n;
+
+    let protectedAmount = 0n;
+    if (isReserveProtectedToken(pair.from)) protectedAmount += reserveAtomicForToken(pair.from);
+    if (pair.from === "EGLD") protectedAmount += estimatedNativeGasForPair(pairKey);
+
+    return balance > protectedAmount ? balance - protectedAmount : 0n;
+  }
+
+  function protectedSpendError(pairKey, amountIn) {
+    const pair = PAIRS[pairKey];
+    if (!pair || amountIn <= 0n) return "";
+    const meta = TOKEN_META[pair.from];
+    const balance = S.tokenBalances[pair.from];
+    if (!meta || balance === undefined) return "";
+    if (amountIn > balance) return `Insufficient ${meta.symbol} balance.`;
+    if (!isReserveProtectedToken(pair.from)) return "";
+
+    const maxSpend = protectedMaxSpend(pairKey);
+    if (amountIn <= maxSpend) return "";
+
+    const maxText = `${formatAmount(maxSpend, meta.decimals, meta.decimals === 6 ? 6 : 8)} ${meta.symbol}`;
+    if (pair.from === "EGLD") {
+      return `Keep ${reserveLabelForToken(pair.from)} plus estimated gas for this swap. Max available: ${maxText}.`;
+    }
+    return `Keep ${reserveLabelForToken(pair.from)} as reserve. Max available: ${maxText}.`;
   }
 
   // ─── AMM FORMULA ──────────────────────────────────────────────────────────
@@ -1215,13 +1281,15 @@
     const pair = PAIRS[pairKey];
     const fromMeta = TOKEN_META[pair?.from];
     const amountIn = fromMeta ? parseAmount(val, fromMeta.decimals) : 0n;
-    const canSwap = Boolean(S.address && S.sessionTopic) && amountIn > 0n && !S.swapping;
+    const reserveError = protectedSpendError(pairKey, amountIn);
+    const canSwap = Boolean(S.address && S.sessionTopic) && amountIn > 0n && !reserveError && !S.swapping;
     D.swapBtn.disabled = !canSwap;
 
     D.swapBtn.textContent = S.swapping ? "Swapping…" : "Swap";
 
     if (!S.address) setSwapMsg("Connect xPortal to swap.");
     else if (!val || amountIn <= 0n) setSwapMsg("Enter an amount to swap.");
+    else if (reserveError) setSwapMsg(reserveError);
   }
 
   function saveConnection(address, topic) {
@@ -1428,6 +1496,18 @@
       if (D.toUsd)   D.toUsd.textContent   = "";
       S.lastQuote = null;
       setSwapMsg(S.address ? "Enter an amount to swap." : "Connect xPortal to swap.");
+      return;
+    }
+
+    const reserveError = protectedSpendError(pairKey, amountIn);
+    if (reserveError) {
+      D.amountOut.value = "";
+      D.rateBox.hidden  = true;
+      if (D.fromUsd) D.fromUsd.textContent = fmtUsd(amountIn, fromMeta.decimals, S.tokenPrices[pair.from]);
+      if (D.toUsd)   D.toUsd.textContent   = "";
+      S.lastQuote = null;
+      setSwapMsg(reserveError);
+      syncSwapBtn();
       return;
     }
 
@@ -1765,6 +1845,12 @@
     const rawIn    = D.amountIn.value.trim();
     const amountIn = parseAmount(rawIn, fromMeta.decimals);
     if (amountIn <= 0n) return;
+    const reserveError = protectedSpendError(pairKey, amountIn);
+    if (reserveError) {
+      showTxError(reserveError);
+      setSwapMsg(reserveError);
+      return;
+    }
 
     S.swapping = true;
     D.txResult.hidden = true;
@@ -1772,10 +1858,14 @@
     syncSwapBtn();
 
     try {
+      const account = await fetchAccount(S.address);
+      S.tokenBalances.EGLD = BigInt(account.balance || "0");
+      const liveReserveError = protectedSpendError(pairKey, amountIn);
+      if (liveReserveError) throw new Error(liveReserveError);
+
       // Refresh quote for accurate minOut
       const quote = await computeQuote(pairKey, amountIn);
       if (!quote || quote.amountOut <= 0n) throw new Error("No liquidity available.");
-      const account = await fetchAccount(S.address);
 
       // ── USDC → TCL (direct pair) ──────────────────────
       if (pairKey === "USDC-TCL") {
@@ -1928,13 +2018,20 @@
     const pair     = PAIRS[pairKey];
     const fromMeta = TOKEN_META[pair?.from];
     if (!fromMeta || !S.address) return;
-    let bal = S.tokenBalances[pair.from] || 0n;
-    if (pair.from === "EGLD" && bal > 0n) {
-      // Reserve ~0.01 EGLD for gas
-      const reserve = 10_000_000_000_000_000n; // 0.01 EGLD in atomic
-      bal = bal > reserve ? bal - reserve : 0n;
+    const bal = isReserveProtectedToken(pair.from)
+      ? protectedMaxSpend(pairKey)
+      : (S.tokenBalances[pair.from] || 0n);
+    if (bal <= 0n) {
+      D.amountIn.value = "0";
+      D.amountOut.value = "0";
+      D.rateBox.hidden = true;
+      const reserveMsg = isReserveProtectedToken(pair.from)
+        ? protectedSpendError(pairKey, 1n) || `Not enough ${fromMeta.symbol} after reserve.`
+        : `No ${fromMeta.symbol} balance available.`;
+      setSwapMsg(reserveMsg);
+      syncSwapBtn();
+      return;
     }
-    if (bal <= 0n) return;
     D.amountIn.value = formatAmount(bal, fromMeta.decimals, fromMeta.decimals === 6 ? 6 : 8).replace(/,/g, "");
     scheduleQuote();
   }
