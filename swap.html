@@ -515,6 +515,9 @@
     GAS_MULTI: 100_000_000,
     GAS_PRICE: 1_000_000_000,
     SIGN_TIMEOUT_MS: 60_000,
+    TX_CONFIRM_TIMEOUT_MS: 120_000,
+    TX_CONFIRM_POLL_MS: 4_000,
+    BALANCE_WAIT_TIMEOUT_MS: 60_000,
 
     balancePollMs: 30_000,
   };
@@ -1526,6 +1529,63 @@
     }
   }
 
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function fetchTransaction(hash) {
+    const r = await fetch(`${CONFIG.apiBase}/transactions/${hash}`);
+    if (!r.ok) throw new Error("Cannot read transaction status.");
+    return r.json();
+  }
+
+  async function waitForTxSuccess(hash, label = "Transaction") {
+    const deadline = Date.now() + CONFIG.TX_CONFIRM_TIMEOUT_MS;
+    let lastStatus = "";
+
+    while (Date.now() < deadline) {
+      try {
+        const tx = await fetchTransaction(hash);
+        lastStatus = tx?.status || "";
+        if (lastStatus === "success") return tx;
+        if (["fail", "failed", "invalid", "notExecuted"].includes(lastStatus)) {
+          throw new Error(`${label} failed on-chain.`);
+        }
+      } catch (err) {
+        if (/failed on-chain/i.test(String(err?.message || ""))) throw err;
+      }
+      await sleep(CONFIG.TX_CONFIRM_POLL_MS);
+    }
+
+    throw new Error(`${label} was sent but was not confirmed yet. Check explorer.`);
+  }
+
+  async function waitForTokenBalanceAtLeast(tokenId, minBalance, label) {
+    const deadline = Date.now() + CONFIG.BALANCE_WAIT_TIMEOUT_MS;
+    let lastBalance = 0n;
+
+    while (Date.now() < deadline) {
+      lastBalance = await fetchTokenBalance(S.address, tokenId);
+      if (lastBalance >= minBalance) return lastBalance;
+      await sleep(CONFIG.TX_CONFIRM_POLL_MS);
+    }
+
+    throw new Error(`${label} is not available yet. Try again in a few seconds.`);
+  }
+
+  async function waitForTokenBalanceAbove(tokenId, previousBalance, label) {
+    const deadline = Date.now() + CONFIG.BALANCE_WAIT_TIMEOUT_MS;
+    let lastBalance = previousBalance;
+
+    while (Date.now() < deadline) {
+      lastBalance = await fetchTokenBalance(S.address, tokenId);
+      if (lastBalance > previousBalance) return lastBalance;
+      await sleep(CONFIG.TX_CONFIRM_POLL_MS);
+    }
+
+    throw new Error(`${label} is not available yet. Try again in a few seconds.`);
+  }
+
   function showTxResult(hash, label) {
     const url = `https://explorer.multiversx.com/transactions/${hash}`;
     D.txResult.innerHTML = `
@@ -1617,69 +1677,79 @@
 
       // ── EGLD → TCL (step1: wrap, step2: multiPairSwap WEGLD→USDC→TCL)
       else if (pairKey === "EGLD-TCL") {
-        if (S.multiStepPhase === 0) {
-          setSwapMsg("Step 1/2: Sign wrapEgld in xPortal…");
-          const tx = buildWrapEgldTx(account, amountIn);
-          const signed = await signTx(tx, account);
-          setSwapMsg("Broadcasting wrap transaction…");
-          const hash = await broadcastTx(signed);
-          S.multiStepPhase = 1;
+        const wegldBefore = await fetchTokenBalance(S.address, CONFIG.WEGLD_ID);
 
-          showTxResult(hash, "Step 1 done: EGLD wrapped to WEGLD.");
-          setSwapMsg("Step 1 done! Wait for confirmation, then click Step 2.");
-        } else {
-          // Step 2: WEGLD → USDC → TCL via router
-          setSwapMsg("Step 2/2: Sign WEGLD → USDC → TCL swap in xPortal…");
-          const acc2   = await fetchAccount(S.address);
-          const q2     = await computeQuote("WEGLD-TCL", amountIn);
-          if (!q2) throw new Error("Cannot quote WEGLD → TCL.");
-          const usdcOut = q2.intermediate || 0n;
-          const minUsdc = applySlippage(usdcOut);
-          const tx = buildMultiPairSwapTx(acc2, CONFIG.WEGLD_ID, amountIn, [
-            { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.USDC_ID, minOut: minUsdc },
-            { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.TCL_ID,  minOut: q2.minOut },
-          ]);
-          const signed = await signTx(tx, acc2);
-          setSwapMsg("Broadcasting swap transaction…");
-          const hash = await broadcastTx(signed);
-          S.multiStepPhase = 2;
+        setSwapMsg("Step 1/2: Sign EGLD wrap in xPortal…");
+        const wrapTx = buildWrapEgldTx(account, amountIn);
+        const signedWrap = await signTx(wrapTx, account);
+        setSwapMsg("Step 1/2: Broadcasting wrap transaction…");
+        const wrapHash = await broadcastTx(signedWrap);
+        showTxResult(wrapHash, "Step 1/2 sent: EGLD wrapped to WEGLD.");
 
-          showTxResult(hash, "EGLD → TCL complete!");
-          setSwapMsg("All done! Check the explorer for confirmation.");
-        }
+        setSwapMsg("Step 1/2: Waiting for wrap confirmation…");
+        await waitForTxSuccess(wrapHash, "Wrap transaction");
+        await waitForTokenBalanceAtLeast(CONFIG.WEGLD_ID, wegldBefore + amountIn, "Wrapped EGLD");
+        S.multiStepPhase = 1;
+
+        setSwapMsg("Step 2/2: Sign final WEGLD → TCL swap in xPortal…");
+        const acc2 = await fetchAccount(S.address);
+        const q2 = await computeQuote("WEGLD-TCL", amountIn);
+        if (!q2 || q2.amountOut <= 0n) throw new Error("Cannot quote WEGLD → TCL.");
+        const usdcOut = q2.intermediate || 0n;
+        const minUsdc = applySlippage(usdcOut);
+        const swapTx = buildMultiPairSwapTx(acc2, CONFIG.WEGLD_ID, amountIn, [
+          { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.USDC_ID, minOut: minUsdc },
+          { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.TCL_ID,  minOut: q2.minOut },
+        ]);
+        const signedSwap = await signTx(swapTx, acc2);
+        setSwapMsg("Step 2/2: Broadcasting final swap…");
+        const swapHash = await broadcastTx(signedSwap);
+        showTxResult(swapHash, "Step 2/2 sent: final swap broadcast.");
+
+        setSwapMsg("Step 2/2: Waiting for final swap confirmation…");
+        await waitForTxSuccess(swapHash, "Final swap");
+        S.multiStepPhase = 2;
+
+        showTxResult(swapHash, "EGLD → TCL complete!");
+        setSwapMsg("Swap complete. Check the explorer for confirmation.");
       }
 
       // ── TCL → EGLD (step1: multiPairSwap TCL→USDC→WEGLD, step2: unwrap)
       else if (pairKey === "TCL-EGLD") {
-        if (S.multiStepPhase === 0) {
-          setSwapMsg("Step 1/2: Sign TCL → USDC → WEGLD swap in xPortal…");
-          const usdcOut  = quote.intermediate || 0n;
-          const minUsdc  = applySlippage(usdcOut);
-          const tx = buildMultiPairSwapTx(account, CONFIG.TCL_ID, amountIn, [
-            { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.USDC_ID,  minOut: minUsdc },
-            { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.WEGLD_ID, minOut: quote.minOut },
-          ]);
-          const signed = await signTx(tx, account);
-          setSwapMsg("Broadcasting transaction…");
-          const hash = await broadcastTx(signed);
-          S.multiStepPhase = 1;
-          S._pendingWegld = quote.amountOut;
+        const wegldBefore = await fetchTokenBalance(S.address, CONFIG.WEGLD_ID);
+        const usdcOut = quote.intermediate || 0n;
+        const minUsdc = applySlippage(usdcOut);
 
-          showTxResult(hash, "Step 1 done: TCL swapped to WEGLD.");
-          setSwapMsg("Step 1 done! Wait for confirmation, then click Step 2 to unwrap.");
-        } else {
-          const wegldAmount = S._pendingWegld || quote.amountOut;
-          setSwapMsg("Step 2/2: Sign unwrapEgld in xPortal…");
-          const acc2 = await fetchAccount(S.address);
-          const tx   = buildUnwrapEgldTx(acc2, wegldAmount);
-          const signed = await signTx(tx, acc2);
-          setSwapMsg("Broadcasting unwrap transaction…");
-          const hash = await broadcastTx(signed);
-          S.multiStepPhase = 2;
+        setSwapMsg("Step 1/2: Sign TCL → WEGLD swap in xPortal…");
+        const swapTx = buildMultiPairSwapTx(account, CONFIG.TCL_ID, amountIn, [
+          { pairAddr: CONFIG.TCL_USDC_PAIR,   tokenOut: CONFIG.USDC_ID,  minOut: minUsdc },
+          { pairAddr: CONFIG.USDC_WEGLD_PAIR, tokenOut: CONFIG.WEGLD_ID, minOut: quote.minOut },
+        ]);
+        const signedSwap = await signTx(swapTx, account);
+        setSwapMsg("Step 1/2: Broadcasting TCL → WEGLD swap…");
+        const swapHash = await broadcastTx(signedSwap);
+        showTxResult(swapHash, "Step 1/2 sent: TCL swapped to WEGLD.");
 
-          showTxResult(hash, "TCL → EGLD complete!");
-          setSwapMsg("All done! Check the explorer for confirmation.");
-        }
+        setSwapMsg("Step 1/2: Waiting for swap confirmation…");
+        await waitForTxSuccess(swapHash, "TCL to WEGLD swap");
+        const wegldAfter = await waitForTokenBalanceAbove(CONFIG.WEGLD_ID, wegldBefore, "Swapped WEGLD");
+        const wegldAmount = wegldAfter - wegldBefore;
+        S.multiStepPhase = 1;
+
+        setSwapMsg("Step 2/2: Sign final WEGLD unwrap in xPortal…");
+        const acc2 = await fetchAccount(S.address);
+        const unwrapTx = buildUnwrapEgldTx(acc2, wegldAmount);
+        const signedUnwrap = await signTx(unwrapTx, acc2);
+        setSwapMsg("Step 2/2: Broadcasting unwrap transaction…");
+        const unwrapHash = await broadcastTx(signedUnwrap);
+        showTxResult(unwrapHash, "Step 2/2 sent: unwrap broadcast.");
+
+        setSwapMsg("Step 2/2: Waiting for unwrap confirmation…");
+        await waitForTxSuccess(unwrapHash, "Unwrap transaction");
+        S.multiStepPhase = 2;
+
+        showTxResult(unwrapHash, "TCL → EGLD complete!");
+        setSwapMsg("Swap complete. Check the explorer for confirmation.");
       }
 
       // Refresh balances after swap
@@ -1688,7 +1758,12 @@
 
     } catch(err) {
       console.error(err);
-      const msg = getSwapErrorMessage(err);
+      let msg = getSwapErrorMessage(err);
+      if (pairKey === "EGLD-TCL" && S.multiStepPhase === 1) {
+        msg = `${msg} EGLD was wrapped to WEGLD, but the final TCL swap was not completed. Select WEGLD → TCL to finish.`;
+      } else if (pairKey === "TCL-EGLD" && S.multiStepPhase === 1) {
+        msg = `${msg} TCL was swapped to WEGLD, but the final unwrap was not completed. The WEGLD remains in your wallet.`;
+      }
       showTxError(msg);
       setSwapMsg(msg);
     } finally {
