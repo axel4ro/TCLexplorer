@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071018">
+  <meta name="description" content="Top 100 TCL wallets ranked by TCL spent on buyCoins for Karma.">
+  <title>Top 100 TCL Spenders for Karma - TCL Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05080d;
+      --panel: rgba(13, 20, 30, 0.94);
+      --panel-soft: rgba(17, 27, 40, 0.78);
+      --line: rgba(154, 178, 210, 0.14);
+      --line-strong: rgba(154, 178, 210, 0.25);
+      --text: #eff7ff;
+      --muted: #91a0b5;
+      --soft: #65758d;
+      --accent: #28e0c2;
+      --accent-soft: rgba(40, 224, 194, 0.13);
+      --blue: #55b8ff;
+      --blue-soft: rgba(85, 184, 255, 0.13);
+      --gold: #f7c968;
+      --silver: #cbd8e7;
+      --bronze: #d89764;
+      --danger: #ff7180;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+      --radius-lg: 22px;
+      --radius-md: 15px;
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        radial-gradient(circle at 12% 2%, rgba(40, 224, 194, 0.14), transparent 28%),
+        radial-gradient(circle at 92% 8%, rgba(85, 184, 255, 0.14), transparent 25%),
+        linear-gradient(155deg, #04070b 0%, #09111b 48%, #05080d 100%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page-shell {
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 42px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .back-link,
+    .explorer-link,
+    .refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.045);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .back-link:hover,
+    .explorer-link:hover,
+    .refresh-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(40, 224, 194, 0.38);
+      background: rgba(40, 224, 194, 0.08);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 38px;
+      max-width: min(520px, 52vw);
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--muted);
+      font-size: 0.84rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-pill::before {
+      content: "";
+      flex: 0 0 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--soft);
+      box-shadow: 0 0 0 5px rgba(101, 117, 141, 0.12);
+    }
+
+    .status-pill.is-loading::before {
+      background: var(--gold);
+      box-shadow: 0 0 0 5px rgba(247, 201, 104, 0.12);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .status-pill.is-ready::before {
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(40, 224, 194, 0.12);
+    }
+
+    .status-pill.is-error::before {
+      background: var(--danger);
+      box-shadow: 0 0 0 5px rgba(255, 113, 128, 0.12);
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: 0.45;
+      }
+    }
+
+    .hero,
+    .stat-card,
+    .leaderboard-panel {
+      border: 1px solid rgba(255, 255, 255, 0.085);
+      background: linear-gradient(180deg, rgba(16, 25, 37, 0.96), rgba(9, 14, 23, 0.95));
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 24px;
+      min-height: 240px;
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -120px;
+      top: -190px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(40, 224, 194, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(40, 224, 194, 0.48), transparent);
+    }
+
+    .brand-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 22px;
+    }
+
+    .brand-row img {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 840px;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .function-card {
+      position: relative;
+      z-index: 1;
+      min-width: 190px;
+      padding: 18px;
+      border: 1px solid rgba(40, 224, 194, 0.2);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(40, 224, 194, 0.1), rgba(85, 184, 255, 0.07));
+    }
+
+    .function-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .function-card strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 13px;
+      margin: 16px 0;
+    }
+
+    .stat-card {
+      min-height: 120px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      display: block;
+      margin-top: 12px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.25rem, 2.4vw, 2rem);
+      line-height: 1.08;
+    }
+
+    .stat-note {
+      display: block;
+      margin-top: 8px;
+      color: var(--soft);
+      font-size: 0.78rem;
+    }
+
+    .leaderboard-panel {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+    }
+
+    .panel-title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .panel-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-input {
+      width: min(330px, 36vw);
+      min-height: 42px;
+      padding: 10px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(4, 8, 14, 0.72);
+      color: var(--text);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--soft);
+    }
+
+    .search-input:focus {
+      border-color: rgba(40, 224, 194, 0.48);
+      box-shadow: 0 0 0 3px rgba(40, 224, 194, 0.1);
+    }
+
+    .refresh-btn:disabled {
+      cursor: wait;
+      opacity: 0.58;
+      transform: none;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1120px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--soft);
+      background: rgba(4, 8, 14, 0.48);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    tbody tr {
+      transition: background 0.16s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(40, 224, 194, 0.04);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .rank-cell {
+      width: 74px;
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line-strong);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-family: var(--font-display);
+      font-size: 0.82rem;
+    }
+
+    .rank-badge.rank-1 {
+      border-color: rgba(247, 201, 104, 0.5);
+      background: rgba(247, 201, 104, 0.13);
+      color: var(--gold);
+      box-shadow: 0 0 24px rgba(247, 201, 104, 0.12);
+    }
+
+    .rank-badge.rank-2 {
+      border-color: rgba(203, 216, 231, 0.45);
+      background: rgba(203, 216, 231, 0.1);
+      color: var(--silver);
+    }
+
+    .rank-badge.rank-3 {
+      border-color: rgba(216, 151, 100, 0.48);
+      background: rgba(216, 151, 100, 0.11);
+      color: var(--bronze);
+    }
+
+    .wallet-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #dcecff;
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .wallet-link:hover {
+      color: var(--accent);
+    }
+
+    .wallet-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--blue));
+      box-shadow: 0 0 14px rgba(40, 224, 194, 0.35);
+    }
+
+    .amount-cell strong {
+      display: block;
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+    }
+
+    .amount-cell span,
+    .purchase-cell,
+    .date-cell {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .tx-link {
+      display: inline-flex;
+      margin-top: 4px;
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .tx-link:hover {
+      color: var(--accent);
+    }
+
+    .empty-state {
+      display: none;
+      padding: 42px 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-state.is-visible {
+      display: block;
+    }
+
+    .loading-row td {
+      height: 66px;
+    }
+
+    .skeleton {
+      height: 13px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+      background-size: 220% 100%;
+      animation: shimmer 1.4s linear infinite;
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: -220% 0;
+      }
+    }
+
+    .footer-note {
+      margin: 16px 4px 0;
+      color: var(--soft);
+      font-size: 0.78rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .footer-note a {
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .function-card {
+        min-width: 0;
+        width: fit-content;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .panel-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .panel-tools,
+      .search-input {
+        width: 100%;
+      }
+
+      .search-input {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page-shell {
+        width: min(100% - 18px, 1240px);
+        padding-top: 10px;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .topbar-actions {
+        justify-content: space-between;
+      }
+
+      .status-pill {
+        max-width: calc(100% - 116px);
+      }
+
+      .hero {
+        min-height: 0;
+        padding: 21px;
+      }
+
+      .brand-row {
+        margin-bottom: 18px;
+      }
+
+      .brand-row img {
+        width: 50px;
+        height: 50px;
+      }
+
+      .hero-copy {
+        font-size: 0.92rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-card {
+        min-height: 100px;
+      }
+
+      .panel-tools {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .refresh-btn {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <div class="topbar">
+      <a class="back-link" id="backToExplorer" href="index.html#token">Back to TCL Explorer</a>
+      <div class="topbar-actions">
+        <div class="status-pill is-loading" id="statusPill">Loading Supabase data...</div>
+        <a
+          class="explorer-link"
+          href="https://explorer.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk?function=buyCoins&token=TCL-fe459d"
+          target="_blank"
+          rel="noopener noreferrer"
+        >MultiversX</a>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div>
+        <div class="brand-row">
+          <img src="images/tcl_icon.png" alt="TCL token">
+          <div>
+            <span class="eyebrow">TCL Explorer Leaderboard</span>
+            <span>On-chain Karma purchases</span>
+          </div>
+        </div>
+        <h1>Top 100 TCL Spenders for Karma</h1>
+        <p class="hero-copy">
+          Wallets ranked by the total TCL sent to The Cursed Land contract through
+          successful <strong>buyCoins</strong> transactions.
+        </p>
+      </div>
+      <div class="function-card">
+        <span>Tracked function</span>
+        <strong>buyCoins</strong>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Leaderboard totals">
+      <article class="stat-card">
+        <span class="stat-label">Total Karma</span>
+        <strong class="stat-value" id="totalKarma">--</strong>
+        <span class="stat-note">Karma purchased on-chain</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Total TCL spent</span>
+        <strong class="stat-value" id="totalTcl">--</strong>
+        <span class="stat-note">Gross TCL sent through buyCoins</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Karma buyers</span>
+        <strong class="stat-value" id="walletCount">--</strong>
+        <span class="stat-note">Unique participating wallets</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Purchases</span>
+        <strong class="stat-value" id="transactionCount">--</strong>
+        <span class="stat-note" id="latestActivityNote">Successful buyCoins calls</span>
+      </article>
+    </section>
+
+    <section class="leaderboard-panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <h2>Leaderboard</h2>
+          <p id="resultSummary">Loading the Top 100 from Cloudflare...</p>
+        </div>
+        <div class="panel-tools">
+          <input
+            class="search-input"
+            id="walletSearch"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            placeholder="Search wallet address"
+            aria-label="Search wallet address"
+          >
+          <button class="refresh-btn" id="refreshBtn" type="button">Refresh</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Top 100 TCL spenders for Karma">
+          <thead>
+            <tr>
+              <th scope="col">Rank</th>
+              <th scope="col">Address</th>
+              <th scope="col">Total Karma</th>
+              <th scope="col">TCL spent</th>
+              <th scope="col">Burnt</th>
+              <th scope="col">Cashback</th>
+              <th scope="col">Referral</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr class="loading-row">
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+            </tr>
+            <tr class="loading-row">
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+            </tr>
+            <tr class="loading-row">
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+              <td><div class="skeleton"></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="empty-state" id="emptyState">No wallet matches this search.</div>
+      </div>
+    </section>
+
+    <p class="footer-note" id="sourceNote">
+      buyCoins history persisted in Supabase and refreshed every 15 minutes by the TCL Cloudflare Worker.
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const CONFIG = {
+        apiUrl: "https://tcl-pnl-sync.axel4ro.workers.dev/api/buy-coins",
+        explorerAccounts: "https://explorer.multiversx.com/accounts/",
+        explorerTransactions: "https://explorer.multiversx.com/transactions/"
+      };
+
+      const state = {
+        rows: [],
+        loading: false
+      };
+
+      function notifyParentReady() {
+        if (window.parent && window.parent !== window) {
+          try {
+            window.parent.postMessage({ type: "tcl:page-ready" }, "*");
+          } catch (_) {}
+        }
+      }
+
+      const dom = {
+        statusPill: document.getElementById("statusPill"),
+        totalKarma: document.getElementById("totalKarma"),
+        totalTcl: document.getElementById("totalTcl"),
+        walletCount: document.getElementById("walletCount"),
+        transactionCount: document.getElementById("transactionCount"),
+        latestActivityNote: document.getElementById("latestActivityNote"),
+        resultSummary: document.getElementById("resultSummary"),
+        walletSearch: document.getElementById("walletSearch"),
+        refreshBtn: document.getElementById("refreshBtn"),
+        leaderboardBody: document.getElementById("leaderboardBody"),
+        emptyState: document.getElementById("emptyState"),
+        sourceNote: document.getElementById("sourceNote")
+      };
+
+      function setStatus(kind, message) {
+        dom.statusPill.className = `status-pill is-${kind}`;
+        dom.statusPill.textContent = message;
+      }
+
+      function formatInteger(value) {
+        return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number(value) || 0);
+      }
+
+      function formatTokenAmount(value, maxFractionDigits = 2) {
+        const raw = String(value || "0");
+        const negative = raw.startsWith("-");
+        const clean = negative ? raw.slice(1) : raw;
+        const [wholeRaw, fractionRaw = ""] = clean.split(".");
+        const whole = (wholeRaw || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        const fraction = fractionRaw.slice(0, maxFractionDigits).replace(/0+$/, "");
+        return `${negative ? "-" : ""}${whole}${fraction ? `.${fraction}` : ""}`;
+      }
+
+      function shortAddress(address) {
+        const value = String(address || "");
+        if (value.length <= 22) return value;
+        return `${value.slice(0, 12)}...${value.slice(-8)}`;
+      }
+
+      function formatDate(timestamp) {
+        const value = Number(timestamp);
+        if (!Number.isFinite(value) || value <= 0) return "Unknown";
+        return new Intl.DateTimeFormat(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(new Date(value * 1000));
+      }
+
+      function formatRelativeTime(timestamp) {
+        const value = Number(timestamp);
+        if (!Number.isFinite(value) || value <= 0) return "No activity";
+        const seconds = Math.max(0, Math.floor(Date.now() / 1000 - value));
+        if (seconds < 60) return "Just now";
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        if (seconds < 86400 * 30) return `${Math.floor(seconds / 86400)}d ago`;
+        return formatDate(value);
+      }
+
+      function createCell(className = "") {
+        const cell = document.createElement("td");
+        if (className) cell.className = className;
+        return cell;
+      }
+
+      function createAmountCell(value, suffix, note = "") {
+        const cell = createCell("amount-cell");
+        const amount = document.createElement("strong");
+        amount.textContent = `${formatTokenAmount(value)}${suffix ? ` ${suffix}` : ""}`;
+        amount.title = `${value || "0"}${suffix ? ` ${suffix}` : ""}`;
+        cell.append(amount);
+        if (note) {
+          const amountNote = document.createElement("span");
+          amountNote.textContent = note;
+          cell.append(amountNote);
+        }
+        return cell;
+      }
+
+      function renderRows() {
+        const query = dom.walletSearch.value.trim().toLowerCase();
+        const rows = query
+          ? state.rows.filter((entry) => String(entry.wallet || "").toLowerCase().includes(query))
+          : state.rows;
+
+        dom.leaderboardBody.replaceChildren();
+        dom.emptyState.classList.toggle("is-visible", rows.length === 0);
+        dom.resultSummary.textContent = query
+          ? `${rows.length} result${rows.length === 1 ? "" : "s"} in the Top 100`
+          : `${state.rows.length} wallets ranked by all-time TCL spent`;
+
+        for (const entry of rows) {
+          const row = document.createElement("tr");
+
+          const rankCell = createCell("rank-cell");
+          const rankBadge = document.createElement("span");
+          rankBadge.className = `rank-badge rank-${entry.rank}`;
+          rankBadge.textContent = `#${entry.rank}`;
+          rankCell.append(rankBadge);
+
+          const walletCell = createCell();
+          const walletLink = document.createElement("a");
+          walletLink.className = "wallet-link";
+          walletLink.href = `${CONFIG.explorerAccounts}${encodeURIComponent(entry.wallet)}`;
+          walletLink.target = "_blank";
+          walletLink.rel = "noopener noreferrer";
+          walletLink.title = entry.wallet;
+          const walletDot = document.createElement("span");
+          walletDot.className = "wallet-dot";
+          const walletText = document.createElement("span");
+          walletText.textContent = shortAddress(entry.wallet);
+          walletLink.append(walletDot, walletText);
+          walletCell.append(walletLink);
+
+          const karmaCell = createAmountCell(entry.totalKarma, "Karma", `${formatInteger(entry.purchases)} purchases`);
+          const spentCell = createAmountCell(entry.tclSpent, "TCL");
+          const burntCell = createAmountCell(entry.burnt, "TCL");
+          const cashbackCell = createAmountCell(entry.cashback, "TCL");
+          const referralCell = createAmountCell(entry.referral, "TCL");
+
+          row.append(
+            rankCell,
+            walletCell,
+            karmaCell,
+            spentCell,
+            burntCell,
+            cashbackCell,
+            referralCell
+          );
+          dom.leaderboardBody.append(row);
+        }
+      }
+
+      function renderStats(data) {
+        const stats = data.stats || {};
+        dom.totalKarma.textContent = `${formatTokenAmount(stats.totalKarma)} Karma`;
+        dom.totalTcl.textContent = `${formatTokenAmount(stats.totalTclSpent)} TCL`;
+        dom.totalTcl.title = `${stats.totalTclSpent || "0"} TCL`;
+        dom.walletCount.textContent = formatInteger(stats.wallets);
+        dom.transactionCount.textContent = formatInteger(stats.transactions);
+        dom.latestActivityNote.textContent = `Latest: ${formatRelativeTime(stats.latestTimestamp)}`;
+
+        const lastSyncAt = data.meta?.lastSyncAt
+          ? new Date(data.meta.lastSyncAt).toLocaleString()
+          : "unknown";
+        const coverage = data.meta?.complete === false ? "Partial Supabase history" : "Complete Supabase history";
+        const cacheLabel = data.meta?.cached ? "Cloudflare cache" : "fresh Worker response";
+        dom.sourceNote.textContent =
+          `${coverage}. ${formatInteger(data.meta?.scannedRows)} successful buyCoins transactions stored. ` +
+          `Last Supabase sync: ${lastSyncAt}. Served from ${cacheLabel}.`;
+      }
+
+      async function loadLeaderboard() {
+        if (state.loading) return;
+        state.loading = true;
+        dom.refreshBtn.disabled = true;
+        setStatus("loading", "Loading Supabase data...");
+
+        try {
+          const response = await fetch(CONFIG.apiUrl, {
+            headers: { Accept: "application/json" },
+            cache: "no-store"
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data.ok || !Array.isArray(data.leaderboard)) {
+            throw new Error(data.error || `Cloudflare request failed (${response.status})`);
+          }
+
+          state.rows = data.leaderboard;
+          renderStats(data);
+          renderRows();
+          setStatus("ready", data.meta?.cached ? "Supabase data loaded" : "Supabase leaderboard updated");
+        } catch (error) {
+          state.rows = [];
+          dom.leaderboardBody.replaceChildren();
+          dom.emptyState.textContent = "Leaderboard data is temporarily unavailable.";
+          dom.emptyState.classList.add("is-visible");
+          dom.resultSummary.textContent = "Could not load the leaderboard";
+          dom.sourceNote.textContent = error?.message || "Unknown data error";
+          setStatus("error", "Data unavailable");
+        } finally {
+          state.loading = false;
+          dom.refreshBtn.disabled = false;
+          notifyParentReady();
+        }
+      }
+
+      document.getElementById("backToExplorer")?.addEventListener("click", (event) => {
+        if (window.parent && window.parent !== window) {
+          event.preventDefault();
+          try {
+            window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+          } catch (_) {}
+        }
+      });
+
+      dom.walletSearch.addEventListener("input", renderRows);
+      dom.refreshBtn.addEventListener("click", loadLeaderboard);
+      loadLeaderboard();
+    })();
+  </script>
+</body>
+</html>

@@ -14,7 +14,10 @@ SYNC_BATCH_SIZE     = "50"            # pagini per run de cron (50 * 50 = 2500 e
 DEBUG_ERRORS        = "false"
 
 [triggers]
-crons = ["*/10 * * * *"]              # la fiecare 10 minute
+crons = [
+  "*/10 * * * *",                     # transferuri TCL / PNL
+  "*/15 * * * *"                      # tranzactii buyCoins -> Supabase
+]
 
 [secrets]
 required = [

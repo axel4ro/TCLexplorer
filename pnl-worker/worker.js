@@ -1,7 +1,9 @@
 // ============================================================
 // tcl-pnl-sync — Cloudflare Worker
 //
-// Cron (*/10 * * * *):
+// Cron:
+//   - */10 * * * * sincronizeaza transferurile TCL pentru PNL
+//   - */15 * * * * sincronizeaza incremental tranzactiile buyCoins in Supabase
 //   - Fase 1 INCREMENTAL: aduce transferuri noi (de la newest_ts in sus)
 //   - Faza 2 BACKFILL:    aduce pagini istorice (order=asc, from offset)
 //     pana ajunge la LISTING_TIMESTAMP
@@ -22,6 +24,14 @@ const ENRICH_BACKLOG_LIMIT = 100; // root-uri din backlog (enriched=false) drena
 const ROOT_ENRICH_BATCH = 50;
 const ROOT_SCAN_BATCH = 80;
 const ROOT_SCAN_CHUNKS = 16;
+const BUY_COINS_PAGE_SIZE = 1000;
+const BUY_COINS_MAX_PAGES = 20;
+const BUY_COINS_CACHE_TTL_SECONDS = 5 * 60;
+const BUY_COINS_CACHE_URL = "https://tcl-pnl-sync.internal/cache/buy-coins-v3";
+const BUY_COINS_ROW_PREFIX = "buycoins_tx:";
+const BUY_COINS_NEWEST_TS_KEY = "buycoins_newest_ts";
+const BUY_COINS_BACKFILL_DONE_KEY = "buycoins_backfill_done";
+const BUY_COINS_LAST_SYNC_KEY = "buycoins_last_sync_at";
 const TCL_GAME_CONTRACT = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
 const TCL_TRANSFER_SELECT = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,status,action_transfers,operations";
 const SWAP_FUNCTIONS = [
@@ -66,10 +76,14 @@ function corsHeaders(env, req) {
   };
 }
 
-function json(data, status = 200, env, req) {
+function json(data, status = 200, env, req, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders(env, req) },
+    headers: {
+      "Content-Type": "application/json",
+      ...corsHeaders(env, req),
+      ...extraHeaders,
+    },
   });
 }
 
@@ -657,6 +671,344 @@ async function handleEnrich(request, env) {
 
 // ── Main fetch handler ────────────────────────────────────────
 
+function readBuyCoinsTclRaw(tx, token) {
+  const transfers = Array.isArray(tx?.action?.arguments?.transfers)
+    ? tx.action.arguments.transfers
+    : [];
+  let total = 0n;
+
+  for (const transfer of transfers) {
+    const identifier = transfer?.token || transfer?.identifier || "";
+    if (identifier !== token) continue;
+    try {
+      total += BigInt(String(transfer?.value || "0"));
+    } catch (_) {
+      // Ignore malformed public chain data instead of failing the full leaderboard.
+    }
+  }
+
+  return total;
+}
+
+function readBuyCoinsKarma(tx) {
+  const hexValue = String(tx?.action?.arguments?.functionArgs?.[0] || "")
+    .trim()
+    .replace(/^0x/i, "");
+  if (!hexValue || !/^[0-9a-f]+$/i.test(hexValue)) return 0n;
+
+  try {
+    return BigInt(`0x${hexValue}`);
+  } catch (_) {
+    return 0n;
+  }
+}
+
+function rawTokenToDecimal(rawValue, decimals = 18) {
+  const raw = typeof rawValue === "bigint" ? rawValue : BigInt(rawValue || 0);
+  const negative = raw < 0n;
+  const digits = (negative ? -raw : raw).toString().padStart(decimals + 1, "0");
+  const whole = digits.slice(0, -decimals) || "0";
+  const fraction = digits.slice(-decimals).replace(/0+$/, "");
+  return `${negative ? "-" : ""}${whole}${fraction ? `.${fraction}` : ""}`;
+}
+
+function compareBigIntDesc(left, right) {
+  if (left > right) return -1;
+  if (left < right) return 1;
+  return 0;
+}
+
+function buyCoinsTransactionToStoredRow(tx, token) {
+  const txHash = String(tx?.txHash || "");
+  const wallet = String(tx?.sender || "").toLowerCase();
+  const timestamp = Number(tx?.timestamp) || 0;
+  const tclSpentRaw = readBuyCoinsTclRaw(tx, token);
+  const karma = readBuyCoinsKarma(tx);
+
+  if (!validTxHash(txHash) || !wallet.startsWith("erd1") || tclSpentRaw <= 0n || karma <= 0n) {
+    return null;
+  }
+
+  return {
+    key: `${BUY_COINS_ROW_PREFIX}${txHash}`,
+    value: JSON.stringify({
+      txHash,
+      wallet,
+      timestamp,
+      karma: karma.toString(),
+      tclSpentRaw: tclSpentRaw.toString(),
+      burntRaw: (tclSpentRaw / 5n).toString(),
+      cashbackRaw: (tclSpentRaw / 20n).toString(),
+      referralRaw: (tclSpentRaw / 20n).toString(),
+    }),
+  };
+}
+
+async function clearBuyCoinsCache() {
+  if (typeof caches === "undefined") return;
+  await caches.default.delete(new Request(BUY_COINS_CACHE_URL));
+}
+
+async function syncBuyCoins(env, log = () => {}) {
+  const gameContract = env.PNL_GAME_CONTRACT || TCL_GAME_CONTRACT;
+  const token = env.TCL_TOKEN || "TCL-fe459d";
+  const newestTsValue = await supabaseGetState(env, BUY_COINS_NEWEST_TS_KEY);
+  const newestTs = Math.max(0, parseInt(newestTsValue || "0", 10) || 0);
+  const after = newestTs > 0 ? Math.max(0, newestTs - 2) : undefined;
+  let latestTimestamp = newestTs;
+  let fetchedTransactions = 0;
+  let storedTransactions = 0;
+  let skippedRows = 0;
+  let complete = false;
+
+  log(`[buyCoins] start newest_ts=${newestTs}`);
+
+  for (let page = 0; page < BUY_COINS_MAX_PAGES; page += 1) {
+    const transactions = await mvxFetch(env, `/accounts/${gameContract}/transactions`, {
+      from: page * BUY_COINS_PAGE_SIZE,
+      size: BUY_COINS_PAGE_SIZE,
+      function: "buyCoins",
+      status: "success",
+      after,
+    });
+
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      complete = true;
+      break;
+    }
+
+    fetchedTransactions += transactions.length;
+    const rows = [];
+    for (const tx of transactions) {
+      latestTimestamp = Math.max(latestTimestamp, Number(tx?.timestamp) || 0);
+      const row = buyCoinsTransactionToStoredRow(tx, token);
+      if (row) rows.push(row);
+      else skippedRows += 1;
+    }
+
+    await supabaseUpsert(env, "tcl_sync_state", rows);
+    storedTransactions += rows.length;
+
+    if (transactions.length < BUY_COINS_PAGE_SIZE) {
+      complete = true;
+      break;
+    }
+    await sleep(120);
+  }
+
+  const syncedAt = new Date().toISOString();
+  const stateRows = [
+    { key: BUY_COINS_NEWEST_TS_KEY, value: String(latestTimestamp) },
+    { key: BUY_COINS_LAST_SYNC_KEY, value: syncedAt },
+  ];
+  if (newestTs === 0 && complete) {
+    stateRows.push({ key: BUY_COINS_BACKFILL_DONE_KEY, value: "true" });
+  }
+  await supabaseUpsert(env, "tcl_sync_state", stateRows);
+  await clearBuyCoinsCache();
+
+  log(`[buyCoins] fetched=${fetchedTransactions} stored=${storedTransactions}`);
+  return {
+    fetchedTransactions,
+    storedTransactions,
+    skippedRows,
+    newestTimestamp: latestTimestamp,
+    complete,
+    syncedAt,
+  };
+}
+
+async function loadStoredBuyCoins(env) {
+  const rows = await supabaseGetAll(env, "tcl_sync_state", {
+    key: `like.${BUY_COINS_ROW_PREFIX}*`,
+    order: "key.asc",
+    select: "key,value",
+  });
+
+  const transactions = [];
+  let invalidRows = 0;
+  for (const row of rows) {
+    try {
+      const tx = JSON.parse(row.value || "{}");
+      if (
+        validTxHash(tx.txHash)
+        && String(tx.wallet || "").startsWith("erd1")
+        && Number.isFinite(Number(tx.timestamp))
+      ) {
+        transactions.push(tx);
+      } else {
+        invalidRows += 1;
+      }
+    } catch (_) {
+      invalidRows += 1;
+    }
+  }
+
+  return { transactions, invalidRows };
+}
+
+async function buildBuyCoinsLeaderboard(env) {
+  const token = env.TCL_TOKEN || "TCL-fe459d";
+  let stored = await loadStoredBuyCoins(env);
+  if (!stored.transactions.length) {
+    await syncBuyCoins(env);
+    stored = await loadStoredBuyCoins(env);
+  }
+
+  const wallets = new Map();
+  let processedTransactions = 0;
+  let totalSpentRaw = 0n;
+  let totalKarma = 0n;
+  let totalBurntRaw = 0n;
+  let totalCashbackRaw = 0n;
+  let totalReferralRaw = 0n;
+  let latestTimestamp = 0;
+  let skippedRows = stored.invalidRows;
+
+  for (const tx of stored.transactions) {
+    try {
+      const hash = String(tx.txHash || "");
+      const wallet = String(tx.wallet || "").toLowerCase();
+      const spentRaw = BigInt(tx.tclSpentRaw || "0");
+      const karma = BigInt(tx.karma || "0");
+      const burntRaw = BigInt(tx.burntRaw || "0");
+      const cashbackRaw = BigInt(tx.cashbackRaw || "0");
+      const referralRaw = BigInt(tx.referralRaw || "0");
+      const timestamp = Number(tx.timestamp) || 0;
+      if (!validTxHash(hash) || !wallet.startsWith("erd1") || spentRaw <= 0n || karma <= 0n) {
+        skippedRows += 1;
+        continue;
+      }
+
+      const current = wallets.get(wallet) || {
+        wallet,
+        karma: 0n,
+        spentRaw: 0n,
+        burntRaw: 0n,
+        cashbackRaw: 0n,
+        referralRaw: 0n,
+        purchases: 0,
+        latestTimestamp: 0,
+        latestTxHash: "",
+      };
+
+      current.karma += karma;
+      current.spentRaw += spentRaw;
+      current.burntRaw += burntRaw;
+      current.cashbackRaw += cashbackRaw;
+      current.referralRaw += referralRaw;
+      current.purchases += 1;
+      if (timestamp >= current.latestTimestamp) {
+        current.latestTimestamp = timestamp;
+        current.latestTxHash = hash;
+      }
+
+      wallets.set(wallet, current);
+      processedTransactions += 1;
+      totalKarma += karma;
+      totalSpentRaw += spentRaw;
+      totalBurntRaw += burntRaw;
+      totalCashbackRaw += cashbackRaw;
+      totalReferralRaw += referralRaw;
+      latestTimestamp = Math.max(latestTimestamp, timestamp);
+    } catch (_) {
+      skippedRows += 1;
+    }
+  }
+
+  const [lastSyncAt, backfillDone] = await Promise.all([
+    supabaseGetState(env, BUY_COINS_LAST_SYNC_KEY),
+    supabaseGetState(env, BUY_COINS_BACKFILL_DONE_KEY),
+  ]);
+
+  const leaderboard = Array.from(wallets.values())
+    .sort((left, right) => (
+      compareBigIntDesc(left.spentRaw, right.spentRaw)
+      || right.purchases - left.purchases
+      || right.latestTimestamp - left.latestTimestamp
+      || left.wallet.localeCompare(right.wallet)
+    ))
+    .slice(0, 100)
+    .map((entry, index) => ({
+      rank: index + 1,
+      wallet: entry.wallet,
+      totalKarma: entry.karma.toString(),
+      tclSpent: rawTokenToDecimal(entry.spentRaw),
+      burnt: rawTokenToDecimal(entry.burntRaw),
+      cashback: rawTokenToDecimal(entry.cashbackRaw),
+      referral: rawTokenToDecimal(entry.referralRaw),
+      purchases: entry.purchases,
+      latestTimestamp: entry.latestTimestamp,
+      latestTxHash: entry.latestTxHash,
+    }));
+
+  return {
+    ok: true,
+    title: "Top 100 TCL Spenders for Karma",
+    token,
+    function: "buyCoins",
+    leaderboard,
+    stats: {
+      wallets: wallets.size,
+      transactions: processedTransactions,
+      totalKarma: totalKarma.toString(),
+      totalTclSpent: rawTokenToDecimal(totalSpentRaw),
+      totalBurnt: rawTokenToDecimal(totalBurntRaw),
+      totalCashback: rawTokenToDecimal(totalCashbackRaw),
+      totalReferral: rawTokenToDecimal(totalReferralRaw),
+      latestTimestamp,
+    },
+    meta: {
+      source: "Supabase buyCoins transaction history",
+      generatedAt: new Date().toISOString(),
+      lastSyncAt,
+      syncIntervalMinutes: 15,
+      complete: backfillDone === "true",
+      scannedRows: stored.transactions.length,
+      skippedRows,
+      cached: false,
+    },
+  };
+}
+
+async function handleBuyCoins(request, env, ctx) {
+  const cache = typeof caches !== "undefined" ? caches.default : null;
+  const cacheKey = new Request(BUY_COINS_CACHE_URL);
+
+  if (cache) {
+    const cachedResponse = await cache.match(cacheKey);
+    if (cachedResponse) {
+      const cachedPayload = await cachedResponse.json();
+      return json({
+        ...cachedPayload,
+        meta: { ...(cachedPayload.meta || {}), cached: true },
+      }, 200, env, request, {
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+      });
+    }
+  }
+
+  const payload = await buildBuyCoinsLeaderboard(env);
+
+  if (cache) {
+    const cacheResponse = new Response(JSON.stringify(payload), {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": `public, max-age=${BUY_COINS_CACHE_TTL_SECONDS}`,
+      },
+    });
+    const cacheWrite = cache.put(cacheKey, cacheResponse);
+    if (ctx?.waitUntil) ctx.waitUntil(cacheWrite);
+    else await cacheWrite;
+  }
+
+  return json(payload, 200, env, request, {
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+  });
+}
+
 export default {
   // HTTP requests
   async fetch(request, env, ctx) {
@@ -675,6 +1027,28 @@ export default {
         return json(status, 200, env, request);
       } catch (err) {
         return json({ error: err.message }, 500, env, request);
+      }
+    }
+
+    if (path === "/api/buy-coins" && request.method === "GET") {
+      try {
+        return await handleBuyCoins(request, env, ctx);
+      } catch (err) {
+        return json({ ok: false, error: err.message }, 500, env, request);
+      }
+    }
+
+    if (path === "/api/buy-coins/sync" && request.method === "POST") {
+      const secret = (url.searchParams.get("secret") || "").trim();
+      const storedSecret = (env.SYNC_SECRET || "").trim();
+      if (!secret || secret !== storedSecret) {
+        return json({ error: "unauthorized" }, 401, env, request);
+      }
+      try {
+        const result = await syncBuyCoins(env);
+        return json({ ok: true, result }, 200, env, request);
+      } catch (err) {
+        return json({ ok: false, error: err.message }, 500, env, request);
       }
     }
 
@@ -729,8 +1103,12 @@ export default {
     return json({ error: "not found" }, 404, env, request);
   },
 
-  // Cron trigger (*/10 * * * *)
+  // Cron triggers: PNL la 10 minute, buyCoins la 15 minute.
   async scheduled(event, env, ctx) {
+    if (event.cron === "*/15 * * * *") {
+      ctx.waitUntil(syncBuyCoins(env));
+      return;
+    }
     ctx.waitUntil(runSync(env));
   },
 };

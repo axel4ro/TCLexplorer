@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="TCL Explorer">
 
   <link rel="apple-touch-icon" href="images/tcl_icon.png" sizes="180x180">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=20260608-10">
   <meta name="theme-color" content="#0c0e14">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -409,6 +409,7 @@
       <button type="button" class="token-flow-link" onclick="openFlowPage()" aria-label="Open TCL Flow Chart">Flow</button>
       <button type="button" class="token-flow-link" onclick="openPnlCheckPage()" aria-label="Open PNL Check">PNL Check</button>
       <button type="button" class="token-flow-link" onclick="openSwapPage()" aria-label="Open TCL Swap">💱 Swap</button>
+      <button type="button" class="token-flow-link" onclick="openTopSpendersPage()" aria-label="Open Top Spenders">🏆 Top Spenders</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
@@ -2807,6 +2808,16 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true,
     readyFallbackMs: 20000
   },
+  TopSpenders: {
+    src: "BuyCoins.html?v=20260608-10",
+    title: "Top Spenders",
+    navId: "btn-token",
+    routeKey: "TopSpenders",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing the TCL Karma spenders leaderboard.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 20000
+  },
   signal: {
     src: "signal.html",
     title: "Signal",
@@ -3186,7 +3197,7 @@ function loadNonCriticalServices() {
   nonCriticalServicesStarted = true;
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(new URL("sw.js?v=20260603-9", window.location.href))
+    navigator.serviceWorker.register(new URL("sw.js?v=20260608-10", window.location.href))
       .then((reg) => console.log("✅ SW registered", reg))
       .catch((err) => console.error("❌ SW error", err));
   }
@@ -5102,6 +5113,11 @@ function openPnlCheckPage() {
 
 function openSwapPage() {
   const route = INTERNAL_PAGE_ROUTES.swap;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openTopSpendersPage() {
+  const route = INTERNAL_PAGE_ROUTES.TopSpenders;
   openInternalPage(route.src, route.title, route);
 }
 

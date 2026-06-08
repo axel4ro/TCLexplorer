@@ -1,3 +1,4 @@
+const SERVICE_WORKER_VERSION = "20260608-10";
 const ICON_URL = new URL("images/tcl_icon.png", self.registration.scope).href;
 const DB_NAME = "tcl-event-notifications";
 const DB_VERSION = 1;
@@ -157,6 +158,16 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     await self.clients.claim();
+    const windows = await self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    });
+    windows.forEach((client) => {
+      client.postMessage({
+        type: "tcl:service-worker-updated",
+        version: SERVICE_WORKER_VERSION
+      });
+    });
     const notifications = await readSchedule().catch(() => []);
     scheduleLocalNotifications(notifications);
   })());
