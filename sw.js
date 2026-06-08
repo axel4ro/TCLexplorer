@@ -1,4 +1,4 @@
-const SERVICE_WORKER_VERSION = "20260608-10";
+const SERVICE_WORKER_VERSION = "20260608-11";
 const ICON_URL = new URL("images/tcl_icon.png", self.registration.scope).href;
 const DB_NAME = "tcl-event-notifications";
 const DB_VERSION = 1;

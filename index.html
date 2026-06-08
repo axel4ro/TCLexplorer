@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="TCL Explorer">
 
   <link rel="apple-touch-icon" href="images/tcl_icon.png" sizes="180x180">
-  <link rel="manifest" href="manifest.json?v=20260608-10">
+  <link rel="manifest" href="manifest.json?v=20260608-11">
   <meta name="theme-color" content="#0c0e14">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2809,7 +2809,7 @@ const INTERNAL_PAGE_ROUTES = {
     readyFallbackMs: 20000
   },
   TopSpenders: {
-    src: "BuyCoins.html?v=20260608-10",
+    src: "BuyCoins.html?v=20260608-11",
     title: "Top Spenders",
     navId: "btn-token",
     routeKey: "TopSpenders",
@@ -3197,7 +3197,7 @@ function loadNonCriticalServices() {
   nonCriticalServicesStarted = true;
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(new URL("sw.js?v=20260608-10", window.location.href))
+    navigator.serviceWorker.register(new URL("sw.js?v=20260608-11", window.location.href))
       .then((reg) => console.log("✅ SW registered", reg))
       .catch((err) => console.error("❌ SW error", err));
   }

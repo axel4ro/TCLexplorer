@@ -80,8 +80,7 @@
     }
 
     .back-link,
-    .explorer-link,
-    .refresh-btn {
+    .explorer-link {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -97,8 +96,7 @@
     }
 
     .back-link:hover,
-    .explorer-link:hover,
-    .refresh-btn:hover {
+    .explorer-link:hover {
       transform: translateY(-1px);
       border-color: rgba(40, 224, 194, 0.38);
       background: rgba(40, 224, 194, 0.08);
@@ -110,47 +108,55 @@
       gap: 10px;
     }
 
-    .status-pill {
+    .update-card {
       display: inline-flex;
       align-items: center;
-      gap: 9px;
-      min-height: 38px;
-      max-width: min(520px, 52vw);
-      padding: 8px 12px;
+      gap: 11px;
+      min-height: 46px;
+      max-width: min(520px, 58vw);
+      padding: 7px 13px;
       border: 1px solid var(--line);
-      border-radius: 999px;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.035);
-      color: var(--muted);
-      font-size: 0.84rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .status-pill::before {
-      content: "";
+    .update-dot {
       flex: 0 0 8px;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--soft);
-      box-shadow: 0 0 0 5px rgba(101, 117, 141, 0.12);
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(40, 224, 194, 0.12);
     }
 
-    .status-pill.is-loading::before {
+    .update-card.is-loading .update-dot {
       background: var(--gold);
       box-shadow: 0 0 0 5px rgba(247, 201, 104, 0.12);
       animation: pulse 1.2s ease-in-out infinite;
     }
 
-    .status-pill.is-ready::before {
-      background: var(--accent);
-      box-shadow: 0 0 0 5px rgba(40, 224, 194, 0.12);
-    }
-
-    .status-pill.is-error::before {
+    .update-card.is-error .update-dot {
       background: var(--danger);
       box-shadow: 0 0 0 5px rgba(255, 113, 128, 0.12);
+    }
+
+    .update-copy {
+      display: grid;
+      min-width: 0;
+      line-height: 1.2;
+    }
+
+    .update-copy strong {
+      color: var(--text);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .update-copy span {
+      margin-top: 3px;
+      color: var(--soft);
+      font-size: 0.72rem;
+      white-space: nowrap;
     }
 
     @keyframes pulse {
@@ -360,12 +366,6 @@
     .search-input:focus {
       border-color: rgba(40, 224, 194, 0.48);
       box-shadow: 0 0 0 3px rgba(40, 224, 194, 0.1);
-    }
-
-    .refresh-btn:disabled {
-      cursor: wait;
-      opacity: 0.58;
-      transform: none;
     }
 
     .table-wrap {
@@ -580,8 +580,8 @@
         justify-content: space-between;
       }
 
-      .status-pill {
-        max-width: calc(100% - 116px);
+      .update-card {
+        max-width: calc(100% - 102px);
       }
 
       .hero {
@@ -615,9 +615,6 @@
         flex-direction: column;
       }
 
-      .refresh-btn {
-        width: 100%;
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -636,13 +633,19 @@
     <div class="topbar">
       <a class="back-link" id="backToExplorer" href="index.html#token">Back to TCL Explorer</a>
       <div class="topbar-actions">
-        <div class="status-pill is-loading" id="statusPill">Loading Supabase data...</div>
+        <div class="update-card is-loading" id="updateCard" aria-live="polite">
+          <span class="update-dot" aria-hidden="true"></span>
+          <span class="update-copy">
+            <strong id="updateLabel">Loading leaderboard</strong>
+            <span id="updateDetail">Automatic updates every 15 minutes</span>
+          </span>
+        </div>
         <a
           class="explorer-link"
           href="https://explorer.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk?function=buyCoins&token=TCL-fe459d"
           target="_blank"
           rel="noopener noreferrer"
-        >MultiversX</a>
+        >Explorer</a>
       </div>
     </div>
 
@@ -694,7 +697,7 @@
       <div class="panel-head">
         <div class="panel-title">
           <h2>Leaderboard</h2>
-          <p id="resultSummary">Loading the Top 100 from Cloudflare...</p>
+          <p id="resultSummary">Loading the Top 100...</p>
         </div>
         <div class="panel-tools">
           <input
@@ -706,7 +709,6 @@
             placeholder="Search wallet address"
             aria-label="Search wallet address"
           >
-          <button class="refresh-btn" id="refreshBtn" type="button">Refresh</button>
         </div>
       </div>
 
@@ -769,12 +771,14 @@
       const CONFIG = {
         apiUrl: "https://tcl-pnl-sync.axel4ro.workers.dev/api/buy-coins",
         explorerAccounts: "https://explorer.multiversx.com/accounts/",
-        explorerTransactions: "https://explorer.multiversx.com/transactions/"
+        explorerTransactions: "https://explorer.multiversx.com/transactions/",
+        refreshMs: 15 * 60 * 1000
       };
 
       const state = {
         rows: [],
-        loading: false
+        loading: false,
+        lastSyncAt: 0
       };
 
       function notifyParentReady() {
@@ -786,7 +790,9 @@
       }
 
       const dom = {
-        statusPill: document.getElementById("statusPill"),
+        updateCard: document.getElementById("updateCard"),
+        updateLabel: document.getElementById("updateLabel"),
+        updateDetail: document.getElementById("updateDetail"),
         totalKarma: document.getElementById("totalKarma"),
         totalTcl: document.getElementById("totalTcl"),
         walletCount: document.getElementById("walletCount"),
@@ -794,15 +800,41 @@
         latestActivityNote: document.getElementById("latestActivityNote"),
         resultSummary: document.getElementById("resultSummary"),
         walletSearch: document.getElementById("walletSearch"),
-        refreshBtn: document.getElementById("refreshBtn"),
         leaderboardBody: document.getElementById("leaderboardBody"),
         emptyState: document.getElementById("emptyState"),
         sourceNote: document.getElementById("sourceNote")
       };
 
-      function setStatus(kind, message) {
-        dom.statusPill.className = `status-pill is-${kind}`;
-        dom.statusPill.textContent = message;
+      function renderUpdateCard(kind = "ready") {
+        dom.updateCard.className = `update-card is-${kind}`;
+
+        if (kind === "loading") {
+          dom.updateLabel.textContent = "Loading leaderboard";
+          dom.updateDetail.textContent = "Automatic updates every 15 minutes";
+          return;
+        }
+
+        if (kind === "error") {
+          dom.updateLabel.textContent = "Update unavailable";
+          dom.updateDetail.textContent = "Automatic retry every 15 minutes";
+          return;
+        }
+
+        if (!state.lastSyncAt) {
+          dom.updateLabel.textContent = "Automatic updates";
+          dom.updateDetail.textContent = "Every 15 minutes";
+          return;
+        }
+
+        const elapsedMs = Math.max(0, Date.now() - state.lastSyncAt);
+        const elapsedMinutes = Math.floor(elapsedMs / 60000);
+        const nextMinutes = Math.max(0, Math.ceil((CONFIG.refreshMs - elapsedMs) / 60000));
+        dom.updateLabel.textContent = elapsedMinutes < 1
+          ? "Updated just now"
+          : `Updated ${elapsedMinutes}m ago`;
+        dom.updateDetail.textContent = nextMinutes > 0
+          ? `Next automatic update in ${nextMinutes}m`
+          : "Checking for new transactions";
       }
 
       function formatInteger(value) {
@@ -932,20 +964,21 @@
         dom.latestActivityNote.textContent = `Latest: ${formatRelativeTime(stats.latestTimestamp)}`;
 
         const lastSyncAt = data.meta?.lastSyncAt
-          ? new Date(data.meta.lastSyncAt).toLocaleString()
-          : "unknown";
-        const coverage = data.meta?.complete === false ? "Partial Supabase history" : "Complete Supabase history";
-        const cacheLabel = data.meta?.cached ? "Cloudflare cache" : "fresh Worker response";
+          ? Date.parse(data.meta.lastSyncAt)
+          : 0;
+        state.lastSyncAt = Number.isFinite(lastSyncAt) ? lastSyncAt : Date.now();
+        renderUpdateCard("ready");
+
+        const coverage = data.meta?.complete === false ? "Partial transaction history" : "Complete transaction history";
         dom.sourceNote.textContent =
-          `${coverage}. ${formatInteger(data.meta?.scannedRows)} successful buyCoins transactions stored. ` +
-          `Last Supabase sync: ${lastSyncAt}. Served from ${cacheLabel}.`;
+          `${coverage}. ${formatInteger(data.meta?.scannedRows)} successful buyCoins transactions tracked. ` +
+          "The leaderboard refreshes automatically every 15 minutes.";
       }
 
       async function loadLeaderboard() {
         if (state.loading) return;
         state.loading = true;
-        dom.refreshBtn.disabled = true;
-        setStatus("loading", "Loading Supabase data...");
+        if (!state.rows.length) renderUpdateCard("loading");
 
         try {
           const response = await fetch(CONFIG.apiUrl, {
@@ -960,7 +993,6 @@
           state.rows = data.leaderboard;
           renderStats(data);
           renderRows();
-          setStatus("ready", data.meta?.cached ? "Supabase data loaded" : "Supabase leaderboard updated");
         } catch (error) {
           state.rows = [];
           dom.leaderboardBody.replaceChildren();
@@ -968,10 +1000,9 @@
           dom.emptyState.classList.add("is-visible");
           dom.resultSummary.textContent = "Could not load the leaderboard";
           dom.sourceNote.textContent = error?.message || "Unknown data error";
-          setStatus("error", "Data unavailable");
+          renderUpdateCard("error");
         } finally {
           state.loading = false;
-          dom.refreshBtn.disabled = false;
           notifyParentReady();
         }
       }
@@ -986,8 +1017,11 @@
       });
 
       dom.walletSearch.addEventListener("input", renderRows);
-      dom.refreshBtn.addEventListener("click", loadLeaderboard);
       loadLeaderboard();
+      window.setInterval(renderUpdateCard, 30 * 1000);
+      window.setInterval(() => {
+        if (document.visibilityState === "visible") loadLeaderboard();
+      }, CONFIG.refreshMs);
     })();
   </script>
 </body>
