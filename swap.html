@@ -375,7 +375,7 @@
 
   <header class="topbar">
     <a class="brand-link" id="brandLink" href="index.html">
-      <img src="images/thecursedland.png" alt="">
+      <img src="images/tcl_icon.png" alt="">
       <span>TCL Explorer</span>
     </a>
     <div class="topbar-right">
@@ -456,7 +456,7 @@
           </div>
           <span class="bs-sep">|</span>
           <div class="bs-item">
-            <img class="bs-icon" id="stripTclIcon" src="images/thecursedland.png" alt="TCL">
+            <img class="bs-icon" id="stripTclIcon" src="images/tcl_icon.png" alt="TCL">
             <div class="bs-info">
               <span class="bs-amount" id="stripTclAmount">-- TCL</span>
               <span class="bs-usd"    id="stripTclUsd">$--</span>
@@ -505,7 +505,7 @@
         <div class="token-box to-box">
           <div class="token-box-header">
             <div class="token-label-main">
-              <img class="token-icon" id="toIcon" src="images/thecursedland.png" alt="">
+              <img class="token-icon" id="toIcon" src="images/tcl_icon.png" alt="">
               <span class="token-symbol" id="toSymbol">TCL</span>
             </div>
             <span class="token-balance-note" id="toBalanceLabel">Balance: --</span>
@@ -623,7 +623,7 @@
   const TOKEN_META = {
     EGLD:  { symbol: "EGLD",  decimals: 18, icon: "images/EGLD.png",           native: true  },
     WEGLD: { symbol: "WEGLD", decimals: 18, icon: "images/EGLD.png",           native: false },
-    TCL:   { symbol: "TCL",   decimals: 18, icon: "images/thecursedland.png",  native: false },
+    TCL:   { symbol: "TCL",   decimals: 18, icon: "images/tcl_icon.png",  native: false },
     USDC:  { symbol: "USDC",  decimals: 6,  icon: "images/USDC.png",           native: false },
   };
 
@@ -1259,7 +1259,7 @@
         name: "TCL Swap",
         description: "Swap TCL on xExchange via xPortal",
         fallbackPath: "/swap.html",
-        iconPath: "images/thecursedland.png"
+        iconPath: "images/tcl_icon.png"
       })
     });
     S.signClientProjectId = CONFIG.walletConnectProjectId;
@@ -1338,7 +1338,7 @@
           name: "TCL Swap",
           description: "Swap TCL on xExchange via xPortal",
           fallbackPath: "/swap.html",
-          iconPath: "images/thecursedland.png"
+          iconPath: "images/tcl_icon.png"
         })
       });
       if (!restored) return false;
@@ -1367,7 +1367,7 @@
           name: "TCL Swap",
           description: "Swap TCL on xExchange via xPortal",
           fallbackPath: "/swap.html",
-          iconPath: "images/thecursedland.png"
+          iconPath: "images/tcl_icon.png"
         })
       });
       const { uri } = pairing;

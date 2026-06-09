@@ -275,7 +275,11 @@
       }
     }
 
-    /* ── xPortal disconnect button (topbar) ──────────────────── */
+    /* ── xPortal disconnect bar (above token page hero) ──────── */
+    .xp-disconnect-bar {
+      display: flex; justify-content: center;
+      padding: 0 0 10px 0;
+    }
     .xp-disconnect-topbar {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 5px 11px;
@@ -517,10 +521,6 @@
           </div>
         </div>
         </div>
-        <button type="button" class="xp-disconnect-topbar" id="xpDisconnectBtn" hidden>
-          <img src="images/xPortal.png" alt="" width="14" height="14" style="border-radius:4px;">
-          <span id="xpWalletShort"></span>Disconnect ✕
-        </button>
       </div>
     </header>
 
@@ -528,16 +528,18 @@
 
  <!-- Token -->
 <div id="token" class="section-page active">
+  <div class="xp-disconnect-bar" id="xpDisconnectBar" hidden>
+    <button type="button" class="xp-disconnect-topbar" id="xpDisconnectBtn">
+      <img src="images/xPortal.png" alt="" width="14" height="14" style="border-radius:4px;">
+      <span id="xpWalletShort"></span>Disconnect ✕
+    </button>
+  </div>
   <div class="page-hero">
     <div class="token-hero-head">
       <h2 class="token-hero-title">
         <img src="images/tcl_icon.png" alt="" width="28" height="28" style="border-radius:8px;">
         TCL Explorer
       </h2>
-      <button type="button" class="token-flow-link" onclick="openFlowPage()" aria-label="Open TCL Flow Chart">Flow</button>
-      <button type="button" class="token-flow-link" onclick="openPnlCheckPage()" aria-label="Open PNL Check">PNL Check</button>
-      <button type="button" class="token-flow-link" onclick="openSwapPage()" aria-label="Open TCL Swap">💱 Swap</button>
-      <button type="button" class="token-flow-link" onclick="openTopSpendersPage()" aria-label="Open Top Spenders">🏆 Top Spenders</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
@@ -545,6 +547,36 @@
     </p>
   </div>
   <div class="token-hub-grid" role="navigation" aria-label="TCL Token quick actions">
+    <button type="button" class="token-accordion-card" onclick="openFlowPage()">
+      <span class="token-accordion-card__title">📈 Flow</span>
+      <span class="token-accordion-card__hint">Vizualizează fluxul live de tranzacții și mișcările de preț TCL.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openPnlCheckPage()">
+      <span class="token-accordion-card__title">💰 PNL Check</span>
+      <span class="token-accordion-card__hint">Verifică profitul și pierderea pe tranzacțiile tale TCL.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openSwapPage()">
+      <span class="token-accordion-card__title">💱 Swap</span>
+      <span class="token-accordion-card__hint">Schimbă TCL direct prin xExchange cu cele mai bune rate.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openTopSpendersPage()">
+      <span class="token-accordion-card__title">🏆 Top Spenders</span>
+      <span class="token-accordion-card__hint">Clasamentul celor mai activi traderi TCL din comunitate.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="showPage('chart')">
+      <span class="token-accordion-card__title">📊 TCL Live Chart</span>
+      <span class="token-accordion-card__hint">Graficul live al prețului TCL direct din DexScreener.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openSupportTCLPage()">
+      <span class="token-accordion-card__title">🧡 TCLexplorer</span>
+      <span class="token-accordion-card__hint">Pagina de suport și comunitate TCL Explorer.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
     <button type="button" class="token-accordion-card" onclick="openTokenOverviewPage()">
       <span class="token-accordion-card__title" data-i18n="token_overview_title">📊 TCL Token</span>
       <span class="token-accordion-card__hint">Open live token stats, sentiment, supply and price overview.</span>
@@ -5459,6 +5491,7 @@ function simulateApr() {
     statusEl:    document.getElementById("xpGateStatus"),
     statusText:  document.getElementById("xpGateStatusText"),
     disconnectBtn: document.getElementById("xpDisconnectBtn"),
+    disconnectBar: document.getElementById("xpDisconnectBar"),
     walletShort: document.getElementById("xpWalletShort"),
   };
 
@@ -5476,8 +5509,8 @@ function simulateApr() {
   }
 
   function syncDisconnectBtn() {
-    if (!DOM.disconnectBtn) return;
-    DOM.disconnectBtn.hidden = !isConnected();
+    if (!DOM.disconnectBar) return;
+    DOM.disconnectBar.hidden = !isConnected();
     if (DOM.walletShort && S.address) {
       DOM.walletShort.textContent = XPORTAL.truncateAddress(S.address, 6, 4) + " · ";
     }
@@ -5485,6 +5518,7 @@ function simulateApr() {
 
   function showGate() {
     if (DOM.gate) DOM.gate.hidden = false;
+    if (DOM.disconnectBar) DOM.disconnectBar.hidden = true;
   }
 
   function hideGate() {
@@ -5537,7 +5571,7 @@ function simulateApr() {
         onSessionDelete: clearConn,
         metadata:  XPORTAL.createMetadata({
           name: "TCL Explorer", description: "MultiversX TCL Token tools",
-          fallbackPath: "/", iconPath: "images/thecursedland.png"
+          fallbackPath: "/", iconPath: "images/tcl_icon.png"
         })
       });
       const timeoutPromise = new Promise(function(_, reject) {
@@ -5589,7 +5623,7 @@ function simulateApr() {
         onSessionDelete: clearConn,
         metadata:  XPORTAL.createMetadata({
           name: "TCL Explorer", description: "MultiversX TCL Token tools",
-          fallbackPath: "/", iconPath: "images/thecursedland.png"
+          fallbackPath: "/", iconPath: "images/tcl_icon.png"
         })
       });
       if (!restored) return false;
