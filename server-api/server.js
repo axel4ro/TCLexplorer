@@ -5,7 +5,7 @@
  */
 
 // Load .env file manually (no dotenv dependency needed)
-import { readFileSync } from "fs";
+import { readFileSync, statSync } from "fs";
 try {
   readFileSync("/opt/tcl-api/.env", "utf8").split("\n").forEach(line => {
     const eq = line.indexOf("=");
@@ -20,7 +20,18 @@ try {
 import express from "express";
 import pg from "pg";
 import { createHash, createHmac, randomBytes } from "crypto";
-import { Address, Message, MessageComputer, UserVerifier } from "@multiversx/sdk-core";
+import {
+  Account,
+  Address,
+  Message,
+  MessageComputer,
+  Token,
+  TokenTransfer,
+  TransactionComputer,
+  TransactionsFactoryConfig,
+  TransferTransactionsFactory,
+  UserVerifier,
+} from "@multiversx/sdk-core";
 
 const { Pool } = pg;
 const app = express();
@@ -39,12 +50,17 @@ const pool = new Pool({
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const MVX_API = "https://api.multiversx.com";
+const MVX_GATEWAY = process.env.MVX_GATEWAY || "https://gateway.multiversx.com";
+const MVX_CHAIN_ID = process.env.MVX_CHAIN_ID || "1";
 const TCL_TOKEN = "TCL-fe459d";
 const TCL_DECIMALS = 18n;
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
+const WHEEL_PAYOUT_PEM_PATH = process.env.WHEEL_PAYOUT_PEM_PATH || "";
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "https://tclexplorer.com,https://axel4ro.github.io").split(",").map(s => s.trim());
 const WHEEL_DRAW_INTERVAL_MS = 60 * 1000;
 const WHEEL_ENTRY_DOMAIN = "tclexplorer.com";
+const WHEEL_PAYOUT_PENDING_STATUSES = ["submitting", "submitted"];
+let wheelPayoutAccountPromise = null;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -128,7 +144,7 @@ function buildWheelEntryMessage({ wallet, campaign, ticketDay, countryCode }) {
   ].join("\n");
 }
 
-async function verifyWheelEntrySignature(wallet, messageText, signatureHex) {
+async function verifyWalletMessageSignature(wallet, messageText, signatureHex, context) {
   if (!/^[0-9a-f]{128}$/i.test(String(signatureHex || ""))) return false;
   try {
     const address = Address.newFromBech32(wallet);
@@ -140,9 +156,94 @@ async function verifyWheelEntrySignature(wallet, messageText, signatureHex) {
     const verifier = UserVerifier.fromAddress(address);
     return await verifier.verify(serialized, Buffer.from(signatureHex, "hex"));
   } catch (error) {
-    console.warn("Wheel entry signature verification failed:", error?.message || error);
+    console.warn(`${context} signature verification failed:`, error?.message || error);
     return false;
   }
+}
+
+async function verifyWheelEntrySignature(wallet, messageText, signatureHex) {
+  return verifyWalletMessageSignature(wallet, messageText, signatureHex, "Wheel entry");
+}
+
+function buildWheelPrizeClaimMessage(winner) {
+  return [
+    "TCL Explorer Giveaway Prize Claim",
+    `Domain: ${WHEEL_ENTRY_DOMAIN}`,
+    `Wallet: ${winner.wallet_address}`,
+    `Campaign: ${winner.raffle_month}`,
+    `Place: ${winner.place}`,
+    `Ticket: ${winner.ticket_number}`,
+    `Token: ${TCL_TOKEN}`,
+    `Reward (raw 18 decimals): ${winner.reward_tcl}`,
+    "Claim version: 1",
+    "I authorize the prize payout to the wallet above.",
+  ].join("\n");
+}
+
+async function getWheelPayoutAccount() {
+  if (!WHEEL_PAYOUT_PEM_PATH) {
+    throw wheelDrawError("Prize payouts are not configured on the server.", 503);
+  }
+  if (!wheelPayoutAccountPromise) {
+    wheelPayoutAccountPromise = Account.newFromPem(WHEEL_PAYOUT_PEM_PATH);
+  }
+  try {
+    return await wheelPayoutAccountPromise;
+  } catch (error) {
+    wheelPayoutAccountPromise = null;
+    console.error("Could not load wheel payout account:", error?.message || error);
+    throw wheelDrawError("Prize payouts are temporarily unavailable.", 503);
+  }
+}
+
+async function wheelPayoutReadiness(wheelWallet) {
+  if (!WHEEL_PAYOUT_PEM_PATH || !isValidWallet(wheelWallet)) return false;
+  try {
+    const payoutAccount = await getWheelPayoutAccount();
+    return payoutAccount.address.toBech32() === wheelWallet;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchMvxJson(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+    signal: options.signal || AbortSignal.timeout(12000),
+  });
+  const text = await response.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+  return { response, data, text };
+}
+
+async function broadcastWheelPayout(transactionPayload) {
+  const { response, data, text } = await fetchMvxJson(`${MVX_GATEWAY}/transaction/send`, {
+    method: "POST",
+    body: JSON.stringify(transactionPayload),
+  });
+  const txHash = data?.txHash || data?.data?.txHash || "";
+  if (!response.ok || !txHash) {
+    const message = data?.error || data?.message || data?.data?.message || text || `HTTP ${response.status}`;
+    throw new Error(`MultiversX broadcast failed: ${message}`);
+  }
+  return txHash;
+}
+
+async function getWheelPayoutTransaction(txHash) {
+  const { response, data, text } = await fetchMvxJson(
+    `${MVX_API}/transactions/${encodeURIComponent(txHash)}?withResults=true`
+  );
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(data?.message || text || `Could not query transaction ${txHash}.`);
+  }
+  return data;
 }
 
 async function getWheelCampaign(month = utcMonth(), client = db) {
@@ -221,7 +322,10 @@ wheel.get("/config", async (req, res) => {
       db.one("SELECT wheel_wallet, host_herotag, host_wallet, token_identifier, enabled, prize_split FROM wheel_config LIMIT 1"),
       getWheelCampaign(month),
     ]);
-    ok(res, { ok: true, config: cfg || null, campaign: publicCampaign(campaign), month });
+    const config = cfg
+      ? { ...cfg, payout_ready: await wheelPayoutReadiness(cfg.wheel_wallet), payout_mode: "winner_claim" }
+      : null;
+    ok(res, { ok: true, config, campaign: publicCampaign(campaign), month });
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
@@ -422,11 +526,236 @@ wheel.get("/winners", async (req, res) => {
   try {
     const month = req.query.month || utcMonth();
     const winners = await db.all(
-      "SELECT place, herotag, wallet_address, ticket_number, reward_tcl, paid_status, draw_proof FROM wheel_winners WHERE raffle_month=$1 ORDER BY place ASC",
+      `SELECT place, herotag, wallet_address, ticket_number, reward_tcl, paid_status,
+              paid_tx_hash, payout_confirmed_at, payout_error, draw_proof
+         FROM wheel_winners
+        WHERE raffle_month=$1
+        ORDER BY place ASC`,
       [month]
     );
     ok(res, { ok: true, winners, month });
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
+// POST /wheel/prize-claim-message
+wheel.post("/prize-claim-message", async (req, res) => {
+  try {
+    const wallet = String(req.body?.wallet || "").trim();
+    const month = String(req.body?.month || utcMonth()).trim();
+    const place = Number(req.body?.place);
+    if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
+    if (!isValidMonth(month)) return fail(res, "Invalid month. Use YYYY-MM.");
+    if (![1, 2, 3].includes(place)) return fail(res, "Invalid winner place.");
+
+    const winner = await db.one(
+      `SELECT raffle_month, place, ticket_number, wallet_address, reward_tcl,
+              paid_status, paid_tx_hash, payout_confirmed_at
+         FROM wheel_winners
+        WHERE raffle_month=$1 AND place=$2
+        LIMIT 1`,
+      [month, place]
+    );
+    if (!winner) return fail(res, "Winner not found.", 404);
+    if (winner.wallet_address !== wallet) return fail(res, "This wallet is not the selected winner.", 403);
+    if (winner.paid_status === "paid") {
+      return ok(res, {
+        ok: true,
+        status: "paid",
+        tx_hash: winner.paid_tx_hash,
+        confirmed_at: winner.payout_confirmed_at,
+      });
+    }
+    if (WHEEL_PAYOUT_PENDING_STATUSES.includes(winner.paid_status)) {
+      return ok(res, { ok: true, status: "submitted", tx_hash: winner.paid_tx_hash });
+    }
+
+    const cfg = await db.one("SELECT wheel_wallet FROM wheel_config LIMIT 1");
+    if (!await wheelPayoutReadiness(cfg?.wheel_wallet)) {
+      return fail(res, "Prize payout wallet is not ready yet.", 503);
+    }
+    ok(res, {
+      ok: true,
+      status: winner.paid_status,
+      message: buildWheelPrizeClaimMessage(winner),
+      reward_tcl: winner.reward_tcl,
+      token_identifier: TCL_TOKEN,
+    });
+  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
+// POST /wheel/prize-claim
+wheel.post("/prize-claim", async (req, res) => {
+  const wallet = String(req.body?.wallet || "").trim();
+  const month = String(req.body?.month || utcMonth()).trim();
+  const place = Number(req.body?.place);
+  const message = String(req.body?.message || "");
+  const signature = String(req.body?.signature || "").trim();
+  if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
+  if (!isValidMonth(month)) return fail(res, "Invalid month. Use YYYY-MM.");
+  if (![1, 2, 3].includes(place)) return fail(res, "Invalid winner place.");
+
+  let client;
+  let transactionPayload;
+  let computedTxHash;
+  try {
+    const initialWinner = await db.one(
+      `SELECT raffle_month, place, ticket_number, wallet_address, reward_tcl, paid_status
+         FROM wheel_winners
+        WHERE raffle_month=$1 AND place=$2
+        LIMIT 1`,
+      [month, place]
+    );
+    if (!initialWinner) return fail(res, "Winner not found.", 404);
+    if (initialWinner.wallet_address !== wallet) return fail(res, "This wallet is not the selected winner.", 403);
+    const expectedMessage = buildWheelPrizeClaimMessage(initialWinner);
+    if (message !== expectedMessage) return fail(res, "Prize claim message is invalid.");
+    if (!await verifyWalletMessageSignature(wallet, message, signature, "Wheel prize claim")) {
+      return fail(res, "Invalid prize claim signature.", 401);
+    }
+
+    const payoutAccount = await getWheelPayoutAccount();
+    client = await pool.connect();
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["wheel-payout-wallet"]);
+
+    const cfgResult = await client.query(
+      "SELECT wheel_wallet, token_identifier FROM wheel_config LIMIT 1 FOR UPDATE"
+    );
+    const cfg = cfgResult.rows[0];
+    const payoutWallet = payoutAccount.address.toBech32();
+    if (!cfg || cfg.wheel_wallet !== payoutWallet) {
+      throw wheelDrawError("Configured wheel wallet does not match the server payout key.", 503);
+    }
+    if (cfg.token_identifier !== TCL_TOKEN) {
+      throw wheelDrawError("Configured payout token does not match TCL.", 503);
+    }
+
+    const winnerResult = await client.query(
+      `SELECT id, raffle_month, place, ticket_number, wallet_address, reward_tcl,
+              paid_status, paid_tx_hash
+         FROM wheel_winners
+        WHERE raffle_month=$1 AND place=$2
+        FOR UPDATE`,
+      [month, place]
+    );
+    const winner = winnerResult.rows[0];
+    if (!winner || winner.wallet_address !== wallet) {
+      throw wheelDrawError("Winner record changed. Please refresh.", 409);
+    }
+    if (winner.paid_status === "paid") {
+      await client.query("COMMIT");
+      return ok(res, { ok: true, status: "paid", tx_hash: winner.paid_tx_hash });
+    }
+    if (WHEEL_PAYOUT_PENDING_STATUSES.includes(winner.paid_status)) {
+      await client.query("COMMIT");
+      return ok(res, { ok: true, status: "submitted", tx_hash: winner.paid_tx_hash });
+    }
+    if (message !== buildWheelPrizeClaimMessage(winner)) {
+      throw wheelDrawError("Prize claim details changed. Please sign a new claim.", 409);
+    }
+
+    const pendingResult = await client.query(
+      `SELECT id
+         FROM wheel_winners
+        WHERE paid_status = ANY($1::text[])
+          AND NOT (raffle_month=$2 AND place=$3)
+        LIMIT 1`,
+      [WHEEL_PAYOUT_PENDING_STATUSES, month, place]
+    );
+    if (pendingResult.rows[0]) {
+      throw wheelDrawError("Another prize payout is being confirmed. Please try again shortly.", 409);
+    }
+
+    const reward = BigInt(winner.reward_tcl || "0");
+    if (reward <= 0n) throw wheelDrawError("This prize has no payable TCL amount.", 409);
+    const [accountInfo, tokenInfo] = await Promise.all([
+      mvxAccount(payoutWallet),
+      mvxTokenBalance(payoutWallet, TCL_TOKEN),
+    ]);
+    if (!accountInfo) throw wheelDrawError("Could not read the payout wallet from MultiversX.", 503);
+    if (accountInfo.isGuarded) {
+      throw wheelDrawError("The payout wallet is guarded and cannot be used by the automatic signer.", 503);
+    }
+    if (BigInt(tokenInfo?.balance || "0") < reward) {
+      throw wheelDrawError("The payout wallet does not have enough TCL for this prize.", 503);
+    }
+
+    const factory = new TransferTransactionsFactory({
+      config: new TransactionsFactoryConfig({ chainID: MVX_CHAIN_ID }),
+    });
+    const transaction = await factory.createTransactionForESDTTokenTransfer(
+      payoutAccount.address,
+      {
+        receiver: Address.newFromBech32(wallet),
+        tokenTransfers: [
+          new TokenTransfer({
+            token: new Token({ identifier: TCL_TOKEN }),
+            amount: reward,
+          }),
+        ],
+      }
+    );
+    transaction.nonce = BigInt(accountInfo.nonce);
+    const maximumFee = transaction.gasLimit * transaction.gasPrice;
+    if (BigInt(accountInfo.balance || "0") < maximumFee) {
+      throw wheelDrawError("The payout wallet needs more EGLD for transaction fees.", 503);
+    }
+    transaction.signature = await payoutAccount.signTransaction(transaction);
+    transactionPayload = transaction.toSendable();
+    computedTxHash = new TransactionComputer().computeTransactionHash(transaction);
+
+    await client.query(
+      `UPDATE wheel_winners
+          SET paid_status='submitted',
+              paid_tx_hash=$1,
+              claim_message=$2,
+              claim_signature=$3,
+              claim_requested_at=NOW(),
+              payout_tx=$4,
+              payout_submitted_at=NOW(),
+              payout_confirmed_at=NULL,
+              payout_last_checked_at=NULL,
+              payout_error=NULL
+        WHERE id=$5`,
+      [computedTxHash, message, signature, JSON.stringify(transactionPayload), winner.id]
+    );
+    await client.query(
+      "INSERT INTO wheel_audit_logs (action, wallet_address, data) VALUES ($1,$2,$3)",
+      ["prize_claim_submitted", wallet, JSON.stringify({
+        month,
+        place,
+        reward_tcl: winner.reward_tcl,
+        tx_hash: computedTxHash,
+      })]
+    );
+    await client.query("COMMIT");
+
+    try {
+      const broadcastHash = await broadcastWheelPayout(transactionPayload);
+      if (broadcastHash !== computedTxHash) {
+        console.warn(`Wheel payout hash mismatch: computed=${computedTxHash} gateway=${broadcastHash}`);
+      }
+    } catch (error) {
+      console.error(`Wheel payout queued for retry ${computedTxHash}:`, error?.message || error);
+      await db.query(
+        "UPDATE wheel_winners SET payout_error=$1 WHERE raffle_month=$2 AND place=$3 AND paid_tx_hash=$4",
+        [String(error?.message || error).slice(0, 1000), month, place, computedTxHash]
+      ).catch(() => {});
+    }
+
+    ok(res, {
+      ok: true,
+      status: "submitted",
+      tx_hash: computedTxHash,
+      explorer_url: `https://explorer.multiversx.com/transactions/${computedTxHash}`,
+    }, 202);
+  } catch (e) {
+    if (client) await client.query("ROLLBACK").catch(() => {});
+    fail(res, e?.status ? e.message : "Prize payout could not be prepared.", e?.status || 500);
+    console.error(e);
+  } finally {
+    client?.release();
+  }
 });
 
 // GET /wheel/draw-proof?month=
@@ -639,7 +968,12 @@ wheel.post("/admin/mark-paid", async (req, res) => {
     const { month, place, tx_hash } = req.body || {};
     if (!month || !place) return fail(res, "month and place required.");
     await db.query(
-      "UPDATE wheel_winners SET paid_status='paid', paid_tx_hash=$1 WHERE raffle_month=$2 AND place=$3",
+      `UPDATE wheel_winners
+          SET paid_status='paid',
+              paid_tx_hash=$1,
+              payout_confirmed_at=NOW(),
+              payout_error=NULL
+        WHERE raffle_month=$2 AND place=$3`,
       [tx_hash || null, month, place]
     );
     ok(res, { ok: true });
@@ -783,8 +1117,132 @@ wheel.post("/admin/add-contribution", async (req, res) => {
 
 app.use("/wheel", wheel);
 
+async function reconcileWheelPayout(winner) {
+  const txHash = winner.paid_tx_hash;
+  if (!txHash || !winner.payout_tx) return;
+  let transactionPayload = winner.payout_tx;
+  if (typeof transactionPayload === "string") {
+    try { transactionPayload = JSON.parse(transactionPayload); } catch { transactionPayload = null; }
+  }
+  if (!transactionPayload) {
+    await db.query(
+      `UPDATE wheel_winners
+          SET paid_status='failed', payout_error=$1, payout_last_checked_at=NOW()
+        WHERE id=$2 AND paid_status='submitted'`,
+      ["Stored payout transaction is invalid.", winner.id]
+    );
+    return;
+  }
+
+  let networkTransaction = null;
+  try {
+    networkTransaction = await getWheelPayoutTransaction(txHash);
+  } catch (error) {
+    await db.query(
+      "UPDATE wheel_winners SET payout_error=$1, payout_last_checked_at=NOW() WHERE id=$2",
+      [String(error?.message || error).slice(0, 1000), winner.id]
+    );
+    return;
+  }
+
+  const status = String(networkTransaction?.status || "").toLowerCase();
+  if (status === "success" || status === "successful") {
+    const result = await db.query(
+      `UPDATE wheel_winners
+          SET paid_status='paid',
+              payout_confirmed_at=NOW(),
+              payout_last_checked_at=NOW(),
+              payout_error=NULL
+        WHERE id=$1 AND paid_status='submitted'
+        RETURNING raffle_month, place, wallet_address, reward_tcl`,
+      [winner.id]
+    );
+    const paid = result.rows[0];
+    if (paid) {
+      await db.query(
+        "INSERT INTO wheel_audit_logs (action, wallet_address, data) VALUES ($1,$2,$3)",
+        ["prize_payout_confirmed", paid.wallet_address, JSON.stringify({
+          month: paid.raffle_month,
+          place: paid.place,
+          reward_tcl: paid.reward_tcl,
+          tx_hash: txHash,
+        })]
+      );
+    }
+    return;
+  }
+
+  if (["fail", "failed", "invalid"].includes(status)) {
+    await db.query(
+      `UPDATE wheel_winners
+          SET paid_status='failed',
+              payout_last_checked_at=NOW(),
+              payout_error=$1
+        WHERE id=$2 AND paid_status='submitted'`,
+      [`MultiversX transaction ended with status: ${status}.`, winner.id]
+    );
+    return;
+  }
+
+  if (networkTransaction) {
+    await db.query(
+      "UPDATE wheel_winners SET payout_last_checked_at=NOW(), payout_error=NULL WHERE id=$1",
+      [winner.id]
+    );
+    return;
+  }
+
+  const sender = String(transactionPayload.sender || "");
+  const accountInfo = isValidWallet(sender) ? await mvxAccount(sender) : null;
+  const transactionNonce = Number(transactionPayload.nonce);
+  const networkNonce = Number(accountInfo?.nonce);
+  if (Number.isInteger(transactionNonce) && Number.isInteger(networkNonce) && networkNonce > transactionNonce) {
+    await db.query(
+      `UPDATE wheel_winners
+          SET paid_status='failed',
+              payout_last_checked_at=NOW(),
+              payout_error=$1
+        WHERE id=$2 AND paid_status='submitted'`,
+      ["Payout transaction was not found and its nonce has already been consumed.", winner.id]
+    );
+    return;
+  }
+
+  try {
+    await broadcastWheelPayout(transactionPayload);
+    await db.query(
+      "UPDATE wheel_winners SET payout_last_checked_at=NOW(), payout_error=NULL WHERE id=$1",
+      [winner.id]
+    );
+  } catch (error) {
+    await db.query(
+      "UPDATE wheel_winners SET payout_error=$1, payout_last_checked_at=NOW() WHERE id=$2",
+      [String(error?.message || error).slice(0, 1000), winner.id]
+    );
+  }
+}
+
+async function runScheduledWheelPayouts() {
+  try {
+    const pending = await db.all(
+      `SELECT id, raffle_month, place, wallet_address, reward_tcl,
+              paid_tx_hash, payout_tx, payout_submitted_at
+         FROM wheel_winners
+        WHERE paid_status='submitted'
+        ORDER BY payout_submitted_at ASC
+        LIMIT 10`
+    );
+    for (const winner of pending) {
+      await reconcileWheelPayout(winner);
+    }
+  } catch (error) {
+    console.error("Automatic wheel payout reconciliation failed:", error?.message || error);
+  }
+}
+
 async function runScheduledWheelDraws() {
   try {
+    await runScheduledWheelPayouts();
     await db.query(
       `UPDATE wheel_campaigns
           SET status='closed', updated_at=NOW()
@@ -1918,6 +2376,26 @@ app.post("/ai/chat", async (req, res) => {
   } catch (e) {
     console.error("AI chat error:", e.message);
     fail(res, "AI chat unavailable.", 502);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  LEADERBOARD (generat de leaderboard.py via cron)
+// ══════════════════════════════════════════════════════════════════════════════
+const LEADERBOARD_PATH = "/opt/tcl-api/leaderboard.json";
+
+app.get("/api/leaderboard", (req, res) => {
+  try {
+    const stat = statSync(LEADERBOARD_PATH);
+    const raw = readFileSync(LEADERBOARD_PATH, "utf8");
+    const payload = JSON.parse(raw);
+    payload._meta = { last_updated: stat.mtime.toISOString() };
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.setHeader("Last-Modified", stat.mtime.toUTCString());
+    res.json(payload);
+  } catch {
+    res.status(503).json({ ok: false, error: "Leaderboard not available yet" });
   }
 });
 
