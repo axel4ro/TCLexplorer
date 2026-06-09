@@ -1137,9 +1137,9 @@ function openLander() {
   let mode = 'buy';
   const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
   const LEADERBOARD_URLS = [
+    "https://api.tclexplorer.com/api/leaderboard",
     "/leaderboard.json",
-    "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json",
-    "https://raw.githubusercontent.com/axel4ro/TCLexplorer/main/leaderboard.json"
+    "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json"
   ];
   const LEADERBOARD_CACHE_KEY = "tclExplorer.leaderboard.v1";
   const LINKED_STAKING_GROUPS = [
@@ -2502,6 +2502,12 @@ async function fetchLeaderboard() {
   try {
     const data = await fetchLeaderboardData();
     lastUpdateTime = new Date();
+
+    if (data._meta?.last_updated) {
+      commitDateGlobal = new Date(data._meta.last_updated);
+      updateCommitRelative();
+    }
+
     setLeaderboardCache(data);
 
     const rendered = renderLeaderboardRows(data);
