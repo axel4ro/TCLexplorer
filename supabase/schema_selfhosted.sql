@@ -128,6 +128,14 @@ CREATE TABLE IF NOT EXISTS public.wheel_winners (
   reward_tcl     TEXT NOT NULL DEFAULT '0',
   paid_status    TEXT NOT NULL DEFAULT 'unpaid',
   paid_tx_hash   TEXT,
+  claim_message  TEXT,
+  claim_signature TEXT,
+  claim_requested_at TIMESTAMPTZ,
+  payout_tx      JSONB,
+  payout_submitted_at TIMESTAMPTZ,
+  payout_confirmed_at TIMESTAMPTZ,
+  payout_last_checked_at TIMESTAMPTZ,
+  payout_error   TEXT,
   draw_proof     JSONB,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (raffle_month, place)
@@ -148,6 +156,7 @@ CREATE INDEX IF NOT EXISTS idx_wcampaign_draw ON wheel_campaigns(status, automat
 CREATE INDEX IF NOT EXISTS idx_wt_acceptance ON wheel_tickets(raffle_month, rules_version, country_code);
 CREATE INDEX IF NOT EXISTS idx_wc_month   ON wheel_contributions(raffle_month);
 CREATE INDEX IF NOT EXISTS idx_ww_month   ON wheel_winners(raffle_month);
+CREATE INDEX IF NOT EXISTS idx_ww_payout  ON wheel_winners(paid_status, payout_submitted_at);
 CREATE INDEX IF NOT EXISTS idx_wal_action ON wheel_audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_wal_ts     ON wheel_audit_logs(created_at);
 

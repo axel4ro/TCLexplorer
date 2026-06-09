@@ -38,12 +38,23 @@ ALTER TABLE public.wheel_tickets
   ADD COLUMN IF NOT EXISTS entry_signature TEXT;
 
 ALTER TABLE public.wheel_winners
-  ADD COLUMN IF NOT EXISTS draw_proof JSONB;
+  ADD COLUMN IF NOT EXISTS draw_proof JSONB,
+  ADD COLUMN IF NOT EXISTS claim_message TEXT,
+  ADD COLUMN IF NOT EXISTS claim_signature TEXT,
+  ADD COLUMN IF NOT EXISTS claim_requested_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS payout_tx JSONB,
+  ADD COLUMN IF NOT EXISTS payout_submitted_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS payout_confirmed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS payout_last_checked_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS payout_error TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_wheel_campaigns_draw
   ON public.wheel_campaigns (status, automatic_draw, draw_at);
 
 CREATE INDEX IF NOT EXISTS idx_wheel_tickets_acceptance
   ON public.wheel_tickets (raffle_month, rules_version, country_code);
+
+CREATE INDEX IF NOT EXISTS idx_wheel_winners_payout
+  ON public.wheel_winners (paid_status, payout_submitted_at);
 
 COMMIT;

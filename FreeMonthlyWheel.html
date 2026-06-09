@@ -603,6 +603,23 @@
     }
     .paid-badge.paid { background: var(--success-dim); color: var(--success); border: 1px solid rgba(74,222,128,.3); }
     .paid-badge.unpaid { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(247,195,95,.3); }
+    .paid-badge.submitted { background: rgba(96,165,250,.12); color: #93c5fd; border: 1px solid rgba(96,165,250,.3); }
+    .paid-badge.failed { background: rgba(248,113,113,.12); color: #fca5a5; border: 1px solid rgba(248,113,113,.3); }
+    .winner-actions { display: flex; align-items: flex-end; flex-direction: column; gap: 6px; }
+    .prize-claim-btn {
+      border: 1px solid rgba(247,195,95,.45);
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(247,195,95,.2), rgba(168,85,247,.18));
+      color: var(--gold);
+      padding: 7px 10px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .prize-claim-btn:disabled { cursor: default; opacity: .55; }
+    .prize-claim-error { max-width: 180px; color: #fca5a5; font-size: 10px; line-height: 1.35; text-align: right; }
+    .winner-tx-link { color: #93c5fd; font-size: 10px; text-decoration: none; }
 
     /* ── Hosted by ── */
     .hosted-row {
@@ -952,6 +969,9 @@
         </div>
         <a class="copy-btn" id="drawProofLink" href="#" target="_blank" rel="noopener noreferrer"
           style="display:inline-flex;margin-top:12px;" hidden>Verify draw proof</a>
+        <p class="claim-hint" id="payoutStatus" style="margin-top:10px;">
+          Winners connect the selected wallet and sign a message to receive TCL. No transaction fee is paid by the winner.
+        </p>
       </section>
     </div>
   </div>
@@ -1214,6 +1234,8 @@
     eligibility: null,
     claiming: false,
     claimedTicket: null,
+    claimingPrizeKey: "",
+    winnerRefreshTimer: null,
   };
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
@@ -1310,6 +1332,9 @@
 
     const cfg = data.config || {};
     const campaign = state.campaign;
+    $("payoutStatus").textContent = cfg.payout_ready
+      ? "Automatic prize claims are ready. Winners connect the selected wallet and sign a message; the payout wallet covers the network fee."
+      : "Automatic prize claims will activate when the official payout wallet key is securely installed on the server.";
     if (campaign?.organizer_name) $("hostHerotag").textContent = campaign.organizer_name;
     else if (cfg.host_herotag) $("hostHerotag").textContent = cfg.host_herotag;
     if (campaign?.organizer_address) $("hostWallet").textContent = campaign.organizer_address;
@@ -1412,9 +1437,31 @@
     const placeLabel = ["", "1st", "2nd", "3rd"];
     const pctMap = { 1: "first", 2: "second", 3: "third" };
     const split = state.config?.prize_split || { first: 50, second: 30, third: 20 };
+    const statusLabel = {
+      unpaid: "Ready to claim",
+      submitted: "Processing",
+      paid: "Paid",
+      failed: "Retry available",
+    };
+    let hasSubmittedPayout = false;
 
     data.winners.forEach(w => {
       const pct = split[pctMap[w.place]] || "?";
+      const isConnectedWinner = !!state.wallet && state.wallet === w.wallet_address;
+      const canClaimPrize = isConnectedWinner
+        && state.config?.payout_ready
+        && ["unpaid", "failed"].includes(w.paid_status);
+      const claimKey = `${data.month}:${w.place}`;
+      const isClaiming = state.claimingPrizeKey === claimKey;
+      const explorerLink = w.paid_tx_hash
+        ? `<a class="winner-tx-link" href="https://explorer.multiversx.com/transactions/${w.paid_tx_hash}" target="_blank" rel="noopener noreferrer">View transaction</a>`
+        : "";
+      const claimButton = canClaimPrize
+        ? `<button class="prize-claim-btn" type="button" data-prize-month="${data.month}" data-prize-place="${w.place}" ${isClaiming ? "disabled" : ""}>${isClaiming ? "Preparing..." : "Claim TCL"}</button>`
+        : (isConnectedWinner && ["unpaid", "failed"].includes(w.paid_status) && !state.config?.payout_ready
+          ? `<button class="prize-claim-btn" type="button" disabled>Payout setup pending</button>`
+          : "");
+      if (w.paid_status === "submitted") hasSubmittedPayout = true;
       const card = document.createElement("div");
       card.className = "winner-card";
       card.innerHTML = `
@@ -1423,11 +1470,18 @@
           <div class="winner-tag">${w.herotag || trunc(w.wallet_address)}</div>
           <div class="winner-ticket">${w.ticket_number}</div>
         </div>
-        <div style="text-align:right;">
+        <div class="winner-actions">
           <div class="winner-reward">${fmtTcl(w.reward_tcl)}</div>
           <div class="winner-pct">${pct}% of pool</div>
-          <div class="paid-badge ${w.paid_status}">${w.paid_status}</div>
+          <div class="paid-badge ${w.paid_status}">${statusLabel[w.paid_status] || w.paid_status}</div>
+          ${explorerLink}
+          ${claimButton}
+          <div class="prize-claim-error" hidden></div>
         </div>`;
+      const button = card.querySelector(".prize-claim-btn[data-prize-month]");
+      if (button) {
+        button.addEventListener("click", () => claimPrize(data.month, w.place, button));
+      }
       list.appendChild(card);
     });
 
@@ -1435,6 +1489,64 @@
     if (data.winners[0]?.draw_proof) {
       $("drawProofLink").href = `${WORKER_URL}/draw-proof?month=${encodeURIComponent(data.month)}`;
       $("drawProofLink").hidden = false;
+    }
+    clearTimeout(state.winnerRefreshTimer);
+    if (hasSubmittedPayout) {
+      state.winnerRefreshTimer = setTimeout(loadWinners, 15000);
+    }
+  }
+
+  async function claimPrize(month, place, button) {
+    if (!state.wallet || !state.signClient || state.claimingPrizeKey) return;
+    const claimKey = `${month}:${place}`;
+    const errorBox = button.closest(".winner-actions")?.querySelector(".prize-claim-error");
+    state.claimingPrizeKey = claimKey;
+    button.disabled = true;
+    button.textContent = "Preparing...";
+    if (errorBox) errorBox.hidden = true;
+
+    try {
+      const prepared = await api("/prize-claim-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: state.wallet, month, place })
+      });
+      if (!prepared?.ok) throw new Error(prepared?.error || "Could not prepare the prize claim.");
+      if (prepared.status === "paid" || prepared.status === "submitted") {
+        await loadWinners();
+        return;
+      }
+
+      button.textContent = "Approve in xPortal...";
+      const signature = await XPORTAL.signMessage({
+        client: state.signClient,
+        address: state.wallet,
+        message: prepared.message
+      });
+
+      button.textContent = "Submitting payout...";
+      const result = await api("/prize-claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: state.wallet,
+          month,
+          place,
+          message: prepared.message,
+          signature
+        })
+      });
+      if (!result?.ok) throw new Error(result?.error || "The prize payout could not be submitted.");
+      await loadWinners();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Claim TCL";
+      if (errorBox) {
+        errorBox.textContent = error?.message || "Prize claim failed.";
+        errorBox.hidden = false;
+      }
+    } finally {
+      state.claimingPrizeKey = "";
     }
   }
 
@@ -1690,6 +1802,7 @@
       setWalletUI(session.address, acc?.username || "");
       checkEligibility();
       loadMyTickets();
+      loadWinners();
     } catch (e) {
       console.warn("Could not restore session:", e);
     }
@@ -1733,6 +1846,7 @@
       setWalletUI(approved.address, acc?.username || "");
       checkEligibility();
       loadMyTickets();
+      loadWinners();
     } catch (e) {
       if (runId === state.connectionRunId) {
         console.error(e);
@@ -1760,6 +1874,7 @@
     clearConnectUI();
     setWalletUI("", "");
     $("myTicketsList").innerHTML = '<div class="empty-state">Connect wallet to see your tickets.</div>';
+    loadWinners();
   }
 
   async function disconnectWallet() {
