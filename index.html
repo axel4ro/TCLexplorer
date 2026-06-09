@@ -465,10 +465,6 @@
       </div>
       <h1 class="app-page-title" id="appPageTitle">TCL Explorer</h1>
       <div class="app-topbar-right">
-        <button type="button" class="xp-disconnect-topbar" id="xpDisconnectBtn" hidden>
-          <img src="images/xPortal.png" alt="" width="14" height="14" style="border-radius:4px;">
-          <span id="xpWalletShort"></span>Disconnect ✕
-        </button>
         <div class="topbar-utility-switcher" id="topbarUtilitySwitcher" data-active="lang">
         <div class="lang-dropdown" id="topbarLangControl">
           <button type="button" class="lang-btn" id="currentLang">
@@ -521,6 +517,10 @@
           </div>
         </div>
         </div>
+        <button type="button" class="xp-disconnect-topbar" id="xpDisconnectBtn" hidden>
+          <img src="images/xPortal.png" alt="" width="14" height="14" style="border-radius:4px;">
+          <span id="xpWalletShort"></span>Disconnect ✕
+        </button>
       </div>
     </header>
 
@@ -5514,7 +5514,7 @@ function simulateApr() {
 
   function clearConn() {
     S.address = ""; S.topic = ""; S.client = null; S.connecting = false;
-    XPORTAL.clearStoredSession();
+    XPORTAL.clearStoredSession({ silent: true }); // silent=true avoids re-triggering this via the "cleared" event
     XPORTAL.resetClient();
     syncDisconnectBtn();
     checkGate();
