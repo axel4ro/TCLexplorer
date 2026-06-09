@@ -5670,12 +5670,13 @@ function simulateApr() {
     DOM.disconnectBtn.addEventListener("click", disconnectWallet);
   }
 
-  // Cross-page session sync (e.g. connect via swap.html)
+  // Cross-page session sync — only react to disconnect events from other sources.
+  // "saved" events are NOT handled here: restore() and approvePairing() fire them
+  // internally (including during legacy key migration) before the WalletConnect
+  // session has been verified; reacting to them would show Disconnect prematurely.
   window.addEventListener("tcl:xportal-session", function (e) {
     if (!e || !e.detail) return;
-    if (e.detail.type === "saved") {
-      saveConn(e.detail.address, e.detail.topic || S.topic);
-    } else if (e.detail.type === "cleared" || e.detail.type === "deleted") {
+    if (e.detail.type === "cleared" || e.detail.type === "deleted") {
       clearConn();
     }
   });
@@ -5683,8 +5684,13 @@ function simulateApr() {
   // ── Boot ───────────────────────────────────────────────────────────
   (async function boot() {
     const restored = await restoreConn();
-    syncDisconnectBtn();
-    if (!restored) checkGate();
+    if (!restored) {
+      // Clear any stale address/topic set by event listeners during restore
+      S.address = ""; S.topic = "";
+      syncDisconnectBtn(); // ensure button is hidden
+      checkGate();
+    }
+    // If restored: saveConn() inside restoreConn() already handled UI
   })();
 
 })();
