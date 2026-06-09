@@ -19,6 +19,8 @@ try {
 
 import express from "express";
 import pg from "pg";
+import { createHash, createHmac, randomBytes } from "crypto";
+import { Address, Message, MessageComputer, UserVerifier } from "@multiversx/sdk-core";
 
 const { Pool } = pg;
 const app = express();
@@ -41,6 +43,8 @@ const TCL_TOKEN = "TCL-fe459d";
 const TCL_DECIMALS = 18n;
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "https://tclexplorer.com,https://axel4ro.github.io").split(",").map(s => s.trim());
+const WHEEL_DRAW_INTERVAL_MS = 60 * 1000;
+const WHEEL_ENTRY_DOMAIN = "tclexplorer.com";
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -75,6 +79,93 @@ function formatTcl(raw) {
 
 function ticketNumber(month, id) {
   return `TCL-FREE-${month}-${String(id).padStart(6, "0")}`;
+}
+
+function isValidMonth(value) {
+  return /^[0-9]{4}-(0[1-9]|1[0-2])$/.test(String(value || ""));
+}
+
+function isValidCountryCode(value) {
+  return /^[A-Z]{2}$/.test(String(value || ""));
+}
+
+function publicCampaign(campaign) {
+  if (!campaign) return null;
+  return {
+    month: campaign.month,
+    title: campaign.title,
+    status: campaign.status,
+    starts_at: campaign.starts_at,
+    closes_at: campaign.closes_at,
+    draw_at: campaign.draw_at,
+    min_age: campaign.min_age,
+    eligible_countries: campaign.eligible_countries || [],
+    rules_version: campaign.rules_version,
+    rules_url: campaign.rules_url,
+    privacy_url: campaign.privacy_url,
+    rules_hash: campaign.rules_hash,
+    organizer_name: campaign.organizer_name,
+    organizer_address: campaign.organizer_address,
+    organizer_email: campaign.organizer_email,
+    prize_amounts: campaign.prize_amounts,
+    prize_arv_ron: campaign.prize_arv_ron,
+    automatic_draw: campaign.automatic_draw,
+  };
+}
+
+function buildWheelEntryMessage({ wallet, campaign, ticketDay, countryCode }) {
+  return [
+    "TCL Explorer Free Monthly Giveaway Entry",
+    `Domain: ${WHEEL_ENTRY_DOMAIN}`,
+    `Wallet: ${wallet}`,
+    `Campaign: ${campaign.month}`,
+    `Entry day (UTC): ${ticketDay}`,
+    `Country: ${countryCode}`,
+    `Age confirmation: ${campaign.min_age}+`,
+    `Rules version: ${campaign.rules_version}`,
+    `Rules SHA-256: ${campaign.rules_hash}`,
+    "No purchase or donation is required.",
+  ].join("\n");
+}
+
+async function verifyWheelEntrySignature(wallet, messageText, signatureHex) {
+  if (!/^[0-9a-f]{128}$/i.test(String(signatureHex || ""))) return false;
+  try {
+    const address = Address.newFromBech32(wallet);
+    const message = new Message({
+      data: new Uint8Array(Buffer.from(messageText, "utf8")),
+      address,
+    });
+    const serialized = new MessageComputer().computeBytesForVerifying(message);
+    const verifier = UserVerifier.fromAddress(address);
+    return await verifier.verify(serialized, Buffer.from(signatureHex, "hex"));
+  } catch (error) {
+    console.warn("Wheel entry signature verification failed:", error?.message || error);
+    return false;
+  }
+}
+
+async function getWheelCampaign(month = utcMonth(), client = db) {
+  return client.one(
+    `SELECT month, title, status, starts_at, closes_at, draw_at, min_age,
+            eligible_countries, rules_version, rules_url, privacy_url, rules_hash,
+            organizer_name, organizer_address, organizer_email, prize_amounts,
+            prize_arv_ron, automatic_draw
+       FROM wheel_campaigns
+      WHERE month=$1
+      LIMIT 1`,
+    [month]
+  );
+}
+
+function wheelCampaignAvailability(campaign, now = new Date()) {
+  if (!campaign) return { open: false, reason: "This month's giveaway has not been configured." };
+  if (campaign.status !== "open") {
+    return { open: false, reason: campaign.status === "drawn" ? "This giveaway has already been drawn." : "Entries are not open." };
+  }
+  if (now < new Date(campaign.starts_at)) return { open: false, reason: "Entries have not opened yet." };
+  if (now >= new Date(campaign.closes_at)) return { open: false, reason: "Entries are closed for this giveaway." };
+  return { open: true, reason: "" };
 }
 
 async function mvxAccount(address) {
@@ -125,10 +216,12 @@ const wheel = express.Router();
 // GET /wheel/config
 wheel.get("/config", async (req, res) => {
   try {
-    const cfg = await db.one(
-      "SELECT wheel_wallet, host_herotag, host_wallet, token_identifier, enabled, prize_split FROM wheel_config LIMIT 1"
-    );
-    ok(res, { ok: true, config: cfg || null, month: utcMonth() });
+    const month = utcMonth();
+    const [cfg, campaign] = await Promise.all([
+      db.one("SELECT wheel_wallet, host_herotag, host_wallet, token_identifier, enabled, prize_split FROM wheel_config LIMIT 1"),
+      getWheelCampaign(month),
+    ]);
+    ok(res, { ok: true, config: cfg || null, campaign: publicCampaign(campaign), month });
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
@@ -150,8 +243,14 @@ wheel.post("/eligibility", async (req, res) => {
     const wallet = String(req.body?.wallet || "").trim();
     if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
 
-    const cfg = await db.one("SELECT enabled FROM wheel_config LIMIT 1");
+    const month = utcMonth();
+    const [cfg, campaign] = await Promise.all([
+      db.one("SELECT enabled FROM wheel_config LIMIT 1"),
+      getWheelCampaign(month),
+    ]);
     if (!cfg?.enabled) return ok(res, { ok: true, eligible: false, reason: "Wheel is not active this month." });
+    const availability = wheelCampaignAvailability(campaign);
+    if (!availability.open) return ok(res, { ok: true, eligible: false, reason: availability.reason, campaign: publicCampaign(campaign) });
 
     const today = utcDay();
     const dup = await db.one(
@@ -164,7 +263,41 @@ wheel.post("/eligibility", async (req, res) => {
     const herotag  = account?.username || "";
     if (!herotag) return ok(res, { ok: true, eligible: false, reason: "HeroTag required. Register one at xPortal." });
 
-    ok(res, { ok: true, eligible: true, herotag });
+    ok(res, {
+      ok: true,
+      eligible: true,
+      herotag,
+      ticket_day: today,
+      campaign: publicCampaign(campaign),
+    });
+  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
+// POST /wheel/entry-message
+wheel.post("/entry-message", async (req, res) => {
+  try {
+    const wallet = String(req.body?.wallet || "").trim();
+    const countryCode = String(req.body?.country_code || "").trim().toUpperCase();
+    const ageConfirmed = req.body?.age_confirmed === true;
+    const rulesVersion = String(req.body?.rules_version || "").trim();
+    if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
+
+    const campaign = await getWheelCampaign(utcMonth());
+    const availability = wheelCampaignAvailability(campaign);
+    if (!availability.open) return fail(res, availability.reason, 403);
+    if (!ageConfirmed) return fail(res, `You must confirm that you are at least ${campaign.min_age}.`, 403);
+    if (!isValidCountryCode(countryCode) || !campaign.eligible_countries?.includes(countryCode)) {
+      return fail(res, "Your country is not eligible for this giveaway.", 403);
+    }
+    if (rulesVersion !== campaign.rules_version) return fail(res, "The giveaway rules have changed.", 409);
+
+    const ticketDay = utcDay();
+    ok(res, {
+      ok: true,
+      message: buildWheelEntryMessage({ wallet, campaign, ticketDay, countryCode }),
+      ticket_day: ticketDay,
+      campaign: publicCampaign(campaign),
+    });
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
@@ -174,15 +307,36 @@ wheel.post("/claim", async (req, res) => {
     const wallet = String(req.body?.wallet || "").trim();
     if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
 
-    const cfg = await db.one("SELECT enabled FROM wheel_config LIMIT 1");
+    const countryCode = String(req.body?.country_code || "").trim().toUpperCase();
+    const ageConfirmed = req.body?.age_confirmed === true;
+    const rulesVersion = String(req.body?.rules_version || "").trim();
+    const entryMessage = String(req.body?.message || "");
+    const entrySignature = String(req.body?.signature || "").trim();
+
+    const month = utcMonth();
+    const [cfg, campaign] = await Promise.all([
+      db.one("SELECT enabled FROM wheel_config LIMIT 1"),
+      getWheelCampaign(month),
+    ]);
     if (!cfg?.enabled) return fail(res, "Wheel is not active this month.", 403);
+    const availability = wheelCampaignAvailability(campaign);
+    if (!availability.open) return fail(res, availability.reason, 403);
+    if (!ageConfirmed) return fail(res, `You must confirm that you are at least ${campaign.min_age}.`, 403);
+    if (!isValidCountryCode(countryCode) || !campaign.eligible_countries?.includes(countryCode)) {
+      return fail(res, "Your country is not eligible for this giveaway.", 403);
+    }
+    if (rulesVersion !== campaign.rules_version) return fail(res, "The giveaway rules have changed. Review and accept the current rules.", 409);
 
     const account = await mvxAccount(wallet);
     const herotag = account?.username || "";
     if (!herotag) return fail(res, "HeroTag required. Register one at xPortal.", 403);
 
     const today = utcDay();
-    const month = today.slice(0, 7);
+    const expectedMessage = buildWheelEntryMessage({ wallet, campaign, ticketDay: today, countryCode });
+    if (entryMessage !== expectedMessage) return fail(res, "The signed entry message is invalid.", 400);
+    if (!await verifyWheelEntrySignature(wallet, entryMessage, entrySignature)) {
+      return fail(res, "The xPortal signature could not be verified.", 403);
+    }
 
     // Idempotent
     const dup = await db.one(
@@ -193,9 +347,15 @@ wheel.post("/claim", async (req, res) => {
 
     // Insert + get id in one round-trip
     const row = await db.one(
-      `INSERT INTO wheel_tickets (raffle_month, wallet_address, herotag, ticket_day, ticket_number, status)
-       VALUES ($1,$2,$3,$4,$5,'valid') RETURNING id`,
-      [month, wallet, herotag, today, `TCL-FREE-${month}-PENDING-${Date.now()}`]
+      `INSERT INTO wheel_tickets
+        (raffle_month, wallet_address, herotag, ticket_day, ticket_number, status,
+         rules_version, country_code, age_confirmed, accepted_at, entry_message, entry_signature)
+       VALUES ($1,$2,$3,$4,$5,'valid',$6,$7,true,NOW(),$8,$9)
+       RETURNING id`,
+      [
+        month, wallet, herotag, today, `TCL-FREE-${month}-PENDING-${Date.now()}`,
+        campaign.rules_version, countryCode, entryMessage, entrySignature,
+      ]
     );
     if (!row?.id) return fail(res, "Ticket creation failed.", 500);
 
@@ -205,10 +365,19 @@ wheel.post("/claim", async (req, res) => {
     // Audit log (fire and forget)
     db.query(
       "INSERT INTO wheel_audit_logs (action, wallet_address, data) VALUES ($1,$2,$3)",
-      ["claim_ticket", wallet, JSON.stringify({ ticket_number: tn, herotag, ticket_day: today, month })]
+      ["claim_ticket", wallet, JSON.stringify({
+        ticket_number: tn,
+        herotag,
+        ticket_day: today,
+        month,
+        country_code: countryCode,
+        rules_version: campaign.rules_version,
+        rules_hash: campaign.rules_hash,
+        signature_verified: true,
+      })]
     ).catch(() => {});
 
-    ok(res, { ok: true, ticket: tn, herotag, wallet, day: today, month });
+    ok(res, { ok: true, ticket: tn, herotag, wallet, day: today, month, rules_version: campaign.rules_version });
   } catch (e) {
     if (e.code === "23505") {
       // Unique violation — race condition, already claimed
@@ -253,10 +422,35 @@ wheel.get("/winners", async (req, res) => {
   try {
     const month = req.query.month || utcMonth();
     const winners = await db.all(
-      "SELECT place, herotag, wallet_address, ticket_number, reward_tcl, paid_status FROM wheel_winners WHERE raffle_month=$1 ORDER BY place ASC",
+      "SELECT place, herotag, wallet_address, ticket_number, reward_tcl, paid_status, draw_proof FROM wheel_winners WHERE raffle_month=$1 ORDER BY place ASC",
       [month]
     );
     ok(res, { ok: true, winners, month });
+  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
+// GET /wheel/draw-proof?month=
+wheel.get("/draw-proof", async (req, res) => {
+  try {
+    const month = String(req.query.month || utcMonth()).trim();
+    if (!isValidMonth(month)) return fail(res, "Invalid month. Use YYYY-MM.");
+    const [winner, tickets] = await Promise.all([
+      db.one(
+        "SELECT draw_proof FROM wheel_winners WHERE raffle_month=$1 AND place=1 LIMIT 1",
+        [month]
+      ),
+      db.all(
+        "SELECT id, ticket_number FROM wheel_tickets WHERE raffle_month=$1 AND status='valid' ORDER BY id ASC",
+        [month]
+      ),
+    ]);
+    if (!winner?.draw_proof) return fail(res, `No completed draw proof for ${month}.`, 404);
+    ok(res, {
+      ok: true,
+      month,
+      proof: winner.draw_proof,
+      tickets: tickets.map((ticket) => ({ id: String(ticket.id), ticket_number: ticket.ticket_number })),
+    });
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
@@ -271,6 +465,159 @@ wheel.get("/herotag", async (req, res) => {
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
+function wheelDrawError(message, status = 400) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+function wheelDrawRewards(campaign, poolRaw, split) {
+  const configured = campaign?.prize_amounts || {};
+  const keys = ["first", "second", "third"];
+  if (keys.every((key) => /^[0-9]+$/.test(String(configured[key] ?? "")))) {
+    return keys.map((key) => BigInt(configured[key]));
+  }
+  return [
+    (poolRaw * BigInt(split.first)) / 100n,
+    (poolRaw * BigInt(split.second)) / 100n,
+    (poolRaw * BigInt(split.third)) / 100n,
+  ];
+}
+
+async function performWheelDraw(month, trigger = "manual") {
+  if (!isValidMonth(month)) throw wheelDrawError("Invalid month. Use YYYY-MM.");
+
+  const cfg = await db.one("SELECT wheel_wallet, prize_split FROM wheel_config LIMIT 1");
+  const tokenInfo = cfg?.wheel_wallet ? await mvxTokenBalance(cfg.wheel_wallet, TCL_TOKEN) : null;
+  const poolRaw = BigInt(tokenInfo?.balance || "0");
+  const split = cfg?.prize_split || { first: 50, second: 30, third: 20 };
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const lock = await client.query(
+      "SELECT pg_try_advisory_xact_lock(hashtext($1)) AS locked",
+      [`wheel-draw:${month}`]
+    );
+    if (!lock.rows[0]?.locked) throw wheelDrawError(`A draw for ${month} is already running.`, 409);
+
+    const existing = await client.query(
+      "SELECT id FROM wheel_winners WHERE raffle_month=$1 LIMIT 1",
+      [month]
+    );
+    if (existing.rows[0]) throw wheelDrawError(`Winners already drawn for ${month}.`, 409);
+
+    const campaignResult = await client.query(
+      `SELECT month, status, closes_at, draw_at, prize_amounts
+         FROM wheel_campaigns
+        WHERE month=$1
+        FOR UPDATE`,
+      [month]
+    );
+    const campaign = campaignResult.rows[0];
+    if (!campaign) throw wheelDrawError(`No campaign configured for ${month}.`, 404);
+    if (Date.now() < new Date(campaign.closes_at).getTime()) {
+      throw wheelDrawError(`Entries for ${month} are still open.`, 409);
+    }
+    if (Date.now() < new Date(campaign.draw_at).getTime()) {
+      throw wheelDrawError(`The scheduled draw time for ${month} has not arrived.`, 409);
+    }
+
+    const ticketsResult = await client.query(
+      `SELECT id, ticket_number, wallet_address, herotag
+         FROM wheel_tickets
+        WHERE raffle_month=$1 AND status='valid'
+        ORDER BY id ASC`,
+      [month]
+    );
+    const tickets = ticketsResult.rows;
+    if (tickets.length < 3) {
+      await client.query(
+        "UPDATE wheel_campaigns SET status='cancelled', updated_at=NOW() WHERE month=$1",
+        [month]
+      );
+      await client.query(
+        "INSERT INTO wheel_audit_logs (action, wallet_address, data) VALUES ($1,NULL,$2)",
+        ["draw_cancelled", JSON.stringify({ month, total_tickets: tickets.length, reason: "not_enough_tickets" })]
+      );
+      await client.query("COMMIT");
+      const error = wheelDrawError(`Not enough tickets (${tickets.length}). Need at least 3. Campaign cancelled.`, 409);
+      error.transactionCommitted = true;
+      throw error;
+    }
+
+    const seed = randomBytes(32);
+    const ticketSet = tickets.map((ticket) => `${ticket.id}:${ticket.ticket_number}`).join("\n");
+    const ticketSetHash = createHash("sha256").update(ticketSet, "utf8").digest("hex");
+    const ranked = tickets
+      .map((ticket) => ({
+        ...ticket,
+        score: createHmac("sha256", seed)
+          .update(`${month}:${ticket.id}:${ticket.ticket_number}`, "utf8")
+          .digest("hex"),
+      }))
+      .sort((a, b) => a.score.localeCompare(b.score) || Number(a.id) - Number(b.id));
+    const chosen = ranked.slice(0, 3);
+    const rewards = wheelDrawRewards(campaign, poolRaw, split);
+    const proof = {
+      version: 1,
+      algorithm: "HMAC-SHA256(seed, month:ticket_id:ticket_number), ascending score",
+      seed: seed.toString("hex"),
+      ticket_set_sha256: ticketSetHash,
+      total_tickets: tickets.length,
+      drawn_at: new Date().toISOString(),
+      trigger,
+    };
+
+    for (let i = 0; i < chosen.length; i++) {
+      await client.query(
+        `INSERT INTO wheel_winners
+          (raffle_month, place, ticket_id, ticket_number, wallet_address, herotag,
+           reward_tcl, paid_status, draw_proof)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,'unpaid',$8)`,
+        [
+          month, i + 1, chosen[i].id, chosen[i].ticket_number,
+          chosen[i].wallet_address, chosen[i].herotag, rewards[i].toString(),
+          JSON.stringify({ ...proof, score: chosen[i].score }),
+        ]
+      );
+    }
+
+    await client.query(
+      "UPDATE wheel_campaigns SET status='drawn', updated_at=NOW() WHERE month=$1",
+      [month]
+    );
+    await client.query(
+      "INSERT INTO wheel_audit_logs (action, wallet_address, data) VALUES ($1,NULL,$2)",
+      ["draw_winners", JSON.stringify({
+        month,
+        total_tickets: tickets.length,
+        chosen: chosen.map((ticket) => ticket.ticket_number),
+        proof,
+      })]
+    );
+    await client.query("COMMIT");
+
+    return {
+      ok: true,
+      month,
+      proof,
+      winners: chosen.map((ticket, index) => ({
+        place: index + 1,
+        ticket: ticket.ticket_number,
+        wallet: ticket.wallet_address,
+        herotag: ticket.herotag,
+        reward_tcl: formatTcl(rewards[index].toString()),
+      })),
+    };
+  } catch (error) {
+    if (!error?.transactionCommitted) await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 // ── Admin routes ──────────────────────────────────────────────────────────────
 
 // POST /wheel/admin/draw
@@ -278,57 +625,11 @@ wheel.post("/admin/draw", async (req, res) => {
   if (!adminAuth(req, res)) return;
   try {
     const month = String(req.body?.month || utcMonth()).trim();
-
-    const existing = await db.one("SELECT id FROM wheel_winners WHERE raffle_month=$1 LIMIT 1", [month]);
-    if (existing) return fail(res, `Winners already drawn for ${month}.`, 409);
-
-    const tickets = await db.all(
-      "SELECT id, ticket_number, wallet_address, herotag FROM wheel_tickets WHERE raffle_month=$1 AND status='valid'",
-      [month]
-    );
-    if (!tickets || tickets.length < 3) return fail(res, `Not enough tickets (${tickets?.length || 0}). Need at least 3.`, 400);
-
-    const cfg = await db.one("SELECT wheel_wallet, prize_split FROM wheel_config LIMIT 1");
-    const tokenInfo = await mvxTokenBalance(cfg?.wheel_wallet, TCL_TOKEN);
-    const poolRaw   = BigInt(tokenInfo?.balance || "0");
-    const split     = cfg?.prize_split || { first: 50, second: 30, third: 20 };
-    const rewards   = [
-      (poolRaw * BigInt(split.first))  / 100n,
-      (poolRaw * BigInt(split.second)) / 100n,
-      (poolRaw * BigInt(split.third))  / 100n,
-    ];
-
-    // Crypto-random draw — 3 unique
-    const pool2 = [...tickets];
-    const chosen = [];
-    for (let i = 0; i < 3; i++) {
-      const buf = new Uint32Array(1);
-      crypto.getRandomValues(buf);
-      const idx = buf[0] % pool2.length;
-      chosen.push(pool2.splice(idx, 1)[0]);
-    }
-
-    for (let i = 0; i < 3; i++) {
-      await db.query(
-        `INSERT INTO wheel_winners (raffle_month, place, ticket_id, ticket_number, wallet_address, herotag, reward_tcl, paid_status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,'unpaid')`,
-        [month, i + 1, chosen[i].id, chosen[i].ticket_number, chosen[i].wallet_address, chosen[i].herotag, rewards[i].toString()]
-      );
-    }
-
-    db.query(
-      "INSERT INTO wheel_audit_logs (action, wallet_address, data) VALUES ($1,NULL,$2)",
-      ["draw_winners", JSON.stringify({ month, total_tickets: tickets.length, chosen: chosen.map(t => t.ticket_number) })]
-    ).catch(() => {});
-
-    ok(res, {
-      ok: true, month,
-      winners: chosen.map((t, i) => ({
-        place: i + 1, ticket: t.ticket_number, wallet: t.wallet_address,
-        herotag: t.herotag, reward_tcl: formatTcl(rewards[i].toString()),
-      })),
-    });
-  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+    ok(res, await performWheelDraw(month, "manual"));
+  } catch (e) {
+    fail(res, e?.status ? e.message : "Server error.", e?.status || 500);
+    console.error(e);
+  }
 });
 
 // POST /wheel/admin/mark-paid
@@ -365,6 +666,94 @@ wheel.post("/admin/update-config", async (req, res) => {
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
+// POST /wheel/admin/upsert-campaign
+wheel.post("/admin/upsert-campaign", async (req, res) => {
+  if (!adminAuth(req, res)) return;
+  try {
+    const body = req.body || {};
+    const month = String(body.month || "").trim();
+    const status = String(body.status || "draft").trim();
+    const startsAt = new Date(body.starts_at);
+    const closesAt = new Date(body.closes_at);
+    const drawAt = new Date(body.draw_at);
+    const countries = Array.from(new Set(
+      (Array.isArray(body.eligible_countries) ? body.eligible_countries : [])
+        .map((value) => String(value).trim().toUpperCase())
+        .filter(isValidCountryCode)
+    ));
+    const rulesHash = String(body.rules_hash || "").trim().toLowerCase();
+
+    if (!isValidMonth(month)) return fail(res, "Invalid month. Use YYYY-MM.");
+    if (!["draft", "open", "closed", "drawn", "cancelled"].includes(status)) return fail(res, "Invalid campaign status.");
+    if ([startsAt, closesAt, drawAt].some((value) => Number.isNaN(value.getTime()))) return fail(res, "Invalid campaign dates.");
+    if (!(startsAt < closesAt) || !(closesAt <= drawAt)) return fail(res, "Campaign dates must satisfy starts_at < closes_at <= draw_at.");
+    if (!countries.length) return fail(res, "At least one eligible country is required.");
+    if (!/^[0-9a-f]{64}$/.test(rulesHash)) return fail(res, "rules_hash must be a SHA-256 hex digest.");
+
+    const requiredText = [
+      "title", "rules_version", "rules_url", "privacy_url",
+      "organizer_name", "organizer_address", "organizer_email",
+    ];
+    for (const field of requiredText) {
+      if (!String(body[field] || "").trim()) return fail(res, `${field} is required.`);
+    }
+
+    const campaign = await db.one(
+      `INSERT INTO wheel_campaigns
+        (month, title, status, starts_at, closes_at, draw_at, min_age,
+         eligible_countries, rules_version, rules_url, privacy_url, rules_hash,
+         organizer_name, organizer_address, organizer_email, prize_amounts,
+         prize_arv_ron, automatic_draw, updated_at)
+       VALUES
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,NOW())
+       ON CONFLICT (month) DO UPDATE SET
+         title=EXCLUDED.title,
+         status=EXCLUDED.status,
+         starts_at=EXCLUDED.starts_at,
+         closes_at=EXCLUDED.closes_at,
+         draw_at=EXCLUDED.draw_at,
+         min_age=EXCLUDED.min_age,
+         eligible_countries=EXCLUDED.eligible_countries,
+         rules_version=EXCLUDED.rules_version,
+         rules_url=EXCLUDED.rules_url,
+         privacy_url=EXCLUDED.privacy_url,
+         rules_hash=EXCLUDED.rules_hash,
+         organizer_name=EXCLUDED.organizer_name,
+         organizer_address=EXCLUDED.organizer_address,
+         organizer_email=EXCLUDED.organizer_email,
+         prize_amounts=EXCLUDED.prize_amounts,
+         prize_arv_ron=EXCLUDED.prize_arv_ron,
+         automatic_draw=EXCLUDED.automatic_draw,
+         updated_at=NOW()
+       RETURNING month, title, status, starts_at, closes_at, draw_at, min_age,
+                 eligible_countries, rules_version, rules_url, privacy_url, rules_hash,
+                 organizer_name, organizer_address, organizer_email, prize_amounts,
+                 prize_arv_ron, automatic_draw`,
+      [
+        month,
+        String(body.title).trim(),
+        status,
+        startsAt.toISOString(),
+        closesAt.toISOString(),
+        drawAt.toISOString(),
+        Math.max(18, Number(body.min_age) || 18),
+        countries,
+        String(body.rules_version).trim(),
+        String(body.rules_url).trim(),
+        String(body.privacy_url).trim(),
+        rulesHash,
+        String(body.organizer_name).trim(),
+        String(body.organizer_address).trim(),
+        String(body.organizer_email).trim(),
+        JSON.stringify(body.prize_amounts || {}),
+        JSON.stringify(body.prize_arv_ron || {}),
+        body.automatic_draw !== false,
+      ]
+    );
+    ok(res, { ok: true, campaign: publicCampaign(campaign) });
+  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
 // GET /wheel/admin/tickets?month=
 wheel.get("/admin/tickets", async (req, res) => {
   if (!adminAuth(req, res)) return;
@@ -393,6 +782,36 @@ wheel.post("/admin/add-contribution", async (req, res) => {
 });
 
 app.use("/wheel", wheel);
+
+async function runScheduledWheelDraws() {
+  try {
+    await db.query(
+      `UPDATE wheel_campaigns
+          SET status='closed', updated_at=NOW()
+        WHERE status='open' AND closes_at <= NOW()`
+    );
+    const due = await db.all(
+      `SELECT month
+         FROM wheel_campaigns
+        WHERE automatic_draw=true
+          AND status IN ('open','closed')
+          AND draw_at <= NOW()
+        ORDER BY draw_at ASC`
+    );
+    for (const campaign of due) {
+      try {
+        const result = await performWheelDraw(campaign.month, "automatic");
+        console.log(`Automatic wheel draw completed for ${campaign.month}: ${result.winners.length} winners`);
+      } catch (error) {
+        if (error?.status !== 409) {
+          console.error(`Automatic wheel draw failed for ${campaign.month}:`, error?.message || error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Automatic wheel draw scan failed:", error?.message || error);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  PNL API  —  /pnl/*
@@ -526,7 +945,981 @@ pnl.get("/buy-coins", async (req, res) => {
   } catch (e) { fail(res, "Server error.", 500); console.error(e); }
 });
 
+// GET /pnl/status — returns sync state
+pnl.get("/status", async (req, res) => {
+  try {
+    const rows = await db.all(
+      "SELECT key, value FROM tcl_sync_state WHERE key = ANY($1)",
+      [[BUY_COINS_LAST_SYNC, BUY_COINS_NEWEST_TS, BUY_COINS_BACKFILL_DONE, "buycoins_backfill_done"]]
+    );
+    const state = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    ok(res, { ok: true, state });
+  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
+// GET /pnl/enrich?wallet= — enrichment stub (cron handles it)
+pnl.get("/enrich", async (req, res) => {
+  const wallet = String(req.query.wallet || "").trim().toLowerCase();
+  if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
+  ok(res, { ok: true, wallet, status: "ready", enriched: true, source: "server" });
+});
+
+// GET /pnl/fast?wallet= — DexScreener or MVX PNL per wallet
+pnl.get("/fast", async (req, res) => {
+  const wallet = String(req.query.wallet || "").trim().toLowerCase();
+  if (!isValidWallet(wallet)) return fail(res, "Invalid wallet address.");
+
+  const cacheKey = `pnl:fast:${wallet}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) return ok(res, { ...cached, meta: { ...cached.meta, cached: true } });
+
+  try {
+    const warnings = [];
+    let result = null;
+    try {
+      result = await fetchDexScreenerPnl(wallet);
+    } catch (e) {
+      warnings.push(`DexScreener unavailable: ${e?.message || "unknown"}`);
+    }
+    if (!result || !result.totals?.tradeCount) {
+      result = await fetchMultiversXFilteredPnl(wallet, warnings);
+    }
+    cacheSet(cacheKey, result, 10 * 60 * 1000);
+    ok(res, result);
+  } catch (e) {
+    res.status(502).json({ ok: false, source: "pnl", wallet, error: e?.message || "PNL unavailable" });
+  }
+});
+
 app.use("/pnl", pnl);
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  IN-MEMORY TTL CACHE  (replaces Cloudflare KV)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const memCache = new Map();
+function cacheGet(key) {
+  const entry = memCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { memCache.delete(key); return null; }
+  return entry.data;
+}
+function cacheSet(key, data, ttlMs) {
+  memCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SHARED HELPERS (ported from cloudflare-worker)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const ANALYTICS_ENDPOINTS = {
+  coin:      "https://api.cryptorank.io/v0/coins/the-cursed-land",
+  quarterly: "https://api.cryptorank.io/v0/coins/the-cursed-land/quarterly-history",
+  monthly:   "https://api.cryptorank.io/v0/coins/the-cursed-land/monthly-history"
+};
+
+const VOLUME_CONFIG = {
+  listingDate:            "2024-06-13T00:00:00Z",
+  pairAddress:            "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+  baseTokenAddress:       "TCL-fe459d",
+  quoteTokenAddress:      "USDC-c76f1f",
+  dexUrl:                 "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+  transferUrlBase:        "https://api.multiversx.com/accounts/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff/transfers",
+  transferPageSize:       2000,
+  transferMaxPages:       24,
+  recentTransferPageSize: 500,
+  recentTransferMaxPages: 4
+};
+
+const VOLUME_SEED_SNAPSHOT = {
+  version: 2,
+  buyRows: [
+    { label: "2026", cells: [3130.35, 4472.27, 2581.7, 3564.33, 289.41, null, null, null, null, null, null, null] },
+    { label: "2025", cells: [9639.22, 9259.28, 14356.93, 11767.26, 14097.41, 9850.55, 8767.28, 4201.1, 5041.02, 13676.96, 4353.24, 3406.88] },
+    { label: "2024", cells: [null, null, null, null, null, 12517.95, 6727.19, 5089.2, 13782.33, 9369.75, 7482.87, 8583.4] }
+  ],
+  sellRows: [
+    { label: "2026", cells: [3842.48, 4246.31, 3197.59, 3330.34, 196.13, null, null, null, null, null, null, null] },
+    { label: "2025", cells: [11915.78, 7678.72, 14757.07, 10914.74, 15569.59, 13637.45, 9524.72, 8269.9, 5858.98, 11303.04, 3484.76, 3921.12] },
+    { label: "2024", cells: [null, null, null, null, null, 11666.05, 9108.81, 2603.8, 9735.67, 14465.25, 7936.13, 7929.6] }
+  ],
+  totalRows: [
+    { label: "2026", cells: [6972.84, 8718.58, 5779.29, 6894.67, 485.53, null, null, null, null, null, null, null] },
+    { label: "2025", cells: [21555, 16938, 29114, 22682, 29667, 23488, 18292, 12471, 10900, 24980, 7838, 7328] },
+    { label: "2024", cells: [null, null, null, null, null, 24184, 15836, 7693, 23518, 23835, 15419, 16513] }
+  ],
+  buySummary:  { label: "Total", cells: [12769.57, 13731.55, 16938.63, 15331.59, 14386.82, 22368.5, 15494.47, 9290.3, 18823.35, 23046.71, 11836.11, 11990.28] },
+  sellSummary: { label: "Total", cells: [15758.26, 11925.03, 17954.66, 14245.08, 15765.72, 25303.5, 18633.53, 10873.7, 15594.65, 25768.29, 11420.89, 11850.72] },
+  totalSummary:{ label: "Total", cells: [28527.84, 25656.58, 34893.29, 29576.67, 30152.53, 47672, 34128, 20164, 34418, 48815, 23257, 23841] },
+  totalVolume: 381101.91, buyVolume: 186007.88, sellVolume: 195094.03,
+  buyTrades: 4479, sellTrades: 6264, totalTrades: 10743,
+  buyDominancePct: 48.81, sellDominancePct: 51.19,
+  coveredMonths: 24, averageMonthlyVolume: 15879.25,
+  peakBuyMonth:   { year: 2025, monthIndex: 2, value: 14356.93 },
+  peakSellMonth:  { year: 2025, monthIndex: 4, value: 15569.59 },
+  peakTotalMonth: { year: 2025, monthIndex: 4, value: 29667 },
+  totalTclAmount: 171635556.0465,
+  largestTclTrade: { hash: "3de764609b2a217a5a95f49067c3a368cea18377c438c824051a63d6f4abb80c", timestamp: 1760886732, side: "buy", volumeUsd: 6660, tclAmount: 5642936.6426, description: "Transfer" },
+  oldestTrade:  { hash: "6d96b9a735ea91749f56673dc408f0874a9a477d5e5db63e1a9c0f429415d4a1", timestamp: 1718301642, side: "buy", volumeUsd: 165, tclAmount: 27049.6602, description: "Transfer" },
+  latestTrade:  { hash: "9c2067bfcd23208d68c412985f1078fa71b17b029ec94c1177f8addb2ebf0df6", timestamp: 1778140890, side: "sell", volumeUsd: 0.13, tclAmount: 157.5, description: "Swap 106.5645 TCL for a minimum of 0.000001 USDC" },
+  fetchMeta: { reachedListingStart: false, hitPageLimit: false, oldestTimestamp: 1718299206, exhaustedHistory: true, snapshotAt: 1778143726, sourceLabel: "server seed" }
+};
+
+const PNL_DEXSCREENER_CONFIG = {
+  chainId: "multiversx", ammId: "xexchange",
+  pairAddress:       "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+  quoteTokenAddress: "USDC-c76f1f",
+  logsBaseUrl:       "https://io.dexscreener.com/dex/log/amm/v4",
+  pagePauseMs: 300, maxPages: 80, maxAttempts: 3
+};
+const PNL_MVX_CONFIG = {
+  apiBase: "https://api.multiversx.com",
+  pageSize: 50, tokenMaxPages: 10, pairMaxPages: 5, pagePauseMs: 80, maxAttempts: 3
+};
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function numberOrNull(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+function roundNumber(v, d) { if (!Number.isFinite(v)) return null; const f = 10 ** d; return Math.round(v * f) / f; }
+function getPercentChange(open, close) {
+  const o = numberOrNull(open), c = numberOrNull(close);
+  if (o === null || c === null || o === 0) return null;
+  return roundNumber(((c / o) - 1) * 100, 8);
+}
+function getAverage(vals) { const s = vals.filter(Number.isFinite); if (!s.length) return null; return roundNumber(s.reduce((a,b)=>a+b,0)/s.length, 2); }
+function getMedian(vals) {
+  const s = vals.filter(Number.isFinite).sort((a,b)=>a-b);
+  if (!s.length) return null;
+  const m = Math.floor(s.length/2);
+  return roundNumber(s.length%2===1 ? s[m] : (s[m-1]+s[m])/2, 2);
+}
+function newMatrixRow(label, cells) { return { label, cells }; }
+function cloneJson(v) { return JSON.parse(JSON.stringify(v)); }
+
+function decimalStringToNumber(value, decimals) {
+  if (typeof value !== "string" || !value.length) return NaN;
+  const neg = value.startsWith("-");
+  const digits = neg ? value.slice(1) : value;
+  if (!/^\d+$/.test(digits)) return NaN;
+  const padded = digits.padStart(decimals + 1, "0");
+  const whole = padded.slice(0, padded.length - decimals);
+  const frac  = padded.slice(padded.length - decimals);
+  const fmt   = decimals > 0 ? `${whole}.${frac}` : whole;
+  const n = Number(neg ? `-${fmt}` : fmt);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function resolveVolumeTokenDecimals(token) {
+  return token === VOLUME_CONFIG.quoteTokenAddress ? 6 : 18;
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+async function fetchAnalyticsJson(url, maxAttempts = 4) {
+  let lastErr;
+  for (let i = 1; i <= maxAttempts; i++) {
+    try {
+      const r = await fetch(url, { headers: { Accept: "application/json", "User-Agent": "TCLExplorerAnalyticsSync/1.0" }, signal: AbortSignal.timeout(15000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const p = await r.json();
+      if (!p) throw new Error("Empty response");
+      return p;
+    } catch (e) { lastErr = e; if (i < maxAttempts) await sleep(1500 * i); }
+  }
+  throw new Error(`Failed to fetch ${url}: ${lastErr?.message}`);
+}
+
+async function buildAnalyticsSnapshot() {
+  const [coinPay, qPay, mPay] = await Promise.all([
+    fetchAnalyticsJson(ANALYTICS_ENDPOINTS.coin),
+    fetchAnalyticsJson(ANALYTICS_ENDPOINTS.quarterly),
+    fetchAnalyticsJson(ANALYTICS_ENDPOINTS.monthly)
+  ]);
+  const coin = coinPay?.data || {};
+  const quarterlyData = Array.isArray(qPay?.data) ? qPay.data : [];
+  const monthlyData = mPay?.data || {};
+  const currentPrice = numberOrNull(coin?.price?.USD);
+
+  const performance = [
+    { label: "1W", key: "7D" }, { label: "1M", key: "30D" },
+    { label: "3M", key: "3M" }, { label: "6M", key: "6M" },
+    { label: "YTD", key: "YTD" }, { label: "1Y", key: "1Y" }
+  ].map(m => {
+    const startPrice = numberOrNull(coin?.histPrices?.[m.key]?.USD);
+    const high = numberOrNull(coin?.histData?.high?.[m.key]?.USD);
+    const low  = numberOrNull(coin?.histData?.low?.[m.key]?.USD);
+    const change = currentPrice !== null && startPrice !== null && startPrice !== 0 ? roundNumber(currentPrice - startPrice, 12) : null;
+    return { label: m.label, key: m.key, startPrice, currentPrice, change, changePct: getPercentChange(startPrice, currentPrice), high, low };
+  });
+
+  const quarterColumns = ["Q1","Q2","Q3","Q4"];
+  const sortedQ = [...quarterlyData].sort((a,b) => Number(b?.year) - Number(a?.year));
+  const quarterlyReturnsRows  = sortedQ.map(e => newMatrixRow(String(e?.year||""), [1,2,3,4].map(qi => { const q = e?.[`q${qi}`]; return q ? getPercentChange(numberOrNull(q.openUSD), numberOrNull(q.closeUSD)) : null; })));
+  const quarterlyClosingRows  = sortedQ.map(e => newMatrixRow(String(e?.year||""), [1,2,3,4].map(qi => { const q = e?.[`q${qi}`]; return (q && q.isFull) ? numberOrNull(q.closeUSD) : null; })));
+  const monthColumns = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthValuesByIndex = Array.from({ length: 13 }, () => []);
+  const monthlyRows = Object.keys(monthlyData).sort((a,b) => Number(b)-Number(a)).map(year => {
+    const ym = monthlyData?.[year]?.months || {};
+    const cells = monthColumns.map((_m, idx) => {
+      const mi = idx + 1;
+      const me = ym?.[mi] || ym?.[String(mi)];
+      if (!me) return null;
+      const cp = getPercentChange(numberOrNull(me.openUSD), numberOrNull(me.closeUSD));
+      if (cp !== null) monthValuesByIndex[mi].push(cp);
+      return cp;
+    });
+    return newMatrixRow(String(year), cells);
+  });
+  const averageCells = monthColumns.map((_,i) => getAverage(monthValuesByIndex[i+1]));
+  const medianCells  = monthColumns.map((_,i) => getMedian(monthValuesByIndex[i+1]));
+
+  return {
+    meta: { updatedAt: new Date().toISOString(), source: "CryptoRank", endpoints: ANALYTICS_ENDPOINTS },
+    coin: { name: String(coin?.name||""), symbol: String(coin?.symbol||""), key: String(coin?.key||""), image: { x60: String(coin?.image?.x60||""), x150: String(coin?.image?.x150||"") } },
+    market: { currentPriceUsd: currentPrice, marketCapUsd: numberOrNull(coin?.marketCap), volume24hUsd: numberOrNull(coin?.volume24h), athPriceUsd: numberOrNull(coin?.athPrice?.USD), atlPriceUsd: numberOrNull(coin?.atlPrice?.USD), listingDate: String(coin?.listingDate||""), historyStartDay: String(coin?.historyStartDay||""), historyEndDay: String(coin?.historyEndDay||"") },
+    performance,
+    quarterlyReturns: { columns: quarterColumns, rows: quarterlyReturnsRows },
+    quarterlyClosing: { columns: quarterColumns, rows: quarterlyClosingRows },
+    monthlyReturns: { columns: monthColumns, rows: monthlyRows, summary: [newMatrixRow("Average", averageCells), newMatrixRow("Median", medianCells)] }
+  };
+}
+
+// ── Volume helpers ─────────────────────────────────────────────────────────────
+
+function isVolumeCoveredMonth(year, monthIndex, startDate, endDate) {
+  const sy = startDate.getUTCFullYear(), sm = startDate.getUTCMonth();
+  const ey = endDate.getUTCFullYear(),   em = endDate.getUTCMonth();
+  if (year < sy || year > ey) return false;
+  if (year === sy && monthIndex < sm) return false;
+  if (year === ey && monthIndex > em) return false;
+  return true;
+}
+function createVolumeCoverageRows(startDate, endDate) {
+  const rows = [];
+  for (let y = endDate.getUTCFullYear(); y >= startDate.getUTCFullYear(); y--) {
+    rows.push({ label: String(y), cells: Array.from({length:12}, (_,mi) => isVolumeCoveredMonth(y,mi,startDate,endDate) ? 0 : null) });
+  }
+  return rows;
+}
+function buildVolumeSummaryRow(rows, label="Total") {
+  const cells = Array.from({length:12}, (_,mi) => {
+    let hasCov = false, sum = 0;
+    for (const row of rows) { const c = row.cells[mi]; if (c != null) { hasCov = true; sum += c; } }
+    return hasCov ? sum : null;
+  });
+  return { label, cells };
+}
+function countVolumeCoveredMonths(rows) { let n=0; for (const r of rows) for (const c of r.cells) if (c!=null) n++; return n; }
+function findVolumePeakMonth(rows) {
+  let peak = null;
+  for (const r of rows) { const y=Number(r.label); for (let mi=0;mi<r.cells.length;mi++) { const v=r.cells[mi]; if (v==null) continue; if (!peak||v>peak.value) peak={year:y,monthIndex:mi,value:v}; } }
+  return peak;
+}
+function sumVolumeMatrixValues(rows) { let t=0; for (const r of rows) for (const c of r.cells) if (typeof c==="number"&&!isNaN(c)) t+=c; return t; }
+
+function rebuildVolumeAggregatedDerivedState(agg) {
+  agg.totalVolume  = sumVolumeMatrixValues(agg.totalRows);
+  agg.buyVolume    = sumVolumeMatrixValues(agg.buyRows);
+  agg.sellVolume   = sumVolumeMatrixValues(agg.sellRows);
+  agg.coveredMonths = countVolumeCoveredMonths(agg.totalRows);
+  agg.averageMonthlyVolume = agg.coveredMonths > 0 ? agg.totalVolume / agg.coveredMonths : 0;
+  agg.buySummary   = buildVolumeSummaryRow(agg.buyRows,   "Total");
+  agg.sellSummary  = buildVolumeSummaryRow(agg.sellRows,  "Total");
+  agg.totalSummary = buildVolumeSummaryRow(agg.totalRows, "Total");
+  agg.peakBuyMonth   = findVolumePeakMonth(agg.buyRows);
+  agg.peakSellMonth  = findVolumePeakMonth(agg.sellRows);
+  agg.peakTotalMonth = findVolumePeakMonth(agg.totalRows);
+  agg.buyDominancePct  = agg.totalVolume > 0 ? (agg.buyVolume  / agg.totalVolume) * 100 : 0;
+  agg.sellDominancePct = agg.totalVolume > 0 ? (agg.sellVolume / agg.totalVolume) * 100 : 0;
+  agg.totalTrades = (Number(agg.buyTrades)||0) + (Number(agg.sellTrades)||0);
+  return agg;
+}
+
+function expandVolumeRowsToEndDate(rows, endDate) {
+  const nd = endDate instanceof Date ? endDate : new Date();
+  const fresh = createVolumeCoverageRows(new Date(VOLUME_CONFIG.listingDate), nd);
+  const existing = new Map((Array.isArray(rows)?rows:[]).map(r=>[String(r.label), Array.isArray(r.cells)?r.cells:[]]));
+  for (const fr of fresh) {
+    const ec = existing.get(String(fr.label));
+    if (!ec) continue;
+    for (let mi=0;mi<fr.cells.length;mi++) { if (ec[mi]!==undefined) fr.cells[mi]=ec[mi]; }
+  }
+  return fresh;
+}
+
+function normalizeVolumeAggregatedSnapshot(agg, endDate=new Date()) {
+  const c = cloneJson(agg);
+  c.buyRows   = expandVolumeRowsToEndDate(c.buyRows,   endDate);
+  c.sellRows  = expandVolumeRowsToEndDate(c.sellRows,  endDate);
+  c.totalRows = expandVolumeRowsToEndDate(c.totalRows, endDate);
+  return rebuildVolumeAggregatedDerivedState(c);
+}
+
+function hasValidVolumeAggregatedShape(v) {
+  return Boolean(v && Array.isArray(v.buyRows) && Array.isArray(v.sellRows) && Array.isArray(v.totalRows) && v.latestTrade && Number.isFinite(Number(v.latestTrade.timestamp)));
+}
+
+function normalizeVolumeTradeTransfer(transfer, pair) {
+  if (!transfer?.token || !transfer?.value) return null;
+  const decimals = Number(transfer.decimals ?? resolveVolumeTokenDecimals(transfer.token));
+  const amount = decimalStringToNumber(transfer.value, decimals);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return { token: transfer.token, amount };
+}
+
+function parseVolumeTrades(transfers, pair) {
+  const tradeList = [];
+  const groupedSwaps = new Map();
+  for (const entry of Array.isArray(transfers)?transfers:[]) {
+    if (entry?.status !== "success") continue;
+    const tl = entry?.action?.arguments?.transfers;
+    if (!Array.isArray(tl) || !tl.length) continue;
+    const pt = normalizeVolumeTradeTransfer(tl[0], pair);
+    if (!pt) continue;
+    const ts = Number(entry.timestamp);
+    if (!Number.isFinite(ts)) continue;
+    const gh = String(entry.originalTxHash || entry.txHash || "");
+    if (!gh) continue;
+    let gs = groupedSwaps.get(gh);
+    if (!gs) { gs = { hash:gh, timestamp:ts, inputToken:null, inputAmount:0, outputToken:null, outputAmount:0, description:"", invalid:false }; groupedSwaps.set(gh, gs); }
+    else if (ts < gs.timestamp) gs.timestamp = ts;
+    if (!gs.description && entry?.action?.description) gs.description = entry.action.description;
+    if (entry.receiver === pair?.pairAddress && entry.function === "swapTokensFixedInput") {
+      if (gs.inputToken && gs.inputToken !== pt.token) { gs.invalid=true; continue; }
+      gs.inputToken = pt.token; gs.inputAmount += pt.amount; continue;
+    }
+    const isPairOutput = entry.sender === pair?.pairAddress && entry.function !== "depositSwapFees" && (pt.token === pair?.baseToken?.address || pt.token === pair?.quoteToken?.address);
+    if (!isPairOutput) continue;
+    if (gs.outputToken && gs.outputToken !== pt.token) { gs.invalid=true; continue; }
+    gs.outputToken = pt.token; gs.outputAmount += pt.amount;
+  }
+  for (const gs of groupedSwaps.values()) {
+    if (gs.invalid || !gs.inputAmount || !gs.outputAmount || !gs.inputToken || !gs.outputToken) continue;
+    let tclAmount=0, usdcAmount=0, side=null;
+    if (gs.inputToken===pair.quoteToken.address && gs.outputToken===pair.baseToken.address) { usdcAmount=gs.inputAmount; tclAmount=gs.outputAmount; side="buy"; }
+    else if (gs.inputToken===pair.baseToken.address && gs.outputToken===pair.quoteToken.address) { tclAmount=gs.inputAmount; usdcAmount=gs.outputAmount; side="sell"; }
+    else continue;
+    const price = usdcAmount / tclAmount;
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(usdcAmount) || usdcAmount <= 0) continue;
+    tradeList.push({ hash:gs.hash, timestamp:gs.timestamp, side, price, volumeUsd:usdcAmount, tclAmount, description:gs.description });
+  }
+  return tradeList.sort((a,b)=>a.timestamp-b.timestamp);
+}
+
+function aggregateVolumeTrades(trades, fetchMeta) {
+  const startDate = new Date(VOLUME_CONFIG.listingDate);
+  const endDate = new Date();
+  const buyRows   = createVolumeCoverageRows(startDate, endDate);
+  const sellRows  = createVolumeCoverageRows(startDate, endDate);
+  const totalRows = createVolumeCoverageRows(startDate, endDate);
+  const buyMap   = new Map(buyRows.map(r=>[r.label,r]));
+  const sellMap  = new Map(sellRows.map(r=>[r.label,r]));
+  const totalMap = new Map(totalRows.map(r=>[r.label,r]));
+  let buyTrades=0, sellTrades=0, totalTclAmount=0, oldestTrade=null, latestTrade=null, largestTclTrade=null;
+  for (const trade of Array.isArray(trades)?trades:[]) {
+    if (!Number.isFinite(trade.timestamp)||!Number.isFinite(trade.volumeUsd)||trade.volumeUsd<0) continue;
+    const d = new Date(trade.timestamp*1000);
+    const yk = String(d.getUTCFullYear()), mi = d.getUTCMonth();
+    const tr = totalMap.get(yk), br = buyMap.get(yk), sr = sellMap.get(yk);
+    if (tr && tr.cells[mi]!=null) tr.cells[mi] += trade.volumeUsd;
+    if (trade.side==="buy") { buyTrades++; if (br && br.cells[mi]!=null) br.cells[mi] += trade.volumeUsd; }
+    else if (trade.side==="sell") { sellTrades++; if (sr && sr.cells[mi]!=null) sr.cells[mi] += trade.volumeUsd; }
+    if (Number.isFinite(trade.tclAmount) && trade.tclAmount>0) {
+      totalTclAmount += trade.tclAmount;
+      if (!largestTclTrade || trade.tclAmount > largestTclTrade.tclAmount) largestTclTrade = trade;
+    }
+    if (!oldestTrade || trade.timestamp < oldestTrade.timestamp) oldestTrade = trade;
+    if (!latestTrade || trade.timestamp > latestTrade.timestamp) latestTrade = trade;
+  }
+  return rebuildVolumeAggregatedDerivedState({ version:2, buyRows, sellRows, totalRows, buyTrades, sellTrades, totalTclAmount, largestTclTrade, oldestTrade, latestTrade, fetchMeta });
+}
+
+function mergeVolumeTradesIntoAggregated(baseAgg, trades, fetchMeta) {
+  const agg = normalizeVolumeAggregatedSnapshot(baseAgg, new Date());
+  const buyMap   = new Map(agg.buyRows.map(r=>[r.label,r]));
+  const sellMap  = new Map(agg.sellRows.map(r=>[r.label,r]));
+  const totalMap = new Map(agg.totalRows.map(r=>[r.label,r]));
+  agg.buyTrades    = Number(agg.buyTrades)||0;
+  agg.sellTrades   = Number(agg.sellTrades)||0;
+  agg.totalTclAmount = Number(agg.totalTclAmount)||0;
+  for (const trade of Array.isArray(trades)?trades:[]) {
+    if (!Number.isFinite(trade.timestamp)||!Number.isFinite(trade.volumeUsd)||trade.volumeUsd<0) continue;
+    const d = new Date(trade.timestamp*1000);
+    const yk = String(d.getUTCFullYear()), mi = d.getUTCMonth();
+    const tr = totalMap.get(yk), br = buyMap.get(yk), sr = sellMap.get(yk);
+    if (tr) tr.cells[mi] = (Number(tr.cells[mi])||0) + trade.volumeUsd;
+    if (trade.side==="buy") { agg.buyTrades++; if (br) br.cells[mi]=(Number(br.cells[mi])||0)+trade.volumeUsd; }
+    else if (trade.side==="sell") { agg.sellTrades++; if (sr) sr.cells[mi]=(Number(sr.cells[mi])||0)+trade.volumeUsd; }
+    if (Number.isFinite(trade.tclAmount) && trade.tclAmount>0) {
+      agg.totalTclAmount += trade.tclAmount;
+      if (!agg.largestTclTrade || trade.tclAmount > agg.largestTclTrade.tclAmount) agg.largestTclTrade = cloneJson(trade);
+    }
+    if (!agg.oldestTrade || trade.timestamp < agg.oldestTrade.timestamp) agg.oldestTrade = cloneJson(trade);
+    if (!agg.latestTrade || trade.timestamp > agg.latestTrade.timestamp) agg.latestTrade = cloneJson(trade);
+  }
+  agg.fetchMeta = { ...(agg.fetchMeta||{}), ...(fetchMeta||{}) };
+  return rebuildVolumeAggregatedDerivedState(agg);
+}
+
+async function fetchVolumeDexPair() {
+  const p = await fetchAnalyticsJson(VOLUME_CONFIG.dexUrl, 3);
+  return p?.pair || (Array.isArray(p?.pairs) ? p.pairs[0] : null);
+}
+
+async function fetchVolumeTransferHistory() {
+  const transfers = [];
+  const listingTs = Math.floor(new Date(VOLUME_CONFIG.listingDate).getTime()/1000);
+  let oldestTs=null, reachedListingStart=false, hitPageLimit=false, exhaustedHistory=false, beforeCursor=null;
+  for (let pi=0; pi<VOLUME_CONFIG.transferMaxPages; pi++) {
+    const params = new URLSearchParams({ size: String(VOLUME_CONFIG.transferPageSize), status:"success", order:"desc" });
+    if (beforeCursor!=null) params.set("before", String(beforeCursor));
+    const page = await fetchAnalyticsJson(`${VOLUME_CONFIG.transferUrlBase}?${params}`, 3);
+    if (!Array.isArray(page)||!page.length) { exhaustedHistory=true; break; }
+    transfers.push(...page);
+    const pts = page.map(i=>Number(i?.timestamp)).filter(Number.isFinite);
+    if (pts.length) oldestTs = oldestTs==null ? Math.min(...pts) : Math.min(oldestTs,...pts);
+    if (oldestTs!=null && oldestTs<=listingTs) { reachedListingStart=true; break; }
+    if (page.length < VOLUME_CONFIG.transferPageSize) { exhaustedHistory=true; break; }
+    beforeCursor = oldestTs!=null ? oldestTs-1 : null;
+    if (!beforeCursor || beforeCursor<=0) { exhaustedHistory=true; break; }
+    if (pi===VOLUME_CONFIG.transferMaxPages-1) hitPageLimit=true;
+  }
+  return { transfers, reachedListingStart, hitPageLimit, oldestTimestamp:oldestTs, exhaustedHistory };
+}
+
+async function fetchVolumeRecentTransferHistory(afterTimestamp) {
+  if (!Number.isFinite(afterTimestamp)) return { transfers:[], hitPageLimit:false, oldestTimestamp:null, exhaustedHistory:true };
+  const transfers = [];
+  let newestTs=null, hitPageLimit=false, exhaustedHistory=false, afterCursor=Math.floor(afterTimestamp)+1;
+  for (let pi=0; pi<VOLUME_CONFIG.recentTransferMaxPages; pi++) {
+    const params = new URLSearchParams({ size:String(VOLUME_CONFIG.recentTransferPageSize), status:"success", order:"asc", after:String(afterCursor) });
+    const page = await fetchAnalyticsJson(`${VOLUME_CONFIG.transferUrlBase}?${params}`, 3);
+    if (!Array.isArray(page)||!page.length) { exhaustedHistory=true; break; }
+    transfers.push(...page);
+    const pts = page.map(i=>Number(i?.timestamp)).filter(Number.isFinite);
+    if (pts.length) newestTs = newestTs==null ? Math.max(...pts) : Math.max(newestTs,...pts);
+    if (page.length < VOLUME_CONFIG.recentTransferPageSize) { exhaustedHistory=true; break; }
+    afterCursor = newestTs!=null ? newestTs+1 : afterCursor+1;
+    if (!Number.isFinite(afterCursor)||afterCursor<=0) { exhaustedHistory=true; break; }
+    if (pi===VOLUME_CONFIG.recentTransferMaxPages-1) hitPageLimit=true;
+  }
+  return { transfers, hitPageLimit, oldestTimestamp: transfers.length ? (Number(transfers[0]?.timestamp)||null) : null, exhaustedHistory };
+}
+
+async function buildVolumeSnapshot(currentSnapshot=null) {
+  const nowSec = Math.floor(Date.now()/1000);
+  const warnings = [];
+  let pair = currentSnapshot?.pair || null;
+  try { pair = await fetchVolumeDexPair(); } catch(e) { warnings.push(`DexScreener: ${e?.message}`); }
+  const baseAgg = hasValidVolumeAggregatedShape(currentSnapshot?.aggregated) ? currentSnapshot.aggregated : VOLUME_SEED_SNAPSHOT;
+  const normalizedBase = normalizeVolumeAggregatedSnapshot(baseAgg, new Date());
+  const latestTs = Number(normalizedBase?.latestTrade?.timestamp);
+  let recentHistory = { transfers:[], hitPageLimit:false, oldestTimestamp:null, exhaustedHistory:true };
+  try { recentHistory = await fetchVolumeRecentTransferHistory(latestTs); } catch(e) { warnings.push(`MVX transfers: ${e?.message}`); }
+  const pairRef = {
+    pairAddress:  pair?.pairAddress  || VOLUME_CONFIG.pairAddress,
+    baseToken:  { address: pair?.baseToken?.address  || VOLUME_CONFIG.baseTokenAddress },
+    quoteToken: { address: pair?.quoteToken?.address || VOLUME_CONFIG.quoteTokenAddress }
+  };
+  const trades = parseVolumeTrades(recentHistory.transfers, pairRef);
+  const sourceLabel = trades.length ? "server cache + live" : "server cache";
+  const fetchMeta = { hitPageLimit:recentHistory.hitPageLimit, oldestTimestamp:recentHistory.oldestTimestamp, exhaustedHistory:recentHistory.exhaustedHistory, recentTransfers:recentHistory.transfers.length, parsedTrades:trades.length, snapshotAt:nowSec, sourceLabel };
+  const aggregated = trades.length ? mergeVolumeTradesIntoAggregated(normalizedBase, trades, fetchMeta) : rebuildVolumeAggregatedDerivedState({ ...normalizedBase, fetchMeta:{...(normalizedBase.fetchMeta||{}),...fetchMeta} });
+  return { ok:true, meta:{ updatedAt:new Date().toISOString(), source:"Server API", endpoints:{ dex:VOLUME_CONFIG.dexUrl, transfers:VOLUME_CONFIG.transferUrlBase }, warnings }, pair, aggregated };
+}
+
+// ── Technicals helpers ─────────────────────────────────────────────────────────
+
+function normalizeTechnicalTrade(t) {
+  return { hash:String(t.hash), timestamp:Number(t.timestamp), price:Number(t.price), volumeUsd:Number(t.volumeUsd), tclAmount:Number(t.tclAmount), side:t.side, description:typeof t.description==="string"?t.description:"" };
+}
+function isValidTechnicalTrade(t) {
+  return Boolean(t && typeof t.hash==="string" && t.hash.length && Number.isFinite(Number(t.timestamp)) && Number.isFinite(Number(t.price)) && Number(t.price)>0 && Number.isFinite(Number(t.volumeUsd)) && Number(t.volumeUsd)>0 && Number.isFinite(Number(t.tclAmount)) && Number(t.tclAmount)>0 && (t.side==="buy"||t.side==="sell"));
+}
+function normalizeTechnicalsTrades(trades) {
+  return (Array.isArray(trades)?trades:[]).filter(isValidTechnicalTrade).map(normalizeTechnicalTrade).sort((a,b)=>a.timestamp-b.timestamp);
+}
+function mergeTechnicalTradeLists(existing, incoming) {
+  const m = new Map();
+  for (const t of existing||[]) if (isValidTechnicalTrade(t)) m.set(t.hash, normalizeTechnicalTrade(t));
+  for (const t of incoming||[]) if (isValidTechnicalTrade(t)) m.set(t.hash, normalizeTechnicalTrade(t));
+  return Array.from(m.values()).sort((a,b)=>a.timestamp-b.timestamp);
+}
+function createTechnicalsSnapshot({ pair, trades, warnings, fetchMeta }) {
+  const nt = normalizeTechnicalsTrades(trades);
+  const latestTradeTimestamp = Number(nt[nt.length-1]?.timestamp)||0;
+  return { ok:true, version:1, meta:{ updatedAt:new Date().toISOString(), source:"Server API", endpoints:{ dex:VOLUME_CONFIG.dexUrl, transfers:VOLUME_CONFIG.transferUrlBase }, warnings:Array.isArray(warnings)?warnings:[], fetchMeta }, pair, trades:nt, latestTradeTimestamp };
+}
+
+async function buildTechnicalsSnapshot(currentSnapshot=null) {
+  const warnings = [];
+  const nowSec = Math.floor(Date.now()/1000);
+  let pair = currentSnapshot?.pair || null;
+  try { pair = await fetchVolumeDexPair(); } catch(e) { warnings.push(`DexScreener: ${e?.message}`); }
+  const pairRef = { pairAddress:pair?.pairAddress||currentSnapshot?.pair?.pairAddress||VOLUME_CONFIG.pairAddress, baseToken:{address:pair?.baseToken?.address||currentSnapshot?.pair?.baseToken?.address||VOLUME_CONFIG.baseTokenAddress}, quoteToken:{address:pair?.quoteToken?.address||currentSnapshot?.pair?.quoteToken?.address||VOLUME_CONFIG.quoteTokenAddress} };
+  const baseTrades = normalizeTechnicalsTrades(currentSnapshot?.trades);
+  const latestTs = Number(currentSnapshot?.latestTradeTimestamp ?? baseTrades[baseTrades.length-1]?.timestamp);
+
+  if (!baseTrades.length) {
+    try {
+      const fh = await fetchVolumeTransferHistory();
+      const ft = normalizeTechnicalsTrades(parseVolumeTrades(fh.transfers, pairRef));
+      if (!ft.length) throw new Error("No trades from full history");
+      return createTechnicalsSnapshot({ pair, trades:ft, warnings, fetchMeta:{ reachedListingStart:fh.reachedListingStart, hitPageLimit:fh.hitPageLimit, oldestTimestamp:fh.oldestTimestamp, exhaustedHistory:fh.exhaustedHistory!==false, recentTransfers:fh.transfers.length, parsedTrades:ft.length, snapshotAt:nowSec, sourceLabel:"server full" } });
+    } catch(e) { warnings.push(`Full MVX refresh: ${e?.message}`); if (!baseTrades.length) throw e; }
+  }
+
+  let rh = { transfers:[], hitPageLimit:false, oldestTimestamp:null, exhaustedHistory:true };
+  try { rh = await fetchVolumeRecentTransferHistory(latestTs); } catch(e) { warnings.push(`MVX transfers: ${e?.message}`); }
+  const liveTrades = normalizeTechnicalsTrades(parseVolumeTrades(rh.transfers, pairRef));
+  const trades = mergeTechnicalTradeLists(baseTrades, liveTrades);
+  if (!trades.length) throw new Error("No cached swap trades available for technicals.");
+  return createTechnicalsSnapshot({ pair, trades, warnings, fetchMeta:{ hitPageLimit:rh.hitPageLimit, oldestTimestamp:rh.oldestTimestamp, exhaustedHistory:rh.exhaustedHistory!==false, recentTransfers:Array.isArray(rh.transfers)?rh.transfers.length:0, parsedTrades:liveTrades.length, snapshotAt:nowSec, sourceLabel:liveTrades.length?"server cache + live":"server cache" } });
+}
+
+// ── PNL fast helpers ───────────────────────────────────────────────────────────
+
+function buildDexScreenerPnlUrl(wallet, beforeBlockNumber=null) {
+  const cfg = PNL_DEXSCREENER_CONFIG;
+  const url = new URL(`${cfg.logsBaseUrl}/${cfg.ammId}/all/${cfg.chainId}/${encodeURIComponent(cfg.pairAddress)}`);
+  url.searchParams.set("q", cfg.quoteTokenAddress);
+  url.searchParams.set("m", wallet);
+  url.searchParams.set("c", "1");
+  if (Number.isFinite(beforeBlockNumber) && beforeBlockNumber > 0) url.searchParams.set("bbn", String(Math.floor(beforeBlockNumber)));
+  return url.toString();
+}
+
+async function fetchDexScreenerJson(url) {
+  let lastErr;
+  for (let i=1; i<=PNL_DEXSCREENER_CONFIG.maxAttempts; i++) {
+    try {
+      const r = await fetch(url, { headers:{ Accept:"application/json", Referer:"https://dexscreener.com/" }, signal: AbortSignal.timeout(15000) });
+      if (!r.ok) { const t=await r.text().catch(()=>""); throw new Error(`DexScreener HTTP ${r.status}${t?`: ${t.slice(0,80)}`:""}`); }
+      const p = await r.json();
+      if (!p||!Array.isArray(p.logs)) throw new Error("DexScreener response did not contain logs");
+      return p;
+    } catch(e) { lastErr=e; if (i<PNL_DEXSCREENER_CONFIG.maxAttempts) await sleep(800*i); }
+  }
+  throw new Error(lastErr?.message || "DexScreener logs unavailable");
+}
+
+function normalizeDexTimestamp(v) { const t=Number(v); if (!Number.isFinite(t)||t<=0) return null; return t>10000000000 ? Math.floor(t/1000) : Math.floor(t); }
+function normalizeDexNumber(v) { const n=Number(String(v??"").replace(/,/g,"")); return Number.isFinite(n)?n:0; }
+
+function parseDexScreenerPnlTrade(log) {
+  if (!log || log.logType!=="swap") return null;
+  if (log.txnType!=="buy" && log.txnType!=="sell") return null;
+  const tclAmount=normalizeDexNumber(log.amount0), quoteAmount=normalizeDexNumber(log.amount1);
+  const volumeUsd=normalizeDexNumber(log.volumeUsd)||quoteAmount;
+  const timestamp=normalizeDexTimestamp(log.blockTimestamp), blockNumber=Number(log.blockNumber), logIndex=Number(log.logIndex), hash=String(log.txnHash||"");
+  if (!hash||!timestamp||!Number.isFinite(blockNumber)||blockNumber<=0) return null;
+  if (!Number.isFinite(tclAmount)||tclAmount<=0||!Number.isFinite(volumeUsd)||volumeUsd<=0) return null;
+  return { hash, key:`${hash}:${Number.isFinite(logIndex)?logIndex:0}`, timestamp, blockNumber, side:log.txnType, price:normalizeDexNumber(log.priceUsd)||(volumeUsd/tclAmount), volumeUsd, tclAmount, description:"DexScreener TCL/USDC swap" };
+}
+
+function aggregatePnlDexTrades(trades) {
+  return trades.reduce((t, tr) => {
+    if (tr.side==="buy") { t.buyCount++; t.buyTcl+=tr.tclAmount; t.buyUsd+=tr.volumeUsd; }
+    else if (tr.side==="sell") { t.sellCount++; t.sellTcl+=tr.tclAmount; t.sellUsd+=tr.volumeUsd; }
+    t.tradeCount++;
+    return t;
+  }, { tradeCount:0, buyCount:0, sellCount:0, buyTcl:0, sellTcl:0, buyUsd:0, sellUsd:0 });
+}
+
+async function fetchDexScreenerPnl(wallet) {
+  const tradeMap = new Map();
+  let beforeBN=null, oldestBN=null, newestBN=null, oldestTs=null, pageCount=0, checkedLogs=0, exhaustedHistory=false, hitPageLimit=false;
+  for (let pi=0; pi<PNL_DEXSCREENER_CONFIG.maxPages; pi++) {
+    const payload = await fetchDexScreenerJson(buildDexScreenerPnlUrl(wallet, beforeBN));
+    const logs = Array.isArray(payload.logs) ? payload.logs : [];
+    if (!logs.length) { exhaustedHistory=true; break; }
+    pageCount++; checkedLogs+=logs.length;
+    const bns = [];
+    for (const log of logs) {
+      const bn=Number(log?.blockNumber);
+      if (Number.isFinite(bn)&&bn>0) bns.push(bn);
+      const ts=normalizeDexTimestamp(log?.blockTimestamp);
+      if (ts) oldestTs=oldestTs==null?ts:Math.min(oldestTs,ts);
+      const maker=String(log?.maker||"").toLowerCase();
+      if (maker&&maker!==wallet) continue;
+      const trade=parseDexScreenerPnlTrade(log);
+      if (trade) tradeMap.set(trade.key, trade);
+    }
+    if (!bns.length) { exhaustedHistory=true; break; }
+    const pb=Math.min(...bns), pn=Math.max(...bns);
+    oldestBN=oldestBN==null?pb:Math.min(oldestBN,pb);
+    newestBN=newestBN==null?pn:Math.max(newestBN,pn);
+    if (beforeBN!=null&&pb>=beforeBN) { exhaustedHistory=true; break; }
+    beforeBN=pb;
+    if (logs.length<100) { exhaustedHistory=true; break; }
+    if (pi===PNL_DEXSCREENER_CONFIG.maxPages-1) { hitPageLimit=true; break; }
+    if (PNL_DEXSCREENER_CONFIG.pagePauseMs>0) await sleep(PNL_DEXSCREENER_CONFIG.pagePauseMs);
+  }
+  const trades = Array.from(tradeMap.values()).sort((a,b)=>a.timestamp-b.timestamp);
+  const totals = aggregatePnlDexTrades(trades);
+  return { ok:true, source:"dexscreener", wallet, totals, trades, meta:{ sourceLabel:"DexScreener", checkedTransactions:tradeMap.size, checkedLogs, pageCount, reachedListingStart:exhaustedHistory, exhaustedHistory, hitPageLimit, oldestTimestamp:oldestTs, oldestBlockNumber:oldestBN, newestBlockNumber:newestBN, cached:false, updatedAt:new Date().toISOString() } };
+}
+
+function normalizePnlOperation(op) {
+  if (op?.action && op.action!=="transfer") return null;
+  const token = op?.identifier || op?.token || (op?.type==="egld"?"EGLD":"");
+  if (!token||!op?.value) return null;
+  if (op?.esdtType && op.esdtType!=="FungibleESDT") return null;
+  const decimals = Number(op.decimals ?? (token===VOLUME_CONFIG.quoteTokenAddress?6:18));
+  const amount = decimalStringToNumber(String(op.value), decimals);
+  if (!Number.isFinite(amount)||amount<=0) return null;
+  const valueUsd = token===VOLUME_CONFIG.quoteTokenAddress ? amount : Number(op.valueUSD);
+  return { token, amount, valueUsd, sender:op.sender||"", receiver:op.receiver||"", key:[op.id||"",op.action||"",op.type||"",token,op.sender||"",op.receiver||"",String(op.value||"")].join("|") };
+}
+
+function normalizePnlTradeTransfer(t) {
+  const token = t?.token||t?.identifier||"";
+  if (!token||!t?.value) return null;
+  const decimals = Number(t.decimals ?? (token===VOLUME_CONFIG.quoteTokenAddress?6:18));
+  const amount = decimalStringToNumber(String(t.value), decimals);
+  if (!Number.isFinite(amount)||amount<=0) return null;
+  return { token, amount };
+}
+
+function groupPnlTransfers(transfers) {
+  const groups = new Map();
+  for (const entry of Array.isArray(transfers)?transfers:[]) {
+    if (entry?.status && entry.status!=="success") continue;
+    const hash = String(entry?.originalTxHash||entry?.txHash||"");
+    if (!hash) continue;
+    let g = groups.get(hash);
+    const ts = Number(entry.timestamp)||0;
+    if (!g) { g={hash,timestamp:ts,entries:[]}; groups.set(hash,g); }
+    else if (ts&&(!g.timestamp||ts<g.timestamp)) g.timestamp=ts;
+    g.entries.push(entry);
+  }
+  return groups;
+}
+
+function parsePnlPairActionTrades(transfers, wallet) {
+  const groupedSwaps = new Map();
+  for (const entry of Array.isArray(transfers)?transfers:[]) {
+    if (entry?.status&&entry.status!=="success") continue;
+    const tl=entry?.action?.arguments?.transfers;
+    if (!Array.isArray(tl)||!tl.length) continue;
+    const pt=normalizePnlTradeTransfer(tl[0]);
+    if (!pt) continue;
+    const ts=Number(entry.timestamp);
+    if (!Number.isFinite(ts)) continue;
+    const hash=String(entry.originalTxHash||entry.txHash||"");
+    if (!hash) continue;
+    let gs=groupedSwaps.get(hash);
+    if (!gs) { gs={hash,timestamp:ts,inputToken:null,inputAmount:0,outputToken:null,outputAmount:0,invalid:false}; groupedSwaps.set(hash,gs); }
+    else if (ts<gs.timestamp) gs.timestamp=ts;
+    const isSwapInput=entry.sender===wallet&&entry.receiver===VOLUME_CONFIG.pairAddress&&(/^swap/i.test(String(entry.function||""))||entry?.action?.name==="swap");
+    if (isSwapInput) { if (gs.inputToken&&gs.inputToken!==pt.token){gs.invalid=true;continue;} gs.inputToken=pt.token; gs.inputAmount+=pt.amount; continue; }
+    const isPairOutput=entry.sender===VOLUME_CONFIG.pairAddress&&entry.receiver===wallet&&entry.function!=="depositSwapFees"&&(pt.token===VOLUME_CONFIG.baseTokenAddress||pt.token===VOLUME_CONFIG.quoteTokenAddress);
+    if (!isPairOutput) continue;
+    if (gs.outputToken&&gs.outputToken!==pt.token){gs.invalid=true;continue;} gs.outputToken=pt.token; gs.outputAmount+=pt.amount;
+  }
+  const trades=[];
+  for (const gs of groupedSwaps.values()) {
+    if (gs.invalid||!gs.inputToken||!gs.outputToken||gs.inputAmount<=0||gs.outputAmount<=0) continue;
+    let side="", tclAmount=0, volumeUsd=0;
+    if (gs.inputToken===VOLUME_CONFIG.quoteTokenAddress&&gs.outputToken===VOLUME_CONFIG.baseTokenAddress) { side="buy"; tclAmount=gs.outputAmount; volumeUsd=gs.inputAmount; }
+    else if (gs.inputToken===VOLUME_CONFIG.baseTokenAddress&&gs.outputToken===VOLUME_CONFIG.quoteTokenAddress) { side="sell"; tclAmount=gs.inputAmount; volumeUsd=gs.outputAmount; }
+    if (!side||!Number.isFinite(tclAmount)||tclAmount<=0||!Number.isFinite(volumeUsd)||volumeUsd<=0) continue;
+    trades.push({ hash:gs.hash, timestamp:gs.timestamp, side, tclAmount, volumeUsd, price:volumeUsd/tclAmount, description:"MultiversX pair transfer" });
+  }
+  return trades;
+}
+
+function parsePnlOperationTrades(transfers, wallet) {
+  const trades=[];
+  for (const group of groupPnlTransfers(transfers).values()) {
+    const seen=new Set(), ops=[];
+    for (const entry of group.entries) {
+      if (!Array.isArray(entry.operations)) continue;
+      for (const raw of entry.operations) {
+        const op=normalizePnlOperation(raw);
+        if (!op||seen.has(op.key)) continue;
+        seen.add(op.key); ops.push(op);
+      }
+    }
+    if (!ops.length) continue;
+    const tclSent=ops.filter(o=>o.token===VOLUME_CONFIG.baseTokenAddress&&o.sender===wallet).reduce((s,o)=>s+o.amount,0);
+    const tclReceived=ops.filter(o=>o.token===VOLUME_CONFIG.baseTokenAddress&&o.receiver===wallet).reduce((s,o)=>s+o.amount,0);
+    const usdSent=ops.filter(o=>o.token!==VOLUME_CONFIG.baseTokenAddress&&o.sender===wallet&&Number.isFinite(o.valueUsd)).reduce((s,o)=>s+o.valueUsd,0);
+    const usdReceived=ops.filter(o=>o.token!==VOLUME_CONFIG.baseTokenAddress&&o.receiver===wallet&&Number.isFinite(o.valueUsd)).reduce((s,o)=>s+o.valueUsd,0);
+    const tclSentUsd=ops.filter(o=>o.token===VOLUME_CONFIG.baseTokenAddress&&o.sender===wallet&&Number.isFinite(o.valueUsd)).reduce((s,o)=>s+o.valueUsd,0);
+    const tclReceivedUsd=ops.filter(o=>o.token===VOLUME_CONFIG.baseTokenAddress&&o.receiver===wallet&&Number.isFinite(o.valueUsd)).reduce((s,o)=>s+o.valueUsd,0);
+    const hasNonTclSent=ops.some(o=>o.token!==VOLUME_CONFIG.baseTokenAddress&&o.sender===wallet);
+    const hasNonTclReceived=ops.some(o=>o.token!==VOLUME_CONFIG.baseTokenAddress&&o.receiver===wallet);
+    const pairInvolved=group.entries.some(e=>e.sender===VOLUME_CONFIG.pairAddress||e.receiver===VOLUME_CONFIG.pairAddress)||ops.some(o=>o.sender===VOLUME_CONFIG.pairAddress||o.receiver===VOLUME_CONFIG.pairAddress);
+    const netTcl=tclReceived-tclSent, netUsd=usdReceived-usdSent;
+    const buyFallbackUsd=(hasNonTclSent||pairInvolved)&&tclReceivedUsd>0?tclReceivedUsd:0;
+    const sellFallbackUsd=(hasNonTclReceived||pairInvolved)&&tclSentUsd>0?tclSentUsd:0;
+    let side="", tclAmount=0, volumeUsd=0;
+    if (netTcl>0&&netUsd<0) { side="buy"; tclAmount=netTcl; volumeUsd=Math.abs(netUsd); }
+    else if (netTcl<0&&netUsd>0) { side="sell"; tclAmount=Math.abs(netTcl); volumeUsd=netUsd; }
+    else if (netTcl>0&&buyFallbackUsd>0) { side="buy"; tclAmount=netTcl; volumeUsd=buyFallbackUsd; }
+    else if (netTcl<0&&sellFallbackUsd>0) { side="sell"; tclAmount=Math.abs(netTcl); volumeUsd=sellFallbackUsd; }
+    else if (tclReceived>0&&usdSent>0) { side="buy"; tclAmount=tclReceived; volumeUsd=usdSent; }
+    else if (tclSent>0&&usdReceived>0) { side="sell"; tclAmount=tclSent; volumeUsd=usdReceived; }
+    if (!side||!Number.isFinite(tclAmount)||tclAmount<=0||!Number.isFinite(volumeUsd)||volumeUsd<=0) continue;
+    trades.push({ hash:group.hash, timestamp:group.timestamp, side, tclAmount, volumeUsd, price:volumeUsd/tclAmount, description:"MultiversX wallet operations" });
+  }
+  return trades;
+}
+
+function parseFilteredPnlTrades(transfers, wallet) {
+  const merged=new Map();
+  for (const t of parsePnlPairActionTrades(transfers, wallet)) merged.set(t.hash, t);
+  for (const t of parsePnlOperationTrades(transfers, wallet)) merged.set(t.hash, t);
+  return Array.from(merged.values()).sort((a,b)=>a.timestamp-b.timestamp);
+}
+
+async function fetchMvxPnlSource(account, params, maxPages) {
+  const transfers=[]; let hitPageLimit=false, exhaustedHistory=false, oldestTs=null;
+  for (let pi=0; pi<maxPages; pi++) {
+    const url=new URL(`${PNL_MVX_CONFIG.apiBase}/accounts/${account}/transfers`);
+    url.searchParams.set("from",String(pi*PNL_MVX_CONFIG.pageSize)); url.searchParams.set("size",String(PNL_MVX_CONFIG.pageSize));
+    url.searchParams.set("status","success"); url.searchParams.set("withOperations","true"); url.searchParams.set("order","desc");
+    for (const [k,v] of Object.entries(params)) { if (v!==undefined&&v!==null&&v!=="") url.searchParams.set(k,String(v)); }
+    const page=await fetchAnalyticsJson(url.toString(), PNL_MVX_CONFIG.maxAttempts);
+    if (!Array.isArray(page)||!page.length) { exhaustedHistory=true; break; }
+    transfers.push(...page);
+    const pts=page.map(i=>Number(i?.timestamp)).filter(Number.isFinite);
+    if (pts.length) oldestTs=oldestTs==null?Math.min(...pts):Math.min(oldestTs,...pts);
+    if (page.length<PNL_MVX_CONFIG.pageSize) { exhaustedHistory=true; break; }
+    if (pi===maxPages-1) { hitPageLimit=true; break; }
+    if (PNL_MVX_CONFIG.pagePauseMs>0) await sleep(PNL_MVX_CONFIG.pagePauseMs);
+  }
+  return { transfers, hitPageLimit, exhaustedHistory, oldestTimestamp:oldestTs };
+}
+
+async function fetchMultiversXFilteredPnl(wallet, warnings=[]) {
+  const sources=[
+    { label:"TCL wallet transfers",    account:wallet, params:{ token:VOLUME_CONFIG.baseTokenAddress }, maxPages:PNL_MVX_CONFIG.tokenMaxPages },
+    { label:"wallet to TCL/USDC pair", account:wallet, params:{ receiver:VOLUME_CONFIG.pairAddress },   maxPages:PNL_MVX_CONFIG.pairMaxPages },
+    { label:"TCL/USDC pair to wallet", account:wallet, params:{ sender:VOLUME_CONFIG.pairAddress },     maxPages:PNL_MVX_CONFIG.pairMaxPages }
+  ];
+  const transferMap=new Map(); let hitPageLimit=false, exhaustedHistory=true, oldestTs=null;
+  const sourceMeta=[];
+  for (const src of sources) {
+    const result=await fetchMvxPnlSource(src.account, src.params, src.maxPages);
+    sourceMeta.push({ label:src.label, transfers:result.transfers.length, hitPageLimit:result.hitPageLimit, exhaustedHistory:result.exhaustedHistory, oldestTimestamp:result.oldestTimestamp });
+    hitPageLimit=hitPageLimit||result.hitPageLimit; exhaustedHistory=exhaustedHistory&&result.exhaustedHistory;
+    if (result.oldestTimestamp!=null) oldestTs=oldestTs==null?result.oldestTimestamp:Math.min(oldestTs,result.oldestTimestamp);
+    result.transfers.forEach((entry,idx) => {
+      const key=[entry?.txHash||entry?.originalTxHash||idx, entry?.type||"", entry?.sender||"", entry?.receiver||"", entry?.timestamp||""].join("|");
+      transferMap.set(key, entry);
+    });
+  }
+  const transfers=Array.from(transferMap.values());
+  const trades=parseFilteredPnlTrades(transfers, wallet);
+  const totals=aggregatePnlDexTrades(trades);
+  return { ok:true, source:"multiversx-filtered", wallet, totals, meta:{ sourceLabel:"MultiversX filtered", checkedTransactions:trades.length, checkedTransfers:transfers.length, sourceMeta, reachedListingStart:!hitPageLimit, exhaustedHistory, hitPageLimit, oldestTimestamp:oldestTs, cached:false, warnings, updatedAt:new Date().toISOString() } };
+}
+
+// ── AI Chat helpers ─────────────────────────────────────────────────────────────
+
+const AI_MAX_QUESTION_CHARS = 800;
+const AI_MAX_CONTEXT_CHARS  = 8000;
+const AI_DEFAULT_MODEL      = "gemini-2.0-flash";
+const AI_GEMINI_KEY         = process.env.GEMINI_API_KEY || "";
+
+async function searchKnowledgeDb(question) {
+  const matchCount = 10;
+  const queryText  = question.trim().slice(0, 500);
+  try {
+    const rows = await db.all(
+      "SELECT id, source_url, title, chunk, (1 - (embedding <=> (SELECT embedding FROM ai_knowledge_chunks WHERE chunk ILIKE $2 LIMIT 1))) AS rank FROM ai_knowledge_chunks WHERE active = true ORDER BY embedding <=> (SELECT embedding FROM ai_knowledge_chunks WHERE content_hash = md5(chunk) LIMIT 1) LIMIT $1",
+      [matchCount * 2, `%${queryText.slice(0, 80)}%`]
+    );
+    return rows.filter(r => r && r.chunk).slice(0, matchCount);
+  } catch {
+    // Fallback: simple text search if pgvector not available
+    try {
+      const rows = await db.all(
+        "SELECT id, source_url, title, chunk, 0.5 AS rank FROM ai_knowledge_chunks WHERE active = true AND (chunk ILIKE $1 OR title ILIKE $1) LIMIT $2",
+        [`%${queryText.slice(0, 80)}%`, matchCount]
+      );
+      return rows;
+    } catch { return []; }
+  }
+}
+
+async function searchKnowledgeRpc(question) {
+  // Use the PostgreSQL RPC function ai_match_knowledge_chunks if available
+  try {
+    const rows = await db.all(
+      "SELECT * FROM ai_match_knowledge_chunks($1, $2)",
+      [question.trim().slice(0, 500), 10]
+    );
+    return Array.isArray(rows) ? rows.filter(r => r && r.chunk) : [];
+  } catch {
+    return searchKnowledgeDb(question);
+  }
+}
+
+function buildAiContext(matches) {
+  let used = 0;
+  const blocks = [];
+  for (const [idx, m] of matches.entries()) {
+    const block = [`[${idx+1}] ${m.title||"Untitled"}`, `URL: ${m.source_url||""}`, String(m.chunk||"").trim()].join("\n");
+    if (used + block.length > AI_MAX_CONTEXT_CHARS) break;
+    used += block.length;
+    blocks.push(block);
+  }
+  return blocks.join("\n\n---\n\n");
+}
+
+async function generateAiAnswer(question, matches, language, history=[]) {
+  const model = String(process.env.GEMINI_MODEL || AI_DEFAULT_MODEL).trim() || AI_DEFAULT_MODEL;
+  const context = buildAiContext(matches);
+  const systemText = `You are Companion, a friendly assistant for The Cursed Land players on TCLexplorer. Rules:
+- Reply in ${language === "ro" ? "Romanian" : "English"} with correct, natural grammar.
+- Be conversational. For yes/no questions start with "Da," or "Nu," (Romanian) / "Yes," or "No," (English).
+- Answer ONLY what was asked. If context lacks the answer, say you don't know simply.
+- Never invent mechanics, stats, percentages, or dates not found in context.
+- Plain text only, no markdown, no raw URLs. Keep answers concise (2-4 sentences max).`;
+  const parts = [`Player language: ${language}`, "", "RAG context:", context, "", "Player question:", question];
+  const prompt = parts.join("\n");
+  const historyContents = (history||[]).slice(-4).map(h => ({ role: h.role==="assistant"?"model":"user", parts: [{ text: h.content }] }));
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_GEMINI_KEY}`;
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemText }] },
+      contents: [...historyContents, { role:"user", parts:[{ text: prompt }] }],
+      generationConfig: { temperature: 0.25, maxOutputTokens: 260 }
+    }),
+    signal: AbortSignal.timeout(30000)
+  });
+  if (!r.ok) {
+    const details = await r.text().catch(()=>"");
+    if (r.status === 429) { const e = new Error("Gemini quota exceeded"); e.code="GEMINI_QUOTA"; throw e; }
+    throw new Error(`Gemini API HTTP ${r.status}: ${details.slice(0,300)}`);
+  }
+  const payload = await r.json();
+  const text = (payload.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("\n").trim();
+  return text
+    .replace(/\*\*/g,"").replace(/^\s*[-*]\s+/gm,"").replace(/\s+/g," ").trim() || "I don't have information about that.";
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ANALYTICS API  —  /api/analytics
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.get("/api/analytics", async (req, res) => {
+  try {
+    const CACHE_KEY = "analytics:snapshot";
+    const TTL_MS    = 15 * 60 * 1000; // 15 minutes
+    let snapshot = cacheGet(CACHE_KEY);
+    if (!snapshot) {
+      snapshot = await buildAnalyticsSnapshot();
+      cacheSet(CACHE_KEY, snapshot, TTL_MS);
+    }
+    ok(res, snapshot);
+  } catch (e) {
+    console.error("Analytics error:", e.message);
+    fail(res, "Analytics unavailable: " + e.message, 502);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  VOLUME API  —  /api/volume
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.get("/api/volume", async (req, res) => {
+  try {
+    const CACHE_KEY = "volume:snapshot";
+    const TTL_MS    = 5 * 60 * 1000; // 5 minutes
+    let snapshot = cacheGet(CACHE_KEY);
+    if (!snapshot) {
+      snapshot = await buildVolumeSnapshot(null);
+      cacheSet(CACHE_KEY, snapshot, TTL_MS);
+    } else {
+      // Refresh in background if stale (older than 4 min)
+      const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
+      if (Date.now() - updatedAt > 4 * 60 * 1000) {
+        buildVolumeSnapshot(snapshot).then(s => cacheSet(CACHE_KEY, s, TTL_MS)).catch(e => console.error("Volume bg refresh:", e.message));
+      }
+    }
+    ok(res, snapshot);
+  } catch (e) {
+    console.error("Volume error:", e.message);
+    // Fallback to seed snapshot
+    const fallback = {
+      ok: true,
+      meta: { updatedAt: new Date().toISOString(), source: "Server API (seed fallback)", warnings: [e.message] },
+      pair: null,
+      aggregated: rebuildVolumeAggregatedDerivedState(normalizeVolumeAggregatedSnapshot(VOLUME_SEED_SNAPSHOT, new Date()))
+    };
+    ok(res, fallback);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  TECHNICALS API  —  /api/technicals
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.get("/api/technicals", async (req, res) => {
+  try {
+    const CACHE_KEY = "technicals:snapshot";
+    const TTL_MS    = 5 * 60 * 1000; // 5 minutes
+    let snapshot = cacheGet(CACHE_KEY);
+    if (!snapshot) {
+      snapshot = await buildTechnicalsSnapshot(null);
+      cacheSet(CACHE_KEY, snapshot, TTL_MS);
+    } else {
+      // Refresh in background if stale
+      const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
+      if (Date.now() - updatedAt > 4 * 60 * 1000) {
+        buildTechnicalsSnapshot(snapshot).then(s => cacheSet(CACHE_KEY, s, TTL_MS)).catch(e => console.error("Technicals bg refresh:", e.message));
+      }
+    }
+    ok(res, snapshot);
+  } catch (e) {
+    console.error("Technicals error:", e.message);
+    fail(res, "Technicals unavailable: " + e.message, 502);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  AI CHAT  —  /ai/chat
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post("/ai/chat", async (req, res) => {
+  try {
+    const question = String(req.body?.message || req.body?.question || "").trim().slice(0, AI_MAX_QUESTION_CHARS);
+    if (!question) return fail(res, "Missing message.");
+    if (!AI_GEMINI_KEY) return fail(res, "AI chat not configured.", 503);
+
+    const language = String(req.body?.language || "en").slice(0, 10);
+    const history  = Array.isArray(req.body?.history)
+      ? req.body.history.filter(h => h && (h.role==="user"||h.role==="assistant") && typeof h.content==="string" && h.content.length>0).slice(-6).map(h => ({ role:h.role, content:String(h.content).slice(0,600) }))
+      : [];
+
+    const matches = await searchKnowledgeRpc(question);
+    const sources = matches.map(m => ({ title:m.title||"", url:m.source_url||"" })).filter(s=>s.url);
+
+    let answer;
+    try {
+      answer = await generateAiAnswer(question, matches, language, history);
+    } catch (e) {
+      if (e.code === "GEMINI_QUOTA") return fail(res, "AI quota exceeded, please try again later.", 429);
+      throw e;
+    }
+
+    // Log chat asynchronously (fire and forget)
+    db.query(
+      "INSERT INTO ai_chat_logs (question, answer, matched_sources, language, created_at) VALUES ($1, $2, $3, $4, NOW()) ON CONFLICT DO NOTHING",
+      [question.slice(0, AI_MAX_QUESTION_CHARS), answer.slice(0, 8000), JSON.stringify(sources), language]
+    ).catch(e => console.warn("Chat log failed:", e.message));
+
+    ok(res, { ok:true, answer, sources, language });
+  } catch (e) {
+    console.error("AI chat error:", e.message);
+    fail(res, "AI chat unavailable.", 502);
+  }
+});
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  HEALTH CHECK
@@ -545,6 +1938,9 @@ pool.connect().then(client => {
   client.release();
   app.listen(PORT, "127.0.0.1", () => {
     console.log(`TCL API listening on http://127.0.0.1:${PORT}`);
+    runScheduledWheelDraws();
+    const wheelDrawTimer = setInterval(runScheduledWheelDraws, WHEEL_DRAW_INTERVAL_MS);
+    wheelDrawTimer.unref();
   });
 }).catch(err => {
   console.error("DB connection failed:", err.message);

@@ -242,6 +242,33 @@
     clearStoredSession();
   }
 
+  async function signMessage(options = {}) {
+    const stored = getStoredSession();
+    const client = options.client || runtime.client || await getClient(options);
+    const topic = options.topic || stored.topic;
+    const address = options.address || stored.address;
+    const message = String(options.message || "");
+
+    if (!topic || !isAddress(address) || !message) {
+      throw new Error("A connected xPortal wallet and a non-empty message are required.");
+    }
+
+    const result = await client.request({
+      topic,
+      chainId: CONFIG.chainId,
+      request: {
+        method: "mvx_signMessage",
+        params: { message, address }
+      }
+    });
+
+    const signature = typeof result === "string" ? result : result?.signature;
+    if (!/^[0-9a-f]{128}$/i.test(String(signature || ""))) {
+      throw new Error("xPortal returned an invalid message signature.");
+    }
+    return String(signature);
+  }
+
   function resetClient() {
     runtime.client = null;
     runtime.projectId = "";
@@ -309,6 +336,7 @@
     resetClient,
     restore,
     saveSession,
+    signMessage,
     startPairing,
     truncateAddress
   };

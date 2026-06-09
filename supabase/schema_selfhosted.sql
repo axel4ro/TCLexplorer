@@ -61,6 +61,32 @@ CREATE TABLE IF NOT EXISTS public.wheel_config (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.wheel_campaigns (
+  month                TEXT PRIMARY KEY CHECK (month ~ '^[0-9]{4}-[0-9]{2}$'),
+  title                TEXT NOT NULL DEFAULT 'TCL Explorer Free Monthly Giveaway',
+  status               TEXT NOT NULL DEFAULT 'draft'
+                       CHECK (status IN ('draft', 'open', 'closed', 'drawn', 'cancelled')),
+  starts_at            TIMESTAMPTZ NOT NULL,
+  closes_at            TIMESTAMPTZ NOT NULL,
+  draw_at              TIMESTAMPTZ NOT NULL,
+  min_age              INTEGER NOT NULL DEFAULT 18 CHECK (min_age >= 18),
+  eligible_countries   TEXT[] NOT NULL DEFAULT ARRAY['RO']::TEXT[],
+  rules_version        TEXT NOT NULL,
+  rules_url            TEXT NOT NULL,
+  privacy_url          TEXT NOT NULL,
+  rules_hash           TEXT NOT NULL CHECK (rules_hash ~ '^[0-9a-f]{64}$'),
+  organizer_name       TEXT NOT NULL,
+  organizer_address    TEXT NOT NULL,
+  organizer_email      TEXT NOT NULL,
+  prize_amounts        JSONB NOT NULL,
+  prize_arv_ron        JSONB NOT NULL,
+  automatic_draw       BOOLEAN NOT NULL DEFAULT true,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (starts_at < closes_at),
+  CHECK (closes_at <= draw_at)
+);
+
 CREATE TABLE IF NOT EXISTS public.wheel_tickets (
   id             BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   ticket_number  TEXT NOT NULL,
@@ -69,6 +95,12 @@ CREATE TABLE IF NOT EXISTS public.wheel_tickets (
   herotag        TEXT NOT NULL DEFAULT '',
   ticket_day     DATE NOT NULL,
   status         TEXT NOT NULL DEFAULT 'valid',
+  rules_version  TEXT,
+  country_code   TEXT,
+  age_confirmed  BOOLEAN NOT NULL DEFAULT false,
+  accepted_at    TIMESTAMPTZ,
+  entry_message  TEXT,
+  entry_signature TEXT,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (ticket_number),
   UNIQUE (wallet_address, ticket_day)
@@ -96,6 +128,7 @@ CREATE TABLE IF NOT EXISTS public.wheel_winners (
   reward_tcl     TEXT NOT NULL DEFAULT '0',
   paid_status    TEXT NOT NULL DEFAULT 'unpaid',
   paid_tx_hash   TEXT,
+  draw_proof     JSONB,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (raffle_month, place)
 );
@@ -111,6 +144,8 @@ CREATE TABLE IF NOT EXISTS public.wheel_audit_logs (
 CREATE INDEX IF NOT EXISTS idx_wt_month   ON wheel_tickets(raffle_month);
 CREATE INDEX IF NOT EXISTS idx_wt_wallet  ON wheel_tickets(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_wt_day     ON wheel_tickets(ticket_day);
+CREATE INDEX IF NOT EXISTS idx_wcampaign_draw ON wheel_campaigns(status, automatic_draw, draw_at);
+CREATE INDEX IF NOT EXISTS idx_wt_acceptance ON wheel_tickets(raffle_month, rules_version, country_code);
 CREATE INDEX IF NOT EXISTS idx_wc_month   ON wheel_contributions(raffle_month);
 CREATE INDEX IF NOT EXISTS idx_ww_month   ON wheel_winners(raffle_month);
 CREATE INDEX IF NOT EXISTS idx_wal_action ON wheel_audit_logs(action);
@@ -198,6 +233,7 @@ ALTER TABLE public.tcl_transfers        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tcl_trades           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tcl_sync_state       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wheel_config         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wheel_campaigns      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wheel_tickets        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wheel_contributions  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wheel_winners        ENABLE ROW LEVEL SECURITY;
@@ -219,6 +255,9 @@ DO $$ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='wheel_config' AND policyname='anon_read') THEN
     CREATE POLICY anon_read ON wheel_config FOR SELECT TO anon USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='wheel_campaigns' AND policyname='anon_read') THEN
+    CREATE POLICY anon_read ON wheel_campaigns FOR SELECT TO anon USING (true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='wheel_tickets' AND policyname='anon_read') THEN
     CREATE POLICY anon_read ON wheel_tickets FOR SELECT TO anon USING (true);

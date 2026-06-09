@@ -8,6 +8,7 @@ pnl-worker/.wrangler/
 .env.*
 *.log
 __pycache__/
+node_modules/
 discord_bot/config.py
 discord_bot/config/
 

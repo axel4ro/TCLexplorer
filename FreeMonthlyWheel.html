@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TCL Community Free Monthly Wheel</title>
+  <title>TCL Explorer Free Monthly Giveaway</title>
   <meta name="theme-color" content="#07080c">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -329,6 +329,52 @@
     .claim-btn:hover:not(:disabled) { opacity: .88; }
     .claim-btn:active:not(:disabled) { transform: scale(.98); }
     .claim-btn:disabled { opacity: .4; cursor: default; }
+
+    .entry-consent {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.025);
+    }
+    .entry-country {
+      display: grid;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .entry-country select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #0b1018;
+      color: var(--text);
+    }
+    .entry-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .entry-check input {
+      margin-top: 3px;
+      accent-color: var(--accent);
+    }
+    .entry-check a,
+    .entry-privacy a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .entry-privacy {
+      font-size: 11px;
+      color: var(--soft);
+    }
 
     .ticket-display {
       margin-top: 16px;
@@ -702,8 +748,8 @@
 
   <!-- Hero -->
   <section class="hero">
-    <div class="hero-badge">🎡 Free Monthly Raffle</div>
-    <h1>TCL Community Free Monthly Wheel</h1>
+    <div class="hero-badge">🎡 Free Monthly Giveaway</div>
+    <h1>TCL Explorer Free Monthly Giveaway</h1>
     <p class="hero-sub">Win TCL from the community prize pool — no payment required to enter.</p>
     <div class="countdown">
       <span class="countdown-label">Draw in</span>
@@ -790,6 +836,24 @@
         </div>
 
         <div id="ticketConnected" hidden>
+          <div class="entry-consent" id="entryConsent" hidden>
+            <label class="entry-country">
+              Eligible country
+              <select id="entryCountry" aria-label="Eligible country"></select>
+            </label>
+            <label class="entry-check">
+              <input type="checkbox" id="entryAge">
+              <span id="entryAgeText">I confirm that I meet the minimum age requirement.</span>
+            </label>
+            <label class="entry-check">
+              <input type="checkbox" id="entryRules">
+              <span>I have read and accept the <a id="entryRulesLink" href="#" target="_blank" rel="noopener noreferrer">Official Rules</a>.</span>
+            </label>
+            <div class="entry-privacy">
+              Entry data is handled according to the
+              <a id="entryPrivacyLink" href="#" target="_blank" rel="noopener noreferrer">Privacy Notice</a>.
+            </div>
+          </div>
           <button class="claim-btn" id="claimBtn" type="button" disabled>
             <span id="claimBtnText">Checking eligibility...</span>
           </button>
@@ -886,6 +950,8 @@
         <div class="winners-grid" id="winnersList">
           <div class="empty-state" id="winnersEmpty">No winners drawn yet this month.</div>
         </div>
+        <a class="copy-btn" id="drawProofLink" href="#" target="_blank" rel="noopener noreferrer"
+          style="display:inline-flex;margin-top:12px;" hidden>Verify draw proof</a>
       </section>
     </div>
   </div>
@@ -964,6 +1030,103 @@
       </div>
 
       <hr style="border-color:var(--line);">
+      <div style="font-size:12px;color:var(--purple);font-weight:600;">Giveaway Campaign</div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label>Month</label>
+          <input class="admin-input" type="text" id="adminCampaignMonth" placeholder="2026-06">
+        </div>
+        <div class="admin-field">
+          <label>Status</label>
+          <select class="admin-input" id="adminCampaignStatus">
+            <option value="draft">draft</option>
+            <option value="open">open</option>
+            <option value="closed">closed</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label>Starts at (UTC)</label>
+          <input class="admin-input" type="datetime-local" id="adminCampaignStarts">
+        </div>
+        <div class="admin-field">
+          <label>Closes at (UTC)</label>
+          <input class="admin-input" type="datetime-local" id="adminCampaignCloses">
+        </div>
+        <div class="admin-field">
+          <label>Draw at (UTC)</label>
+          <input class="admin-input" type="datetime-local" id="adminCampaignDraw">
+        </div>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label>Campaign title</label>
+          <input class="admin-input" type="text" id="adminCampaignTitle" value="TCL Explorer Free Monthly Giveaway">
+        </div>
+        <div class="admin-field">
+          <label>Minimum age</label>
+          <input class="admin-input" type="number" id="adminCampaignAge" min="18" value="18">
+        </div>
+        <div class="admin-field">
+          <label>Eligible countries</label>
+          <input class="admin-input" type="text" id="adminCampaignCountries" value="RO" placeholder="RO,DE">
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="adminCampaignAutomatic" checked>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          Automatic draw
+        </label>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label>Rules version</label>
+          <input class="admin-input" type="text" id="adminCampaignRulesVersion" placeholder="2026-06-v1">
+        </div>
+        <div class="admin-field">
+          <label>Rules URL</label>
+          <input class="admin-input" type="url" id="adminCampaignRulesUrl" placeholder="https://...">
+        </div>
+        <div class="admin-field">
+          <label>Rules SHA-256</label>
+          <input class="admin-input" type="text" id="adminCampaignRulesHash" placeholder="64 hex characters">
+        </div>
+        <div class="admin-field">
+          <label>Privacy URL</label>
+          <input class="admin-input" type="url" id="adminCampaignPrivacyUrl" placeholder="https://...">
+        </div>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label>Organizer name</label>
+          <input class="admin-input" type="text" id="adminCampaignOrganizerName">
+        </div>
+        <div class="admin-field">
+          <label>Organizer address</label>
+          <input class="admin-input" type="text" id="adminCampaignOrganizerAddress">
+        </div>
+        <div class="admin-field">
+          <label>Organizer email</label>
+          <input class="admin-input" type="email" id="adminCampaignOrganizerEmail">
+        </div>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label>Prize amounts JSON (raw TCL)</label>
+          <input class="admin-input" type="text" id="adminCampaignPrizes" placeholder='{"first":"0","second":"0","third":"0"}'>
+        </div>
+        <div class="admin-field">
+          <label>Prize ARV RON JSON</label>
+          <input class="admin-input" type="text" id="adminCampaignArv" placeholder='{"first":"0","second":"0","third":"0"}'>
+        </div>
+        <button class="admin-btn" id="adminSaveCampaignBtn" type="button">Save Campaign</button>
+      </div>
+
+      <hr style="border-color:var(--line);">
       <div style="font-size:12px;color:var(--purple);font-weight:600;">Monthly Draw</div>
 
       <div class="admin-row">
@@ -1034,7 +1197,7 @@
   "use strict";
 
   // ── CONFIG ────────────────────────────────────────────────────────────────
-  const WORKER_URL = "https://tcl-wheel.axel4ro.workers.dev";
+  const WORKER_URL = "https://api.tclexplorer.com/wheel";
   const XPORTAL = window.TCLXPortal;
 
   // ── STATE ─────────────────────────────────────────────────────────────────
@@ -1046,6 +1209,7 @@
     connectionRunId: 0,
     connecting: false,
     config: null,
+    campaign: null,
     pool: null,
     eligibility: null,
     claiming: false,
@@ -1076,6 +1240,20 @@
     return new Date(iso).toLocaleDateString("en", { day: "2-digit", month: "short", year: "numeric" });
   }
 
+  function toUtcInput(iso) {
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
+  }
+
+  function fromUtcInput(value) {
+    return value ? new Date(`${value}:00Z`).toISOString() : "";
+  }
+
+  function parseJsonInput(id) {
+    const value = $(id).value.trim();
+    return value ? JSON.parse(value) : {};
+  }
+
   function copyText(text) {
     navigator.clipboard?.writeText(text).catch(() => {});
   }
@@ -1099,7 +1277,14 @@
     const el = $("countdown");
     function tick() {
       const now = new Date();
-      const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+      if (state.campaign?.status === "drawn") {
+        el.textContent = "Draw complete";
+        return;
+      }
+      const configuredDraw = state.campaign?.draw_at ? new Date(state.campaign.draw_at) : null;
+      const end = configuredDraw && !Number.isNaN(configuredDraw.getTime())
+        ? configuredDraw
+        : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
       const diff = end - now;
       if (diff <= 0) { el.textContent = "Draw time!"; return; }
       const d = Math.floor(diff / 86400000);
@@ -1121,10 +1306,55 @@
     const data = await api("/config").catch(() => null);
     if (!data?.ok) return;
     state.config = data.config;
+    state.campaign = data.campaign || null;
 
     const cfg = data.config || {};
-    if (cfg.host_herotag) $("hostHerotag").textContent = cfg.host_herotag;
-    if (cfg.host_wallet) $("hostWallet").textContent = trunc(cfg.host_wallet);
+    const campaign = state.campaign;
+    if (campaign?.organizer_name) $("hostHerotag").textContent = campaign.organizer_name;
+    else if (cfg.host_herotag) $("hostHerotag").textContent = cfg.host_herotag;
+    if (campaign?.organizer_address) $("hostWallet").textContent = campaign.organizer_address;
+    else if (cfg.host_wallet) $("hostWallet").textContent = trunc(cfg.host_wallet);
+
+    if (campaign) {
+      const monthDate = new Date(`${campaign.month}-01T00:00:00Z`);
+      if (!Number.isNaN(monthDate.getTime())) {
+        $("monthLabel").textContent = monthDate.toLocaleString("en", {
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC"
+        });
+      }
+      $("entryAgeText").textContent = `I confirm that I am at least ${campaign.min_age} years old.`;
+      $("entryRulesLink").href = campaign.rules_url;
+      $("entryPrivacyLink").href = campaign.privacy_url;
+      const country = $("entryCountry");
+      country.replaceChildren();
+      (campaign.eligible_countries || []).forEach(code => {
+        const option = document.createElement("option");
+        option.value = code;
+        option.textContent = code;
+        country.appendChild(option);
+      });
+
+      $("adminCampaignMonth").value = campaign.month || "";
+      $("adminCampaignStatus").value = campaign.status || "draft";
+      $("adminCampaignStarts").value = toUtcInput(campaign.starts_at);
+      $("adminCampaignCloses").value = toUtcInput(campaign.closes_at);
+      $("adminCampaignDraw").value = toUtcInput(campaign.draw_at);
+      $("adminCampaignTitle").value = campaign.title || "";
+      $("adminCampaignAge").value = campaign.min_age || 18;
+      $("adminCampaignCountries").value = (campaign.eligible_countries || []).join(",");
+      $("adminCampaignAutomatic").checked = campaign.automatic_draw !== false;
+      $("adminCampaignRulesVersion").value = campaign.rules_version || "";
+      $("adminCampaignRulesUrl").value = campaign.rules_url || "";
+      $("adminCampaignRulesHash").value = campaign.rules_hash || "";
+      $("adminCampaignPrivacyUrl").value = campaign.privacy_url || "";
+      $("adminCampaignOrganizerName").value = campaign.organizer_name || "";
+      $("adminCampaignOrganizerAddress").value = campaign.organizer_address || "";
+      $("adminCampaignOrganizerEmail").value = campaign.organizer_email || "";
+      $("adminCampaignPrizes").value = JSON.stringify(campaign.prize_amounts || {});
+      $("adminCampaignArv").value = JSON.stringify(campaign.prize_arv_ron || {});
+    }
 
     if (cfg.prize_split) {
       $("pct1").textContent = `${cfg.prize_split.first}%`;
@@ -1171,6 +1401,7 @@
 
     if (!data?.ok || !data.winners?.length) {
       if (empty) empty.hidden = false;
+      $("drawProofLink").hidden = true;
       return;
     }
 
@@ -1201,6 +1432,10 @@
     });
 
     $("winnersSub").textContent = `${data.month} · 3 winners`;
+    if (data.winners[0]?.draw_proof) {
+      $("drawProofLink").href = `${WORKER_URL}/draw-proof?month=${encodeURIComponent(data.month)}`;
+      $("drawProofLink").hidden = false;
+    }
   }
 
   // ── Load contributors ─────────────────────────────────────────────────────
@@ -1264,6 +1499,17 @@
   }
 
   // ── Eligibility check ─────────────────────────────────────────────────────
+  function updateClaimButton() {
+    const canClaim = Boolean(
+      state.eligibility?.eligible &&
+      $("entryAge").checked &&
+      $("entryRules").checked &&
+      $("entryCountry").value &&
+      !state.claiming
+    );
+    $("claimBtn").disabled = !canClaim;
+  }
+
   async function checkEligibility() {
     if (!state.wallet) return;
 
@@ -1272,6 +1518,7 @@
     $("claimError").hidden = true;
     $("ticketResult").hidden = true;
     $("claimHint").textContent = "";
+    $("entryConsent").hidden = true;
 
     const data = await api("/eligibility", {
       method: "POST",
@@ -1289,9 +1536,24 @@
     }
 
     if (data.eligible) {
-      $("claimBtn").disabled = false;
+      if (data.campaign) {
+        state.campaign = data.campaign;
+        $("entryAgeText").textContent = `I confirm that I am at least ${data.campaign.min_age} years old.`;
+        $("entryRulesLink").href = data.campaign.rules_url;
+        $("entryPrivacyLink").href = data.campaign.privacy_url;
+        const country = $("entryCountry");
+        country.replaceChildren();
+        (data.campaign.eligible_countries || []).forEach(code => {
+          const option = document.createElement("option");
+          option.value = code;
+          option.textContent = code;
+          country.appendChild(option);
+        });
+      }
+      $("entryConsent").hidden = false;
       $("claimBtnText").textContent = "Claim Free Daily Ticket";
-      $("claimHint").textContent = "Free · No payment required · Valid today UTC";
+      $("claimHint").textContent = "Free · Sign the entry message in xPortal · No blockchain transaction";
+      updateClaimButton();
     } else if (data.ticket) {
       // Already claimed
       showTicketClaimed(data.ticket);
@@ -1312,6 +1574,7 @@
         <div class="ticket-sub">Your free ticket for this draw</div>
       </div>`;
     $("claimBtn").disabled = true;
+    $("entryConsent").hidden = true;
     $("claimBtnText").textContent = "Already claimed today";
     $("claimHint").textContent = "Come back tomorrow UTC for another free ticket.";
     $("claimError").hidden = true;
@@ -1321,29 +1584,65 @@
   // ── Claim ticket ──────────────────────────────────────────────────────────
   async function claimTicket() {
     if (state.claiming || !state.wallet) return;
-    state.claiming = true;
-    $("claimBtn").disabled = true;
-    $("claimBtnText").textContent = "Claiming...";
-    $("claimError").hidden = true;
-
-    const data = await api("/claim", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: state.wallet })
-    }).catch(() => null);
-
-    state.claiming = false;
-
-    if (!data?.ok) {
-      $("claimBtn").disabled = false;
-      $("claimBtnText").textContent = "Claim Free Daily Ticket";
-      $("claimError").hidden = false;
-      $("claimError").textContent = data?.error || "Something went wrong. Please try again.";
+    const campaign = state.campaign;
+    const countryCode = $("entryCountry").value;
+    if (!campaign || !$("entryAge").checked || !$("entryRules").checked || !countryCode) {
+      updateClaimButton();
       return;
     }
 
-    showTicketClaimed(data.ticket);
-    loadMyTickets();
+    state.claiming = true;
+    $("claimBtn").disabled = true;
+    $("claimBtnText").textContent = "Preparing entry...";
+    $("claimError").hidden = true;
+
+    try {
+      const entry = await api("/entry-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: state.wallet,
+          country_code: countryCode,
+          age_confirmed: true,
+          rules_version: campaign.rules_version
+        })
+      });
+      if (!entry?.ok || !entry.message) throw new Error(entry?.error || "Could not prepare the entry message.");
+
+      $("claimBtnText").textContent = "Approve signature in xPortal...";
+      const signature = await XPORTAL.signMessage({
+        client: state.signClient,
+        address: state.wallet,
+        message: entry.message
+      });
+
+      $("claimBtnText").textContent = "Creating ticket...";
+      const data = await api("/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: state.wallet,
+          country_code: countryCode,
+          age_confirmed: true,
+          rules_version: campaign.rules_version,
+          message: entry.message,
+          signature
+        })
+      });
+      if (!data?.ok) throw new Error(data?.error || "Something went wrong. Please try again.");
+
+      showTicketClaimed(data.ticket);
+      loadMyTickets();
+    } catch (error) {
+      $("claimError").hidden = false;
+      $("claimError").textContent = error?.message || "The entry could not be signed.";
+    } finally {
+      state.claiming = false;
+      if (!state.claimedTicket) {
+        $("claimBtnText").textContent = "Claim Free Daily Ticket";
+        updateClaimButton();
+      }
+    }
   }
 
   // ── Wallet connection ─────────────────────────────────────────────────────
@@ -1383,6 +1682,8 @@
     try {
       const session = await XPORTAL.restore();
       if (!session?.address) return;
+      state.signClient = session.client;
+      state.sessionTopic = session.topic;
       // Fetch herotag
       const acc = await fetch(`https://api.multiversx.com/accounts/${session.address}`)
         .then(r => r.ok ? r.json() : null).catch(() => null);
@@ -1423,6 +1724,7 @@
       if (runId !== state.connectionRunId) return;
 
       state.signClient = pairing.client;
+      state.sessionTopic = approved.topic;
       clearConnectUI();
 
       const acc = await fetch(`https://api.multiversx.com/accounts/${approved.address}`)
@@ -1452,6 +1754,9 @@
     state.signClient = null;
     state.eligibility = null;
     state.claimedTicket = null;
+    $("entryAge").checked = false;
+    $("entryRules").checked = false;
+    $("entryConsent").hidden = true;
     clearConnectUI();
     setWalletUI("", "");
     $("myTicketsList").innerHTML = '<div class="empty-state">Connect wallet to see your tickets.</div>';
@@ -1505,6 +1810,16 @@
       $("adminDrawMonth").value = m;
       $("adminPaidMonth").value = m;
       $("adminContribMonth").value = m;
+      if (!$("adminCampaignMonth").value) {
+        const starts = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const closes = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+        const draw = new Date(closes.getTime() + 60 * 60 * 1000);
+        $("adminCampaignMonth").value = m;
+        $("adminCampaignStarts").value = starts.toISOString().slice(0, 16);
+        $("adminCampaignCloses").value = closes.toISOString().slice(0, 16);
+        $("adminCampaignDraw").value = draw.toISOString().slice(0, 16);
+        $("adminCampaignRulesVersion").value = `${m}-v1`;
+      }
     }
 
     // Connect
@@ -1523,6 +1838,9 @@
 
     // Claim
     $("claimBtn").addEventListener("click", claimTicket);
+    $("entryAge").addEventListener("change", updateClaimButton);
+    $("entryRules").addEventListener("change", updateClaimButton);
+    $("entryCountry").addEventListener("change", updateClaimButton);
 
     // Admin buttons
     $("adminSaveConfigBtn").addEventListener("click", () => {
@@ -1532,6 +1850,33 @@
         host_wallet: $("adminHostWallet").value.trim(),
         enabled: $("adminEnabled").checked
       });
+    });
+
+    $("adminSaveCampaignBtn").addEventListener("click", () => {
+      try {
+        adminCall("/admin/upsert-campaign", {
+          month: $("adminCampaignMonth").value.trim(),
+          status: $("adminCampaignStatus").value,
+          starts_at: fromUtcInput($("adminCampaignStarts").value),
+          closes_at: fromUtcInput($("adminCampaignCloses").value),
+          draw_at: fromUtcInput($("adminCampaignDraw").value),
+          title: $("adminCampaignTitle").value.trim(),
+          min_age: parseInt($("adminCampaignAge").value, 10) || 18,
+          eligible_countries: $("adminCampaignCountries").value.split(",").map(value => value.trim()).filter(Boolean),
+          automatic_draw: $("adminCampaignAutomatic").checked,
+          rules_version: $("adminCampaignRulesVersion").value.trim(),
+          rules_url: $("adminCampaignRulesUrl").value.trim(),
+          rules_hash: $("adminCampaignRulesHash").value.trim(),
+          privacy_url: $("adminCampaignPrivacyUrl").value.trim(),
+          organizer_name: $("adminCampaignOrganizerName").value.trim(),
+          organizer_address: $("adminCampaignOrganizerAddress").value.trim(),
+          organizer_email: $("adminCampaignOrganizerEmail").value.trim(),
+          prize_amounts: parseJsonInput("adminCampaignPrizes"),
+          prize_arv_ron: parseJsonInput("adminCampaignArv")
+        });
+      } catch (error) {
+        showAdminResult(`Invalid campaign JSON: ${error.message}`, false);
+      }
     });
 
     $("adminDrawBtn").addEventListener("click", () => {
