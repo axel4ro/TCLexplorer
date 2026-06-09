@@ -395,6 +395,140 @@ wheel.post("/admin/add-contribution", async (req, res) => {
 app.use("/wheel", wheel);
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  PNL API  —  /pnl/*
+// ══════════════════════════════════════════════════════════════════════════════
+
+const BUY_COINS_ROW_PREFIX   = "buycoins_tx:";
+const BUY_COINS_NEWEST_TS    = "buycoins_newest_ts";
+const BUY_COINS_LAST_SYNC    = "buycoins_last_sync_at";
+const BUY_COINS_BACKFILL_DONE = "buycoins_backfill_done";
+const TCL_GAME_CONTRACT      = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+
+function rawToDecimal(raw, decimals = 18) {
+  const v = typeof raw === "bigint" ? raw : BigInt(String(raw || "0"));
+  const neg = v < 0n;
+  const s = (neg ? -v : v).toString().padStart(decimals + 1, "0");
+  const whole = s.slice(0, -decimals) || "0";
+  const frac  = s.slice(-decimals).replace(/0+$/, "");
+  return `${neg ? "-" : ""}${whole}${frac ? `.${frac}` : ""}`;
+}
+function cmpBigDesc(a, b) { return a > b ? -1 : a < b ? 1 : 0; }
+
+// GET /pnl/buy-coins — top 100 TCL karma spenders leaderboard
+const pnl = express.Router();
+
+pnl.get("/buy-coins", async (req, res) => {
+  try {
+    const token = TCL_TOKEN;
+
+    // Load stored buy-coins transactions from tcl_sync_state
+    const rows = await db.all(
+      "SELECT value FROM tcl_sync_state WHERE key LIKE $1 ORDER BY key ASC",
+      [BUY_COINS_ROW_PREFIX + "%"]
+    );
+
+    const transactions = [];
+    for (const row of rows) {
+      try {
+        const tx = JSON.parse(row.value || "{}");
+        if (tx.txHash && String(tx.wallet || "").startsWith("erd1") && Number.isFinite(Number(tx.timestamp))) {
+          transactions.push(tx);
+        }
+      } catch (_) { /* skip malformed */ }
+    }
+
+    // Build leaderboard
+    const wallets = new Map();
+    let totalSpentRaw = 0n, totalKarma = 0n, totalBurntRaw = 0n;
+    let totalCashbackRaw = 0n, totalReferralRaw = 0n;
+    let processedTx = 0, skipped = 0, latestTs = 0;
+
+    for (const tx of transactions) {
+      try {
+        const wallet    = String(tx.wallet || "").toLowerCase();
+        const spentRaw  = BigInt(tx.tclSpentRaw  || "0");
+        const karma     = BigInt(tx.karma        || "0");
+        const burntRaw  = BigInt(tx.burntRaw     || "0");
+        const cashbRaw  = BigInt(tx.cashbackRaw  || "0");
+        const refRaw    = BigInt(tx.referralRaw  || "0");
+        const ts        = Number(tx.timestamp)  || 0;
+        const hash      = String(tx.txHash || "");
+        if (!wallet.startsWith("erd1") || spentRaw <= 0n || karma <= 0n) { skipped++; continue; }
+
+        const cur = wallets.get(wallet) || { wallet, karma:0n, spentRaw:0n, burntRaw:0n, cashbackRaw:0n, referralRaw:0n, purchases:0, latestTimestamp:0, latestTxHash:"" };
+        cur.karma        += karma;
+        cur.spentRaw     += spentRaw;
+        cur.burntRaw     += burntRaw;
+        cur.cashbackRaw  += cashbRaw;
+        cur.referralRaw  += refRaw;
+        cur.purchases    += 1;
+        if (ts >= cur.latestTimestamp) { cur.latestTimestamp = ts; cur.latestTxHash = hash; }
+        wallets.set(wallet, cur);
+        processedTx++;
+        totalKarma       += karma;
+        totalSpentRaw    += spentRaw;
+        totalBurntRaw    += burntRaw;
+        totalCashbackRaw += cashbRaw;
+        totalReferralRaw += refRaw;
+        latestTs = Math.max(latestTs, ts);
+      } catch (_) { skipped++; }
+    }
+
+    const [stateTs, stateSync, stateDone] = await Promise.all([
+      db.one("SELECT value FROM tcl_sync_state WHERE key=$1", [BUY_COINS_NEWEST_TS]),
+      db.one("SELECT value FROM tcl_sync_state WHERE key=$1", [BUY_COINS_LAST_SYNC]),
+      db.one("SELECT value FROM tcl_sync_state WHERE key=$1", [BUY_COINS_BACKFILL_DONE]),
+    ]);
+
+    const leaderboard = Array.from(wallets.values())
+      .sort((a, b) => cmpBigDesc(a.spentRaw, b.spentRaw) || b.purchases - a.purchases || b.latestTimestamp - a.latestTimestamp)
+      .slice(0, 100)
+      .map((e, i) => ({
+        rank: i + 1,
+        wallet: e.wallet,
+        totalKarma: e.karma.toString(),
+        tclSpent: rawToDecimal(e.spentRaw),
+        burnt: rawToDecimal(e.burntRaw),
+        cashback: rawToDecimal(e.cashbackRaw),
+        referral: rawToDecimal(e.referralRaw),
+        purchases: e.purchases,
+        latestTimestamp: e.latestTimestamp,
+        latestTxHash: e.latestTxHash,
+      }));
+
+    ok(res, {
+      ok: true,
+      title: "Top 100 TCL Spenders for Karma",
+      token,
+      function: "buyCoins",
+      leaderboard,
+      stats: {
+        wallets: wallets.size,
+        transactions: processedTx,
+        totalKarma: totalKarma.toString(),
+        totalTclSpent: rawToDecimal(totalSpentRaw),
+        totalBurnt: rawToDecimal(totalBurntRaw),
+        totalCashback: rawToDecimal(totalCashbackRaw),
+        totalReferral: rawToDecimal(totalReferralRaw),
+        latestTimestamp: latestTs,
+      },
+      meta: {
+        source: "self-hosted PostgreSQL buyCoins history",
+        generatedAt: new Date().toISOString(),
+        lastSyncAt: stateSync?.value || null,
+        syncIntervalMinutes: 15,
+        complete: stateDone?.value === "true",
+        scannedRows: transactions.length,
+        skippedRows: skipped,
+        cached: false,
+      },
+    });
+  } catch (e) { fail(res, "Server error.", 500); console.error(e); }
+});
+
+app.use("/pnl", pnl);
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  HEALTH CHECK
 // ══════════════════════════════════════════════════════════════════════════════
 app.get("/health", async (req, res) => {

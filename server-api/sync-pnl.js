@@ -303,12 +303,104 @@ async function syncEnrichBacklog(log) {
   return n;
 }
 
+// ── Phase 4: Sync buyCoins transactions ──────────────────────────────────────
+const BUY_COINS_ROW_PREFIX    = "buycoins_tx:";
+const BUY_COINS_NEWEST_TS     = "buycoins_newest_ts";
+const BUY_COINS_LAST_SYNC     = "buycoins_last_sync_at";
+const BUY_COINS_BACKFILL_DONE = "buycoins_backfill_done";
+const TCL_GAME_CONTRACT       = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+const BUY_COINS_PAGE_SIZE     = 1000;
+const BUY_COINS_MAX_PAGES     = 20;
+
+function readTclRaw(tx) {
+  const transfers = Array.isArray(tx?.action?.arguments?.transfers) ? tx.action.arguments.transfers : [];
+  let total = 0n;
+  for (const t of transfers) {
+    const id = t?.token || t?.identifier || "";
+    if (id !== TCL_TOKEN) continue;
+    try { total += BigInt(String(t?.value || "0")); } catch (_) {}
+  }
+  return total;
+}
+
+function readKarma(tx) {
+  const hex = String(tx?.action?.arguments?.functionArgs?.[0] || "").trim().replace(/^0x/i, "");
+  if (!hex || !/^[0-9a-f]+$/i.test(hex)) return 0n;
+  try { return BigInt(`0x${hex}`); } catch (_) { return 0n; }
+}
+
+async function syncBuyCoins(log) {
+  const newestTsStr = await getState(BUY_COINS_NEWEST_TS);
+  const newestTs    = Math.max(0, parseInt(newestTsStr || "0", 10) || 0);
+  const after       = newestTs > 0 ? Math.max(0, newestTs - 2) : undefined;
+  let latestTs = newestTs, fetched = 0, stored = 0, complete = false;
+
+  log(`[buyCoins] start newest_ts=${newestTs}`);
+
+  for (let page = 0; page < BUY_COINS_MAX_PAGES; page++) {
+    const txs = await mvxFetch(`/accounts/${TCL_GAME_CONTRACT}/transactions`, {
+      from: page * BUY_COINS_PAGE_SIZE,
+      size: BUY_COINS_PAGE_SIZE,
+      function: "buyCoins",
+      status: "success",
+      after,
+    });
+    if (!Array.isArray(txs) || !txs.length) { complete = true; break; }
+    fetched += txs.length;
+
+    const rows = [];
+    for (const tx of txs) {
+      latestTs = Math.max(latestTs, Number(tx?.timestamp) || 0);
+      const txHash   = String(tx?.txHash || "");
+      const wallet   = String(tx?.sender || "").toLowerCase();
+      const ts       = Number(tx?.timestamp) || 0;
+      const spentRaw = readTclRaw(tx);
+      const karma    = readKarma(tx);
+      if (!validTxHash(txHash) || !wallet.startsWith("erd1") || spentRaw <= 0n || karma <= 0n) continue;
+      rows.push({
+        key: `${BUY_COINS_ROW_PREFIX}${txHash}`,
+        value: JSON.stringify({
+          txHash, wallet, timestamp: ts,
+          karma:       karma.toString(),
+          tclSpentRaw: spentRaw.toString(),
+          burntRaw:    (spentRaw / 5n).toString(),
+          cashbackRaw: (spentRaw / 20n).toString(),
+          referralRaw: (spentRaw / 20n).toString(),
+        }),
+      });
+    }
+
+    if (rows.length) {
+      // Upsert into tcl_sync_state
+      const placeholders = rows.map((_, i) => `($${i*2+1},$${i*2+2})`).join(",");
+      const vals = rows.flatMap(r => [r.key, r.value]);
+      await db.query(
+        `INSERT INTO tcl_sync_state (key,value) VALUES ${placeholders}
+         ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`,
+        vals
+      );
+      stored += rows.length;
+    }
+
+    if (txs.length < BUY_COINS_PAGE_SIZE) { complete = true; break; }
+    await sleep(120);
+  }
+
+  const syncedAt = new Date().toISOString();
+  await setState(BUY_COINS_NEWEST_TS, latestTs);
+  await setState(BUY_COINS_LAST_SYNC, syncedAt);
+  if (newestTs === 0 && complete) await setState(BUY_COINS_BACKFILL_DONE, "true");
+
+  log(`[buyCoins] fetched=${fetched} stored=${stored} complete=${complete}`);
+  return stored;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   const log = (...args) => console.log(new Date().toISOString(), ...args);
   log("=== TCL PNL Sync START ===");
 
-  let newCount = 0, backfillCount = 0, backlogCount = 0;
+  let newCount = 0, backfillCount = 0, backlogCount = 0, buyCoinsCount = 0;
 
   try { newCount      = await syncIncremental(log); }
   catch (e) { log("[incremental] ERROR:", e.message); }
@@ -319,7 +411,10 @@ async function main() {
   try { backlogCount  = await syncEnrichBacklog(log); }
   catch (e) { log("[backlog] ERROR:", e.message); }
 
-  log(`=== DONE: +${newCount} new, +${backfillCount} backfill, +${backlogCount} enriched ===`);
+  try { buyCoinsCount = await syncBuyCoins(log); }
+  catch (e) { log("[buyCoins] ERROR:", e.message); }
+
+  log(`=== DONE: +${newCount} new, +${backfillCount} backfill, +${backlogCount} enriched, +${buyCoinsCount} buyCoins ===`);
   await pool.end();
 }
 
