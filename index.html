@@ -349,9 +349,14 @@
     .xp-qr-head { display: flex; align-items: center; justify-content: space-between; }
     .xp-qr-title { font-weight: 900; font-size: 1rem; color: #e8edf5; }
     .xp-qr-close {
-      display: grid; place-items: center; width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; padding: 0; line-height: 1;
       border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
-      background: rgba(255,255,255,0.05); color: #8f9aae; font-size: 0.8rem; cursor: pointer;
+      background: rgba(255,255,255,0.05); color: #8f9aae; font-size: 0.82rem; cursor: pointer;
+    }
+    /* "Open xPortal" deep link — only useful on mobile */
+    @media (hover: hover) and (pointer: fine) {
+      #xpGateOpenBtn { display: none !important; }
     }
     .xp-qr-wrap { display: grid; justify-items: center; }
     .xp-qr-frame { position: relative; display: grid; place-items: center; width: min(100%,260px); }
@@ -457,14 +462,13 @@
       <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-controls="appSidebar" aria-expanded="false" aria-label="Toggle navigation">☰</button>
       <div class="topbar-cta-rail" id="topbarCtaRail" aria-label="Quick actions">
         <button type="button" class="install-btn topbar-earn-btn" id="topbarEarnBtn" onclick="handleTopbarCtaClick()" hidden>🎮Play and Earn💰</button>
-        <button type="button" class="xp-disconnect-topbar" id="xpDisconnectBtn" hidden>
-          <img src="images/xPortal.png" alt="" width="14" height="14" style="border-radius:4px;">
-          <span id="xpWalletShort"></span>
-          <span>Disconnect ✕</span>
-        </button>
       </div>
       <h1 class="app-page-title" id="appPageTitle">TCL Explorer</h1>
       <div class="app-topbar-right">
+        <button type="button" class="xp-disconnect-topbar" id="xpDisconnectBtn" hidden>
+          <img src="images/xPortal.png" alt="" width="14" height="14" style="border-radius:4px;">
+          <span id="xpWalletShort"></span>Disconnect ✕
+        </button>
         <div class="topbar-utility-switcher" id="topbarUtilitySwitcher" data-active="lang">
         <div class="lang-dropdown" id="topbarLangControl">
           <button type="button" class="lang-btn" id="currentLang">
@@ -5552,12 +5556,20 @@ function simulateApr() {
     } catch (err) {
       if (runId !== S.runId) return;
       S.connecting = false; S.client = null;
-      if (/expired|timeout/i.test(err && err.message || "")) {
+      const isExpired = /expired|timeout|408/i.test((err && err.message) || "") || (err && err.code === 408);
+      if (isExpired) {
         if (DOM.qrFrame)   DOM.qrFrame.classList.add("is-expired");
         if (DOM.qrRefresh) DOM.qrRefresh.hidden = false;
         setStatus("error", "Session expired. Press Refresh.");
       } else {
         setStatus("error", (err && err.message) || "Connection failed.");
+        // Auto-retry after 4s if still not connected
+        setTimeout(function () {
+          if (!isConnected() && DOM.gate && !DOM.gate.hidden) {
+            setStatus("loading", "Retrying…");
+            startConnect();
+          }
+        }, 4000);
       }
     }
   }
