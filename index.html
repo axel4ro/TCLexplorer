@@ -5515,6 +5515,7 @@ function simulateApr() {
   function clearConn() {
     S.address = ""; S.topic = ""; S.client = null; S.connecting = false;
     XPORTAL.clearStoredSession();
+    XPORTAL.resetClient();
     syncDisconnectBtn();
     checkGate();
   }
@@ -5528,7 +5529,8 @@ function simulateApr() {
     if (DOM.qrFrame)   DOM.qrFrame.classList.remove("is-expired");
     if (DOM.openBtn)   DOM.openBtn.classList.add("is-disabled");
     try {
-      const pairing = await XPORTAL.startPairing({
+      // Timeout of 25s so we never hang indefinitely on relay issues
+      const pairingPromise = XPORTAL.startPairing({
         projectId: XPORTAL.CONFIG.projectId,
         relayUrl:  XPORTAL.CONFIG.relayUrl,
         methods:   XPORTAL.CONFIG.methods,
@@ -5538,6 +5540,10 @@ function simulateApr() {
           fallbackPath: "/", iconPath: "images/thecursedland.png"
         })
       });
+      const timeoutPromise = new Promise(function(_, reject) {
+        setTimeout(function() { reject(new Error("timeout")); }, 25000);
+      });
+      const pairing = await Promise.race([pairingPromise, timeoutPromise]);
       if (runId !== S.runId) return;
       const { uri } = pairing;
       S.client = pairing.client;
@@ -5661,6 +5667,7 @@ function simulateApr() {
       if (DOM.qrFrame) DOM.qrFrame.classList.remove("is-expired");
       DOM.qrRefresh.hidden = true;
       S.connecting = false; S.client = null;
+      XPORTAL.resetClient();
       if (DOM.openBtn) DOM.openBtn.classList.add("is-disabled");
       startConnect();
     });
@@ -5685,9 +5692,10 @@ function simulateApr() {
   (async function boot() {
     const restored = await restoreConn();
     if (!restored) {
-      // Clear any stale address/topic set by event listeners during restore
+      // Clear any stale state + force fresh WalletConnect client
       S.address = ""; S.topic = "";
-      syncDisconnectBtn(); // ensure button is hidden
+      XPORTAL.resetClient();
+      syncDisconnectBtn();
       checkGate();
     }
     // If restored: saveConn() inside restoreConn() already handled UI
