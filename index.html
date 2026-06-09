@@ -1137,9 +1137,7 @@ function openLander() {
   let mode = 'buy';
   const DEX_API_URL = "https://api.dexscreener.io/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
   const LEADERBOARD_URLS = [
-    "https://api.tclexplorer.com/api/leaderboard",
-    "/leaderboard.json",
-    "https://cdn.jsdelivr.net/gh/axel4ro/TCLexplorer@main/leaderboard.json"
+    "https://api.tclexplorer.com/api/leaderboard"
   ];
   const LEADERBOARD_CACHE_KEY = "tclExplorer.leaderboard.v1";
   const LINKED_STAKING_GROUPS = [
@@ -3136,9 +3134,7 @@ function startStakingRefresh() {
   if (stakingRefreshStarted) return;
   stakingRefreshStarted = true;
 
-  fetchLeaderboardLastUpdate();
   fetchLeaderboard();
-  window.setInterval(fetchLeaderboardLastUpdate, 2 * 60 * 1000);
   window.setInterval(fetchLeaderboard, 300000);
   window.setInterval(updateCommitRelative, 30 * 1000);
 }
@@ -4828,22 +4824,6 @@ if (stakingInfo) {
 
 let commitDateGlobal = null;
 
-async function fetchLeaderboardLastUpdate() {
-  const statusEl = document.getElementById("lastUpdated");
-  try {
-    const resp = await fetch("https://api.github.com/repos/axel4ro/TCLexplorer/commits?path=leaderboard.json&page=1&per_page=1");
-    const data = await resp.json();
-    if (data && data.length > 0) {
-      commitDateGlobal = new Date(data[0].commit.committer.date);
-      updateCommitRelative(); // afișăm imediat
-    } else {
-      statusEl.textContent = "⚠️ No commit history found.";
-    }
-  } catch (err) {
-    console.error("❌ Failed to fetch commit time:", err);
-    statusEl.textContent = "⚠️ Failed to fetch last update time.";
-  }
-}
 
 function updateCommitRelative() {
   if (!commitDateGlobal) return;
