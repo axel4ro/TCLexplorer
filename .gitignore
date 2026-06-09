@@ -16,3 +16,7 @@ discord_bot/config/
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# SSH keys - never commit
+.ssh/
+.server_config
