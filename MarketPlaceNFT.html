@@ -646,6 +646,53 @@
     #toast.error { border-color: var(--red); color: var(--red); }
     #toast.info { border-color: var(--accent); color: var(--accent); }
 
+    /* ── App Confirmation Modal ── */
+    #confirm-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #confirm-modal.open { display: flex; }
+    .confirm-box {
+      width: 100%;
+      max-width: 430px;
+      padding: 24px;
+      background: #0d1120;
+      border: 1px solid #2a3347;
+      border-radius: 18px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+      animation: fadeUp 0.2s ease;
+    }
+    .confirm-box h3 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 17px;
+    }
+    .confirm-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 22px;
+    }
+    .confirm-actions button { min-width: 110px; padding: 11px 16px; }
+    #confirm-accept.danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+    }
+
     /* ── QR Modal ── */
     #qr-modal {
       display: none;
@@ -851,6 +898,18 @@
 
 <!-- ════════════ TOAST ════════════ -->
 <div id="toast"></div>
+
+<!-- ════════════ APP CONFIRMATION MODAL ════════════ -->
+<div id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Confirm action</h3>
+    <p id="confirm-message"></p>
+    <div class="confirm-actions">
+      <button class="btn-secondary" id="confirm-cancel" type="button">Cancel</button>
+      <button class="btn-primary" id="confirm-accept" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
 
 <!-- ════════════ SCRIPTS ════════════ -->
 <!-- WalletConnect (bundled) -->
@@ -1445,7 +1504,12 @@ async function buyNFT(listingId) {
   }
 
   const priceWhole = formatTCL(listing.price);
-  if (!confirm(`Buy this NFT for ${priceWhole} TCL?`)) return;
+  const confirmed = await showConfirm({
+    title: "Confirm purchase",
+    message: `Buy this NFT for ${priceWhole} TCL?`,
+    confirmText: "Buy NFT",
+  });
+  if (!confirmed) return;
 
   try {
     showToast("Building transaction…", "info");
@@ -1471,7 +1535,13 @@ async function buyNFT(listingId) {
 // ══════════════════════════════════════════════════════════════════════════════
 async function cancelListing(listingId) {
   if (!walletAddress) { showToast("Connect wallet first", "error"); return; }
-  if (!confirm("Cancel this listing and get your NFT back?")) return;
+  const confirmed = await showConfirm({
+    title: "Cancel listing",
+    message: "Cancel this listing and return the NFT to your wallet?",
+    confirmText: "Cancel Listing",
+    danger: true,
+  });
+  if (!confirmed) return;
 
   try {
     const listingIdHex = listingId.toString(16).padStart(16, "0");
@@ -2312,6 +2382,41 @@ function showToast(msg, type = "info") {
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove("show"), 4000);
 }
+
+let confirmResolver = null;
+
+function showConfirm({ title, message, confirmText = "Confirm", danger = false }) {
+  if (confirmResolver) closeConfirm(false);
+  const modal = document.getElementById("confirm-modal");
+  const accept = document.getElementById("confirm-accept");
+  document.getElementById("confirm-title").textContent = title;
+  document.getElementById("confirm-message").textContent = message;
+  accept.textContent = confirmText;
+  accept.classList.toggle("danger", danger);
+  modal.classList.add("open");
+  accept.focus();
+  return new Promise(resolve => {
+    confirmResolver = resolve;
+  });
+}
+
+function closeConfirm(confirmed = false) {
+  document.getElementById("confirm-modal").classList.remove("open");
+  const resolve = confirmResolver;
+  confirmResolver = null;
+  if (resolve) resolve(confirmed);
+}
+
+document.getElementById("confirm-accept")?.addEventListener("click", () => closeConfirm(true));
+document.getElementById("confirm-cancel")?.addEventListener("click", () => closeConfirm(false));
+document.getElementById("confirm-modal")?.addEventListener("click", e => {
+  if (e.target === document.getElementById("confirm-modal")) closeConfirm(false);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.getElementById("confirm-modal")?.classList.contains("open")) {
+    closeConfirm(false);
+  }
+});
 
 // Close modals on outside click
 document.getElementById("detail-modal")?.addEventListener("click", e => {
