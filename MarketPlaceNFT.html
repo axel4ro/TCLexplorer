@@ -652,8 +652,8 @@
     </div>
   </div>
   <div class="header-right">
-    <a href="index.html" class="nav-back">← Dashboard</a>
-    <a href="NFTs.html" class="nav-back">🖼 Browse NFTs</a>
+    <button class="nav-back" onclick="navBack()">← TCL Explorer</button>
+    <button class="nav-back" onclick="navBrowseNFTs()">🖼 Browse NFTs</button>
     <button id="wallet-btn" onclick="handleWalletClick()">🔗 Connect xPortal</button>
   </div>
 </header>
@@ -824,6 +824,22 @@ function handleWalletClick() {
 }
 
 const IN_IFRAME = window !== window.top;
+
+function navBack() {
+  if (IN_IFRAME) {
+    window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+  } else {
+    window.location.href = "index.html";
+  }
+}
+
+function navBrowseNFTs() {
+  if (IN_IFRAME) {
+    window.parent.postMessage({ type: "tcl:navigate", page: "nfts" }, "*");
+  } else {
+    window.location.href = "NFTs.html";
+  }
+}
 
 async function connectWallet() {
   if (IN_IFRAME) {
