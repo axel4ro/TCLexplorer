@@ -1114,19 +1114,16 @@ async function showNFTDetails(identifier) {
   if (hasScDataNow) {
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
-    if (tclMax > 0n) {
+    if (tclMax > 0n && tclCount > 0n) {
       const storagePct = Math.min(Number(tclCount * 100n / tclMax), 100);
       const usdVal = tclPriceUSD
-        ? `<span style="color:#34d399;font-size:13px;font-weight:600;"> ≈ $${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`
+        ? ` ≈ <b style="color:#34d399;">$${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b>`
         : '';
       scHtml = `
-        <div class="sc-attrs-section">
-          <h3>⚙️ Game Attributes</h3>
-          <div class="sc-storage-full">
-            <span class="k">💾 TCL Storage — ${fmtTCL(tclCount)} / ${fmtTCL(tclMax)} TCL${usdVal}</span>
-            <div class="storage-bar-wrap" style="height:14px; margin-top:6px;">
-              <div class="storage-bar-fill" style="width:${storagePct}%"></div>
-            </div>
+        <div class="sc-storage-full" style="margin-bottom:10px;">
+          <span class="k">💾 TCL Storage — ${fmtTCL(tclCount)} / ${fmtTCL(tclMax)} TCL${usdVal}</span>
+          <div class="storage-bar-wrap" style="height:10px; margin-top:5px;">
+            <div class="storage-bar-fill" style="width:${storagePct}%"></div>
           </div>
         </div>`;
     }
@@ -1139,6 +1136,7 @@ content.innerHTML = `
     <h2>${nft.name}</h2>
     <img src="${nft.media?.[0]?.url || ''}">
     <div class="modal-info">
+      ${scHtml}
       <p><b>Collection:</b> ${nft.collection}</p>
       <p><b>Identifier:</b> ${nft.identifier}</p>
       <p><b>Royalties:</b> ${royaltyPct}</p>
@@ -1147,7 +1145,6 @@ content.innerHTML = `
   </div>
 
   <div class="modal-right">
-    ${scHtml}
     ${attributesHtml}
   </div>
 `;
