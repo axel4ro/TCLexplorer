@@ -549,6 +549,18 @@
       font-weight: 600;
       margin-top: 7px;
     }
+    .xportal-transfer-note {
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 10px;
+      color: #d1d5db;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 12px 0;
+      padding: 10px 12px;
+    }
+    .xportal-transfer-note strong { color: var(--gold); }
+    .xportal-transfer-note code { color: var(--accent); }
     .nft-select-card {
       display: flex;
       align-items: center;
@@ -764,6 +776,12 @@
       <label class="form-label">Royalty % <span style="color:var(--muted);font-size:11px;font-weight:400;">🔒 Fixed</span></label>
       <input type="number" class="form-input" id="royalty-percent" readonly style="opacity:0.6;cursor:not-allowed;" value="0">
       <div class="fee-note">Creator royalty fixed at <span>10%</span> + platform fee <span>2%</span> — both paid in TCL.</div>
+    </div>
+
+    <div class="xportal-transfer-note">
+      <strong>xPortal notice:</strong> it will show your own wallet as the transaction receiver.
+      This is required by the MultiversX NFT transfer protocol. The NFT destination is the
+      marketplace contract <code id="listing-contract-destination">—</code>, encoded inside the transaction.
     </div>
 
     <div style="display:flex; gap:10px; margin-top:8px;">
@@ -1346,6 +1364,8 @@ function openListModal() {
   // Pre-fill default royalty info for TCL NFTs
   document.getElementById("royalty-address").value = TCL_ROYALTY_ADDRESS;
   document.getElementById("royalty-percent").value = TCL_ROYALTY_PCT;
+  document.getElementById("listing-contract-destination").textContent =
+    `${MARKETPLACE_CONTRACT.slice(0, 10)}…${MARKETPLACE_CONTRACT.slice(-8)}`;
   renderMyNFTsForListing();
 }
 function closeListModal() {
@@ -1484,6 +1504,7 @@ async function submitListing() {
       15_000_000
     );
 
+    showToast("xPortal may show your own address as receiver. The NFT destination is the marketplace contract.", "info");
     const hash = await signAndBroadcast(tx);
     showToast("NFT listed! Tx: " + hash.slice(0, 12) + "…", "success");
     closeListModal();
