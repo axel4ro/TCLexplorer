@@ -748,14 +748,14 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Royalty Wallet (creator address)</label>
-      <input type="text" class="form-input" id="royalty-address" placeholder="erd1…" value="">
+      <label class="form-label">Royalty Wallet (creator address) <span style="color:var(--muted);font-size:11px;font-weight:400;">🔒 Fixed</span></label>
+      <input type="text" class="form-input" id="royalty-address" readonly style="opacity:0.6;cursor:not-allowed;" value="">
     </div>
 
     <div class="form-group">
-      <label class="form-label">Royalty % (e.g. 5 = 5%)</label>
-      <input type="number" class="form-input" id="royalty-percent" placeholder="0" min="0" max="20" step="0.1" value="0">
-      <div class="fee-note">From the NFT's on-chain royalties field. <span>Max 20%.</span></div>
+      <label class="form-label">Royalty % <span style="color:var(--muted);font-size:11px;font-weight:400;">🔒 Fixed</span></label>
+      <input type="number" class="form-input" id="royalty-percent" readonly style="opacity:0.6;cursor:not-allowed;" value="0">
+      <div class="fee-note">Creator royalty fixed at <span>10%</span> + platform fee <span>2%</span> — both paid in TCL.</div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:8px;">
@@ -1393,11 +1393,9 @@ function selectNFTForListing(identifier) {
     </div>`;
   document.getElementById("selected-nft-preview").style.display = "block";
 
-  // Pre-fill royalty info from NFT on-chain data (fallback to TCL defaults)
-  const royaltyPct = nft.royalties ? (nft.royalties / 100) : TCL_ROYALTY_PCT;
-  const royaltyAddr = nft.creator || TCL_ROYALTY_ADDRESS;
-  document.getElementById("royalty-percent").value = royaltyPct;
-  document.getElementById("royalty-address").value = royaltyAddr;
+  // Always use fixed TCL royalty values — not editable
+  document.getElementById("royalty-percent").value = TCL_ROYALTY_PCT;
+  document.getElementById("royalty-address").value = TCL_ROYALTY_ADDRESS;
 }
 
 // Update fee breakdown as user types price
@@ -1411,8 +1409,7 @@ document.getElementById && (() => {
         return;
       }
       const fee = price * 0.02;
-      const royaltyPct = parseFloat(document.getElementById("royalty-percent").value) || 0;
-      const royalty = price * (royaltyPct / 100);
+      const royalty = price * (TCL_ROYALTY_PCT / 100);
       const seller = price - fee - royalty;
       document.getElementById("price-breakdown").innerHTML = `
         Platform fee (2%): <span>${fee.toFixed(2)} TCL</span> &nbsp;|&nbsp;
@@ -1426,9 +1423,6 @@ async function submitListing() {
   if (!selectedNFTForListing) { showToast("Select an NFT first", "error"); return; }
   const priceVal = parseFloat(document.getElementById("list-price").value);
   if (!priceVal || priceVal <= 0) { showToast("Enter a valid price", "error"); return; }
-  const royaltyAddress = document.getElementById("royalty-address").value.trim();
-  const royaltyPct = parseFloat(document.getElementById("royalty-percent").value) || 0;
-
   if (!MARKETPLACE_CONTRACT) {
     showToast("Contract not deployed yet. See DEPLOY.md", "info");
     return;
@@ -1436,11 +1430,11 @@ async function submitListing() {
 
   try {
     const priceBig = BigInt(Math.floor(priceVal)) * TCL_DENOMINATOR;
-    const royaltyBps = Math.floor(royaltyPct * 100); // convert % to basis points
+    const royaltyBps = TCL_ROYALTY_PCT * 100; // fixed 10% → 1000 basis points
 
     const nft = selectedNFTForListing;
     const priceHex = priceBig.toString(16).padStart(64, "0");
-    const royaltyAddrHex = addressToHex(royaltyAddress || walletAddress);
+    const royaltyAddrHex = addressToHex(TCL_ROYALTY_ADDRESS);
     const royaltyBpsHex = royaltyBps.toString(16).padStart(16, "0");
     const data = `listNFT@${priceHex}@${royaltyAddrHex}@${royaltyBpsHex}`;
 
