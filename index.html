@@ -567,6 +567,11 @@
       <span class="token-accordion-card__hint">Clasamentul celor mai activi traderi TCL din comunitate.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
+    <button type="button" class="token-accordion-card" onclick="openMarketplacePage()">
+      <span class="token-accordion-card__title">🛒 NFTs Marketplace</span>
+      <span class="token-accordion-card__hint">Cumpără și vinde NFT-uri TCL cu tokenul TCL.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
     <button type="button" class="token-accordion-card" onclick="showPage('chart')">
       <span class="token-accordion-card__title">📊 TCL Live Chart</span>
       <span class="token-accordion-card__hint">Graficul live al prețului TCL direct din DexScreener.</span>
@@ -2894,6 +2899,15 @@ const INTERNAL_PAGE_ROUTES = {
     loadingTitle: "Loading NFTs...",
     loadingSubtitle: "Preparing collections, images and explorer tools.",
     waitForReadyMessage: true
+  },
+  marketplace: {
+    src: "MarketPlaceNFT.html",
+    title: "NFTs Marketplace",
+    navId: "btn-marketplace",
+    routeKey: "marketplace",
+    loadingTitle: "Loading NFTs Marketplace...",
+    loadingSubtitle: "Preparing TCL NFT listings, buy & sell with TCL token.",
+    waitForReadyMessage: false
   },
   lander: {
     src: "https://popugames.github.io/Lander/",
@@ -5264,6 +5278,11 @@ function openSwapPage() {
 
 function openTopSpendersPage() {
   const route = INTERNAL_PAGE_ROUTES.TopSpenders;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openMarketplacePage() {
+  const route = INTERNAL_PAGE_ROUTES.marketplace;
   openInternalPage(route.src, route.title, route);
 }
 
