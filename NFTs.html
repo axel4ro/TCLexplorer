@@ -916,8 +916,6 @@ async function renderNFTs(nfts) {
       if (found) attrValue = found.value;
     }
 
-    const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
-
     // SC badges
     const qualityNames = ["","Common","Uncommon","Rare","Epic","Legendary"];
     const q = nft.sc_quality;
@@ -947,19 +945,16 @@ async function renderNFTs(nfts) {
     })() : "";
 
     const hasBadges = qualityBadge || waveBadge || bonusBadge || crystalBadge || socketBadge;
+    // don't repeat attrValue if it's already the title
+    const showAttr = attrValue && attrValue !== title;
 
     cardsHtml += `
       <div class="card" onclick="showNFTDetails('${nft.identifier}')">
         <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
         <h4>${title}</h4>
-        ${attrValue ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
+        ${showAttr ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
         ${hasBadges ? `<div class="nft-badges">${qualityBadge}${waveBadge}${bonusBadge}${crystalBadge}${socketBadge}</div>` : ""}
         ${storageHtml}
-        <button style="margin-top:10px; background:#2ff6de; color:#161a24;
-          font-weight:bold; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;"
-          onclick="window.open('${nftLink}','_blank'); event.stopPropagation();">
-          🛒 View on XOXNO
-        </button>
       </div>
     `;
   }
@@ -1015,6 +1010,41 @@ async function renderNFTs(nfts) {
       }
       return Number(val) || 0;
     }
+// Live SC query from browser (fallback when server hasn't synced yet)
+async function fetchScDataLive(collectionId, nonce) {
+  const GAME_SC = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+  async function scQ(funcName) {
+    try {
+      const colHex = Array.from(collectionId).map(c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+      const nonceHex = BigInt(nonce).toString(16).padStart(16,'0');
+      const r = await fetch(`${MVX_API_FALLBACK}/vm-values/query`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ scAddress: GAME_SC, funcName, args: [colHex, nonceHex] })
+      });
+      const d = await r.json();
+      const b64 = d?.data?.data?.returnData?.[0];
+      if (b64 == null) return null;
+      if (b64 === '') return 0n;
+      const hex = atob(b64).split('').map(c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+      return hex ? BigInt('0x' + hex) : 0n;
+    } catch { return null; }
+  }
+  const [socketCount, tclCount, tclMax, refinementTs, quality, wave, hasBonus, hasCrystal] = await Promise.all([
+    scQ('getSocketCount'), scQ('getTclCount'), scQ('getTclMax'), scQ('getRefinementTimestamp'),
+    scQ('getNftQuality'), scQ('getNftWave'), scQ('getHasBonus'), scQ('getHasCrystal')
+  ]);
+  return {
+    sc_socket_count:  socketCount   !== null ? Number(socketCount)  : null,
+    sc_tcl_count:     tclCount      !== null ? tclCount.toString()  : null,
+    sc_tcl_max:       tclMax        !== null ? tclMax.toString()    : null,
+    sc_refinement_ts: refinementTs  !== null ? Number(refinementTs) : null,
+    sc_quality:       quality       !== null ? Number(quality)      : null,
+    sc_wave:          wave          !== null ? Number(wave)         : null,
+    sc_has_bonus:     hasBonus      !== null ? hasBonus > 0n        : null,
+    sc_has_crystal:   hasCrystal    !== null ? hasCrystal > 0n      : null,
+  };
+}
+
 async function showNFTDetails(identifier) {
   let nft = getCache("nftDetails", NFTS_CACHE_TTL.nftDetails, identifier);
   if (!nft) {
@@ -1057,15 +1087,22 @@ async function showNFTDetails(identifier) {
     attributesHtml += "</div>";
   }
 
-  // link direct NFT
-  const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
+  // Fetch SC data live if server hasn't synced yet
+  const hasScData = nft.sc_quality != null || nft.sc_wave != null || nft.sc_tcl_max != null
+    || nft.sc_socket_count != null || nft.sc_has_bonus != null;
+  if (!hasScData && nft.collection && nft.nonce != null) {
+    try {
+      const live = await fetchScDataLive(nft.collection, nft.nonce);
+      Object.assign(nft, live);
+    } catch(e) { console.warn('live SC fetch failed', e); }
+  }
 
   // SC attributes section
   const qualityNames = ["","Common","Uncommon","Rare","Epic","Legendary"];
   let scHtml = "";
-  const hasScData = nft.sc_quality != null || nft.sc_wave != null || nft.sc_tcl_max != null
+  const hasScDataNow = nft.sc_quality != null || nft.sc_wave != null || nft.sc_tcl_max != null
     || nft.sc_socket_count != null || nft.sc_has_bonus != null;
-  if (hasScData) {
+  if (hasScDataNow) {
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
     const storagePct = tclMax > 0n ? Number(tclCount * 100n / tclMax) : 0;
@@ -1110,7 +1147,8 @@ async function showNFTDetails(identifier) {
       </div>`;
   }
 
-// 🔥 layout pe două coloane
+const royaltyPct = nft.royalties > 0 ? (nft.royalties / 100).toFixed(2).replace(/\.?0+$/, '') + '%' : '—';
+
 content.innerHTML = `
   <div class="modal-left">
     <h2>${nft.name}</h2>
@@ -1118,13 +1156,9 @@ content.innerHTML = `
     <div class="modal-info">
       <p><b>Collection:</b> ${nft.collection}</p>
       <p><b>Identifier:</b> ${nft.identifier}</p>
-      <p><b>Royalties:</b> ${nft.royalties/100}%</p>
+      <p><b>Royalties:</b> ${royaltyPct}</p>
       <p><b>Nonce:</b> ${nft.nonce}</p>
     </div>
-    <button class="view-btn" style="margin-top:15px;"
-      onclick="window.open('${nftLink}','_blank')">
-      🛒 View on XOXNO
-    </button>
   </div>
 
   <div class="modal-right">
