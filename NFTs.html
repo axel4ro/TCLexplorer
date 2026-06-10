@@ -492,9 +492,19 @@ body.page-sub {
 
   <!-- ================== MARKETPLACE (cu filtre avansate) ================== -->
   <script>
-    // Server API — date pre-indexate, instant (fallback la MultiversX API dacă serverul e offline)
     const TCL_API = "https://api.tclexplorer.com";
     const MVX_API_FALLBACK = "https://api.multiversx.com";
+    let tclPriceUSD = 0;
+    async function loadTCLPrice() {
+      try {
+        const r = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+        const d = await r.json();
+        tclPriceUSD = parseFloat(d?.pairs?.[0]?.priceUsd || 0);
+      } catch {}
+    }
+    function fmtTCL(bigintVal) {
+      return (Number(bigintVal) / 1e18).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
 
     const creators = [
       "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
@@ -934,14 +944,13 @@ async function renderNFTs(nfts) {
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
     const storageHtml = tclMax > 0n ? (() => {
-      const pct = Number(tclCount * 100n / tclMax);
-      const countFmt = (Number(tclCount) / 1e18).toFixed(0);
-      const maxFmt   = (Number(tclMax)   / 1e18).toFixed(0);
+      const pct = Math.min(Number(tclCount * 100n / tclMax), 100);
+      const usdVal = tclPriceUSD ? ` ≈ $${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '';
       return `
         <div class="storage-bar-wrap" title="TCL Storage">
           <div class="storage-bar-fill" style="width:${pct}%"></div>
         </div>
-        <span class="storage-label">💾 ${countFmt} / ${maxFmt} TCL</span>`;
+        <span class="storage-label">💾 ${fmtTCL(tclCount)} / ${fmtTCL(tclMax)} TCL${usdVal}</span>`;
     })() : "";
 
     const hasBadges = qualityBadge || waveBadge || bonusBadge || crystalBadge || socketBadge;
@@ -1105,46 +1114,22 @@ async function showNFTDetails(identifier) {
   if (hasScDataNow) {
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
-    const storagePct = tclMax > 0n ? Number(tclCount * 100n / tclMax) : 0;
-    const countFmt = (Number(tclCount) / 1e18).toFixed(2);
-    const maxFmt   = (Number(tclMax)   / 1e18).toFixed(2);
-
-    scHtml = `
-      <div class="sc-attrs-section">
-        <h3>⚙️ Game Attributes</h3>
-        <div class="sc-attrs-grid">
-          ${nft.sc_quality != null ? `<div class="sc-attr-item">
-            <span class="k">Quality</span>
-            <span class="v">${qualityNames[nft.sc_quality] || `Q${nft.sc_quality}`}</span>
-          </div>` : ""}
-          ${nft.sc_wave != null ? `<div class="sc-attr-item">
-            <span class="k">Wave</span>
-            <span class="v">${nft.sc_wave}</span>
-          </div>` : ""}
-          ${nft.sc_has_bonus != null ? `<div class="sc-attr-item">
-            <span class="k">Bonus</span>
-            <span class="v" style="color:${nft.sc_has_bonus ? '#fbbf24' : '#6b7280'}">${nft.sc_has_bonus ? "✦ Yes" : "No"}</span>
-          </div>` : ""}
-          ${nft.sc_has_crystal != null ? `<div class="sc-attr-item">
-            <span class="k">Crystal</span>
-            <span class="v" style="color:${nft.sc_has_crystal ? '#67e8f9' : '#6b7280'}">${nft.sc_has_crystal ? "◈ Yes" : "No"}</span>
-          </div>` : ""}
-          ${nft.sc_socket_count != null ? `<div class="sc-attr-item">
-            <span class="k">Sockets</span>
-            <span class="v">⬡ ${nft.sc_socket_count}</span>
-          </div>` : ""}
-          ${nft.sc_refinement_ts > 0 ? `<div class="sc-attr-item">
-            <span class="k">Refined</span>
-            <span class="v" style="font-size:11px">${new Date(nft.sc_refinement_ts * 1000).toLocaleDateString()}</span>
-          </div>` : ""}
-          ${tclMax > 0n ? `<div class="sc-storage-full">
-            <span class="k">💾 TCL Storage — ${countFmt} / ${maxFmt} TCL (${storagePct}%)</span>
-            <div class="storage-bar-wrap" style="height:14px">
+    if (tclMax > 0n) {
+      const storagePct = Math.min(Number(tclCount * 100n / tclMax), 100);
+      const usdVal = tclPriceUSD
+        ? `<span style="color:#34d399;font-size:13px;font-weight:600;"> ≈ $${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`
+        : '';
+      scHtml = `
+        <div class="sc-attrs-section">
+          <h3>⚙️ Game Attributes</h3>
+          <div class="sc-storage-full">
+            <span class="k">💾 TCL Storage — ${fmtTCL(tclCount)} / ${fmtTCL(tclMax)} TCL${usdVal}</span>
+            <div class="storage-bar-wrap" style="height:14px; margin-top:6px;">
               <div class="storage-bar-fill" style="width:${storagePct}%"></div>
             </div>
-          </div>` : ""}
-        </div>
-      </div>`;
+          </div>
+        </div>`;
+    }
   }
 
 const royaltyPct = nft.royalties > 0 ? (nft.royalties / 100).toFixed(2).replace(/\.?0+$/, '') + '%' : '—';
@@ -1245,6 +1230,7 @@ async function loadBalance() {
 
 // 🔥 Activează doar "Created" imediat când se încarcă pagina
 window.addEventListener("DOMContentLoaded", () => {
+  loadTCLPrice();
   showSection("created");
 });
 function globalSearch() {
