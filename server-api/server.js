@@ -2554,6 +2554,78 @@ app.post("/api/nfts/sync", async (req, res) => {
 const MARKETPLACE_SC = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvscppu7fqmsypuu25";
 const MVX_API_BASE   = "https://api.multiversx.com";
 
+async function fetchTclPriceUsd() {
+  try {
+    const d = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff")
+      .then(r => r.json());
+    return parseFloat(d?.pairs?.[0]?.priceUsd || 0) || 0;
+  } catch { return 0; }
+}
+
+async function runMarketplaceSync() {
+  const tclUsd = await fetchTclPriceUsd();
+  let from = 0, indexed = 0;
+  while (true) {
+    const url = `${MVX_API_BASE}/accounts/${MARKETPLACE_SC}/transactions?size=50&from=${from}&status=success&function=buyNFT&withLogs=true`;
+    const txs = await fetch(url).then(r => r.json());
+    if (!Array.isArray(txs) || !txs.length) break;
+
+    const client = await pool.connect();
+    try {
+      for (const tx of txs) {
+        try {
+          const data  = Buffer.from(tx.data || "", "base64").toString("utf8");
+          const parts = data.split("@");
+          if (parts[0] !== "ESDTTransfer" || parts.length < 5) continue;
+          const price     = parts[2] ? BigInt("0x" + parts[2]) : 0n;
+          const listingId = parts[4] ? parseInt(parts[4], 16) : 0;
+          const priceTcl  = Number(price) / 1e18;
+          const priceUsd  = tclUsd > 0 ? priceTcl * tclUsd : null;
+
+          // Extract NFT info from listingSold event topics
+          const events   = tx.logs?.events || [];
+          const soldEv   = events.find(e => e.identifier === "listingSold");
+          const nftToken = soldEv?.topics?.[2]
+            ? Buffer.from(soldEv.topics[2], "base64").toString("utf8") : null;
+          const nftNonce = soldEv?.topics?.[3]
+            ? parseInt(Buffer.from(soldEv.topics[3], "base64").toString("hex") || "0", 16) : null;
+
+          // seller = contract receiver (SC is the contract, seller is in ESDT transfer target)
+          // buyer = tx.sender (who sent TCL to SC)
+          const seller = soldEv?.topics?.[1]
+            ? (() => { try { const b = Buffer.from(soldEv.topics[1], "base64"); return new Address(b).toBech32(); } catch { return null; } })()
+            : null;
+
+          const { rowCount } = await client.query(`
+            INSERT INTO tcl_marketplace_sales
+              (listing_id, seller, buyer, nft_token, nft_nonce, price, price_usd, tx_hash, sold_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            ON CONFLICT (tx_hash) DO NOTHING
+          `, [
+            listingId,
+            seller,
+            tx.sender || null,
+            nftToken,
+            nftNonce,
+            price.toString(),
+            priceUsd,
+            tx.txHash || tx.hash,
+            tx.timestamp ? new Date(tx.timestamp * 1000) : new Date(),
+          ]);
+          if (rowCount > 0) indexed++;
+        } catch { /* skip malformed tx */ }
+      }
+    } finally {
+      client.release();
+    }
+
+    from += txs.length;
+    if (txs.length < 50) break;
+  }
+  if (indexed > 0) console.log(`Marketplace sync: indexed ${indexed} new sales`);
+  return indexed;
+}
+
 // GET /api/marketplace/sales — recent sales from DB
 app.get("/api/marketplace/sales", async (req, res) => {
   try {
@@ -2572,90 +2644,67 @@ app.get("/api/marketplace/sales", async (req, res) => {
   }
 });
 
-// GET /api/marketplace/stats — floor price, volume, total sales
+// GET /api/marketplace/stats — volume, floor, total sales
 app.get("/api/marketplace/stats", async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
-        COUNT(*)                              AS total_sales,
-        SUM(price) / 1e18                    AS total_volume_tcl,
-        MIN(price) / 1e18                    AS floor_price_tcl,
-        MAX(price) / 1e18                    AS max_price_tcl
+        COUNT(*)::int                                                   AS total_sales,
+        COALESCE(SUM(price::numeric) / 1e18, 0)                        AS volume_tcl,
+        COALESCE(SUM(price_usd), 0)                                     AS volume_usd,
+        COALESCE(MIN(price::numeric) / 1e18, 0)                        AS floor_price_tcl,
+        COALESCE(MAX(price::numeric) / 1e18, 0)                        AS max_price_tcl
       FROM tcl_marketplace_sales
     `);
-    res.setHeader("Cache-Control", "public, max-age=60");
+    res.setHeader("Cache-Control", "public, max-age=30");
     res.json(rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// POST /api/marketplace/sync — index sales from blockchain transactions (admin)
+// GET /api/marketplace/wallet/:address — EGLD + TCL balances with USD
+app.get("/api/marketplace/wallet/:address", async (req, res) => {
+  try {
+    const { address } = req.params;
+    if (!address.startsWith("erd1") || address.length < 60)
+      return res.status(400).json({ error: "Invalid address" });
+
+    const [accountData, tokenData, tclUsd, egldData] = await Promise.all([
+      fetch(`${MVX_API_BASE}/accounts/${address}`).then(r => r.json()),
+      fetch(`${MVX_API_BASE}/accounts/${address}/tokens/TCL-fe459d`).then(r => r.json()).catch(() => null),
+      fetchTclPriceUsd(),
+      fetch(`${MVX_API_BASE}/economics`).then(r => r.json()).catch(() => null),
+    ]);
+
+    const egldRaw    = BigInt(accountData?.balance || "0");
+    const egldAmount = Number(egldRaw) / 1e18;
+    const egldUsd    = parseFloat(egldData?.price || 0) || 0;
+
+    const tclRaw    = BigInt(tokenData?.balance || "0");
+    const tclAmount = Number(tclRaw) / 1e18;
+
+    res.setHeader("Cache-Control", "public, max-age=20");
+    res.json({
+      egld:     egldAmount,
+      egld_usd: egldAmount * egldUsd,
+      tcl:      tclAmount,
+      tcl_usd:  tclAmount * tclUsd,
+      egld_price: egldUsd,
+      tcl_price:  tclUsd,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/marketplace/sync — manual trigger (admin)
 app.post("/api/marketplace/sync", async (req, res) => {
   const secret = req.headers["x-admin-secret"] || "";
   if (!ADMIN_SECRET || secret !== ADMIN_SECRET)
     return res.status(401).json({ error: "Unauthorized" });
-
   res.json({ ok: true, message: "Marketplace sync started" });
-
-  // Fire-and-forget: index listingSold events from blockchain
-  (async () => {
-    try {
-      let from = 0, indexed = 0;
-      while (true) {
-        const url = `${MVX_API_BASE}/accounts/${MARKETPLACE_SC}/transactions?size=50&from=${from}&status=success&function=buyNFT`;
-        const txs = await fetch(url).then(r => r.json());
-        if (!Array.isArray(txs) || !txs.length) break;
-
-        const client = await pool.connect();
-        try {
-          for (const tx of txs) {
-            // Parse buyNFT call: ESDTTransfer@tclHex@amountHex@buyNFTHex@listingIdHex
-            try {
-              const data = Buffer.from(tx.data || "", "base64").toString("utf8");
-              const parts = data.split("@");
-              if (parts[0] !== "ESDTTransfer" || parts.length < 5) continue;
-              const price     = parts[2] ? BigInt("0x" + parts[2]) : 0n;
-              const listingId = parts[4] ? parseInt(parts[4], 16) : 0;
-
-              // Get NFT info from SC events
-              const events = tx.logs?.events || [];
-              const soldEv = events.find(e => e.identifier === "listingSold" || e.topics?.[0]);
-              const nftToken = soldEv?.topics?.[2]
-                ? Buffer.from(soldEv.topics[2], "base64").toString("utf8") : null;
-              const nftNonce = soldEv?.topics?.[3]
-                ? parseInt(Buffer.from(soldEv.topics[3], "base64").toString("hex") || "0", 16) : null;
-
-              await client.query(`
-                INSERT INTO tcl_marketplace_sales
-                  (listing_id, seller, buyer, nft_token, nft_nonce, price, tx_hash, sold_at)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-                ON CONFLICT (tx_hash) DO NOTHING
-              `, [
-                listingId,
-                tx.receiver || null,
-                tx.sender || null,
-                nftToken,
-                nftNonce,
-                price.toString(),
-                tx.txHash || tx.hash,
-                tx.timestamp ? new Date(tx.timestamp * 1000) : new Date(),
-              ]);
-              indexed++;
-            } catch { /* skip malformed tx */ }
-          }
-        } finally {
-          client.release();
-        }
-
-        from += txs.length;
-        if (txs.length < 50) break;
-      }
-      console.log(`Marketplace sync: indexed ${indexed} sales`);
-    } catch (e) {
-      console.error("Marketplace sync error:", e.message);
-    }
-  })();
+  runMarketplaceSync().catch(e => console.error("Marketplace sync error:", e.message));
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2689,10 +2738,12 @@ async function runMigrations() {
        nft_token     TEXT,
        nft_nonce     BIGINT,
        price         NUMERIC(36,0),
+       price_usd     NUMERIC(18,6),
        royalty_pct   INT,
        tx_hash       TEXT UNIQUE,
        sold_at       TIMESTAMPTZ DEFAULT NOW()
      )`,
+    `ALTER TABLE tcl_marketplace_sales ADD COLUMN IF NOT EXISTS price_usd NUMERIC(18,6)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_nft ON tcl_marketplace_sales(nft_token, nft_nonce)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_seller ON tcl_marketplace_sales(seller)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_buyer ON tcl_marketplace_sales(buyer)`,
@@ -2719,6 +2770,12 @@ pool.connect().then(async client => {
     runScheduledWheelDraws();
     const wheelDrawTimer = setInterval(runScheduledWheelDraws, WHEEL_DRAW_INTERVAL_MS);
     wheelDrawTimer.unref();
+    // Auto-index marketplace sales every 5 minutes
+    runMarketplaceSync().catch(e => console.error("Marketplace initial sync:", e.message));
+    const mpSyncTimer = setInterval(() => {
+      runMarketplaceSync().catch(e => console.error("Marketplace sync:", e.message));
+    }, 5 * 60 * 1000);
+    mpSyncTimer.unref();
   });
 }).catch(err => {
   console.error("DB connection failed:", err.message);

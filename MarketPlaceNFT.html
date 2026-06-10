@@ -952,7 +952,7 @@
       .toolbar .btn-primary,
       .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
 
-      /* Stats bar — 2×2 grid */
+      /* Stats bar — 2-column grid */
       .stats-bar { padding: 10px 14px; gap: 0; display: grid; grid-template-columns: 1fr 1fr; row-gap: 10px; column-gap: 12px; }
       .stats-bar > div:last-child { grid-column: 1 / -1; text-align: right; padding-top: 4px; border-top: 1px solid #1e2a42; }
       .stat-value { font-size: 14px; }
@@ -1044,8 +1044,13 @@
       </div>
     </div>
 
-    <!-- ── Connected: address chip + disconnect (hidden when not connected) -->
+    <!-- ── Connected: address chip + balances + disconnect -->
     <div id="connectedView" style="display:flex;align-items:center;gap:8px;" hidden>
+      <div id="walletBalances" style="display:flex;align-items:center;gap:6px;font-size:0.78rem;">
+        <span id="balEgld" style="color:var(--muted);">—</span>
+        <span style="color:#2a3347;">|</span>
+        <span id="balTcl" style="color:var(--gold);">—</span>
+      </div>
       <span class="wallet-addr-text" id="walletAddr" style="font-size:0.82rem;"></span>
       <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
     </div>
@@ -1068,6 +1073,14 @@
   <div class="stat-item">
     <div class="stat-label">TCL Price</div>
     <div class="stat-value" id="stat-tcl-price">$—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Volume TCL</div>
+    <div class="stat-value gold" id="stat-volume-tcl">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Volume $</div>
+    <div class="stat-value" id="stat-volume-usd">$—</div>
   </div>
   <div class="stat-item">
     <div class="stat-label">Contract</div>
@@ -1401,8 +1414,13 @@ async function disconnectWallet() {
 function updateWalletUI(address) {
   if (address) {
     loadMyNFTs();
+    loadWalletBalances(address);
   } else {
     myWalletNFTs = [];
+    const egldEl = document.getElementById("balEgld");
+    const tclEl  = document.getElementById("balTcl");
+    if (egldEl) egldEl.textContent = "—";
+    if (tclEl)  tclEl.textContent  = "—";
   }
   renderCurrentTab();
 }
@@ -2928,6 +2946,33 @@ async function loadTCLPrice() {
   }
 }
 
+async function loadMarketplaceStats() {
+  try {
+    const data = await fetch(`${TCL_API}/api/marketplace/stats`).then(r => r.json());
+    const volTcl = parseFloat(data.volume_tcl || 0);
+    const volUsd = parseFloat(data.volume_usd || 0);
+    document.getElementById("stat-volume-tcl").textContent =
+      volTcl >= 1000 ? (volTcl / 1000).toFixed(1) + "K TCL" : volTcl.toFixed(0) + " TCL";
+    document.getElementById("stat-volume-usd").textContent =
+      volUsd >= 1000 ? "$" + (volUsd / 1000).toFixed(2) + "K" : "$" + volUsd.toFixed(2);
+  } catch (e) {
+    console.warn("Marketplace stats fetch error", e);
+  }
+}
+
+async function loadWalletBalances(address) {
+  try {
+    const data = await fetch(`${TCL_API}/api/marketplace/wallet/${address}`).then(r => r.json());
+    if (data.error) return;
+    const egldEl = document.getElementById("balEgld");
+    const tclEl  = document.getElementById("balTcl");
+    if (egldEl) egldEl.textContent = `${data.egld.toFixed(3)} EGLD ($${data.egld_usd.toFixed(2)})`;
+    if (tclEl)  tclEl.textContent  = `${data.tcl.toLocaleString(undefined,{maximumFractionDigits:0})} TCL ($${data.tcl_usd.toFixed(2)})`;
+  } catch (e) {
+    console.warn("Wallet balance fetch error", e);
+  }
+}
+
 async function loadMarketplaceFee() {
   if (!MARKETPLACE_CONTRACT) return;
   try {
@@ -3034,7 +3079,7 @@ document.getElementById("my-nfts-modal")?.addEventListener("click", e => {
     updateWalletUI(savedAddress);
   }
 
-  await Promise.all([loadTCLPrice(), loadMarketplaceFee(), loadListings()]);
+  await Promise.all([loadTCLPrice(), loadMarketplaceFee(), loadListings(), loadMarketplaceStats()]);
 })();
 </script>
 </body>
