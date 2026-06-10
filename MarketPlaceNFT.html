@@ -1463,10 +1463,15 @@ function updateListingPriceBreakdown() {
 document.getElementById && (() => {
   const priceInput = document.getElementById("list-price");
   if (!priceInput) return;
-  priceInput.addEventListener("input", updateListingPriceBreakdown);
-  priceInput.addEventListener("focus", () => {
-    const normalized = normalizeTokenNumberInput(priceInput.value);
-    if (normalized) priceInput.value = normalized;
+  priceInput.addEventListener("keydown", event => {
+    if (event.key === ",") priceInput.dataset.typedDecimalComma = "true";
+  });
+  priceInput.addEventListener("beforeinput", event => {
+    if (event.data === ",") priceInput.dataset.typedDecimalComma = "true";
+  });
+  priceInput.addEventListener("input", event => {
+    formatPriceInputLive(event);
+    updateListingPriceBreakdown();
   });
   priceInput.addEventListener("blur", () => {
     const normalized = normalizeTokenNumberInput(priceInput.value);
@@ -1778,6 +1783,58 @@ function formatTokenInput(normalized) {
   const [whole, fraction = ""] = String(normalized).split(".");
   const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return fraction ? `${grouped}.${fraction}` : grouped;
+}
+
+function formatPriceInputLive(event) {
+  const input = event.currentTarget;
+  const original = input.value;
+  const caret = input.selectionStart ?? original.length;
+  const wasAtEnd = caret === original.length;
+  const typedDecimalComma = event.data === "," || input.dataset.typedDecimalComma === "true";
+  delete input.dataset.typedDecimalComma;
+  let normalized;
+
+  if (event.inputType === "insertFromPaste") {
+    normalized = normalizeTokenNumberInput(original);
+  } else if ((typedDecimalComma || original.endsWith(",")) && !original.includes(".")) {
+    const insertedComma = Math.max(0, caret - 1);
+    normalized = Array.from(original, (char, index) => {
+      if (char !== ",") return char;
+      return index === insertedComma ? "." : "";
+    }).join("");
+  } else {
+    normalized = original.replace(/,/g, "");
+  }
+
+  normalized = normalized.replace(/[\s_]/g, "");
+  if (!/^\d*(\.\d*)?$/.test(normalized)) return;
+
+  const hasTrailingDecimal = normalized.endsWith(".");
+  const formatted = normalized
+    ? formatTokenInput(normalized) + (hasTrailingDecimal ? "." : "")
+    : "";
+  const meaningfulBeforeCaret = original
+    .slice(0, caret)
+    .replace(/,/g, "")
+    .length;
+
+  input.value = formatted;
+  if (typeof input.setSelectionRange !== "function") return;
+  if (wasAtEnd) {
+    input.setSelectionRange(formatted.length, formatted.length);
+    return;
+  }
+
+  let meaningfulSeen = 0;
+  let nextCaret = formatted.length;
+  for (let index = 0; index < formatted.length; index++) {
+    if (formatted[index] !== ",") meaningfulSeen++;
+    if (meaningfulSeen >= meaningfulBeforeCaret) {
+      nextCaret = index + 1;
+      break;
+    }
+  }
+  input.setSelectionRange(nextCaret, nextCaret);
 }
 
 function formatDisplayTCL(value) {
