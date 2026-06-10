@@ -505,6 +505,11 @@ body.page-sub {
     function fmtTCL(bigintVal) {
       return (Number(bigintVal) / 1e18).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
     }
+    // Storage display: raw TCL (1e18) / (SC_price * 200) = × 5 at current SC price $0.001
+    const SC_STORAGE_PRICE = 0.001;
+    function fmtStorage(bigintVal) {
+      return (Number(bigintVal) / 1e18 / (SC_STORAGE_PRICE * 200)).toLocaleString('en-US', {maximumFractionDigits: 0});
+    }
 
     const creators = [
       "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
@@ -515,7 +520,7 @@ body.page-sub {
 	let allNFTs = [];
 	let forSaleList = [];
     let allNFTsByCollection = {};
-    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v4"; // v4 = includes SC attrs
+    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v5"; // v5 = storage display × 5 formula
     const NFTS_CACHE_TTL = {
       collections: 5 * 60 * 1000,   // 5 min (server e rapid)
       allNFTs: 5 * 60 * 1000,
@@ -945,12 +950,13 @@ async function renderNFTs(nfts) {
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
     const storageHtml = tclMax > 0n ? (() => {
       const pct = Math.min(Number(tclCount * 100n / tclMax), 100);
-      const usdVal = tclPriceUSD ? ` ≈ $${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '';
+      const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+      const usdVal = tclPriceUSD && maxDisplay > 0 ? ` ≈ $${(maxDisplay / 2 * tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '';
       return `
         <div class="storage-bar-wrap" title="TCL Storage">
           <div class="storage-bar-fill" style="width:${pct}%"></div>
         </div>
-        <span class="storage-label">💾 ${fmtTCL(tclCount)} / ${fmtTCL(tclMax)} TCL${usdVal}</span>`;
+        <span class="storage-label">💾 ${fmtStorage(tclMax)} TCL${usdVal}</span>`;
     })() : "";
 
     const hasBadges = qualityBadge || waveBadge || bonusBadge || crystalBadge || socketBadge;
@@ -1116,12 +1122,13 @@ async function showNFTDetails(identifier) {
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
     if (tclMax > 0n) {
       const storagePct = tclCount > 0n ? Math.min(Number(tclCount * 100n / tclMax), 100) : 0;
-      const usdVal = tclPriceUSD && tclCount > 0n
-        ? ` ≈ <b style="color:#34d399;">$${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b>`
+      const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+      const usdVal = tclPriceUSD && maxDisplay > 0
+        ? ` ≈ <b style="color:#34d399;">$${(maxDisplay / 2 * tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b>`
         : '';
       scHtml = `
         <div class="sc-storage-full" style="margin-bottom:10px;">
-          <span class="k">💾 Storage: ${fmtTCL(tclCount)} TCL${usdVal}</span>
+          <span class="k">💾 Storage: ${fmtStorage(tclMax)} TCL${usdVal}</span>
           <div class="storage-bar-wrap" style="height:10px; margin-top:5px;">
             <div class="storage-bar-fill" style="width:${storagePct}%"></div>
           </div>
