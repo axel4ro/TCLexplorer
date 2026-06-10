@@ -545,34 +545,39 @@
     </p>
   </div>
   <div class="token-hub-grid" role="navigation" aria-label="TCL Token quick actions">
-    <button type="button" class="token-accordion-card" onclick="openFlowPage()">
-      <span class="token-accordion-card__title">📈 Flow</span>
-      <span class="token-accordion-card__hint">Vizualizează fluxul live de tranzacții și mișcările de preț TCL.</span>
+    <button type="button" class="token-accordion-card" onclick="openMarketplacePage()">
+      <span class="token-accordion-card__title">🛒 NFTs Marketplace</span>
+      <span class="token-accordion-card__hint">Cumpără și vinde NFT-uri TCL cu tokenul TCL. În dezvoltare.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openPnlCheckPage()">
+	<button type="button" class="token-accordion-card" onclick="openTokenStakingPage()">
+      <span class="token-accordion-card__title" data-i18n="token_staking_title">🏆 Top Staking</span>
+      <span class="token-accordion-card__hint">Open leaderboard, APR and live pool reward details.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+	<button type="button" class="token-accordion-card" onclick="openPnlCheckPage()">
       <span class="token-accordion-card__title">💰 PNL Check</span>
       <span class="token-accordion-card__hint">Verifică profitul și pierderea pe tranzacțiile tale TCL.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openSwapPage()">
+	<button type="button" class="token-accordion-card" onclick="openSwapPage()">
       <span class="token-accordion-card__title">💱 Swap</span>
       <span class="token-accordion-card__hint">Schimbă TCL direct prin xExchange cu cele mai bune rate.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openTopSpendersPage()">
-      <span class="token-accordion-card__title">🏆 Top Spenders</span>
-      <span class="token-accordion-card__hint">Clasamentul celor mai activi traderi TCL din comunitate.</span>
-      <span class="token-accordion-card__icon">↗</span>
-    </button>
-    <button type="button" class="token-accordion-card" onclick="showPage('chart')">
+	<button type="button" class="token-accordion-card" onclick="showPage('chart')">
       <span class="token-accordion-card__title">📊 TCL Live Chart</span>
       <span class="token-accordion-card__hint">Graficul live al prețului TCL direct din DexScreener.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openSupportTCLPage()">
+	<button type="button" class="token-accordion-card" onclick="openSupportTCLPage()">
       <span class="token-accordion-card__title">🧡 TCLexplorer</span>
-      <span class="token-accordion-card__hint">Pagina de suport și comunitate TCL Explorer.</span>
+      <span class="token-accordion-card__hint">Suport TCL Explorer.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openFlowPage()">
+      <span class="token-accordion-card__title">📈 Flow</span>
+      <span class="token-accordion-card__hint">Vizualizează fluxul live de tranzacții și mișcările de preț TCL.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
     <button type="button" class="token-accordion-card" onclick="openTokenOverviewPage()">
@@ -580,9 +585,14 @@
       <span class="token-accordion-card__hint">Open live token stats, sentiment, supply and price overview.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openTokenStakingPage()">
-      <span class="token-accordion-card__title" data-i18n="token_staking_title">🏆 Top Staking</span>
-      <span class="token-accordion-card__hint">Open leaderboard, APR and live pool reward details.</span>
+	<button type="button" class="token-accordion-card" onclick="openAprRewardsCalculatorPage()">
+      <span class="token-accordion-card__title" data-i18n="token_calculator_apr_title">🎁 APR &amp; Rewards Calculator</span>
+      <span class="token-accordion-card__hint" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+	<button type="button" class="token-accordion-card" onclick="openTopSpendersPage()">
+      <span class="token-accordion-card__title">🏆 Top Spenders</span>
+      <span class="token-accordion-card__hint">Clasamentul celor mai activi traderi TCL din comunitate.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
     <button type="button" class="token-accordion-card" onclick="openTradeSimulatorPage()">
@@ -600,11 +610,6 @@
       <span class="token-accordion-card__hint">Open the live TCL signal monitor for Buy, Sell or Watch updates.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openAprRewardsCalculatorPage()">
-      <span class="token-accordion-card__title" data-i18n="token_calculator_apr_title">🎁 APR &amp; Rewards Calculator</span>
-      <span class="token-accordion-card__hint" data-i18n="token_calculator_apr_desc">Estimate daily, weekly, monthly and yearly TCL rewards based on APR.</span>
-      <span class="token-accordion-card__icon">↗</span>
-    </button>
     <button type="button" class="token-accordion-card" onclick="openAnalyticsPage()">
       <span class="token-accordion-card__title">📈 Analytics</span>
       <span class="token-accordion-card__hint">Review live analytics, trends and market structure in one dashboard.</span>
@@ -620,11 +625,6 @@
       <span class="token-accordion-card__hint" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-<!--<button type="button" class="token-accordion-card" onclick="openMarketplacePage()">
-      <span class="token-accordion-card__title">🛒 NFTs Marketplace</span>
-      <span class="token-accordion-card__hint">Cumpără și vinde NFT-uri TCL cu tokenul TCL. În dezvoltare.</span>
-      <span class="token-accordion-card__icon">↗</span>
-    </button>--!> 
   </div>
 </div>
 
