@@ -1286,8 +1286,8 @@ async function buyNFT(listingId) {
       `buyNFT@${listingIdHex}`,
       10_000_000
     );
-    const result = await TCLXPortal.signAndSendTransaction(tx);
-    showToast("Purchase sent! Tx: " + result.hash.slice(0, 12) + "…", "success");
+    const hash = await signAndBroadcast(tx);
+    showToast("Purchase sent! Tx: " + hash.slice(0, 12) + "…", "success");
     setTimeout(loadListings, 5000);
   } catch (err) {
     showToast("Transaction failed: " + err.message, "error");
@@ -1309,8 +1309,8 @@ async function cancelListing(listingId) {
       `cancelListing@${listingIdHex}`,
       8_000_000
     );
-    const result = await TCLXPortal.signAndSendTransaction(tx);
-    showToast("Listing cancelled! " + result.hash.slice(0, 12), "success");
+    const hash = await signAndBroadcast(tx);
+    showToast("Listing cancelled! " + hash.slice(0, 12), "success");
     setTimeout(loadListings, 4000);
   } catch (err) {
     showToast("Error: " + err.message, "error");
@@ -1448,8 +1448,8 @@ async function submitListing() {
       15_000_000
     );
 
-    const result = await TCLXPortal.signAndSendTransaction(tx);
-    showToast("NFT listed! Tx: " + result.hash.slice(0, 12) + "…", "success");
+    const hash = await signAndBroadcast(tx);
+    showToast("NFT listed! Tx: " + hash.slice(0, 12) + "…", "success");
     closeListModal();
     setTimeout(loadListings, 5000);
   } catch (err) {
@@ -1488,6 +1488,61 @@ function decodeBase64Value(b64) {
 function decodeListingStruct(raw) {
   // Simplified decoder — real ABI decoder needed for production
   return { listing_id: 0, seller: "", nft_token: "", nft_nonce: 0, price: 0n, royalty_percent: 0, timestamp: 0, is_active: true };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SIGN + BROADCAST (WalletConnect via TCLXPortal, same pattern as swap.html)
+// ══════════════════════════════════════════════════════════════════════════════
+async function getAccountNonce(address) {
+  const r = await fetch(`${MVX_API}/accounts/${address}`);
+  if (!r.ok) throw new Error("Cannot fetch account nonce");
+  const d = await r.json();
+  return Number(d.nonce || 0);
+}
+
+async function signTx(tx) {
+  const stored = TCLXPortal.getStoredSession();
+  if (!stored?.topic) throw new Error("Wallet not connected");
+  const client = await TCLXPortal.getClient();
+  const nonce = await getAccountNonce(tx.sender);
+  const signingTx = {
+    ...tx,
+    nonce,
+    value: String(tx.value ?? "0"),
+    gasPrice: 1000000000,
+    gasLimit: Number(tx.gasLimit),
+    chainID: "1",
+    version: 1
+    // data is already base64 from buildNFTTransferTx / buildESDTTransferTx
+  };
+  const reqPromise = client.request({
+    topic: stored.topic,
+    chainId: TCLXPortal.CONFIG.chainId,
+    request: { method: "mvx_signTransaction", params: { transaction: signingTx } }
+  });
+  TCLXPortal.openApp?.();
+  const result = await reqPromise;
+  const signed = result?.transaction && typeof result.transaction === "object"
+    ? { ...signingTx, ...result.transaction }
+    : { ...signingTx, ...result };
+  if (!signed.signature) throw new Error("xPortal did not return a signature.");
+  return signed;
+}
+
+async function broadcastTx(tx) {
+  const r = await fetch(`${MVX_API}/transactions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(tx)
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d?.error || d?.message || "Broadcast failed");
+  return d.txHash || d.hash;
+}
+
+async function signAndBroadcast(tx) {
+  const signed = await signTx(tx);
+  return broadcastTx(signed);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
