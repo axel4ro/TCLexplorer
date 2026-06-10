@@ -21,9 +21,16 @@
       --red: #f87171;
       --green: #34d399;
       --gold: #fbbf24;
+      --success: #4ade80;
+      --danger: #fb7185;
+      --soft: #667085;
+      --line: rgba(0,232,204,0.18);
+      --line-strong: rgba(0,232,204,0.38);
+      --radius: 8px;
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
     body {
       font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -78,24 +85,73 @@
     }
     .nav-back:hover { background: rgba(47,246,222,0.08); border-color: var(--accent); }
 
-    /* ── Wallet Button ── */
-    #wallet-btn {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border: none;
-      color: #fff;
-      font-weight: 600;
-      padding: 9px 18px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 7px;
+    /* ── Connect component (exact from swap.html) ── */
+    .status-line { display: flex; align-items: center; gap: 10px; min-height: 32px; color: var(--muted); font-size: 0.9rem; }
+    .status-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--soft); box-shadow: 0 0 0 4px rgba(102,112,133,0.12); }
+    body[data-state="connected"] .status-dot, body[data-state="ready"] .status-dot { background: var(--success); box-shadow: 0 0 0 4px rgba(74,222,128,0.12); }
+    body[data-state="loading"] .status-dot { background: var(--gold); box-shadow: 0 0 0 4px rgba(247,195,95,0.14); }
+    body[data-state="error"] .status-dot { background: var(--danger); box-shadow: 0 0 0 4px rgba(251,113,133,0.12); }
+    .qr-wrap { display: grid; gap: 12px; justify-items: center; margin: 12px 0 14px; }
+    .connect-qr-frame { position: relative; display: grid; place-items: center; width: min(100%,240px); }
+    .connect-qr-frame.is-expired .qr-code { opacity: 0.38; filter: grayscale(1); }
+    .qr-code { display: grid; place-items: center; width: min(100%,240px); min-height: 240px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); background: #fff; position: relative; }
+    .qr-code canvas, .qr-code img { width: 220px; height: 220px; }
+    .qr-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 220px; height: 220px; color: #555; font-size: 13px; font-family: inherit; }
+    .qr-loader__spinner { width: 36px; height: 36px; border: 3px solid rgba(0,0,0,0.12); border-top-color: #0c0e14; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .qr-refresh-btn { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 18px; border: 1px solid rgba(0,232,204,0.5); border-radius: var(--radius); background: linear-gradient(135deg, var(--accent), #55f5df); color: #041210; font-weight: 900; transform: translate(-50%,-50%); cursor: pointer; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 10px 15px; border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius); background: rgba(255,255,255,0.04); color: var(--text); font-weight: 800; text-decoration: none; transition: transform 0.18s, border-color 0.18s, background 0.18s, opacity 0.18s; cursor: pointer; font-family: inherit; font-size: 0.88rem; }
+    .btn img { width: 18px; height: 18px; object-fit: contain; }
+    .btn:hover { transform: translateY(-1px); border-color: var(--line-strong); background: rgba(255,255,255,0.07); }
+    .btn-blue { border-color: rgba(47,117,255,0.58); background: linear-gradient(135deg, #2f75ff, #1640ca); color: #fff; }
+    .btn.is-disabled { opacity: 0.45; pointer-events: none; }
+    .connect-wrap { position: relative; }
+    .qr-popover {
+      position: fixed; inset: 0; z-index: 420;
+      display: flex; align-items: center; justify-content: center;
+      width: 100vw; min-height: 100dvh; padding: 22px; border: 0;
+      background: rgba(3,6,12,0.68); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     }
-    #wallet-btn:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }
-    #wallet-btn.connected { background: linear-gradient(135deg, #065f46, #047857); }
-    #wallet-btn.connected:hover { background: linear-gradient(135deg, #064e3b, #065f46); }
+    .qr-modal-card {
+      display: grid; gap: 14px; width: min(380px, calc(100vw - 32px));
+      max-height: calc(100dvh - 44px); overflow: auto; padding: 18px;
+      border: 1px solid var(--line-strong); border-radius: 14px;
+      background: linear-gradient(180deg, rgba(20,26,40,0.99), rgba(10,14,22,0.99));
+      box-shadow: 0 28px 84px rgba(0,0,0,0.62);
+    }
+    .qr-popover-head { display: flex; align-items: center; justify-content: space-between; }
+    .qr-popover-title { font-weight: 900; font-size: 1rem; }
+    .qr-close-btn {
+      display: grid; place-items: center; width: 28px; height: 28px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      background: rgba(255,255,255,0.05); color: var(--muted);
+      font-size: 0.8rem; cursor: pointer;
+      padding: 0 !important; line-height: 1; text-align: center;
+    }
+    .qr-popover .qr-wrap { margin: 0; }
+    .qr-popover .connect-qr-frame { width: 100%; }
+    .qr-popover .qr-code { width: 100%; max-width: 284px; min-height: 284px; padding: 12px; }
+    .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 260px; height: 260px; }
+    .qr-popover .qr-loader { width: 260px; height: 260px; }
+    .qr-popover .status-line { font-size: 0.82rem; margin: 0; }
+    .btn-disconnect-topbar {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border: 1px solid rgba(251,113,133,0.4);
+      border-radius: var(--radius); background: rgba(251,113,133,0.08);
+      color: #fb7185; font: inherit; font-weight: 800; font-size: 0.88rem;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .btn-disconnect-topbar:hover { background: rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.65); }
+    .btn-explorer-sm { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(0,232,204,0.35); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); white-space: nowrap; text-decoration: none; }
+    .wallet-addr-text { font-family: "Consolas","SFMono-Regular",monospace; font-size: 0.86rem; font-weight: 700; color: var(--text); flex: 1; }
+    @media (min-width: 641px) { .qr-popover #connectBtn { display: none; } }
+    @media (max-width: 640px) {
+      .qr-popover { padding: 14px; }
+      .qr-modal-card { width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 14px; }
+      .qr-popover .qr-code { max-width: 260px; min-height: 260px; }
+      .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 236px; height: 236px; }
+      .qr-popover .qr-loader { width: 236px; height: 236px; }
+    }
 
     /* ── Hero Stats Bar ── */
     .stats-bar {
@@ -282,14 +338,17 @@
 
     .card-price-row {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
       gap: 8px;
+      margin-top: 4px;
     }
     .price-tag {
       display: flex;
       align-items: center;
       gap: 6px;
+      justify-content: center;
+      width: 100%;
     }
     .price-tag .tcl-icon {
       width: 20px;
@@ -307,6 +366,7 @@
       color: var(--muted);
     }
 
+    .btn-buy, .btn-cancel { width: 100%; justify-content: center; }
     .btn-buy {
       background: linear-gradient(135deg, #fbbf24, #f59e0b);
       color: #0d1120;
@@ -793,31 +853,7 @@
       color: #fff;
     }
 
-    /* ── QR Modal ── */
-    #qr-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(8px);
-      z-index: 300;
-      align-items: center;
-      justify-content: center;
-    }
-    #qr-modal.open { display: flex; }
-    .qr-box {
-      background: #0d1120;
-      border: 1px solid #2a3347;
-      border-radius: 20px;
-      padding: 28px;
-      text-align: center;
-      max-width: 340px;
-      width: 90%;
-      position: relative;
-    }
-    .qr-box h3 { margin: 0 0 6px; font-family: 'Orbitron', sans-serif; color: var(--accent); font-size: 16px; }
-    .qr-box p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
-    #qr-canvas { border-radius: 12px; }
+    /* #qr-modal removed — using .qr-popover inside #connectView */
 
     /* ── My NFTs Modal ── */
     #my-nfts-modal {
@@ -862,10 +898,12 @@
       border-radius: 12px;
       overflow: hidden;
       transition: border-color 0.2s, transform 0.2s;
+      display: flex; flex-direction: column;
     }
     .my-nft-item:hover { border-color: var(--accent); transform: translateY(-2px); }
     .my-nft-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-    .my-nft-item-body { display: grid; gap: 8px; padding: 10px; }
+    .my-nft-item-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; flex: 1; }
+    .my-nft-item .my-nft-list-btn { margin-top: auto; }
     .my-nft-item .nft-label { color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .my-nft-identifier { color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .my-nft-storage { display: grid; gap: 5px; padding-top: 2px; }
@@ -886,6 +924,74 @@
     .empty-msg small { font-size: 13px; color: #4a5568; }
 
     a.nav-back { text-decoration: none; }
+
+    /* ══════════════════════════════════════
+       MOBILE RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 640px) {
+      /* Header — single compact row */
+      header { padding: 8px 12px; gap: 6px; flex-wrap: nowrap; align-items: center; overflow: hidden; }
+      .header-left { flex-shrink: 0; gap: 8px; min-width: 0; }
+      .header-left img { width: 24px; height: 24px; }
+      .site-title { font-size: 13px; }
+      .site-subtitle { display: none; }
+      .header-right { gap: 5px; flex-wrap: nowrap; margin-left: auto; align-items: center; flex-shrink: 0; }
+      .nav-back { padding: 5px 8px; font-size: 13px; min-width: 0; }
+      .nav-back .nav-label { display: none; }
+      /* hide address chip on mobile — just show Disconnect */
+      #connectedView { display: none !important; }
+      .btn-disconnect-topbar { padding: 5px 10px; font-size: 0.78rem; }
+      /* Connect button — icon only */
+      #connectTriggerBtn #connectTitle { display: none; }
+      #connectTriggerBtn { min-height: 32px; padding: 5px 10px; }
+
+      /* Toolbar — selects on one row, buttons below */
+      .toolbar { padding: 10px 12px; gap: 7px; }
+      .search-box { min-width: 0; width: 100%; flex: 1 1 100%; }
+      .toolbar-select { flex: 1; min-width: 0; font-size: 12px; padding: 7px 8px; }
+      .toolbar .btn-primary,
+      .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
+
+      /* Stats bar — 2×2 grid */
+      .stats-bar { padding: 10px 14px; gap: 0; display: grid; grid-template-columns: 1fr 1fr; row-gap: 10px; column-gap: 12px; }
+      .stats-bar > div:last-child { grid-column: 1 / -1; text-align: right; padding-top: 4px; border-top: 1px solid #1e2a42; }
+      .stat-value { font-size: 14px; }
+      .stat-label { font-size: 10px; }
+
+      /* Tabs — all 3 fit on one row, no scroll */
+      .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: nowrap; overflow: visible; }
+      .tab-btn { flex: 1; padding: 8px 4px; font-size: 11px; white-space: nowrap; text-align: center; }
+
+
+      /* Listings grid — 2 cols on mobile */
+      #listings-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px 10px; }
+
+      /* NFT Card compact */
+      .nft-card .card-body { padding: 9px 10px; }
+      .nft-card .card-name { font-size: 12px; }
+      .nft-card .card-collection { font-size: 10px; margin: 2px 0; }
+      .price-tag .amount { font-size: 12px; }
+      .price-tag .amount-usd { font-size: 10px; }
+      .btn-buy, .btn-cancel { font-size: 12px; padding: 7px 10px; min-height: 34px; }
+
+      /* Detail modal — full screen on mobile */
+      #detail-modal > .modal-box { width: 100%; max-height: 100dvh; border-radius: 0; padding: 16px; overflow-y: auto; }
+      .modal-layout { grid-template-columns: 1fr; gap: 16px; }
+      .modal-img-col img { max-height: 260px; }
+
+      /* My NFTs modal */
+      .my-nfts-modal-box { padding: 16px; border-radius: 0; }
+      .my-nfts-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+
+      /* List modal */
+      .list-modal-box { padding: 16px; border-radius: 12px; }
+    }
+
+    @media (max-width: 400px) {
+      #listings-grid { grid-template-columns: 1fr; }
+      .my-nfts-grid { grid-template-columns: 1fr !important; }
+      .tab-btn { font-size: 11px; padding: 7px 8px; }
+    }
   </style>
 </head>
 <body>
@@ -900,9 +1006,55 @@
     </div>
   </div>
   <div class="header-right">
-    <button class="nav-back" onclick="navBack()">← TCL Explorer</button>
-    <button class="nav-back" onclick="navBrowseNFTs()">🖼 Browse NFTs</button>
-    <button id="wallet-btn" onclick="handleWalletClick()">🔗 Connect xPortal</button>
+    <button class="nav-back" onclick="navBack()">← <span class="nav-label">TCL Explorer</span></button>
+    <button class="nav-back" onclick="navBrowseNFTs()">🖼 <span class="nav-label">Browse NFTs</span></button>
+
+    <!-- ── Connect button + QR popover (hidden when connected) -->
+    <div class="connect-wrap" id="connectView">
+      <button class="btn btn-blue" id="connectTriggerBtn" type="button">
+        <img src="images/xPortal.png" alt="" width="16" height="16">
+        <span id="connectTitle">Connect xPortal</span>
+      </button>
+      <div class="qr-popover" id="qrPopover" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle" hidden>
+        <div class="qr-modal-card">
+          <div class="qr-popover-head">
+            <span class="qr-popover-title" id="qrModalTitle">Scan with xPortal</span>
+            <button class="qr-close-btn" id="qrCloseBtn" type="button" aria-label="Close xPortal connection">X</button>
+          </div>
+          <div class="qr-wrap">
+            <div class="connect-qr-frame" id="connectQrFrame">
+              <div class="qr-code" id="connectQrCode" aria-label="WalletConnect QR">
+                <div class="qr-loader" id="connectQrLoader">
+                  <div class="qr-loader__spinner"></div>
+                  <span>Generating QR…</span>
+                </div>
+              </div>
+              <button class="qr-refresh-btn" id="refreshSessionBtn" type="button" hidden>Refresh</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin:0;justify-content:center;">
+            <a class="btn btn-blue is-disabled" id="connectBtn" href="#" target="_top" rel="noreferrer" style="flex:1;">
+              <img src="images/xPortal.png" alt="" width="16" height="16">
+              Open xPortal
+            </a>
+            <a class="btn" href="https://xportal.com/app" target="_blank" rel="noreferrer" style="min-width:120px;justify-content:center;">Install xPortal</a>
+          </div>
+          <div class="status-line" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="statusText">Preparing connection…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Connected: address chip + disconnect (hidden when not connected) -->
+    <div id="connectedView" style="display:flex;align-items:center;gap:8px;" hidden>
+      <span class="wallet-addr-text" id="walletAddr" style="font-size:0.82rem;"></span>
+      <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
+    </div>
+    <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" hidden>
+      Disconnect <span>✕</span>
+    </button>
   </div>
 </header>
 
@@ -1015,16 +1167,7 @@
   </div>
 </div>
 
-<!-- ════════════ QR MODAL ════════════ -->
-<div id="qr-modal">
-  <div class="qr-box">
-    <button class="modal-close" onclick="closeQR()">×</button>
-    <h3>Scan with xPortal</h3>
-    <p>Open the xPortal app and scan the QR code to connect your wallet.</p>
-    <canvas id="qr-canvas" width="240" height="240"></canvas>
-    <p style="margin-top:12px; font-size:11px; color:#4a5568;">Waiting for connection…</p>
-  </div>
-</div>
+<!-- QR modal is now the .qr-popover inside #connectView -->
 
 <!-- ════════════ TOAST ════════════ -->
 <div id="toast"></div>
@@ -1057,6 +1200,7 @@
 </div>
 
 <!-- ════════════ SCRIPTS ════════════ -->
+<script src="lib/qrcode.min.js"></script>
 <!-- WalletConnect (bundled) -->
 <script src="lib/walletconnect-sign-client.umd.js"></script>
 <!-- xPortal session helper -->
@@ -1096,101 +1240,220 @@ let selectedNFTForListing = null;
 let currentTab = "all";
 
 // ══════════════════════════════════════════════════════════════════════════════
-// WALLET
+// WALLET — exact state machine from swap.html, adapted for marketplace
 // ══════════════════════════════════════════════════════════════════════════════
-function handleWalletClick() {
-  if (walletAddress) {
-    disconnectWallet();
-  } else {
-    connectWallet();
-  }
-}
-
 const IN_IFRAME = window !== window.top;
+const XPORTAL = window.TCLXPortal;
 
-function navBack() {
-  if (IN_IFRAME) {
-    window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
-  } else {
-    window.location.href = "index.html";
-  }
+const WS = {
+  address: "", sessionTopic: "", pendingUri: "",
+  connecting: false, connectionRunId: 0, signClient: null, signClientProjectId: "",
+};
+
+const WD = {
+  connectQrCode:     document.getElementById("connectQrCode"),
+  connectQrFrame:    document.getElementById("connectQrFrame"),
+  connectBtn:        document.getElementById("connectBtn"),
+  connectTriggerBtn: document.getElementById("connectTriggerBtn"),
+  qrPopover:         document.getElementById("qrPopover"),
+  qrCloseBtn:        document.getElementById("qrCloseBtn"),
+  refreshSessionBtn: document.getElementById("refreshSessionBtn"),
+  disconnectBtn:     document.getElementById("disconnectBtn"),
+  connectView:       document.getElementById("connectView"),
+  connectedView:     document.getElementById("connectedView"),
+  explorerLink:      document.getElementById("explorerLink"),
+  walletAddr:        document.getElementById("walletAddr"),
+  statusText:        document.getElementById("statusText"),
+};
+
+function truncAddr(a) {
+  return a.length > 18 ? `${a.slice(0,10)}…${a.slice(-8)}` : a;
 }
 
-function navBrowseNFTs() {
-  if (IN_IFRAME) {
-    window.parent.postMessage({ type: "tcl:navigate", page: "nfts" }, "*");
-  } else {
-    window.location.href = "NFTs.html";
-  }
+function xportalDeepLink(uri) { return XPORTAL.getDeepLink(uri); }
+function isExpiredError(err)   { return /proposal expired/i.test(String(err?.message || err)); }
+
+function renderWcQr(target, text, size) {
+  XPORTAL.renderQr(target, text, size, "connectQrLoader");
 }
 
-async function connectWallet() {
-  if (IN_IFRAME) {
-    // Delegate to parent TCL Explorer which manages the WalletConnect session
-    window.parent.postMessage({ type: "tcl:requestConnect" }, "*");
-    showToast("Opening wallet connection in TCL Explorer…", "info");
-    return;
+function setWcStatus(kind, text) {
+  document.body.dataset.state = kind;
+  if (WD.statusText) WD.statusText.textContent = text;
+}
+
+function setRefreshVisible(v) {
+  if (WD.refreshSessionBtn) WD.refreshSessionBtn.hidden = !v;
+  if (WD.connectQrFrame) WD.connectQrFrame.classList.toggle("is-expired", Boolean(v));
+}
+
+function syncConnectView() {
+  const ok = Boolean(WS.address && WS.sessionTopic);
+  if (WD.connectView)   WD.connectView.hidden   = ok;
+  if (WD.connectedView) WD.connectedView.hidden = !ok;
+  if (WD.disconnectBtn) WD.disconnectBtn.hidden = !ok;
+  if (ok) {
+    if (WD.qrPopover)    WD.qrPopover.hidden = true;
+    if (WD.walletAddr)   WD.walletAddr.textContent = truncAddr(WS.address);
+    if (WD.explorerLink) WD.explorerLink.href = `https://explorer.multiversx.com/accounts/${WS.address}`;
   }
-  // Standalone mode — full WalletConnect flow
+  // keep walletAddress global in sync for the rest of the page
+  walletAddress = ok ? WS.address : null;
+  updateWalletUI(walletAddress);
+}
+
+function saveConnection(address, topic) {
+  WS.address = address; WS.sessionTopic = topic || "";
+  XPORTAL.saveSession(WS.address, WS.sessionTopic);
+  syncConnectView();
+  if (IN_IFRAME) window.parent.postMessage({ type: "tcl:walletConnected", address }, "*");
+}
+
+function clearConnection() {
+  WS.address = ""; WS.sessionTopic = ""; WS.pendingUri = "";
+  XPORTAL.clearStoredSession();
+  syncConnectView();
+  setWcStatus("idle", "xPortal disconnected.");
+  startConnection();
+}
+
+async function restoreSession() {
   try {
-    const pairing = await TCLXPortal.startPairing({
-      name: "TCL Marketplace",
-      description: "NFT Marketplace powered by TCL token",
-      fallbackPath: "/MarketPlaceNFT.html",
+    const restored = await XPORTAL.restore({
+      projectId: XPORTAL.CONFIG.projectId,
+      relayUrl:  XPORTAL.CONFIG.relayUrl,
+      methods:   XPORTAL.CONFIG.methods,
+      onSessionDelete: clearConnection,
+      metadata: XPORTAL.createMetadata({
+        name: "TCL NFT Marketplace",
+        description: "TCL NFT Marketplace — buy and sell TCL NFTs",
+        fallbackPath: "/MarketPlaceNFT.html",
+        iconPath: "images/tcl_icon.png",
+      }),
     });
-    if (pairing.uri) showQR(pairing.uri);
-    const approved = await TCLXPortal.approvePairing(pairing);
-    walletAddress = approved.address;
-    updateWalletUI(walletAddress);
-    closeQR();
-  } catch (e) {
-    showToast("Wallet connection failed", "error");
-    console.error(e);
+    if (!restored) return false;
+    WS.signClient = restored.client;
+    WS.signClientProjectId = XPORTAL.CONFIG.projectId;
+    saveConnection(restored.address, restored.topic);
+    setWcStatus("connected", `Connected: ${truncAddr(WS.address)}`);
+    return true;
+  } catch(_) { clearConnection(); return false; }
+}
+
+async function startConnection() {
+  if (WS.address || WS.connecting) return;
+  const runId = ++WS.connectionRunId;
+  WS.connecting = true;
+  setRefreshVisible(false);
+  setWcStatus("loading", "Generating xPortal session…");
+  try {
+    const pairing = await XPORTAL.startPairing({
+      projectId: XPORTAL.CONFIG.projectId,
+      relayUrl:  XPORTAL.CONFIG.relayUrl,
+      methods:   XPORTAL.CONFIG.methods,
+      onSessionDelete: clearConnection,
+      metadata: XPORTAL.createMetadata({
+        name: "TCL NFT Marketplace",
+        description: "TCL NFT Marketplace — buy and sell TCL NFTs",
+        fallbackPath: "/MarketPlaceNFT.html",
+        iconPath: "images/tcl_icon.png",
+      }),
+    });
+    const { uri } = pairing;
+    WS.signClient = pairing.client;
+    WS.signClientProjectId = XPORTAL.CONFIG.projectId;
+    if (!uri) throw new Error("WalletConnect did not return a URI.");
+    WS.pendingUri = uri;
+    renderWcQr(WD.connectQrCode, uri, 260);
+    if (WD.connectBtn) {
+      WD.connectBtn.classList.remove("is-disabled");
+      WD.connectBtn.href = xportalDeepLink(uri);
+    }
+    setWcStatus("loading", "Scan with xPortal → top-right Scan QR button.");
+
+    const approved = await XPORTAL.approvePairing(pairing, { methods: XPORTAL.CONFIG.methods });
+    if (runId !== WS.connectionRunId) return;
+    WS.pendingUri = "";
+    saveConnection(approved.address, approved.topic);
+    setWcStatus("connected", `Connected: ${truncAddr(approved.address)}`);
+  } catch(err) {
+    if (runId !== WS.connectionRunId) return;
+    WS.signClient = null; WS.signClientProjectId = "";
+    if (isExpiredError(err)) {
+      WS.pendingUri = "";
+      setRefreshVisible(true);
+      setWcStatus("error", "Session expired. Press Refresh.");
+    } else {
+      setWcStatus("error", err?.message || "Connection failed.");
+      if (WD.connectQrCode) WD.connectQrCode.innerHTML = `<div class="qr-loader" style="color:#c0392b"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-size:12px;text-align:center">Connection failed</span></div>`;
+    }
+  } finally {
+    if (runId === WS.connectionRunId) WS.connecting = false;
   }
 }
 
-function disconnectWallet() {
-  if (IN_IFRAME) {
-    window.parent.postMessage({ type: "tcl:requestDisconnect" }, "*");
-    return;
-  }
-  TCLXPortal.disconnect();
-  walletAddress = null;
-  updateWalletUI(null);
+async function disconnectWallet() {
+  const topic = WS.sessionTopic || localStorage.getItem(XPORTAL.CONFIG.sessionTopicKey);
+  const client = WS.signClient;
+  WS.connectionRunId++;
+  await XPORTAL.disconnect({ client, topic });
+  clearConnection();
+  if (IN_IFRAME) window.parent.postMessage({ type: "tcl:requestDisconnect" }, "*");
 }
 
 function updateWalletUI(address) {
-  const btn = document.getElementById("wallet-btn");
   if (address) {
-    btn.textContent = `✅ ${address.slice(0,8)}…${address.slice(-6)}`;
-    btn.classList.add("connected");
     loadMyNFTs();
   } else {
-    btn.textContent = IN_IFRAME ? "🔗 Connect in TCL Explorer" : "🔗 Connect xPortal";
-    btn.classList.remove("connected");
     myWalletNFTs = [];
   }
+  renderCurrentTab();
 }
 
-// Listen for wallet session changes fired in same window (standalone mode)
-window.addEventListener("tcl:xportal-session", (e) => {
-  const { address, connected } = e.detail || {};
-  walletAddress = connected ? address : null;
-  updateWalletUI(walletAddress);
-  closeQR();
-  if (connected) showToast(`Connected: ${address.slice(0,12)}…`, "success");
-  renderCurrentTab();
-});
+function navBack() {
+  if (IN_IFRAME) window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*");
+  else window.location.href = "index.html";
+}
 
-// Listen for localStorage changes from parent window (iframe mode)
-window.addEventListener("storage", (e) => {
-  if (e.key !== "tclExplorer.xportal.address.v1") return;
-  const newAddress = e.newValue || null;
-  walletAddress = newAddress;
-  updateWalletUI(newAddress);
-  if (newAddress) showToast(`Connected: ${newAddress.slice(0,12)}…`, "success");
-  renderCurrentTab();
+function navBrowseNFTs() {
+  if (IN_IFRAME) window.parent.postMessage({ type: "tcl:navigate", page: "nfts" }, "*");
+  else window.location.href = "NFTs.html";
+}
+
+// Popover toggle
+if (WD.connectTriggerBtn) {
+  WD.connectTriggerBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!WS.address && !WS.connecting) startConnection();
+    if (WD.qrPopover) WD.qrPopover.hidden = !WD.qrPopover.hidden;
+  });
+}
+if (WD.qrCloseBtn) {
+  WD.qrCloseBtn.addEventListener("click", () => { if (WD.qrPopover) WD.qrPopover.hidden = true; });
+}
+if (WD.qrPopover) {
+  WD.qrPopover.addEventListener("click", (e) => { if (e.target === WD.qrPopover) WD.qrPopover.hidden = true; });
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && WD.qrPopover && !WD.qrPopover.hidden) WD.qrPopover.hidden = true;
 });
+document.addEventListener("click", (e) => {
+  if (WD.qrPopover && !WD.qrPopover.hidden) {
+    if (WD.connectView && !WD.connectView.contains(e.target)) WD.qrPopover.hidden = true;
+  }
+});
+if (WD.refreshSessionBtn) {
+  WD.refreshSessionBtn.addEventListener("click", () => { setRefreshVisible(false); startConnection(); });
+}
+if (WD.disconnectBtn) {
+  WD.disconnectBtn.addEventListener("click", disconnectWallet);
+}
+
+// Restore session on page load, then start pairing if not connected
+(async () => {
+  const restored = await restoreSession();
+  if (!restored) startConnection();
+})();
 
 // Listen for postMessage from parent (connect/disconnect relay)
 window.addEventListener("message", (e) => {
@@ -1207,26 +1470,7 @@ window.addEventListener("message", (e) => {
   }
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// QR MODAL
-// ══════════════════════════════════════════════════════════════════════════════
-function showQR(uri) {
-  document.getElementById("qr-modal").classList.add("open");
-  const canvas = document.getElementById("qr-canvas");
-  // Simple QR via external lib if available, else show URI text
-  if (window.QRCode) {
-    const qr = new QRCode(canvas, { text: uri, width: 240, height: 240, colorDark: "#2ff6de", colorLight: "#0d1120" });
-  } else {
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#0d1120";
-    ctx.fillRect(0, 0, 240, 240);
-    ctx.fillStyle = "#2ff6de";
-    ctx.font = "10px monospace";
-    const lines = uri.match(/.{1,30}/g) || [];
-    lines.forEach((l, i) => ctx.fillText(l, 4, 16 + i * 13));
-  }
-}
-function closeQR() { document.getElementById("qr-modal").classList.remove("open"); }
+// showQR / closeQR / setQrStatus removed — replaced by .qr-popover state machine
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TABS
@@ -1423,14 +1667,6 @@ function buildListingCard(listing) {
   const collection = nft.collection || listing.nft_token || "";
   const isMine = walletAddress && listing.seller === walletAddress;
 
-  // Pick top 4 attributes to show as mini-badges
-  const attrs = (nft.metadata?.attributes || []).slice(0, 4);
-  const miniAttrs = attrs.map(a => {
-    const isNeg = typeof a.value === "string" && a.value.trim().startsWith("-");
-    const cls = isNeg ? "neg" : "pos";
-    return `<span class="mini-attr"><span class="attr-k">${a.trait_type}:</span> <span class="attr-v ${cls}">${a.value}</span></span>`;
-  }).join("");
-
   const demoNote = listing._demo ? `<span class="badge">Demo</span>` : "";
 
   return `
@@ -1443,7 +1679,6 @@ function buildListingCard(listing) {
       <div class="card-body">
         <p class="card-name">${name}</p>
         <p class="card-collection">${collection}</p>
-        <div class="mini-attrs">${miniAttrs || '<span style="color:var(--muted);font-size:12px;">No attributes</span>'}</div>
         <div class="card-price-row">
           <div class="price-tag">
             <img src="images/tcl_icon.png" class="tcl-icon" onerror="this.style.display='none'">
@@ -1452,9 +1687,11 @@ function buildListingCard(listing) {
               <div class="amount-usd">${priceUSD}</div>
             </div>
           </div>
-          ${isMine
-            ? `<button class="btn-cancel" onclick="event.stopPropagation(); cancelListing(${listing.listing_id})">Cancel</button>`
-            : `<button class="btn-buy" onclick="event.stopPropagation(); buyNFT(${listing.listing_id})">Buy</button>`
+          ${currentTab === "mine"
+            ? `<button class="btn-cancel" onclick="event.stopPropagation(); cancelListing(${listing.listing_id})">Cancel Listing</button>`
+            : isMine
+              ? `<span style="font-size:11px;color:var(--muted);text-align:center;width:100%;display:block;">Your listing</span>`
+              : `<button class="btn-buy" onclick="event.stopPropagation(); openDetail(${listing.listing_id})">Buy</button>`
           }
         </div>
       </div>
@@ -2787,9 +3024,6 @@ document.getElementById("list-modal")?.addEventListener("click", e => {
 });
 document.getElementById("my-nfts-modal")?.addEventListener("click", e => {
   if (e.target === document.getElementById("my-nfts-modal")) closeMyNFTsModal();
-});
-document.getElementById("qr-modal")?.addEventListener("click", e => {
-  if (e.target === document.getElementById("qr-modal")) closeQR();
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
