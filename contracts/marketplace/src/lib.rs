@@ -7,7 +7,7 @@ multiversx_sc::derive_imports!();
 /// Allows listing and buying TCL game NFTs using the TCL-fe459d token.
 ///
 /// Flow:
-///   Seller: ESDTNFTTransfer → contract.listNFT(price_in_tcl)
+///   Seller: ESDTNFTTransfer → contract.listNFT(price_in_tcl, creator, royalties)
 ///   Buyer:  ESDTTransfer(TCL) → contract.buyNFT(listing_id)
 ///   2% platform fee retained in contract; royalties paid to NFT creator.
 
@@ -46,8 +46,8 @@ pub trait TclMarketplace {
 
     /// Seller calls this after sending the NFT via ESDTNFTTransfer.
     /// price: amount of TCL (in smallest unit, 18 decimals)
-    /// royalty_address: creator wallet to receive royalties
-    /// royalty_percent: basis points (e.g. 500 = 5%)
+    /// royalty_address and royalty_percent must match the NFT metadata.
+    /// royalty_percent uses basis points (e.g. 500 = 5%).
     #[payable("*")]
     #[endpoint(listNFT)]
     fn list_nft(
@@ -63,6 +63,21 @@ pub trait TclMarketplace {
         require!(payment.amount == BigUint::from(1u32), "Only one NFT per listing");
         require!(price > BigUint::zero(), "Price must be greater than 0");
         require!(royalty_percent <= 2_000u64, "Royalties cannot exceed 20%");
+
+        let sc_address = self.blockchain().get_sc_address();
+        let nft_data = self.blockchain().get_esdt_token_data(
+            &sc_address,
+            &payment.token_identifier,
+            payment.token_nonce,
+        );
+        require!(
+            royalty_address == nft_data.creator,
+            "Royalty address must match NFT creator"
+        );
+        require!(
+            BigUint::from(royalty_percent) == nft_data.royalties,
+            "Royalties must match NFT metadata"
+        );
 
         let listing_id = self.last_listing_id().get() + 1;
         self.last_listing_id().set(listing_id);

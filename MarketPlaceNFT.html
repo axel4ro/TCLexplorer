@@ -775,7 +775,7 @@
     <div class="form-group">
       <label class="form-label">Royalty % <span style="color:var(--muted);font-size:11px;font-weight:400;">🔒 Fixed</span></label>
       <input type="number" class="form-input" id="royalty-percent" readonly style="opacity:0.6;cursor:not-allowed;" value="0">
-      <div class="fee-note">Creator royalty fixed at <span>10%</span> + platform fee <span>2%</span> — both paid in TCL.</div>
+      <div class="fee-note" id="royalty-summary">Select an NFT to read its creator royalty. Platform fee: <span>2%</span>.</div>
     </div>
 
     <div class="xportal-transfer-note">
@@ -833,6 +833,7 @@ const TCL_CREATORS = [
 // ══════════════════════════════════════════════════════════════════════════════
 let walletAddress = null;
 let tclPriceUSD = 0;
+let marketplaceFeePercent = 2;
 let allListings = [];      // on-chain listings enriched with NFT metadata
 let myWalletNFTs = [];     // NFTs owned by connected wallet
 let selectedNFTForListing = null;
@@ -1038,7 +1039,7 @@ async function loadDemoListings() {
       nft_token: nft.collection,
       nft_nonce: nft.nonce,
       price: BigInt(Math.floor(Math.random() * 900 + 100)) * TCL_DENOMINATOR,
-      royalty_percent: nft.royalties || 0,
+      royalty_percent: Math.round(Number(nft.royalties || 0) * 100),
       timestamp: Date.now() / 1000 - Math.random() * 86400 * 7,
       is_active: true,
       // enriched fields:
@@ -1243,7 +1244,9 @@ function openDetail(listingId) {
 
   const xoxnoUrl = `https://xoxno.com/nft/${nft.identifier || ""}`;
   const sellerShort = listing.seller ? `${listing.seller.slice(0,10)}…${listing.seller.slice(-8)}` : "Unknown";
-  const royPct = listing.royalty_percent ? (listing.royalty_percent / 100).toFixed(2) + "%" : (nft.royalties ? nft.royalties/100 + "%" : "0%");
+  const royPct = listing.royalty_percent
+    ? `${formatPercent(listing.royalty_percent / 100)}%`
+    : `${formatPercent(Number(nft.royalties || 0))}%`;
   const listedAt = listing.timestamp ? new Date(listing.timestamp * 1000).toLocaleString() : "Unknown";
 
   document.getElementById("detail-content").innerHTML = `
@@ -1351,19 +1354,15 @@ async function cancelListing(listingId) {
 // ══════════════════════════════════════════════════════════════════════════════
 // LIST NFT MODAL
 // ══════════════════════════════════════════════════════════════════════════════
-// Default TCL royalty values (creator address + 10%)
-const TCL_ROYALTY_ADDRESS = "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc";
-const TCL_ROYALTY_PCT = 10;
-
 function openListModal() {
   if (!walletAddress) {
     showToast("Connect your wallet first to list an NFT", "error");
     return;
   }
   document.getElementById("list-modal").classList.add("open");
-  // Pre-fill default royalty info for TCL NFTs
-  document.getElementById("royalty-address").value = TCL_ROYALTY_ADDRESS;
-  document.getElementById("royalty-percent").value = TCL_ROYALTY_PCT;
+  document.getElementById("royalty-address").value = "";
+  document.getElementById("royalty-percent").value = "0";
+  updateRoyaltySummary();
   document.getElementById("listing-contract-destination").textContent =
     `${MARKETPLACE_CONTRACT.slice(0, 10)}…${MARKETPLACE_CONTRACT.slice(-8)}`;
   renderMyNFTsForListing();
@@ -1427,9 +1426,36 @@ function selectNFTForListing(identifier) {
     </div>`;
   document.getElementById("selected-nft-preview").style.display = "block";
 
-  // Always use fixed TCL royalty values — not editable
-  document.getElementById("royalty-percent").value = TCL_ROYALTY_PCT;
-  document.getElementById("royalty-address").value = TCL_ROYALTY_ADDRESS;
+  const royalty = getNFTRoyalty(nft);
+  document.getElementById("royalty-percent").value = formatPercent(royalty.percent);
+  document.getElementById("royalty-address").value = royalty.address;
+  updateRoyaltySummary();
+  updateListingPriceBreakdown();
+}
+
+function getNFTRoyalty(nft) {
+  const address = String(nft?.creator || "");
+  const percent = Number(nft?.royalties || 0);
+  if (!address.startsWith("erd1")) throw new Error("NFT creator address is missing");
+  if (!Number.isFinite(percent) || percent < 0 || percent > 20) {
+    throw new Error("NFT royalty metadata is invalid");
+  }
+  return {
+    address,
+    percent,
+    basisPoints: Math.round(percent * 100),
+  };
+}
+
+function updateRoyaltySummary() {
+  const summary = document.getElementById("royalty-summary");
+  if (!summary) return;
+  if (!selectedNFTForListing) {
+    summary.innerHTML = `Select an NFT to read its creator royalty. Platform fee: <span>${formatPercent(marketplaceFeePercent)}%</span>.`;
+    return;
+  }
+  const royalty = getNFTRoyalty(selectedNFTForListing);
+  summary.innerHTML = `Creator royalty from NFT metadata: <span>${formatPercent(royalty.percent)}%</span> + platform fee <span>${formatPercent(marketplaceFeePercent)}%</span> — both paid in TCL.`;
 }
 
 function updateListingPriceBreakdown() {
@@ -1446,8 +1472,11 @@ function updateListingPriceBreakdown() {
     return;
   }
 
-  const fee = price * 0.02;
-  const royalty = price * (TCL_ROYALTY_PCT / 100);
+  const royaltyPercent = selectedNFTForListing
+    ? getNFTRoyalty(selectedNFTForListing).percent
+    : 0;
+  const fee = price * (marketplaceFeePercent / 100);
+  const royalty = price * (royaltyPercent / 100);
   const seller = price - fee - royalty;
   const usd = amount => tclPriceUSD ? ` <small>(≈ ${formatUSD(amount * tclPriceUSD)})</small>` : "";
 
@@ -1455,8 +1484,8 @@ function updateListingPriceBreakdown() {
     ? `Current value: ≈ ${formatUSD(price * tclPriceUSD)} at ${formatUSD(tclPriceUSD, 6)} / TCL`
     : "Current USD value: loading…";
   breakdown.innerHTML = `
-    Platform fee (2%): <span>${formatDisplayTCL(fee)} TCL</span>${usd(fee)} &nbsp;|&nbsp;
-    Royalties: <span>${formatDisplayTCL(royalty)} TCL</span>${usd(royalty)} &nbsp;|&nbsp;
+    Platform fee (${formatPercent(marketplaceFeePercent)}%): <span>${formatDisplayTCL(fee)} TCL</span>${usd(fee)} &nbsp;|&nbsp;
+    Royalties (${formatPercent(royaltyPercent)}%): <span>${formatDisplayTCL(royalty)} TCL</span>${usd(royalty)} &nbsp;|&nbsp;
     You receive: <span style="color:var(--green)">${formatDisplayTCL(seller)} TCL</span>${usd(seller)}`;
 }
 
@@ -1491,12 +1520,11 @@ async function submitListing() {
   }
 
   try {
-    const royaltyBps = TCL_ROYALTY_PCT * 100; // fixed 10% → 1000 basis points
-
     const nft = selectedNFTForListing;
+    const royalty = getNFTRoyalty(nft);
     const priceHex = bigIntToHex(priceBig);
-    const royaltyAddrHex = addressToHex(TCL_ROYALTY_ADDRESS);
-    const royaltyBpsHex = bigIntToHex(BigInt(royaltyBps));
+    const royaltyAddrHex = addressToHex(royalty.address);
+    const royaltyBpsHex = bigIntToHex(BigInt(royalty.basisPoints));
     const data = `${stringToHex("listNFT")}@${priceHex}@${royaltyAddrHex}@${royaltyBpsHex}`;
 
     const tx = buildNFTTransferTx(
@@ -2008,9 +2036,32 @@ async function loadTCLPrice() {
   }
 }
 
+async function loadMarketplaceFee() {
+  if (!MARKETPLACE_CONTRACT) return;
+  try {
+    const [rawFee] = await queryContract("getFeePercent");
+    if (rawFee) {
+      const fee = Number(decodeBase64Unsigned(rawFee));
+      if (Number.isInteger(fee) && fee >= 0 && fee <= 10) {
+        marketplaceFeePercent = fee;
+      }
+    }
+  } catch (e) {
+    console.warn("Marketplace fee query error", e);
+  }
+  updateRoyaltySummary();
+  updateListingPriceBreakdown();
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // UTILITIES
 // ══════════════════════════════════════════════════════════════════════════════
+function formatPercent(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "0";
+  return number.toFixed(2).replace(/\.?0+$/, "");
+}
+
 function formatTCL(amount) {
   try {
     const big = typeof amount === "bigint" ? amount : BigInt(String(amount));
@@ -2052,7 +2103,7 @@ document.getElementById("qr-modal")?.addEventListener("click", e => {
     updateWalletUI(savedAddress);
   }
 
-  await Promise.all([loadTCLPrice(), loadListings()]);
+  await Promise.all([loadTCLPrice(), loadMarketplaceFee(), loadListings()]);
 })();
 </script>
 </body>

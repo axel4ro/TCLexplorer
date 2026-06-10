@@ -28,8 +28,8 @@
             "docs": [
                 "Seller calls this after sending the NFT via ESDTNFTTransfer.",
                 "price: amount of TCL (in smallest unit, 18 decimals)",
-                "royalty_address: creator wallet to receive royalties",
-                "royalty_percent: basis points (e.g. 500 = 5%)"
+                "royalty_address and royalty_percent must match the NFT metadata.",
+                "royalty_percent uses basis points (e.g. 500 = 5%)."
             ],
             "name": "listNFT",
             "rustMethodName": "list_nft",
