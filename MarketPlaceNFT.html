@@ -1497,7 +1497,7 @@ async function submitListing() {
     const priceHex = bigIntToHex(priceBig);
     const royaltyAddrHex = addressToHex(TCL_ROYALTY_ADDRESS);
     const royaltyBpsHex = bigIntToHex(BigInt(royaltyBps));
-    const data = `listNFT@${priceHex}@${royaltyAddrHex}@${royaltyBpsHex}`;
+    const data = `${stringToHex("listNFT")}@${priceHex}@${royaltyAddrHex}@${royaltyBpsHex}`;
 
     const tx = buildNFTTransferTx(
       walletAddress,
@@ -1602,7 +1602,14 @@ function decodeListingStruct(b64) {
 async function getAccount(address) {
   const r = await fetch(`${MVX_API}/accounts/${address}`);
   if (!r.ok) throw new Error("Cannot fetch wallet account");
-  return r.json();
+  const account = await r.json();
+  if (isGuardedAccount(account) && !getGuardianAddress(account)) {
+    const guardianResponse = await fetch(`${MVX_GATEWAY}/address/${address}/guardian-data`);
+    if (!guardianResponse.ok) throw new Error("Cannot fetch guardian data");
+    const guardianPayload = await guardianResponse.json();
+    account.guardianData = guardianPayload?.data?.guardianData || guardianPayload?.guardianData || {};
+  }
+  return account;
 }
 
 function getGuardianAddress(account) {
@@ -1636,6 +1643,28 @@ function withTimeout(promise, ms, message) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+async function simulateTx(tx) {
+  const simulationTx = {
+    ...tx,
+    signature: "0".repeat(128),
+  };
+  if (tx.guardian) simulationTx.guardianSignature = "0".repeat(128);
+
+  const response = await fetch(`${MVX_API}/transaction/simulate?checkSignature=false`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(simulationTx),
+  });
+  const payload = await response.json();
+  const result = payload?.data?.result || payload?.result;
+  if (!response.ok || payload?.error || !result) {
+    throw new Error(payload?.error || payload?.message || "Transaction validation unavailable");
+  }
+  if (result.status !== "success") {
+    throw new Error(result.failReason || "Transaction validation failed");
+  }
+}
+
 async function signTx(tx) {
   const stored = TCLXPortal.getStoredSession();
   if (!stored?.topic) throw new Error("Wallet not connected");
@@ -1652,12 +1681,12 @@ async function signTx(tx) {
   };
   if (isGuardedAccount(account)) {
     const guardian = getGuardianAddress(account);
-    if (guardian) {
-      signingTx.guardian = guardian;
-      signingTx.version = Math.max(signingTx.version, 2);
-      signingTx.options = Number(signingTx.options || 0) | 2;
-    }
+    if (!guardian) throw new Error("Guarded account has no active guardian");
+    signingTx.guardian = guardian;
+    signingTx.version = Math.max(signingTx.version, 2);
+    signingTx.options = Number(signingTx.options || 0) | 2;
   }
+  await simulateTx(signingTx);
   const reqPromise = client.request({
     topic: stored.topic,
     chainId: TCLXPortal.CONFIG.chainId,
@@ -1727,7 +1756,17 @@ function buildNFTTransferTx(sender, receiver, token, nonce, qty, extraData, gasL
   const qtyHex = bigIntToHex(BigInt(qty));
   const receiverHex = addressToHex(receiver);
   const data = `ESDTNFTTransfer@${tokenHex}@${nonceHex}@${qtyHex}@${receiverHex}@${extraData}`;
+  validateEncodedTransferData(data);
   return { sender, receiver: sender, data: btoa(data), gasLimit, value: "0", chainID: "1", version: 1 };
+}
+
+function validateEncodedTransferData(data) {
+  const [operation, ...args] = String(data || "").split("@");
+  if (operation !== "ESDTNFTTransfer") throw new Error("Invalid NFT transfer operation");
+  const invalidIndex = args.findIndex(arg => !arg || arg.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(arg));
+  if (invalidIndex !== -1) {
+    throw new Error(`Invalid NFT transfer argument ${invalidIndex + 1}`);
+  }
 }
 
 function stringToHex(str) {
