@@ -534,6 +534,8 @@
       border-radius: 20px;
       max-width: 540px;
       width: 100%;
+      max-height: calc(100dvh - 40px);
+      overflow-y: auto;
       padding: 28px;
       position: relative;
       animation: fadeUp 0.2s ease;
@@ -646,6 +648,104 @@
     #toast.error { border-color: var(--red); color: var(--red); }
     #toast.info { border-color: var(--accent); color: var(--accent); }
 
+    /* ── Transaction Status Modal ── */
+    #tx-status-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 520;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      min-height: 100dvh;
+      padding: 22px;
+      background: rgba(3, 6, 12, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    #tx-status-modal.open { display: flex; }
+    .tx-status-box {
+      display: grid;
+      gap: 14px;
+      width: min(440px, calc(100vw - 32px));
+      max-height: calc(100dvh - 44px);
+      overflow-y: auto;
+      padding: 22px;
+      border: 1px solid rgba(47,246,222,0.3);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15,23,39,0.99), rgba(8,13,26,0.99));
+      box-shadow: 0 24px 70px rgba(0,0,0,0.58), 0 0 0 1px rgba(47,246,222,0.06);
+      animation: fadeUp 0.2s ease;
+    }
+    .tx-status-head { display: flex; align-items: flex-start; gap: 12px; }
+    .tx-status-icon {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(47,246,222,0.25);
+      border-radius: 50%;
+      color: var(--accent);
+      background: rgba(47,246,222,0.08);
+      font-weight: 900;
+    }
+    #tx-status-modal.pending .tx-status-icon::before {
+      content: "";
+      width: 17px;
+      height: 17px;
+      border: 2px solid rgba(47,246,222,0.25);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    #tx-status-modal.success .tx-status-box { border-color: rgba(34,197,94,0.38); }
+    #tx-status-modal.success .tx-status-icon { color: var(--green); border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.1); }
+    #tx-status-modal.error .tx-status-box { border-color: rgba(239,68,68,0.42); }
+    #tx-status-modal.error .tx-status-icon { color: var(--red); border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.1); }
+    #tx-status-modal.info .tx-status-icon { color: var(--gold); border-color: rgba(251,191,36,0.35); background: rgba(251,191,36,0.1); }
+    .tx-status-copy { min-width: 0; flex: 1; }
+    .tx-status-copy h3 {
+      margin: 1px 0 6px;
+      color: var(--text);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
+    }
+    .tx-status-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .tx-status-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 7px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
+    }
+    .tx-status-close:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+    .tx-status-link {
+      display: none;
+      padding: 11px 13px;
+      border: 1px solid rgba(47,246,222,0.2);
+      border-radius: 10px;
+      color: var(--accent);
+      background: rgba(47,246,222,0.06);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+    .tx-status-link.visible { display: block; }
+
     /* ── App Confirmation Modal ── */
     #confirm-modal {
       display: none;
@@ -719,27 +819,56 @@
     .qr-box p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
     #qr-canvas { border-radius: 12px; }
 
-    /* ── My NFTs grid (for listing) ── */
+    /* ── My NFTs Modal ── */
+    #my-nfts-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 205;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.78);
+      backdrop-filter: blur(8px);
+    }
+    #my-nfts-modal.open { display: flex; }
+    .my-nfts-modal-box {
+      width: min(920px, 100%);
+      max-height: calc(100dvh - 40px);
+      overflow-y: auto;
+      padding: 28px;
+      position: relative;
+      border: 1px solid #2a3347;
+      border-radius: 20px;
+      background: #0d1120;
+      animation: fadeUp 0.2s ease;
+    }
+    .my-nfts-modal-box h2 {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+    }
+    .my-nfts-subtitle { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
     .my-nfts-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 10px;
-      max-height: 280px;
-      overflow-y: auto;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
       padding: 4px;
     }
     .my-nft-item {
       background: #080d1a;
-      border: 2px solid #2a3347;
-      border-radius: 10px;
+      border: 1px solid #2a3347;
+      border-radius: 12px;
       overflow: hidden;
-      cursor: pointer;
-      transition: border-color 0.2s;
-      text-align: center;
+      transition: border-color 0.2s, transform 0.2s;
     }
-    .my-nft-item:hover, .my-nft-item.selected { border-color: var(--accent); }
+    .my-nft-item:hover { border-color: var(--accent); transform: translateY(-2px); }
     .my-nft-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
-    .my-nft-item .nft-label { font-size: 10px; color: var(--muted); padding: 4px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .my-nft-item-body { display: grid; gap: 8px; padding: 10px; }
+    .my-nft-item .nft-label { color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .my-nft-identifier { color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .my-nft-list-btn { width: 100%; padding: 9px 10px; font-size: 12px; }
 
     .empty-msg {
       text-align: center;
@@ -814,7 +943,7 @@
   <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
     <option value="">All Collections</option>
   </select>
-  <button class="btn-primary" onclick="openListModal()">+ List NFT</button>
+  <button class="btn-primary" onclick="openMyNFTsModal()">My NFTs</button>
   <button class="btn-secondary" onclick="loadListings()">↻ Refresh</button>
 </div>
 
@@ -840,14 +969,8 @@
     <button class="modal-close" onclick="closeListModal()">×</button>
     <h2>📦 List NFT for Sale</h2>
 
-    <div class="form-group">
-      <label class="form-label">Select NFT from your wallet</label>
-      <div id="my-nfts-grid" class="my-nfts-grid">
-        <div style="color:var(--muted); font-size:13px; padding:16px;">Connect wallet to see your NFTs</div>
-      </div>
-    </div>
-
-    <div class="form-group" id="selected-nft-preview" style="display:none;">
+    <div class="form-group" id="selected-nft-preview">
+      <label class="form-label">Selected NFT</label>
       <div class="nft-select-card" id="nft-preview-card"></div>
     </div>
 
@@ -861,16 +984,7 @@
       <div class="fee-note" id="price-breakdown">Enter a price to see breakdown</div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Royalty Wallet (creator address) <span style="color:var(--muted);font-size:11px;font-weight:400;">🔒 Fixed</span></label>
-      <input type="text" class="form-input" id="royalty-address" readonly style="opacity:0.6;cursor:not-allowed;" value="">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Royalty % <span style="color:var(--muted);font-size:11px;font-weight:400;">🔒 Fixed</span></label>
-      <input type="number" class="form-input" id="royalty-percent" readonly style="opacity:0.6;cursor:not-allowed;" value="0">
-      <div class="fee-note" id="royalty-summary">Select an NFT to read its creator royalty. Platform fee: <span>2%</span>.</div>
-    </div>
+    <div class="fee-note" id="royalty-summary">Creator royalty and platform fee are calculated from the selected NFT.</div>
 
     <div class="xportal-transfer-note">
       <strong>xPortal notice:</strong> it will show your own wallet as the transaction receiver.
@@ -881,6 +995,18 @@
     <div style="display:flex; gap:10px; margin-top:8px;">
       <button class="btn-primary" style="flex:1; padding:13px; font-size:15px;" onclick="submitListing()">List NFT →</button>
       <button class="btn-secondary" style="padding:13px 18px;" onclick="closeListModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MY NFTS MODAL ════════════ -->
+<div id="my-nfts-modal">
+  <div class="my-nfts-modal-box">
+    <button class="modal-close" onclick="closeMyNFTsModal()">×</button>
+    <h2>My NFTs</h2>
+    <p class="my-nfts-subtitle">Choose an NFT from your wallet to list on the marketplace.</p>
+    <div id="my-nfts-grid" class="my-nfts-grid">
+      <div style="color:var(--muted); font-size:13px; padding:16px;">Connect wallet to see your NFTs</div>
     </div>
   </div>
 </div>
@@ -898,6 +1024,21 @@
 
 <!-- ════════════ TOAST ════════════ -->
 <div id="toast"></div>
+
+<!-- ════════════ TRANSACTION STATUS MODAL ════════════ -->
+<div id="tx-status-modal" role="dialog" aria-modal="true" aria-labelledby="tx-status-title" aria-live="polite">
+  <div class="tx-status-box">
+    <div class="tx-status-head">
+      <div class="tx-status-icon" id="tx-status-icon"></div>
+      <div class="tx-status-copy">
+        <h3 id="tx-status-title">Transaction</h3>
+        <p id="tx-status-message"></p>
+      </div>
+      <button class="tx-status-close" type="button" onclick="closeTransactionStatus()" aria-label="Close notification">X</button>
+    </div>
+    <a class="tx-status-link" id="tx-status-link" href="#" target="_blank" rel="noreferrer">View transaction on Explorer</a>
+  </div>
+</div>
 
 <!-- ════════════ APP CONFIRMATION MODAL ════════════ -->
 <div id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
@@ -930,6 +1071,8 @@ const MVX_GATEWAY = "https://gateway.multiversx.com";
 const TCL_API = "https://api.tclexplorer.com";
 const SC_STORAGE_PRICE = 0.001;
 const GAME_CONTRACT = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
+const TX_CONFIRM_TIMEOUT_MS = 120_000;
+const TX_CONFIRM_POLL_MS = 2_500;
 
 // TCL game NFT creator addresses
 const TCL_CREATORS = [
@@ -1512,7 +1655,6 @@ async function buyNFT(listingId) {
   if (!confirmed) return;
 
   try {
-    showToast("Building transaction…", "info");
     const listingIdHex = listingId.toString(16).padStart(16, "0");
     const tx = buildESDTTransferTx(
       walletAddress,
@@ -1522,11 +1664,21 @@ async function buyNFT(listingId) {
       `buyNFT@${listingIdHex}`,
       10_000_000
     );
-    const hash = await signAndBroadcast(tx);
-    showToast("Purchase sent! Tx: " + hash.slice(0, 12) + "…", "success");
+    await runTrackedTransaction(tx, {
+      signingTitle: "Confirm purchase in xPortal",
+      signingMessage: `Sign the purchase of this NFT for ${priceWhole} TCL.`,
+      sentTitle: "Purchase sent",
+      sentMessage: "Waiting for the marketplace purchase to be confirmed on-chain.",
+      successTitle: "Purchase confirmed",
+      successMessage: "The NFT purchase was completed successfully.",
+      label: "Purchase transaction",
+    });
     setTimeout(loadListings, 5000);
   } catch (err) {
-    showToast("Transaction failed: " + err.message, "error");
+    if (!err?.transactionStatusShown) {
+      showTransactionStatus("error", "Purchase failed", err?.message || "The purchase could not be completed.");
+    }
+    console.error("Purchase failed", err);
   }
 }
 
@@ -1551,11 +1703,22 @@ async function cancelListing(listingId) {
       `cancelListing@${listingIdHex}`,
       8_000_000
     );
-    const hash = await signAndBroadcast(tx);
-    showToast("Listing cancelled! " + hash.slice(0, 12), "success");
+    await runTrackedTransaction(tx, {
+      signingTitle: "Confirm cancellation in xPortal",
+      signingMessage: "Sign the transaction to cancel the listing and return the NFT to your wallet.",
+      sentTitle: "Cancellation sent",
+      sentMessage: "Waiting for the listing cancellation to be confirmed on-chain.",
+      successTitle: "Listing cancelled",
+      successMessage: "The NFT was returned to your wallet.",
+      label: "Cancel listing transaction",
+    });
     setTimeout(loadListings, 4000);
+    setTimeout(loadMyNFTs, 5000);
   } catch (err) {
-    showToast("Error: " + err.message, "error");
+    if (!err?.transactionStatusShown) {
+      showTransactionStatus("error", "Cancellation failed", err?.message || "The listing could not be cancelled.");
+    }
+    console.error("Listing cancellation failed", err);
   }
 }
 
@@ -1605,12 +1768,22 @@ async function submitPriceUpdate(listingId) {
       `updatePrice@${listingIdHex}@${newPriceHex}`,
       8_000_000
     );
-    const hash = await signAndBroadcast(tx);
-    showToast("Price update sent! " + hash.slice(0, 12) + "…", "success");
+    await runTrackedTransaction(tx, {
+      signingTitle: "Confirm price update in xPortal",
+      signingMessage: `Sign the transaction to update the price to ${formatTCL(newPrice)} TCL.`,
+      sentTitle: "Price update sent",
+      sentMessage: "Waiting for the new price to be confirmed on-chain.",
+      successTitle: "Price updated",
+      successMessage: `The listing price is now ${formatTCL(newPrice)} TCL.`,
+      label: "Price update transaction",
+    });
     closeDetail();
     setTimeout(loadListings, 4000);
   } catch (err) {
-    showToast("Price update failed: " + err.message, "error");
+    if (!err?.transactionStatusShown) {
+      showTransactionStatus("error", "Price update failed", err?.message || "The listing price could not be updated.");
+    }
+    console.error("Price update failed", err);
   }
 }
 
@@ -1634,24 +1807,47 @@ async function getEditableListing(listingId) {
 // ══════════════════════════════════════════════════════════════════════════════
 // LIST NFT MODAL
 // ══════════════════════════════════════════════════════════════════════════════
-function openListModal() {
+async function openMyNFTsModal() {
+  if (!walletAddress) {
+    showToast("Connect your wallet first to see your NFTs", "error");
+    return;
+  }
+  document.getElementById("my-nfts-modal").classList.add("open");
+  document.getElementById("my-nfts-grid").innerHTML =
+    `<div style="color:var(--muted);font-size:13px;padding:16px;">Loading NFTs from your wallet...</div>`;
+  await loadMyNFTs();
+  renderMyNFTWallet();
+}
+
+function closeMyNFTsModal() {
+  document.getElementById("my-nfts-modal").classList.remove("open");
+}
+
+function openListModal(identifier) {
   if (!walletAddress) {
     showToast("Connect your wallet first to list an NFT", "error");
     return;
   }
+  const nft = myWalletNFTs.find(item => item.identifier === identifier);
+  if (!nft) {
+    showToast("This NFT is no longer available in your wallet", "error");
+    loadMyNFTs();
+    return;
+  }
+  closeMyNFTsModal();
+  selectedNFTForListing = nft;
   document.getElementById("list-modal").classList.add("open");
-  document.getElementById("royalty-address").value = "";
-  document.getElementById("royalty-percent").value = "0";
-  updateRoyaltySummary();
   document.getElementById("listing-contract-destination").textContent =
     `${MARKETPLACE_CONTRACT.slice(0, 10)}…${MARKETPLACE_CONTRACT.slice(-8)}`;
-  renderMyNFTsForListing();
+  selectNFTForListing(identifier);
+  document.getElementById("list-price").focus();
 }
 function closeListModal() {
   document.getElementById("list-modal").classList.remove("open");
   selectedNFTForListing = null;
-  document.getElementById("selected-nft-preview").style.display = "none";
+  document.getElementById("nft-preview-card").innerHTML = "";
   document.getElementById("list-price").value = "";
+  updateRoyaltySummary();
   updateListingPriceBreakdown();
 }
 
@@ -1669,16 +1865,21 @@ async function loadMyNFTs() {
   }
 }
 
-function renderMyNFTsForListing() {
+function renderMyNFTWallet() {
   const container = document.getElementById("my-nfts-grid");
+  if (!container) return;
   if (!myWalletNFTs.length) {
-    container.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:12px;">No TCL NFTs found in your wallet</div>`;
+    container.innerHTML = `<div class="empty-msg"><p>No TCL NFTs found in your wallet</p></div>`;
     return;
   }
   container.innerHTML = myWalletNFTs.map(nft => `
-    <div class="my-nft-item" onclick="selectNFTForListing('${nft.identifier}')">
+    <div class="my-nft-item">
       <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}" onerror="this.src='images/tcl_icon.png'">
-      <div class="nft-label">${nft.name || nft.identifier}</div>
+      <div class="my-nft-item-body">
+        <div class="nft-label">${nft.name || nft.identifier}</div>
+        <div class="my-nft-identifier">${nft.identifier}</div>
+        <button class="btn-primary my-nft-list-btn" type="button" onclick="openListModal('${nft.identifier}')">List NFT</button>
+      </div>
     </div>
   `).join("");
 }
@@ -1688,14 +1889,6 @@ function selectNFTForListing(identifier) {
   if (!nft) return;
   selectedNFTForListing = nft;
 
-  // Update selection highlight
-  document.querySelectorAll(".my-nft-item").forEach(el => el.classList.remove("selected"));
-  document.querySelectorAll(".my-nft-item").forEach(el => {
-    if (el.querySelector(".nft-label")?.textContent.trim() === (nft.name || nft.identifier)) {
-      el.classList.add("selected");
-    }
-  });
-
   // Show preview
   const preview = document.getElementById("nft-preview-card");
   preview.innerHTML = `
@@ -1704,11 +1897,8 @@ function selectNFTForListing(identifier) {
       <div class="nft-select-name">${nft.name || "Unknown"}</div>
       <div class="nft-select-id">${nft.identifier}</div>
     </div>`;
-  document.getElementById("selected-nft-preview").style.display = "block";
 
   const royalty = getNFTRoyalty(nft);
-  document.getElementById("royalty-percent").value = formatPercent(royalty.percent);
-  document.getElementById("royalty-address").value = royalty.address;
   updateRoyaltySummary();
   updateListingPriceBreakdown();
 }
@@ -1817,13 +2007,23 @@ async function submitListing() {
       15_000_000
     );
 
-    showToast("xPortal may show your own address as receiver. The NFT destination is the marketplace contract.", "info");
-    const hash = await signAndBroadcast(tx);
-    showToast("NFT listed! Tx: " + hash.slice(0, 12) + "…", "success");
+    await runTrackedTransaction(tx, {
+      signingTitle: "Confirm listing in xPortal",
+      signingMessage: "xPortal may show your own wallet as receiver. The NFT destination is encoded as the marketplace contract.",
+      sentTitle: "NFT listing sent",
+      sentMessage: "Waiting for the marketplace contract to confirm the listing on-chain.",
+      successTitle: "NFT listed",
+      successMessage: `${nft.name || nft.identifier} is now listed on the marketplace.`,
+      label: "NFT listing transaction",
+    });
     closeListModal();
     setTimeout(loadListings, 5000);
+    setTimeout(loadMyNFTs, 5000);
   } catch (err) {
-    showToast("Listing failed: " + err.message, "error");
+    if (!err?.transactionStatusShown) {
+      showTransactionStatus("error", "NFT listing failed", err?.message || "The NFT could not be listed.");
+    }
+    console.error("NFT listing failed", err);
   }
 }
 
@@ -2050,6 +2250,99 @@ async function signAndBroadcast(tx) {
   const hash = await broadcastTx(signed);
   if (typeof hash !== "string" || !hash) throw new Error("Broadcast returned no transaction hash");
   return hash;
+}
+
+function closeTransactionStatus() {
+  document.getElementById("tx-status-modal")?.classList.remove("open");
+}
+
+function showTransactionStatus(state, title, message, hash = "") {
+  const modal = document.getElementById("tx-status-modal");
+  const icon = document.getElementById("tx-status-icon");
+  const link = document.getElementById("tx-status-link");
+  if (!modal || !icon || !link) return;
+
+  modal.className = `open ${state}`;
+  document.getElementById("tx-status-title").textContent = title;
+  document.getElementById("tx-status-message").textContent = message;
+  icon.textContent = state === "success" ? "OK" : state === "error" ? "!" : state === "info" ? "i" : "";
+
+  if (hash) {
+    link.href = `https://explorer.multiversx.com/transactions/${hash}`;
+    link.textContent = `View transaction on Explorer: ${hash.slice(0, 12)}...${hash.slice(-8)}`;
+    link.classList.add("visible");
+  } else {
+    link.removeAttribute("href");
+    link.classList.remove("visible");
+  }
+}
+
+function getTransactionFailureMessage(tx, label) {
+  const resultWithMessage = tx?.smartContractResults?.find(result => result?.returnMessage);
+  const message = tx?.returnMessage || tx?.error || resultWithMessage?.returnMessage;
+  return message ? `${label} failed: ${message}` : `${label} failed on-chain.`;
+}
+
+async function waitForTransactionConfirmation(hash, label) {
+  const deadline = Date.now() + TX_CONFIRM_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(`${MVX_API}/transactions/${hash}`);
+      if (response.ok) {
+        const tx = await response.json();
+        const status = String(tx?.status || "").toLowerCase();
+        if (status === "success") return tx;
+        if (["fail", "failed", "invalid", "notexecuted"].includes(status)) {
+          const error = new Error(getTransactionFailureMessage(tx, label));
+          error.onChainFailure = true;
+          throw error;
+        }
+      }
+    } catch (error) {
+      if (error?.onChainFailure) throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, TX_CONFIRM_POLL_MS));
+  }
+  return null;
+}
+
+async function runTrackedTransaction(tx, options) {
+  const {
+    signingTitle,
+    signingMessage,
+    sentTitle,
+    sentMessage,
+    successTitle,
+    successMessage,
+    label = "Transaction",
+  } = options;
+
+  let hash = "";
+  showTransactionStatus("pending", signingTitle, signingMessage);
+  try {
+    hash = await signAndBroadcast(tx);
+    showTransactionStatus("pending", sentTitle, sentMessage, hash);
+    const confirmed = await waitForTransactionConfirmation(hash, label);
+    if (confirmed) {
+      showTransactionStatus("success", successTitle, successMessage, hash);
+    } else {
+      showTransactionStatus(
+        "info",
+        "Transaction still pending",
+        "The transaction was sent but has not been confirmed yet. Check its current status on Explorer.",
+        hash
+      );
+    }
+    return hash;
+  } catch (error) {
+    const normalizedError = error instanceof Error
+      ? error
+      : new Error(String(error || "Transaction could not be completed."));
+    const message = normalizedError.message;
+    showTransactionStatus("error", `${label} failed`, message, hash);
+    normalizedError.transactionStatusShown = true;
+    throw normalizedError;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2424,6 +2717,9 @@ document.getElementById("detail-modal")?.addEventListener("click", e => {
 });
 document.getElementById("list-modal")?.addEventListener("click", e => {
   if (e.target === document.getElementById("list-modal")) closeListModal();
+});
+document.getElementById("my-nfts-modal")?.addEventListener("click", e => {
+  if (e.target === document.getElementById("my-nfts-modal")) closeMyNFTsModal();
 });
 document.getElementById("qr-modal")?.addEventListener("click", e => {
   if (e.target === document.getElementById("qr-modal")) closeQR();
