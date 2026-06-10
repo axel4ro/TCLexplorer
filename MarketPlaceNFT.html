@@ -1492,41 +1492,41 @@ async function cancelListing(listingId) {
 // ══════════════════════════════════════════════════════════════════════════════
 // UPDATE LISTING PRICE
 // ══════════════════════════════════════════════════════════════════════════════
-function updateListingPrice(listingId) {
+async function updateListingPrice(listingId) {
   if (!walletAddress) { showToast("Connect wallet first", "error"); return; }
-  const listing = allListings.find(l => l.listing_id === listingId);
-  if (!listing || listing._demo) return;
-  if (listing.seller !== walletAddress) {
-    showToast("Only the seller can update this price", "error");
-    return;
-  }
+  const cachedListing = allListings.find(l => l.listing_id === listingId);
+  if (!cachedListing || cachedListing._demo) return;
 
-  const panel = document.getElementById("update-price-panel");
-  const input = document.getElementById("update-price-input");
-  if (!panel || !input) return;
-  panel.classList.toggle("open");
-  if (panel.classList.contains("open")) {
-    input.value = formatTokenInput(atomicTokenToDecimalString(listing.price, TCL_DECIMALS));
-    input.focus();
-    input.select();
+  try {
+    const listing = await getEditableListing(listingId);
+    const panel = document.getElementById("update-price-panel");
+    const input = document.getElementById("update-price-input");
+    if (!panel || !input) return;
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open")) {
+      input.value = formatTokenInput(atomicTokenToDecimalString(listing.price, TCL_DECIMALS));
+      input.focus();
+      input.select();
+    }
+  } catch (err) {
+    showToast(err.message, "error");
   }
 }
 
 async function submitPriceUpdate(listingId) {
-  const listing = allListings.find(l => l.listing_id === listingId);
   const entered = document.getElementById("update-price-input")?.value || "";
-  if (!listing) return;
   const newPrice = parseTokenAmount(entered, TCL_DECIMALS);
   if (newPrice <= 0n) {
     showToast("Enter a valid price", "error");
     return;
   }
-  if (newPrice === listing.price) {
-    showToast("The new price is unchanged", "info");
-    return;
-  }
 
   try {
+    const listing = await getEditableListing(listingId);
+    if (newPrice === listing.price) {
+      showToast("The new price is unchanged", "info");
+      return;
+    }
     const listingIdHex = BigInt(listingId).toString(16).padStart(16, "0");
     const newPriceHex = bigIntToHex(newPrice);
     const tx = buildBaseTx(
@@ -1542,6 +1542,23 @@ async function submitPriceUpdate(listingId) {
   } catch (err) {
     showToast("Price update failed: " + err.message, "error");
   }
+}
+
+async function getEditableListing(listingId) {
+  const [raw] = await queryContract("getListing", [listingId]);
+  if (!raw) throw new Error("Listing no longer exists");
+  const listing = decodeListingStruct(raw);
+  if (!listing.is_active) {
+    closeDetail();
+    loadListings();
+    throw new Error("Listing is no longer active. Marketplace refreshed.");
+  }
+  if (listing.seller.toLowerCase() !== String(walletAddress || "").toLowerCase()) {
+    closeDetail();
+    loadListings();
+    throw new Error("This listing belongs to another wallet. Marketplace refreshed.");
+  }
+  return listing;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1881,8 +1898,17 @@ async function simulateTx(tx) {
   if (!response.ok || payload?.error || !result) {
     throw new Error(payload?.error || payload?.message || "Transaction validation unavailable");
   }
-  if (result.status !== "success") {
-    throw new Error(result.failReason || "Transaction validation failed");
+  const shardResults = [result.senderShard, result.receiverShard].filter(Boolean);
+  const failedShard = shardResults.find(shard => shard.status && shard.status !== "success");
+  const succeeded = result.status === "success"
+    || (shardResults.length > 0 && shardResults.every(shard => shard.status === "success"));
+  if (!succeeded) {
+    throw new Error(
+      result.failReason
+      || failedShard?.failReason
+      || failedShard?.error
+      || "Transaction validation failed"
+    );
   }
 }
 
