@@ -1115,13 +1115,13 @@ async function showNFTDetails(identifier) {
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
     if (tclMax > 0n) {
-      const storagePct = Math.min(Number(tclCount * 100n / tclMax), 100);
+      const storagePct = tclCount > 0n ? Math.min(Number(tclCount * 100n / tclMax), 100) : 0;
       const usdVal = tclPriceUSD
-        ? ` ≈ <b style="color:#34d399;">$${((Number(tclCount)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b>`
+        ? ` ≈ <b style="color:#34d399;">$${((Number(tclMax)/1e18/2)*tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b>`
         : '';
       scHtml = `
         <div class="sc-storage-full" style="margin-bottom:10px;">
-          <span class="k">💾 TCL Storage — ${fmtTCL(tclCount)} / ${fmtTCL(tclMax)} TCL${usdVal}</span>
+          <span class="k">💾 Storage: ${fmtTCL(tclMax)} TCL${usdVal}</span>
           <div class="storage-bar-wrap" style="height:10px; margin-top:5px;">
             <div class="storage-bar-fill" style="width:${storagePct}%"></div>
           </div>
