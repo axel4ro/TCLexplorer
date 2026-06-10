@@ -741,7 +741,7 @@
     <div class="form-group">
       <label class="form-label">Price (TCL)</label>
       <div class="price-input-wrap">
-        <input type="number" class="form-input" id="list-price" placeholder="e.g. 500" min="1" step="1">
+        <input type="number" class="form-input" id="list-price" placeholder="e.g. 500" min="0.000000000000000001" step="any">
         <span class="price-suffix">TCL</span>
       </div>
       <div class="fee-note" id="price-breakdown">Enter a price to see breakdown</div>
@@ -976,7 +976,7 @@ async function loadListings() {
   }
 
   try {
-    const activeIds = await queryContract("getActiveListings");
+    const activeIds = (await queryContract("getActiveListings")).map(decodeBase64Unsigned);
     updateStats();
     if (!activeIds || activeIds.length === 0) {
       allListings = [];
@@ -1032,12 +1032,13 @@ async function loadDemoListings() {
 
 async function fetchListingData(listingId) {
   try {
-    const raw = await queryContract("getListing", [listingId]);
-    // Decode listing struct from contract response
+    const [raw] = await queryContract("getListing", [listingId]);
+    if (!raw) throw new Error("Contract returned an empty listing");
     const listing = decodeListingStruct(raw);
     // Enrich with NFT metadata
-    const nftId = `${listing.nft_token}-${listing.nft_nonce.toString(16).padStart(16, "0")}`;
+    const nftId = `${listing.nft_token}-${bigIntToHex(BigInt(listing.nft_nonce))}`;
     const nftResp = await fetch(`${MVX_API}/nfts/${nftId}`);
+    if (!nftResp.ok) throw new Error(`NFT metadata unavailable (${nftResp.status})`);
     listing.nft = await nftResp.json();
     return listing;
   } catch (e) {
@@ -1421,21 +1422,21 @@ document.getElementById && (() => {
 
 async function submitListing() {
   if (!selectedNFTForListing) { showToast("Select an NFT first", "error"); return; }
-  const priceVal = parseFloat(document.getElementById("list-price").value);
-  if (!priceVal || priceVal <= 0) { showToast("Enter a valid price", "error"); return; }
+  const priceInput = document.getElementById("list-price").value;
+  const priceBig = parseTokenAmount(priceInput, TCL_DECIMALS);
+  if (priceBig <= 0n) { showToast("Enter a valid price", "error"); return; }
   if (!MARKETPLACE_CONTRACT) {
     showToast("Contract not deployed yet. See DEPLOY.md", "info");
     return;
   }
 
   try {
-    const priceBig = BigInt(Math.floor(priceVal)) * TCL_DENOMINATOR;
     const royaltyBps = TCL_ROYALTY_PCT * 100; // fixed 10% → 1000 basis points
 
     const nft = selectedNFTForListing;
-    const priceHex = priceBig.toString(16).padStart(64, "0");
+    const priceHex = bigIntToHex(priceBig);
     const royaltyAddrHex = addressToHex(TCL_ROYALTY_ADDRESS);
-    const royaltyBpsHex = royaltyBps.toString(16).padStart(16, "0");
+    const royaltyBpsHex = bigIntToHex(BigInt(royaltyBps));
     const data = `listNFT@${priceHex}@${royaltyAddrHex}@${royaltyBpsHex}`;
 
     const tx = buildNFTTransferTx(
@@ -1464,64 +1465,149 @@ async function queryContract(func, args = []) {
   const body = {
     scAddress: MARKETPLACE_CONTRACT,
     funcName: func,
-    args: args.map(a => typeof a === "number" ? a.toString(16).padStart(16, "0") : String(a)),
+    args: args.map(encodeContractArgument),
   };
-  const resp = await fetch(`${MVX_GATEWAY}/vm-values/query`, {
+  const resp = await fetch(`${MVX_API}/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = await resp.json();
-  if (data.error) throw new Error(data.error);
+  if (!resp.ok || data.error || (data.returnCode && data.returnCode !== "ok")) {
+    throw new Error(data.error || data.returnMessage || `Contract query failed (${resp.status})`);
+  }
 
-  const returnData = data.data?.data?.returnData || [];
-  return returnData.map(decodeBase64Value);
+  return data.returnData || data.data?.data?.returnData || [];
 }
 
-function decodeBase64Value(b64) {
-  const raw = atob(b64);
-  // Try to interpret as hex number
-  const hex = Array.from(raw).map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
-  return hex ? BigInt("0x" + hex) : 0n;
+function encodeContractArgument(value) {
+  if (typeof value === "number" || typeof value === "bigint") {
+    return bigIntToHex(BigInt(value));
+  }
+  const text = String(value || "");
+  if (text.startsWith("erd1")) return addressToHex(text);
+  return text;
 }
 
-function decodeListingStruct(raw) {
-  // Simplified decoder — real ABI decoder needed for production
-  return { listing_id: 0, seller: "", nft_token: "", nft_nonce: 0, price: 0n, royalty_percent: 0, timestamp: 0, is_active: true };
+function base64ToBytes(b64) {
+  const raw = atob(b64 || "");
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+
+function bytesToBigInt(bytes) {
+  let value = 0n;
+  for (const byte of bytes) value = (value << 8n) | BigInt(byte);
+  return value;
+}
+
+function decodeBase64Unsigned(b64) {
+  return bytesToBigInt(base64ToBytes(b64));
+}
+
+function decodeListingStruct(b64) {
+  const bytes = base64ToBytes(b64);
+  let offset = 0;
+
+  const take = length => {
+    if (offset + length > bytes.length) throw new Error("Invalid listing payload");
+    const value = bytes.slice(offset, offset + length);
+    offset += length;
+    return value;
+  };
+  const readU32 = () => Number(bytesToBigInt(take(4)));
+  const readU64 = () => bytesToBigInt(take(8));
+  const readNestedBytes = () => take(readU32());
+  const readAddress = () => bytesToAddress(take(32));
+  const readBigUint = () => bytesToBigInt(readNestedBytes());
+
+  const listing = {
+    listing_id: Number(readU64()),
+    seller: readAddress(),
+    nft_token: new TextDecoder().decode(readNestedBytes()),
+    nft_nonce: Number(readU64()),
+    price: readBigUint(),
+    royalty_address: readAddress(),
+    royalty_percent: Number(readU64()),
+    timestamp: Number(readU64()),
+    is_active: take(1)[0] === 1,
+  };
+  if (offset !== bytes.length) throw new Error("Unexpected bytes in listing payload");
+  return listing;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SIGN + BROADCAST (WalletConnect via TCLXPortal, same pattern as swap.html)
 // ══════════════════════════════════════════════════════════════════════════════
-async function getAccountNonce(address) {
+async function getAccount(address) {
   const r = await fetch(`${MVX_API}/accounts/${address}`);
-  if (!r.ok) throw new Error("Cannot fetch account nonce");
-  const d = await r.json();
-  return Number(d.nonce || 0);
+  if (!r.ok) throw new Error("Cannot fetch wallet account");
+  return r.json();
+}
+
+function getGuardianAddress(account) {
+  const candidates = [
+    account?.activeGuardian,
+    account?.guardianAddress,
+    account?.guardian,
+    account?.guardianData?.activeGuardian,
+    account?.guardianData?.guardianAddress,
+  ];
+  for (const value of candidates) {
+    const address = typeof value === "string"
+      ? value
+      : value?.address || value?.bech32 || value?.value;
+    if (TCLXPortal.isAddress(address)) return address;
+  }
+  return "";
+}
+
+function isGuardedAccount(account) {
+  return account?.isGuarded === true
+    || account?.guarded === true
+    || account?.guardianData?.guarded === true;
+}
+
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 async function signTx(tx) {
   const stored = TCLXPortal.getStoredSession();
   if (!stored?.topic) throw new Error("Wallet not connected");
   const client = await TCLXPortal.getClient();
-  const nonce = await getAccountNonce(tx.sender);
+  const account = await getAccount(tx.sender);
   const signingTx = {
     ...tx,
-    nonce,
+    nonce: Number(account.nonce || 0),
     value: String(tx.value ?? "0"),
     gasPrice: 1000000000,
     gasLimit: Number(tx.gasLimit),
-    chainID: "1",
-    version: 1
-    // data is already base64 from buildNFTTransferTx / buildESDTTransferTx
+    chainID: String(tx.chainID || "1"),
+    version: Number(tx.version || 1),
   };
+  if (isGuardedAccount(account)) {
+    const guardian = getGuardianAddress(account);
+    if (guardian) {
+      signingTx.guardian = guardian;
+      signingTx.version = Math.max(signingTx.version, 2);
+      signingTx.options = Number(signingTx.options || 0) | 2;
+    }
+  }
   const reqPromise = client.request({
     topic: stored.topic,
     chainId: TCLXPortal.CONFIG.chainId,
     request: { method: "mvx_signTransaction", params: { transaction: signingTx } }
   });
   TCLXPortal.openApp?.();
-  const result = await reqPromise;
+  const result = await withTimeout(
+    reqPromise,
+    90_000,
+    "No signature received from xPortal. Transaction canceled."
+  );
   const signed = result?.transaction && typeof result.transaction === "object"
     ? { ...signingTx, ...result.transaction }
     : { ...signingTx, ...result };
@@ -1530,19 +1616,33 @@ async function signTx(tx) {
 }
 
 async function broadcastTx(tx) {
-  const r = await fetch(`${MVX_API}/transactions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tx)
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d?.error || d?.message || "Broadcast failed");
-  return d.txHash || d.hash;
+  const post = async url => {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tx)
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d?.error || d?.message || "Broadcast failed");
+    return d;
+  };
+
+  try {
+    const d = await post(`${MVX_API}/transactions`);
+    return d.txHash || d.hash;
+  } catch (apiError) {
+    const d = await post(`${MVX_GATEWAY}/transaction/send`);
+    const hash = d?.data?.txHash || d?.txHash || d?.hash;
+    if (!hash) throw apiError;
+    return hash;
+  }
 }
 
 async function signAndBroadcast(tx) {
   const signed = await signTx(tx);
-  return broadcastTx(signed);
+  const hash = await broadcastTx(signed);
+  if (typeof hash !== "string" || !hash) throw new Error("Broadcast returned no transaction hash");
+  return hash;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1562,8 +1662,8 @@ function buildESDTTransferTx(sender, receiver, token, amount, functionCall, gasL
 
 function buildNFTTransferTx(sender, receiver, token, nonce, qty, extraData, gasLimit) {
   const tokenHex = stringToHex(token);
-  const nonceHex = nonce.toString(16).padStart(2, "0");
-  const qtyHex = qty.toString(16).padStart(2, "0");
+  const nonceHex = bigIntToHex(BigInt(nonce));
+  const qtyHex = bigIntToHex(BigInt(qty));
   const receiverHex = addressToHex(receiver);
   const data = `ESDTNFTTransfer@${tokenHex}@${nonceHex}@${qtyHex}@${receiverHex}@${extraData}`;
   return { sender, receiver: sender, data: btoa(data), gasLimit, value: "0", chainID: "1", version: 1 };
@@ -1578,10 +1678,90 @@ function bigIntToHex(n) {
   return h.length % 2 === 0 ? h : "0" + h;
 }
 
-function addressToHex(bech32) {
-  // Minimal bech32→bytes decoder stub; use full SDK in production
-  if (!bech32 || !bech32.startsWith("erd1")) return "0".repeat(64);
-  return stringToHex(bech32); // placeholder
+function parseTokenAmount(value, decimals) {
+  const raw = String(value || "").trim().replace(",", ".");
+  if (!/^\d+(\.\d*)?$/.test(raw)) return 0n;
+  const [whole, fraction = ""] = raw.split(".");
+  if (fraction.length > decimals) return 0n;
+  return BigInt(whole || "0") * (10n ** BigInt(decimals))
+    + BigInt(fraction.padEnd(decimals, "0") || "0");
+}
+
+const BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+function bech32Polymod(values) {
+  const generators = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+  let checksum = 1;
+  for (const value of values) {
+    const top = checksum >>> 25;
+    checksum = ((checksum & 0x1ffffff) << 5) ^ value;
+    for (let i = 0; i < 5; i++) {
+      if ((top >>> i) & 1) checksum ^= generators[i];
+    }
+  }
+  return checksum >>> 0;
+}
+
+function bech32HrpExpand(hrp) {
+  return [
+    ...Array.from(hrp, c => c.charCodeAt(0) >>> 5),
+    0,
+    ...Array.from(hrp, c => c.charCodeAt(0) & 31),
+  ];
+}
+
+function convertBits(data, fromBits, toBits, pad) {
+  let value = 0;
+  let bitCount = 0;
+  const result = [];
+  const maxValue = (1 << toBits) - 1;
+  for (const item of data) {
+    if (item < 0 || (item >>> fromBits) !== 0) return null;
+    value = (value << fromBits) | item;
+    bitCount += fromBits;
+    while (bitCount >= toBits) {
+      bitCount -= toBits;
+      result.push((value >>> bitCount) & maxValue);
+    }
+  }
+  if (pad) {
+    if (bitCount > 0) result.push((value << (toBits - bitCount)) & maxValue);
+  } else if (bitCount >= fromBits || ((value << (toBits - bitCount)) & maxValue)) {
+    return null;
+  }
+  return result;
+}
+
+function addressToHex(address) {
+  const raw = String(address || "");
+  if (raw !== raw.toLowerCase()) throw new Error("Invalid MultiversX address");
+  const separator = raw.lastIndexOf("1");
+  const hrp = raw.slice(0, separator);
+  const words = Array.from(raw.slice(separator + 1), c => BECH32_CHARSET.indexOf(c));
+  if (hrp !== "erd" || separator < 1 || words.length < 7 || words.some(v => v < 0)) {
+    throw new Error("Invalid MultiversX address");
+  }
+  if (bech32Polymod([...bech32HrpExpand(hrp), ...words]) !== 1) {
+    throw new Error("Invalid MultiversX address checksum");
+  }
+  const bytes = convertBits(words.slice(0, -6), 5, 8, false);
+  if (!bytes || bytes.length !== 32) throw new Error("Invalid MultiversX address length");
+  return bytes.map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function bytesToAddress(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length !== 32) {
+    throw new Error("Invalid MultiversX public key");
+  }
+  const hrp = "erd";
+  const words = convertBits(Array.from(bytes), 8, 5, true);
+  const polymod = bech32Polymod([
+    ...bech32HrpExpand(hrp),
+    ...words,
+    0, 0, 0, 0, 0, 0,
+  ]) ^ 1;
+  const checksum = Array.from({ length: 6 }, (_, i) => (polymod >>> (5 * (5 - i))) & 31);
+  return `${hrp}1${[...words, ...checksum].map(v => BECH32_CHARSET[v]).join("")}`;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
