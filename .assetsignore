@@ -8,3 +8,8 @@ node_modules/
 *.pack
 *.log
 .claude/
+contracts/target/
+contracts/marketplace/wasm/target/
+.ssh/
+.server_config
+server-api/
