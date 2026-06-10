@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "marketplace",
+    "marketplace/meta",
+]
+resolver = "2"

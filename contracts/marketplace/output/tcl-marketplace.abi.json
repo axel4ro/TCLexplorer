@@ -1,0 +1,302 @@
+{
+    "buildInfo": {
+        "contractCrate": {
+            "name": "tcl-marketplace",
+            "version": "0.1.0"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.66.1"
+        }
+    },
+    "name": "TclMarketplace",
+    "constructor": {
+        "inputs": [
+            {
+                "name": "fee_percent",
+                "type": "u64"
+            }
+        ],
+        "outputs": []
+    },
+    "upgradeConstructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "docs": [
+                "Seller calls this after sending the NFT via ESDTNFTTransfer.",
+                "price: amount of TCL (in smallest unit, 18 decimals)",
+                "royalty_address: creator wallet to receive royalties",
+                "royalty_percent: basis points (e.g. 500 = 5%)"
+            ],
+            "name": "listNFT",
+            "rustMethodName": "list_nft",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "price",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "royalty_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "royalty_percent",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Buyer sends exact TCL amount; receives NFT.",
+                "Fees: platform fee + royalties deducted from payment; rest goes to seller."
+            ],
+            "name": "buyNFT",
+            "rustMethodName": "buy_nft",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Seller (or contract owner) cancels a listing; NFT returned."
+            ],
+            "name": "cancelListing",
+            "rustMethodName": "cancel_listing",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "updatePrice",
+            "rustMethodName": "update_price",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "new_price",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setFeePercent",
+            "rustMethodName": "set_fee_percent",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "fee",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "withdrawFees",
+            "rustMethodName": "withdraw_fees",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "getActiveListings",
+            "rustMethodName": "get_active_listings",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<u64>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getListing",
+            "rustMethodName": "get_listing",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "Listing"
+                }
+            ]
+        },
+        {
+            "name": "getListingCount",
+            "rustMethodName": "get_listing_count",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getFeePercent",
+            "rustMethodName": "get_fee_percent",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getTclToken",
+            "rustMethodName": "get_tcl_token",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "name": "getSellerListings",
+            "rustMethodName": "get_seller_listings",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "seller",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "variadic<u64>",
+                    "multi_result": true
+                }
+            ]
+        }
+    ],
+    "events": [
+        {
+            "identifier": "listingCreated",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "seller",
+                    "type": "Address",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "identifier": "listingSold",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "buyer",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "price",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "identifier": "listingCancelled",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "seller",
+                    "type": "Address",
+                    "indexed": true
+                }
+            ]
+        }
+    ],
+    "esdtAttributes": [],
+    "hasCallback": false,
+    "types": {
+        "Listing": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "listing_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "seller",
+                    "type": "Address"
+                },
+                {
+                    "name": "nft_token",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "nft_nonce",
+                    "type": "u64"
+                },
+                {
+                    "name": "price",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "royalty_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "royalty_percent",
+                    "type": "u64"
+                },
+                {
+                    "name": "timestamp",
+                    "type": "u64"
+                },
+                {
+                    "name": "is_active",
+                    "type": "bool"
+                }
+            ]
+        }
+    }
+}

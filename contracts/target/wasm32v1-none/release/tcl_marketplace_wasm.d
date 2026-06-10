@@ -1,0 +1,1 @@
+\\?\C:\Users\alex_\Documents\TCLexplorer-main\contracts\target\wasm32v1-none\release\tcl_marketplace_wasm.wasm: C:\Users\alex_\Documents\TCLexplorer-main\contracts\marketplace\src\lib.rs C:\Users\alex_\Documents\TCLexplorer-main\contracts\marketplace\wasm\src\lib.rs

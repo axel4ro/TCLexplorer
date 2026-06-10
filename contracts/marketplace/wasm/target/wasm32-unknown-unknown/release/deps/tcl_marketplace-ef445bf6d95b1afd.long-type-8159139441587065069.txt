@@ -1,0 +1,1 @@
+multiversx_sc::imports::SingleValueMapper<<Self as multiversx_sc::contract_base::ContractBase>::Api, Listing<<Self as multiversx_sc::contract_base::ContractBase>::Api>>

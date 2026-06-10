@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TCL NFT Marketplace</title>
+  <meta name="theme-color" content="#0c0e14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <style>
+    :root {
+      --accent: #2ff6de;
+      --accent2: #a78bfa;
+      --bg: #050810;
+      --card-bg: #0d1120;
+      --card-border: #1e2a42;
+      --text: #f1f1f1;
+      --muted: #7a8399;
+      --red: #f87171;
+      --green: #34d399;
+      --gold: #fbbf24;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at top left, #0a0f1c, #050810 80%);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(90deg, #101729, #141a33);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid #2a3347;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-left img { width: 36px; height: 36px; border-radius: 8px; }
+    .site-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(47,246,222,0.6);
+      margin: 0;
+    }
+    .site-subtitle { font-size: 12px; color: var(--muted); margin: 0; }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .nav-back {
+      background: none;
+      border: 1px solid #2a3347;
+      color: var(--accent);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-back:hover { background: rgba(47,246,222,0.08); border-color: var(--accent); }
+
+    /* ── Wallet Button ── */
+    #wallet-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    #wallet-btn:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }
+    #wallet-btn.connected { background: linear-gradient(135deg, #065f46, #047857); }
+    #wallet-btn.connected:hover { background: linear-gradient(135deg, #064e3b, #065f46); }
+
+    /* ── Hero Stats Bar ── */
+    .stats-bar {
+      background: linear-gradient(90deg, rgba(13,17,32,0.9), rgba(20,26,51,0.9));
+      border-bottom: 1px solid #1e2a42;
+      padding: 12px 24px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .stat-item { text-align: center; }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-value { font-size: 18px; font-weight: 700; color: var(--accent); font-family: 'Orbitron', sans-serif; }
+    .stat-value.gold { color: var(--gold); }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 24px 0;
+      border-bottom: 1px solid #1e2a42;
+      background: rgba(13,17,32,0.5);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(47,246,222,0.06); }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: rgba(5,8,16,0.6);
+      border-bottom: 1px solid #1a2235;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      max-width: 360px;
+      background: #0d1120;
+      border: 1px solid #2a3347;
+      border-radius: 10px;
+      padding: 9px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: var(--accent); }
+    .toolbar-select {
+      background: #0d1120;
+      border: 1px solid #2a3347;
+      border-radius: 10px;
+      padding: 9px 14px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2ff6de, #0ea5e9);
+      color: #0d1120;
+      font-weight: 700;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-secondary {
+      background: rgba(167,139,250,0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(167,139,250,0.3);
+      padding: 9px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(167,139,250,0.25); }
+
+    /* ── Grid ── */
+    #listings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      padding: 24px;
+    }
+
+    /* ── NFT Card ── */
+    .nft-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .nft-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(47,246,222,0.15);
+    }
+
+    .nft-card .badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(47,246,222,0.15);
+      border: 1px solid rgba(47,246,222,0.4);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    .nft-card .nft-img-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: #080d1a;
+    }
+    .nft-card .nft-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    .nft-card:hover .nft-img-wrap img { transform: scale(1.04); }
+
+    .nft-card .card-body { padding: 14px; }
+    .nft-card .card-name {
+      font-weight: 700;
+      font-size: 15px;
+      margin: 0 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nft-card .card-collection {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+
+    /* Mini attribute preview */
+    .mini-attrs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+    .mini-attr {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #2a3347;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+    }
+    .mini-attr .attr-k { color: var(--accent); font-weight: 600; }
+    .mini-attr .attr-v { color: var(--text); }
+    .mini-attr .attr-v.neg { color: var(--red); }
+    .mini-attr .attr-v.pos { color: var(--green); }
+
+    .card-price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .price-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .price-tag .tcl-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+    .price-tag .amount {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gold);
+      font-family: 'Orbitron', sans-serif;
+    }
+    .price-tag .amount-usd {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .btn-buy {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #0d1120;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-buy:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-cancel {
+      background: rgba(248,113,113,0.15);
+      color: var(--red);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cancel:hover { background: rgba(248,113,113,0.25); }
+
+    /* ── Loading / Empty ── */
+    .loading-msg {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #1e2a42;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Detail Modal ── */
+    #detail-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #detail-modal.open { display: flex; }
+
+    .modal-box {
+      background: #0d1120;
+      border: 1px solid #2a3347;
+      border-radius: 20px;
+      max-width: 860px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      position: relative;
+      animation: fadeUp 0.2s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(16px); } }
+
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid #2a3347;
+      color: var(--muted);
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+
+    .modal-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+    @media(max-width: 640px) { .modal-layout { grid-template-columns: 1fr; } }
+
+    .modal-img-col img {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #2a3347;
+    }
+    .modal-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a2235;
+      font-size: 13px;
+    }
+    .modal-info-row:last-child { border-bottom: none; }
+    .modal-info-row .k { color: var(--muted); }
+    .modal-info-row .v { font-weight: 600; color: var(--text); }
+    .modal-info-row .v a { color: var(--accent); text-decoration: none; }
+    .modal-info-row .v a:hover { text-decoration: underline; }
+
+    .attrs-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--accent);
+      margin: 18px 0 10px;
+    }
+    .attrs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .attr-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #1e2a42;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .attr-box .ak { font-size: 11px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .attr-box .av { font-size: 14px; font-weight: 700; }
+    .attr-box .av.neg { color: var(--red); }
+    .attr-box .av.pos { color: var(--green); }
+    .attr-box .av.neutral { color: var(--text); }
+    /* Single-line wide attrs */
+    .attr-box.wide { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+    .attr-box.wide .ak { margin-bottom: 0; }
+
+    .modal-price-section {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 12px;
+    }
+    .modal-price-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .modal-price-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--gold);
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-price-usd { font-size: 14px; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400; }
+    .modal-action-row { display: flex; gap: 10px; margin-top: 14px; }
+    .modal-action-row button { flex: 1; padding: 13px; font-size: 15px; border-radius: 10px; }
+
+    /* ── List NFT Modal ── */
+    #list-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #list-modal.open { display: flex; }
+    .list-modal-box {
+      background: #0d1120;
+      border: 1px solid #2a3347;
+      border-radius: 20px;
+      max-width: 540px;
+      width: 100%;
+      padding: 28px;
+      position: relative;
+      animation: fadeUp 0.2s ease;
+    }
+    .list-modal-box h2 {
+      margin: 0 0 20px;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--accent);
+      font-size: 18px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%;
+      background: #080d1a;
+      border: 1px solid #2a3347;
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-select {
+      width: 100%;
+      background: #080d1a;
+      border: 1px solid #2a3347;
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+    .price-input-wrap {
+      position: relative;
+    }
+    .price-input-wrap .price-suffix {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 13px;
+      pointer-events: none;
+    }
+    .price-input-wrap .form-input { padding-right: 58px; }
+    .fee-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .fee-note span { color: var(--accent2); font-weight: 600; }
+    .nft-select-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: #080d1a;
+      border: 1px solid #2a3347;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .nft-select-card:hover { border-color: var(--accent); }
+    .nft-select-card img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+    .nft-select-name { font-size: 13px; font-weight: 600; }
+    .nft-select-id { font-size: 11px; color: var(--muted); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1a2235;
+      border: 1px solid #2a3347;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 999;
+      transition: transform 0.3s;
+      max-width: 380px;
+      text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: var(--green); color: var(--green); }
+    #toast.error { border-color: var(--red); color: var(--red); }
+    #toast.info { border-color: var(--accent); color: var(--accent); }
+
+    /* ── QR Modal ── */
+    #qr-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    #qr-modal.open { display: flex; }
+    .qr-box {
+      background: #0d1120;
+      border: 1px solid #2a3347;
+      border-radius: 20px;
+      padding: 28px;
+      text-align: center;
+      max-width: 340px;
+      width: 90%;
+      position: relative;
+    }
+    .qr-box h3 { margin: 0 0 6px; font-family: 'Orbitron', sans-serif; color: var(--accent); font-size: 16px; }
+    .qr-box p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+    #qr-canvas { border-radius: 12px; }
+
+    /* ── My NFTs grid (for listing) ── */
+    .my-nfts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .my-nft-item {
+      background: #080d1a;
+      border: 2px solid #2a3347;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      text-align: center;
+    }
+    .my-nft-item:hover, .my-nft-item.selected { border-color: var(--accent); }
+    .my-nft-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+    .my-nft-item .nft-label { font-size: 10px; color: var(--muted); padding: 4px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .empty-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-msg .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-msg p { margin: 0; font-size: 15px; }
+    .empty-msg small { font-size: 13px; color: #4a5568; }
+
+    a.nav-back { text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════ HEADER ════════════ -->
+<header>
+  <div class="header-left">
+    <img src="images/tcl_icon.png" alt="TCL" onerror="this.style.display='none'">
+    <div>
+      <h1 class="site-title">TCLexplorer</h1>
+      <p class="site-subtitle">NFT Marketplace</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="index.html" class="nav-back">← Dashboard</a>
+    <a href="NFTs.html" class="nav-back">🖼 Browse NFTs</a>
+    <button id="wallet-btn" onclick="handleWalletClick()">🔗 Connect xPortal</button>
+  </div>
+</header>
+
+<!-- ════════════ STATS BAR ════════════ -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-label">Active Listings</div>
+    <div class="stat-value" id="stat-listings">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Floor Price</div>
+    <div class="stat-value gold" id="stat-floor">— TCL</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">TCL Price</div>
+    <div class="stat-value" id="stat-tcl-price">$—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Contract</div>
+    <div class="stat-value" id="stat-contract" style="font-size:12px; font-family: monospace; color: var(--muted);">Not deployed</div>
+  </div>
+  <div style="margin-left:auto;">
+    <span style="font-size:12px; color: var(--muted);">Payment token: </span>
+    <span style="font-size:13px; color: var(--gold); font-weight:700;">TCL-fe459d</span>
+  </div>
+</div>
+
+<!-- ════════════ TABS ════════════ -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('all')" id="tab-all">🛒 All Listings</button>
+  <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
+  <button class="tab-btn" onclick="switchTab('activity')" id="tab-activity">📋 Recent Sales</button>
+</div>
+
+<!-- ════════════ TOOLBAR ════════════ -->
+<div class="toolbar">
+  <input type="text" class="search-box" id="search-input" placeholder="🔍 Search by name or identifier…" oninput="filterListings()">
+  <select class="toolbar-select" id="sort-select" onchange="filterListings()">
+    <option value="price_asc">Price: Low → High</option>
+    <option value="price_desc">Price: High → Low</option>
+    <option value="newest">Newest First</option>
+    <option value="oldest">Oldest First</option>
+  </select>
+  <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
+    <option value="">All Collections</option>
+  </select>
+  <button class="btn-primary" onclick="openListModal()">+ List NFT</button>
+  <button class="btn-secondary" onclick="loadListings()">↻ Refresh</button>
+</div>
+
+<!-- ════════════ LISTINGS GRID ════════════ -->
+<div id="listings-grid">
+  <div class="loading-msg">
+    <div class="loading-spinner"></div>
+    Loading marketplace…
+  </div>
+</div>
+
+<!-- ════════════ DETAIL MODAL ════════════ -->
+<div id="detail-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeDetail()">×</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ════════════ LIST NFT MODAL ════════════ -->
+<div id="list-modal">
+  <div class="list-modal-box">
+    <button class="modal-close" onclick="closeListModal()">×</button>
+    <h2>📦 List NFT for Sale</h2>
+
+    <div class="form-group">
+      <label class="form-label">Select NFT from your wallet</label>
+      <div id="my-nfts-grid" class="my-nfts-grid">
+        <div style="color:var(--muted); font-size:13px; padding:16px;">Connect wallet to see your NFTs</div>
+      </div>
+    </div>
+
+    <div class="form-group" id="selected-nft-preview" style="display:none;">
+      <div class="nft-select-card" id="nft-preview-card"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Price (TCL)</label>
+      <div class="price-input-wrap">
+        <input type="number" class="form-input" id="list-price" placeholder="e.g. 500" min="1" step="1">
+        <span class="price-suffix">TCL</span>
+      </div>
+      <div class="fee-note" id="price-breakdown">Enter a price to see breakdown</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Royalty Wallet (creator address)</label>
+      <input type="text" class="form-input" id="royalty-address" placeholder="erd1…" value="">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Royalty % (e.g. 5 = 5%)</label>
+      <input type="number" class="form-input" id="royalty-percent" placeholder="0" min="0" max="20" step="0.1" value="0">
+      <div class="fee-note">From the NFT's on-chain royalties field. <span>Max 20%.</span></div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:8px;">
+      <button class="btn-primary" style="flex:1; padding:13px; font-size:15px;" onclick="submitListing()">List NFT →</button>
+      <button class="btn-secondary" style="padding:13px 18px;" onclick="closeListModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ QR MODAL ════════════ -->
+<div id="qr-modal">
+  <div class="qr-box">
+    <button class="modal-close" onclick="closeQR()">×</button>
+    <h3>Scan with xPortal</h3>
+    <p>Open the xPortal app and scan the QR code to connect your wallet.</p>
+    <canvas id="qr-canvas" width="240" height="240"></canvas>
+    <p style="margin-top:12px; font-size:11px; color:#4a5568;">Waiting for connection…</p>
+  </div>
+</div>
+
+<!-- ════════════ TOAST ════════════ -->
+<div id="toast"></div>
+
+<!-- ════════════ SCRIPTS ════════════ -->
+<!-- WalletConnect (bundled) -->
+<script src="lib/walletconnect-sign-client.min.js"></script>
+<!-- xPortal session helper -->
+<script src="js/xportal-session.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════════════════
+const MARKETPLACE_CONTRACT = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvscppu7fqmsypuu25";
+const TCL_TOKEN = "TCL-fe459d";
+const TCL_DECIMALS = 18;
+const TCL_DENOMINATOR = BigInt("1000000000000000000"); // 10^18
+const MVX_API = "https://api.multiversx.com";
+const MVX_GATEWAY = "https://gateway.multiversx.com";
+
+// TCL game NFT creator addresses
+const TCL_CREATORS = [
+  "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
+  "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════════════
+let walletAddress = null;
+let tclPriceUSD = 0;
+let allListings = [];      // on-chain listings enriched with NFT metadata
+let myWalletNFTs = [];     // NFTs owned by connected wallet
+let selectedNFTForListing = null;
+let currentTab = "all";
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WALLET
+// ══════════════════════════════════════════════════════════════════════════════
+function handleWalletClick() {
+  if (walletAddress) {
+    disconnectWallet();
+  } else {
+    connectWallet();
+  }
+}
+
+async function connectWallet() {
+  try {
+    const uri = await TCLXPortal.connect({
+      name: "TCL Marketplace",
+      description: "NFT Marketplace powered by TCL token",
+      fallbackPath: "/MarketPlaceNFT.html",
+    });
+    if (uri) showQR(uri);
+  } catch (e) {
+    showToast("Wallet connection failed", "error");
+    console.error(e);
+  }
+}
+
+function disconnectWallet() {
+  TCLXPortal.disconnect();
+  walletAddress = null;
+  updateWalletUI(null);
+}
+
+function updateWalletUI(address) {
+  const btn = document.getElementById("wallet-btn");
+  if (address) {
+    btn.textContent = `✅ ${address.slice(0,8)}…${address.slice(-6)}`;
+    btn.classList.add("connected");
+    loadMyNFTs();
+  } else {
+    btn.textContent = "🔗 Connect xPortal";
+    btn.classList.remove("connected");
+    myWalletNFTs = [];
+  }
+}
+
+// Listen for wallet session changes
+window.addEventListener("tcl:xportal-session", (e) => {
+  const { address, connected } = e.detail || {};
+  walletAddress = connected ? address : null;
+  updateWalletUI(walletAddress);
+  closeQR();
+  if (connected) showToast(`Connected: ${address.slice(0,12)}…`, "success");
+  renderCurrentTab();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QR MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function showQR(uri) {
+  document.getElementById("qr-modal").classList.add("open");
+  const canvas = document.getElementById("qr-canvas");
+  // Simple QR via external lib if available, else show URI text
+  if (window.QRCode) {
+    const qr = new QRCode(canvas, { text: uri, width: 240, height: 240, colorDark: "#2ff6de", colorLight: "#0d1120" });
+  } else {
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#0d1120";
+    ctx.fillRect(0, 0, 240, 240);
+    ctx.fillStyle = "#2ff6de";
+    ctx.font = "10px monospace";
+    const lines = uri.match(/.{1,30}/g) || [];
+    lines.forEach((l, i) => ctx.fillText(l, 4, 16 + i * 13));
+  }
+}
+function closeQR() { document.getElementById("qr-modal").classList.remove("open"); }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  ["all", "mine", "activity"].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle("active", t === tab);
+  });
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  if (currentTab === "all") renderListings(allListings);
+  else if (currentTab === "mine") renderMyListings();
+  else renderActivity();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOAD LISTINGS  (on-chain contract query + MultiversX API enrichment)
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadListings() {
+  const grid = document.getElementById("listings-grid");
+  grid.innerHTML = `<div class="loading-msg"><div class="loading-spinner"></div>Loading listings…</div>`;
+
+  if (!MARKETPLACE_CONTRACT) {
+    // Demo mode: pull live TCL NFTs from MultiversX API as placeholder listings
+    await loadDemoListings();
+    return;
+  }
+
+  try {
+    const activeIds = await queryContract("getActiveListings");
+    updateStats();
+    if (!activeIds || activeIds.length === 0) {
+      allListings = [];
+      renderListings([]);
+      return;
+    }
+    const listings = await Promise.all(activeIds.map(id => fetchListingData(id)));
+    allListings = listings.filter(Boolean);
+    updateStats();
+    renderCurrentTab();
+  } catch (err) {
+    console.error("Error loading listings:", err);
+    await loadDemoListings();
+  }
+}
+
+async function loadDemoListings() {
+  // Fetch real NFTs from MultiversX API to populate marketplace visually
+  try {
+    const resp = await fetch(`${MVX_API}/collections?creator=${TCL_CREATORS[0]}&size=20`);
+    const collections = await resp.json();
+    const nfts = [];
+    for (const col of collections.slice(0, 4)) {
+      const r = await fetch(`${MVX_API}/collections/${col.collection}/nfts?size=8&fields=identifier,name,media,metadata,collection,royalties,nonce`);
+      const data = await r.json();
+      nfts.push(...data);
+    }
+
+    // Build demo listing objects with random TCL prices
+    allListings = nfts.map((nft, i) => ({
+      listing_id: i + 1,
+      seller: "erd1demo000000000000000000000000000000000000000000000000000000000",
+      nft_token: nft.collection,
+      nft_nonce: nft.nonce,
+      price: BigInt(Math.floor(Math.random() * 900 + 100)) * TCL_DENOMINATOR,
+      royalty_percent: nft.royalties || 0,
+      timestamp: Date.now() / 1000 - Math.random() * 86400 * 7,
+      is_active: true,
+      // enriched fields:
+      nft,
+      _demo: true,
+    }));
+    updateStats();
+    renderCurrentTab();
+  } catch (err) {
+    console.error("Demo load error:", err);
+    document.getElementById("listings-grid").innerHTML = `
+      <div class="loading-msg" style="color:var(--red);">
+        ⚠️ Could not load listings.<br><small>${err.message}</small>
+      </div>`;
+  }
+}
+
+async function fetchListingData(listingId) {
+  try {
+    const raw = await queryContract("getListing", [listingId]);
+    // Decode listing struct from contract response
+    const listing = decodeListingStruct(raw);
+    // Enrich with NFT metadata
+    const nftId = `${listing.nft_token}-${listing.nft_nonce.toString(16).padStart(16, "0")}`;
+    const nftResp = await fetch(`${MVX_API}/nfts/${nftId}`);
+    listing.nft = await nftResp.json();
+    return listing;
+  } catch (e) {
+    console.warn("fetchListingData error", listingId, e);
+    return null;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDER LISTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+function filterListings() {
+  const query = document.getElementById("search-input").value.toLowerCase();
+  const sort = document.getElementById("sort-select").value;
+  const colFilter = document.getElementById("collection-filter").value;
+
+  let filtered = allListings.filter(l => {
+    const name = (l.nft?.name || "").toLowerCase();
+    const id = (l.nft?.identifier || "").toLowerCase();
+    const col = l.nft?.collection || "";
+    if (query && !name.includes(query) && !id.includes(query)) return false;
+    if (colFilter && col !== colFilter) return false;
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    if (sort === "price_asc") return compareBigInt(a.price, b.price);
+    if (sort === "price_desc") return compareBigInt(b.price, a.price);
+    if (sort === "newest") return b.timestamp - a.timestamp;
+    if (sort === "oldest") return a.timestamp - b.timestamp;
+    return 0;
+  });
+
+  renderListings(filtered);
+}
+
+function compareBigInt(a, b) {
+  const ba = typeof a === "bigint" ? a : BigInt(String(a));
+  const bb = typeof b === "bigint" ? b : BigInt(String(b));
+  if (ba < bb) return -1;
+  if (ba > bb) return 1;
+  return 0;
+}
+
+function renderListings(listings) {
+  const grid = document.getElementById("listings-grid");
+  if (!listings.length) {
+    grid.innerHTML = `
+      <div class="empty-msg">
+        <div class="empty-icon">🛒</div>
+        <p>No listings found</p>
+        <small>${MARKETPLACE_CONTRACT ? "Be the first to list an NFT!" : "Contract not deployed yet — showing demo data"}</small>
+      </div>`;
+    return;
+  }
+
+  // Populate collection filter
+  const colSelect = document.getElementById("collection-filter");
+  const existing = new Set(Array.from(colSelect.options).map(o => o.value));
+  const cols = [...new Set(listings.map(l => l.nft?.collection).filter(Boolean))];
+  cols.forEach(c => {
+    if (!existing.has(c)) {
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c;
+      colSelect.appendChild(opt);
+    }
+  });
+
+  grid.innerHTML = listings.map(l => buildListingCard(l)).join("");
+}
+
+function buildListingCard(listing) {
+  const nft = listing.nft || {};
+  const priceWhole = formatTCL(listing.price);
+  const priceUSD = tclPriceUSD ? `≈$${(Number(priceWhole) * tclPriceUSD).toFixed(2)}` : "";
+  const img = nft.media?.[0]?.url || nft.media?.[0]?.thumbnailUrl || "";
+  const name = nft.name || `NFT #${listing.nft_nonce}`;
+  const collection = nft.collection || listing.nft_token || "";
+  const isMine = walletAddress && listing.seller === walletAddress;
+
+  // Pick top 4 attributes to show as mini-badges
+  const attrs = (nft.metadata?.attributes || []).slice(0, 4);
+  const miniAttrs = attrs.map(a => {
+    const isNeg = typeof a.value === "string" && a.value.trim().startsWith("-");
+    const cls = isNeg ? "neg" : "pos";
+    return `<span class="mini-attr"><span class="attr-k">${a.trait_type}:</span> <span class="attr-v ${cls}">${a.value}</span></span>`;
+  }).join("");
+
+  const demoNote = listing._demo ? `<span class="badge">Demo</span>` : "";
+
+  return `
+    <div class="nft-card" onclick="openDetail(${listing.listing_id})">
+      ${demoNote}
+      <div class="nft-img-wrap">
+        <img src="${img}" alt="${name}" loading="lazy"
+             onerror="this.src='images/tcl_icon.png'">
+      </div>
+      <div class="card-body">
+        <p class="card-name">${name}</p>
+        <p class="card-collection">${collection}</p>
+        <div class="mini-attrs">${miniAttrs || '<span style="color:var(--muted);font-size:12px;">No attributes</span>'}</div>
+        <div class="card-price-row">
+          <div class="price-tag">
+            <img src="images/tcl_icon.png" class="tcl-icon" onerror="this.style.display='none'">
+            <div>
+              <div class="amount">${priceWhole} TCL</div>
+              <div class="amount-usd">${priceUSD}</div>
+            </div>
+          </div>
+          ${isMine
+            ? `<button class="btn-cancel" onclick="event.stopPropagation(); cancelListing(${listing.listing_id})">Cancel</button>`
+            : `<button class="btn-buy" onclick="event.stopPropagation(); buyNFT(${listing.listing_id})">Buy</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderMyListings() {
+  if (!walletAddress) {
+    document.getElementById("listings-grid").innerHTML = `
+      <div class="empty-msg">
+        <div class="empty-icon">🔗</div>
+        <p>Connect your wallet to see your listings</p>
+      </div>`;
+    return;
+  }
+  const mine = allListings.filter(l => l.seller === walletAddress);
+  renderListings(mine);
+}
+
+function renderActivity() {
+  document.getElementById("listings-grid").innerHTML = `
+    <div class="empty-msg">
+      <div class="empty-icon">📋</div>
+      <p>Recent sales will appear here</p>
+      <small>Connect a deployed contract to see real on-chain activity</small>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DETAIL MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function openDetail(listingId) {
+  const listing = allListings.find(l => l.listing_id === listingId);
+  if (!listing) return;
+  const nft = listing.nft || {};
+  const priceWhole = formatTCL(listing.price);
+  const priceUSD = tclPriceUSD ? `≈ $${(Number(priceWhole) * tclPriceUSD).toFixed(2)}` : "";
+  const img = nft.media?.[0]?.url || "";
+  const isMine = walletAddress && listing.seller === walletAddress;
+
+  // Build full attributes grid
+  let attrsHtml = "";
+  const attrs = nft.metadata?.attributes || [];
+  if (attrs.length) {
+    attrsHtml = `<div class="attrs-title">⚔️ Attributes</div><div class="attrs-grid">`;
+    attrs.forEach(a => {
+      const val = String(a.value);
+      const isNeg = val.trim().startsWith("-");
+      const hasPlus = /\+\d+/.test(val);
+      const cls = isNeg ? "neg" : (hasPlus || val.includes("%") ? "pos" : "neutral");
+      const isWide = val.length > 20;
+      attrsHtml += `
+        <div class="attr-box${isWide ? " wide" : ""}">
+          <div class="ak">${a.trait_type}</div>
+          <div class="av ${cls}">${val}</div>
+        </div>`;
+    });
+    attrsHtml += "</div>";
+  }
+
+  const xoxnoUrl = `https://xoxno.com/nft/${nft.identifier || ""}`;
+  const sellerShort = listing.seller ? `${listing.seller.slice(0,10)}…${listing.seller.slice(-8)}` : "Unknown";
+  const royPct = listing.royalty_percent ? (listing.royalty_percent / 100).toFixed(2) + "%" : (nft.royalties ? nft.royalties/100 + "%" : "0%");
+  const listedAt = listing.timestamp ? new Date(listing.timestamp * 1000).toLocaleString() : "Unknown";
+
+  document.getElementById("detail-content").innerHTML = `
+    <div class="modal-layout">
+      <div class="modal-img-col">
+        <img src="${img}" alt="${nft.name}" onerror="this.src='images/tcl_icon.png'">
+        <div style="margin-top:12px;">
+          <div class="modal-info-row"><span class="k">Collection</span><span class="v">${nft.collection || "—"}</span></div>
+          <div class="modal-info-row"><span class="k">Identifier</span><span class="v" style="font-size:11px; font-family:monospace;">${nft.identifier || "—"}</span></div>
+          <div class="modal-info-row"><span class="k">Nonce</span><span class="v">${nft.nonce ?? listing.nft_nonce ?? "—"}</span></div>
+          <div class="modal-info-row"><span class="k">Royalties</span><span class="v">${royPct}</span></div>
+          <div class="modal-info-row"><span class="k">Seller</span><span class="v"><a href="https://explorer.multiversx.com/accounts/${listing.seller}" target="_blank">${sellerShort}</a></span></div>
+          <div class="modal-info-row"><span class="k">Listed at</span><span class="v">${listedAt}</span></div>
+          <div class="modal-info-row"><span class="k">View on</span><span class="v"><a href="${xoxnoUrl}" target="_blank">XOXNO ↗</a></span></div>
+        </div>
+      </div>
+      <div class="modal-right-col">
+        <h2 style="margin:0 0 4px; font-size:22px; font-weight:700;">${nft.name || "Unknown NFT"}</h2>
+        <p style="color:var(--muted); margin:0 0 16px; font-size:13px;">${nft.collection || ""}</p>
+        ${attrsHtml}
+        <div class="modal-price-section">
+          <div class="modal-price-label">💰 Listed Price</div>
+          <div class="modal-price-value">
+            <img src="images/tcl_icon.png" style="width:28px;height:28px;border-radius:50%;" onerror="this.style.display='none'">
+            ${priceWhole} TCL
+          </div>
+          ${priceUSD ? `<div class="modal-price-usd">${priceUSD}</div>` : ""}
+        </div>
+        <div class="modal-action-row">
+          ${isMine
+            ? `<button class="btn-cancel" onclick="cancelListing(${listingId}); closeDetail()">Cancel Listing</button>`
+            : `<button class="btn-buy" onclick="buyNFT(${listingId})">🛒 Buy with TCL</button>`
+          }
+          <button class="btn-secondary" onclick="window.open('${xoxnoUrl}','_blank')">🔍 XOXNO</button>
+        </div>
+        ${listing._demo ? '<p style="color:var(--muted);font-size:12px;margin-top:8px;text-align:center;">⚠️ Demo listing — deploy contract to enable real trades</p>' : ""}
+      </div>
+    </div>`;
+
+  document.getElementById("detail-modal").classList.add("open");
+}
+
+function closeDetail() { document.getElementById("detail-modal").classList.remove("open"); }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BUY NFT
+// ══════════════════════════════════════════════════════════════════════════════
+async function buyNFT(listingId) {
+  if (!walletAddress) {
+    showToast("Connect your wallet first", "error");
+    return;
+  }
+  const listing = allListings.find(l => l.listing_id === listingId);
+  if (!listing) return;
+  if (listing._demo) {
+    showToast("Deploy the contract to enable real purchases", "info");
+    return;
+  }
+
+  const priceWhole = formatTCL(listing.price);
+  if (!confirm(`Buy this NFT for ${priceWhole} TCL?`)) return;
+
+  try {
+    showToast("Building transaction…", "info");
+    const listingIdHex = listingId.toString(16).padStart(16, "0");
+    const tx = buildESDTTransferTx(
+      walletAddress,
+      MARKETPLACE_CONTRACT,
+      TCL_TOKEN,
+      listing.price,
+      `buyNFT@${listingIdHex}`,
+      10_000_000
+    );
+    const result = await TCLXPortal.signAndSendTransaction(tx);
+    showToast("Purchase sent! Tx: " + result.hash.slice(0, 12) + "…", "success");
+    setTimeout(loadListings, 5000);
+  } catch (err) {
+    showToast("Transaction failed: " + err.message, "error");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CANCEL LISTING
+// ══════════════════════════════════════════════════════════════════════════════
+async function cancelListing(listingId) {
+  if (!walletAddress) { showToast("Connect wallet first", "error"); return; }
+  if (!confirm("Cancel this listing and get your NFT back?")) return;
+
+  try {
+    const listingIdHex = listingId.toString(16).padStart(16, "0");
+    const tx = buildBaseTx(
+      walletAddress,
+      MARKETPLACE_CONTRACT,
+      `cancelListing@${listingIdHex}`,
+      8_000_000
+    );
+    const result = await TCLXPortal.signAndSendTransaction(tx);
+    showToast("Listing cancelled! " + result.hash.slice(0, 12), "success");
+    setTimeout(loadListings, 4000);
+  } catch (err) {
+    showToast("Error: " + err.message, "error");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LIST NFT MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function openListModal() {
+  if (!walletAddress) {
+    showToast("Connect your wallet first to list an NFT", "error");
+    return;
+  }
+  document.getElementById("list-modal").classList.add("open");
+  renderMyNFTsForListing();
+}
+function closeListModal() {
+  document.getElementById("list-modal").classList.remove("open");
+  selectedNFTForListing = null;
+  document.getElementById("selected-nft-preview").style.display = "none";
+  document.getElementById("list-price").value = "";
+}
+
+async function loadMyNFTs() {
+  if (!walletAddress) return;
+  try {
+    const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=100&collections=${encodeTCLCollections()}`);
+    myWalletNFTs = await resp.json();
+  } catch (e) {
+    console.warn("Could not load wallet NFTs", e);
+    myWalletNFTs = [];
+  }
+}
+
+function encodeTCLCollections() {
+  // Filter only TCL game collections
+  const known = ["TCLDAGGER","TCLSWORD","TCLSTAFF","TCLBOW","TCLARMOR","TCLHELMET","TCLGLOVES","TCLBOOTS","TCLBELT","TCLNECKLACE","TCLRING"];
+  return known.join(",");
+}
+
+function renderMyNFTsForListing() {
+  const container = document.getElementById("my-nfts-grid");
+  if (!myWalletNFTs.length) {
+    container.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:12px;">No TCL NFTs found in your wallet</div>`;
+    return;
+  }
+  container.innerHTML = myWalletNFTs.map(nft => `
+    <div class="my-nft-item" onclick="selectNFTForListing('${nft.identifier}')">
+      <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}" onerror="this.src='images/tcl_icon.png'">
+      <div class="nft-label">${nft.name || nft.identifier}</div>
+    </div>
+  `).join("");
+}
+
+function selectNFTForListing(identifier) {
+  const nft = myWalletNFTs.find(n => n.identifier === identifier);
+  if (!nft) return;
+  selectedNFTForListing = nft;
+
+  // Update selection highlight
+  document.querySelectorAll(".my-nft-item").forEach(el => el.classList.remove("selected"));
+  document.querySelectorAll(".my-nft-item").forEach(el => {
+    if (el.querySelector(".nft-label")?.textContent.trim() === (nft.name || nft.identifier)) {
+      el.classList.add("selected");
+    }
+  });
+
+  // Show preview
+  const preview = document.getElementById("nft-preview-card");
+  preview.innerHTML = `
+    <img src="${nft.media?.[0]?.url || ''}" onerror="this.src='images/tcl_icon.png'">
+    <div>
+      <div class="nft-select-name">${nft.name || "Unknown"}</div>
+      <div class="nft-select-id">${nft.identifier}</div>
+    </div>`;
+  document.getElementById("selected-nft-preview").style.display = "block";
+
+  // Pre-fill royalty info from NFT
+  if (nft.royalties) {
+    document.getElementById("royalty-percent").value = (nft.royalties / 100).toFixed(2);
+  }
+  if (nft.creator) {
+    document.getElementById("royalty-address").value = nft.creator;
+  }
+}
+
+// Update fee breakdown as user types price
+document.getElementById && (() => {
+  const priceInput = document.getElementById("list-price");
+  if (priceInput) {
+    priceInput.addEventListener("input", () => {
+      const price = parseFloat(priceInput.value);
+      if (!price || price <= 0) {
+        document.getElementById("price-breakdown").innerHTML = "Enter a price to see breakdown";
+        return;
+      }
+      const fee = price * 0.02;
+      const royaltyPct = parseFloat(document.getElementById("royalty-percent").value) || 0;
+      const royalty = price * (royaltyPct / 100);
+      const seller = price - fee - royalty;
+      document.getElementById("price-breakdown").innerHTML = `
+        Platform fee (2%): <span>${fee.toFixed(2)} TCL</span> &nbsp;|&nbsp;
+        Royalties: <span>${royalty.toFixed(2)} TCL</span> &nbsp;|&nbsp;
+        You receive: <span style="color:var(--green)">${seller.toFixed(2)} TCL</span>`;
+    });
+  }
+})();
+
+async function submitListing() {
+  if (!selectedNFTForListing) { showToast("Select an NFT first", "error"); return; }
+  const priceVal = parseFloat(document.getElementById("list-price").value);
+  if (!priceVal || priceVal <= 0) { showToast("Enter a valid price", "error"); return; }
+  const royaltyAddress = document.getElementById("royalty-address").value.trim();
+  const royaltyPct = parseFloat(document.getElementById("royalty-percent").value) || 0;
+
+  if (!MARKETPLACE_CONTRACT) {
+    showToast("Contract not deployed yet. See DEPLOY.md", "info");
+    return;
+  }
+
+  try {
+    const priceBig = BigInt(Math.floor(priceVal)) * TCL_DENOMINATOR;
+    const royaltyBps = Math.floor(royaltyPct * 100); // convert % to basis points
+
+    const nft = selectedNFTForListing;
+    const priceHex = priceBig.toString(16).padStart(64, "0");
+    const royaltyAddrHex = addressToHex(royaltyAddress || walletAddress);
+    const royaltyBpsHex = royaltyBps.toString(16).padStart(16, "0");
+    const data = `listNFT@${priceHex}@${royaltyAddrHex}@${royaltyBpsHex}`;
+
+    const tx = buildNFTTransferTx(
+      walletAddress,
+      MARKETPLACE_CONTRACT,
+      nft.collection,
+      nft.nonce,
+      1,
+      data,
+      15_000_000
+    );
+
+    const result = await TCLXPortal.signAndSendTransaction(tx);
+    showToast("NFT listed! Tx: " + result.hash.slice(0, 12) + "…", "success");
+    closeListModal();
+    setTimeout(loadListings, 5000);
+  } catch (err) {
+    showToast("Listing failed: " + err.message, "error");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTRACT QUERY HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+async function queryContract(func, args = []) {
+  const body = {
+    scAddress: MARKETPLACE_CONTRACT,
+    funcName: func,
+    args: args.map(a => typeof a === "number" ? a.toString(16).padStart(16, "0") : String(a)),
+  };
+  const resp = await fetch(`${MVX_GATEWAY}/vm-values/query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error);
+
+  const returnData = data.data?.data?.returnData || [];
+  return returnData.map(decodeBase64Value);
+}
+
+function decodeBase64Value(b64) {
+  const raw = atob(b64);
+  // Try to interpret as hex number
+  const hex = Array.from(raw).map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+  return hex ? BigInt("0x" + hex) : 0n;
+}
+
+function decodeListingStruct(raw) {
+  // Simplified decoder — real ABI decoder needed for production
+  return { listing_id: 0, seller: "", nft_token: "", nft_nonce: 0, price: 0n, royalty_percent: 0, timestamp: 0, is_active: true };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRANSACTION BUILDERS
+// ══════════════════════════════════════════════════════════════════════════════
+function buildBaseTx(sender, receiver, data, gasLimit) {
+  return { sender, receiver, data: btoa(data), gasLimit, value: "0", chainID: "1", version: 1 };
+}
+
+function buildESDTTransferTx(sender, receiver, token, amount, functionCall, gasLimit) {
+  const tokenHex = stringToHex(token);
+  const amountHex = bigIntToHex(typeof amount === "bigint" ? amount : BigInt(String(amount)));
+  const data = `ESDTTransfer@${tokenHex}@${amountHex}@${stringToHex(functionCall.split("@")[0])}` +
+    (functionCall.includes("@") ? "@" + functionCall.split("@").slice(1).join("@") : "");
+  return { sender, receiver, data: btoa(data), gasLimit, value: "0", chainID: "1", version: 1 };
+}
+
+function buildNFTTransferTx(sender, receiver, token, nonce, qty, extraData, gasLimit) {
+  const tokenHex = stringToHex(token);
+  const nonceHex = nonce.toString(16).padStart(2, "0");
+  const qtyHex = qty.toString(16).padStart(2, "0");
+  const receiverHex = addressToHex(receiver);
+  const data = `ESDTNFTTransfer@${tokenHex}@${nonceHex}@${qtyHex}@${receiverHex}@${extraData}`;
+  return { sender, receiver: sender, data: btoa(data), gasLimit, value: "0", chainID: "1", version: 1 };
+}
+
+function stringToHex(str) {
+  return Array.from(str).map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+}
+
+function bigIntToHex(n) {
+  const h = n.toString(16);
+  return h.length % 2 === 0 ? h : "0" + h;
+}
+
+function addressToHex(bech32) {
+  // Minimal bech32→bytes decoder stub; use full SDK in production
+  if (!bech32 || !bech32.startsWith("erd1")) return "0".repeat(64);
+  return stringToHex(bech32); // placeholder
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════════════════════════════
+function updateStats() {
+  document.getElementById("stat-listings").textContent = allListings.length;
+  if (allListings.length) {
+    const prices = allListings.map(l => {
+      const p = typeof l.price === "bigint" ? l.price : BigInt(String(l.price));
+      return Number(p / TCL_DENOMINATOR);
+    });
+    const floor = Math.min(...prices);
+    document.getElementById("stat-floor").textContent = floor.toLocaleString() + " TCL";
+  }
+  if (MARKETPLACE_CONTRACT) {
+    const s = MARKETPLACE_CONTRACT;
+    document.getElementById("stat-contract").textContent = `${s.slice(0,10)}…${s.slice(-8)}`;
+    document.getElementById("stat-contract").style.color = "var(--accent)";
+  }
+}
+
+async function loadTCLPrice() {
+  try {
+    const resp = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    const data = await resp.json();
+    tclPriceUSD = parseFloat(data?.pairs?.[0]?.priceUsd || 0);
+    if (tclPriceUSD) {
+      document.getElementById("stat-tcl-price").textContent = `$${tclPriceUSD.toFixed(6)}`;
+    }
+  } catch (e) {
+    console.warn("Price fetch error", e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════════════════
+function formatTCL(amount) {
+  try {
+    const big = typeof amount === "bigint" ? amount : BigInt(String(amount));
+    const whole = big / TCL_DENOMINATOR;
+    const rem = big % TCL_DENOMINATOR;
+    const dec = rem.toString().padStart(18, "0").slice(0, 2);
+    return dec === "00" ? whole.toLocaleString() : `${whole.toLocaleString()}.${dec}`;
+  } catch { return String(amount); }
+}
+
+let _toastTimer;
+function showToast(msg, type = "info") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove("show"), 4000);
+}
+
+// Close modals on outside click
+document.getElementById("detail-modal")?.addEventListener("click", e => {
+  if (e.target === document.getElementById("detail-modal")) closeDetail();
+});
+document.getElementById("list-modal")?.addEventListener("click", e => {
+  if (e.target === document.getElementById("list-modal")) closeListModal();
+});
+document.getElementById("qr-modal")?.addEventListener("click", e => {
+  if (e.target === document.getElementById("qr-modal")) closeQR();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════════
+(async function init() {
+  // Restore wallet session if exists
+  const savedAddress = TCLXPortal?.getSavedAddress?.();
+  if (savedAddress) {
+    walletAddress = savedAddress;
+    updateWalletUI(savedAddress);
+  }
+
+  await Promise.all([loadTCLPrice(), loadListings()]);
+})();
+</script>
+</body>
+</html>

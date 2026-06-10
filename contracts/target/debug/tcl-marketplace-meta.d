@@ -1,0 +1,1 @@
+C:\Users\alex_\Documents\TCLexplorer-main\contracts\target\debug\tcl-marketplace-meta.exe: C:\Users\alex_\Documents\TCLexplorer-main\contracts\marketplace\meta\src\main.rs C:\Users\alex_\Documents\TCLexplorer-main\contracts\marketplace\src\lib.rs

@@ -1,0 +1,106 @@
+{
+  "buildInfo": {
+    "rustc": { "version": "1.78.0" },
+    "framework": { "name": "multiversx-sc", "version": "0.54.0" }
+  },
+  "name": "TclMarketplace",
+  "constructor": {
+    "inputs": [{ "name": "fee_percent", "type": "u64" }],
+    "outputs": []
+  },
+  "endpoints": [
+    {
+      "name": "listNFT",
+      "mutability": "mutable",
+      "payableInTokens": ["*"],
+      "inputs": [
+        { "name": "price", "type": "BigUint" },
+        { "name": "royalty_address", "type": "Address" },
+        { "name": "royalty_percent", "type": "u64" }
+      ],
+      "outputs": []
+    },
+    {
+      "name": "buyNFT",
+      "mutability": "mutable",
+      "payableInTokens": ["TCL-fe459d"],
+      "inputs": [{ "name": "listing_id", "type": "u64" }],
+      "outputs": []
+    },
+    {
+      "name": "cancelListing",
+      "mutability": "mutable",
+      "inputs": [{ "name": "listing_id", "type": "u64" }],
+      "outputs": []
+    },
+    {
+      "name": "updatePrice",
+      "mutability": "mutable",
+      "inputs": [
+        { "name": "listing_id", "type": "u64" },
+        { "name": "new_price", "type": "BigUint" }
+      ],
+      "outputs": []
+    },
+    {
+      "name": "withdrawFees",
+      "onlyOwner": true,
+      "mutability": "mutable",
+      "inputs": [],
+      "outputs": []
+    },
+    {
+      "name": "setFeePercent",
+      "onlyOwner": true,
+      "mutability": "mutable",
+      "inputs": [{ "name": "fee", "type": "u64" }],
+      "outputs": []
+    },
+    {
+      "name": "getActiveListings",
+      "mutability": "readonly",
+      "inputs": [],
+      "outputs": [{ "type": "variadic<u64>", "multi_result": true }]
+    },
+    {
+      "name": "getListing",
+      "mutability": "readonly",
+      "inputs": [{ "name": "listing_id", "type": "u64" }],
+      "outputs": [{ "type": "Listing" }]
+    },
+    {
+      "name": "getSellerListings",
+      "mutability": "readonly",
+      "inputs": [{ "name": "seller", "type": "Address" }],
+      "outputs": [{ "type": "variadic<u64>", "multi_result": true }]
+    },
+    {
+      "name": "getListingCount",
+      "mutability": "readonly",
+      "inputs": [],
+      "outputs": [{ "type": "u64" }]
+    },
+    {
+      "name": "getFeePercent",
+      "mutability": "readonly",
+      "inputs": [],
+      "outputs": [{ "type": "u64" }]
+    }
+  ],
+  "structs": [
+    {
+      "name": "Listing",
+      "fields": [
+        { "name": "listing_id", "type": "u64" },
+        { "name": "seller", "type": "Address" },
+        { "name": "nft_token", "type": "TokenIdentifier" },
+        { "name": "nft_nonce", "type": "u64" },
+        { "name": "price", "type": "BigUint" },
+        { "name": "royalty_address", "type": "Address" },
+        { "name": "royalty_percent", "type": "u64" },
+        { "name": "timestamp", "type": "u64" },
+        { "name": "is_active", "type": "bool" }
+      ]
+    }
+  ]
+}
