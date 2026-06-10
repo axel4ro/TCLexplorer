@@ -781,7 +781,7 @@
 
 <!-- ════════════ SCRIPTS ════════════ -->
 <!-- WalletConnect (bundled) -->
-<script src="lib/walletconnect-sign-client.min.js"></script>
+<script src="lib/walletconnect-sign-client.umd.js"></script>
 <!-- xPortal session helper -->
 <script src="js/xportal-session.js"></script>
 
@@ -1304,12 +1304,19 @@ async function cancelListing(listingId) {
 // ══════════════════════════════════════════════════════════════════════════════
 // LIST NFT MODAL
 // ══════════════════════════════════════════════════════════════════════════════
+// Default TCL royalty values (creator address + 10%)
+const TCL_ROYALTY_ADDRESS = "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc";
+const TCL_ROYALTY_PCT = 10;
+
 function openListModal() {
   if (!walletAddress) {
     showToast("Connect your wallet first to list an NFT", "error");
     return;
   }
   document.getElementById("list-modal").classList.add("open");
+  // Pre-fill default royalty info for TCL NFTs
+  document.getElementById("royalty-address").value = TCL_ROYALTY_ADDRESS;
+  document.getElementById("royalty-percent").value = TCL_ROYALTY_PCT;
   renderMyNFTsForListing();
 }
 function closeListModal() {
@@ -1322,18 +1329,15 @@ function closeListModal() {
 async function loadMyNFTs() {
   if (!walletAddress) return;
   try {
-    const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=100&collections=${encodeTCLCollections()}`);
-    myWalletNFTs = await resp.json();
+    // Fetch all NFTs for this wallet and filter by TCL creator addresses
+    const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
+    if (!resp.ok) throw new Error("API error");
+    const all = await resp.json();
+    myWalletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
   } catch (e) {
     console.warn("Could not load wallet NFTs", e);
     myWalletNFTs = [];
   }
-}
-
-function encodeTCLCollections() {
-  // Filter only TCL game collections
-  const known = ["TCLDAGGER","TCLSWORD","TCLSTAFF","TCLBOW","TCLARMOR","TCLHELMET","TCLGLOVES","TCLBOOTS","TCLBELT","TCLNECKLACE","TCLRING"];
-  return known.join(",");
 }
 
 function renderMyNFTsForListing() {
@@ -1373,13 +1377,11 @@ function selectNFTForListing(identifier) {
     </div>`;
   document.getElementById("selected-nft-preview").style.display = "block";
 
-  // Pre-fill royalty info from NFT
-  if (nft.royalties) {
-    document.getElementById("royalty-percent").value = (nft.royalties / 100).toFixed(2);
-  }
-  if (nft.creator) {
-    document.getElementById("royalty-address").value = nft.creator;
-  }
+  // Pre-fill royalty info from NFT on-chain data (fallback to TCL defaults)
+  const royaltyPct = nft.royalties ? (nft.royalties / 100) : TCL_ROYALTY_PCT;
+  const royaltyAddr = nft.creator || TCL_ROYALTY_ADDRESS;
+  document.getElementById("royalty-percent").value = royaltyPct;
+  document.getElementById("royalty-address").value = royaltyAddr;
 }
 
 // Update fee breakdown as user types price
