@@ -981,13 +981,13 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Price (TCL)</label>
+      <label class="form-label">You want to receive (TCL)</label>
       <div class="price-input-wrap">
-        <input type="text" inputmode="decimal" autocomplete="off" class="form-input" id="list-price" placeholder="e.g. 1,000,000">
+        <input type="text" inputmode="decimal" autocomplete="off" class="form-input" id="list-price" placeholder="e.g. 100,000">
         <span class="price-suffix">TCL</span>
       </div>
-      <div class="price-usd-estimate" id="list-price-usd">Current USD value: —</div>
-      <div class="fee-note price-breakdown" id="price-breakdown">Enter a price to see breakdown</div>
+      <div class="price-usd-estimate" id="list-price-usd">Listing price: —</div>
+      <div class="fee-note price-breakdown" id="price-breakdown">Enter how much TCL you want to receive</div>
     </div>
 
     <div class="xportal-transfer-note">
@@ -1964,35 +1964,65 @@ function getNFTRoyalty(nft) {
   };
 }
 
+function calculateListingSplitsAtomic(grossPrice, royaltyBasisPoints) {
+  const platformFee = grossPrice * BigInt(Math.round(marketplaceFeePercent)) / 100n;
+  const royaltyAmount = grossPrice * BigInt(royaltyBasisPoints) / 10_000n;
+  return {
+    platformFee,
+    royaltyAmount,
+    sellerAmount: grossPrice - platformFee - royaltyAmount,
+  };
+}
+
+function calculateGrossListingPriceAtomic(desiredNet, royaltyBasisPoints) {
+  const feeBasisPoints = Math.round(marketplaceFeePercent * 100);
+  const netBasisPoints = 10_000 - feeBasisPoints - royaltyBasisPoints;
+  if (desiredNet <= 0n || netBasisPoints <= 0) return 0n;
+
+  const denominator = BigInt(netBasisPoints);
+  const estimate = (desiredNet * 10_000n + denominator - 1n) / denominator;
+  let candidate = estimate > 8n ? estimate - 8n : 0n;
+
+  for (let offset = 0; offset < 32; offset++, candidate++) {
+    if (calculateListingSplitsAtomic(candidate, royaltyBasisPoints).sellerAmount === desiredNet) {
+      return candidate;
+    }
+  }
+
+  return estimate;
+}
+
 function updateListingPriceBreakdown() {
   const priceInput = document.getElementById("list-price");
   const usdEstimate = document.getElementById("list-price-usd");
   const breakdown = document.getElementById("price-breakdown");
   if (!priceInput || !usdEstimate || !breakdown) return;
 
-  const normalized = normalizeTokenNumberInput(priceInput.value);
-  const price = Number(normalized);
-  if (!normalized || !Number.isFinite(price) || price <= 0) {
-    usdEstimate.textContent = "Current USD value: —";
-    breakdown.innerHTML = "Enter a price to see breakdown";
+  const desiredNet = parseTokenAmount(priceInput.value, TCL_DECIMALS);
+  if (desiredNet <= 0n) {
+    usdEstimate.textContent = "Listing price: —";
+    breakdown.innerHTML = "Enter how much TCL you want to receive";
     return;
   }
 
-  const royaltyPercent = selectedNFTForListing
-    ? getNFTRoyalty(selectedNFTForListing).percent
-    : 0;
-  const fee = price * (marketplaceFeePercent / 100);
-  const royalty = price * (royaltyPercent / 100);
-  const seller = price - fee - royalty;
+  const royalty = selectedNFTForListing
+    ? getNFTRoyalty(selectedNFTForListing)
+    : { percent: 0, basisPoints: 0 };
+  const grossPrice = calculateGrossListingPriceAtomic(desiredNet, royalty.basisPoints);
+  const splits = calculateListingSplitsAtomic(grossPrice, royalty.basisPoints);
+  const grossPriceNumber = atomicTokenToNumber(grossPrice, TCL_DECIMALS);
+  const feeNumber = atomicTokenToNumber(splits.platformFee, TCL_DECIMALS);
+  const royaltyNumber = atomicTokenToNumber(splits.royaltyAmount, TCL_DECIMALS);
+  const sellerNumber = atomicTokenToNumber(splits.sellerAmount, TCL_DECIMALS);
   const usd = amount => tclPriceUSD ? ` <small>(≈ ${formatUSD(amount * tclPriceUSD)})</small>` : "";
 
   usdEstimate.textContent = tclPriceUSD
-    ? `Current value: ≈ ${formatUSD(price * tclPriceUSD)} at ${formatUSD(tclPriceUSD, 6)} / TCL`
-    : "Current USD value: loading…";
+    ? `Listing price: ${formatDisplayTCL(grossPriceNumber)} TCL ≈ ${formatUSD(grossPriceNumber * tclPriceUSD)} at ${formatUSD(tclPriceUSD, 6)} / TCL`
+    : `Listing price: ${formatDisplayTCL(grossPriceNumber)} TCL`;
   breakdown.innerHTML = `
-    <div class="price-breakdown-row">Platform fee (${formatPercent(marketplaceFeePercent)}%): <span>${formatDisplayTCL(fee)} TCL</span>${usd(fee)}</div>
-    <div class="price-breakdown-row">Royalties (${formatPercent(royaltyPercent)}%): <span>${formatDisplayTCL(royalty)} TCL</span>${usd(royalty)}</div>
-    <div class="price-breakdown-row">You receive: <span style="color:var(--green)">${formatDisplayTCL(seller)} TCL</span>${usd(seller)}</div>`;
+    <div class="price-breakdown-row">Platform fee (${formatPercent(marketplaceFeePercent)}%): <span>${formatDisplayTCL(feeNumber)} TCL</span>${usd(feeNumber)}</div>
+    <div class="price-breakdown-row">Royalties (${formatPercent(royalty.percent)}%): <span>${formatDisplayTCL(royaltyNumber)} TCL</span>${usd(royaltyNumber)}</div>
+    <div class="price-breakdown-row">You receive: <span style="color:var(--green)">${formatDisplayTCL(sellerNumber)} TCL</span>${usd(sellerNumber)}</div>`;
 }
 
 document.getElementById && (() => {
@@ -2018,8 +2048,8 @@ document.getElementById && (() => {
 async function submitListing() {
   if (!selectedNFTForListing) { showToast("Select an NFT first", "error"); return; }
   const priceInput = document.getElementById("list-price").value;
-  const priceBig = parseTokenAmount(priceInput, TCL_DECIMALS);
-  if (priceBig <= 0n) { showToast("Enter a valid price", "error"); return; }
+  const desiredNet = parseTokenAmount(priceInput, TCL_DECIMALS);
+  if (desiredNet <= 0n) { showToast("Enter a valid amount to receive", "error"); return; }
   if (!MARKETPLACE_CONTRACT) {
     showToast("Contract not deployed yet. See DEPLOY.md", "info");
     return;
@@ -2028,6 +2058,8 @@ async function submitListing() {
   try {
     const nft = selectedNFTForListing;
     const royalty = getNFTRoyalty(nft);
+    const priceBig = calculateGrossListingPriceAtomic(desiredNet, royalty.basisPoints);
+    if (priceBig <= 0n) throw new Error("Platform fee and royalties leave no amount for the seller");
     const priceHex = bigIntToHex(priceBig);
     const royaltyAddrHex = addressToHex(royalty.address);
     const royaltyBpsHex = bigIntToHex(BigInt(royalty.basisPoints));
