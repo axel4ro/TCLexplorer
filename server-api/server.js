@@ -2400,6 +2400,40 @@ app.get("/api/leaderboard", (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  SYNC STATUS — monitor nft-sync.js progress
+// ══════════════════════════════════════════════════════════════════════════════
+app.get("/api/sync/status", async (req, res) => {
+  try {
+    let logLines = [];
+    try {
+      const { execSync } = await import("child_process");
+      const raw = execSync("tail -50 /tmp/nft-sync.log 2>/dev/null || echo ''").toString();
+      logLines = raw.split("\n").filter(Boolean);
+    } catch { logLines = ["Log file not found"]; }
+
+    const lastLine = logLines[logLines.length - 1] || "";
+    const done = lastLine.includes("Done!");
+    const failed = lastLine.toLowerCase().includes("sync failed") || lastLine.toLowerCase().includes("error");
+
+    // Count indexed NFTs from DB
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) total,
+              COUNT(*) FILTER (WHERE sc_quality IS NOT NULL AND sc_quality > 0) sc_synced
+       FROM tcl_nfts`
+    );
+
+    res.json({
+      status: done ? "done" : failed ? "failed" : "running",
+      total_nfts: Number(rows[0].total),
+      sc_synced: Number(rows[0].sc_synced),
+      log_tail: logLines.slice(-20),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  NFT INDEX — serve cached NFTs from DB, avoid hammering MultiversX API
 // ══════════════════════════════════════════════════════════════════════════════
 

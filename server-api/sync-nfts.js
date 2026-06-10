@@ -42,12 +42,12 @@ const SC_PARALLEL = 3; // NFTs per SC attribute batch (3 NFTs × 8 calls = 24 pa
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function fetchJson(url, retries = 4) {
+async function fetchJson(url, retries = 10) {
   for (let i = 0; i <= retries; i++) {
     const res = await fetch(url);
     if (res.status === 429) {
-      const wait = 2000 * (i + 1);
-      console.warn(`  429 rate limit on ${url.split("?")[0].split("/").slice(-2).join("/")} — waiting ${wait}ms`);
+      const wait = Math.min(5000 * Math.pow(2, i), 120_000); // 5s→10s→20s… max 2min
+      console.warn(`  429 — waiting ${(wait/1000).toFixed(0)}s (attempt ${i+1}/${retries+1})`);
       await sleep(wait);
       continue;
     }
@@ -208,11 +208,15 @@ async function main() {
   const collections = await syncCollections();
   let grand = 0;
 
-  for (const col of collections) {
+  for (let i = 0; i < collections.length; i++) {
+    if (i > 0) {
+      console.log(`  Waiting 61s before next collection...`);
+      await sleep(61_000);
+    }
     try {
-      grand += await syncCollectionNFTs(col.collection);
+      grand += await syncCollectionNFTs(collections[i].collection);
     } catch (err) {
-      console.error(`  Error syncing ${col.collection}:`, err.message);
+      console.error(`  Error syncing ${collections[i].collection}:`, err.message);
     }
   }
 
