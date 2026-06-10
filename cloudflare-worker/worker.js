@@ -32,6 +32,10 @@ const TECHNICALS_SNAPSHOT_KEY = "technicals:snapshot";
 const TECHNICALS_REFRESH_LOCK_KEY = "technicals:refresh-lock";
 const TECHNICALS_REFRESH_LOCK_TTL_SECONDS = 4 * 60;
 const DEFAULT_TECHNICALS_REFRESH_INTERVAL_MINUTES = 5;
+const MARKETPLACE_SC_ADDRESS = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvscppu7fqmsypuu25";
+const MARKETPLACE_PAIR_ADDRESS = "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+const MARKETPLACE_TOKEN = "TCL-fe459d";
+const MARKETPLACE_MVX_API = "https://api.multiversx.com";
 const PNL_DEXSCREENER_CACHE_PREFIX = "pnl:dexscreener:";
 const PNL_DEXSCREENER_CACHE_TTL_SECONDS = 10 * 60;
 const PNL_DEXSCREENER_CONFIG = {
@@ -235,6 +239,10 @@ async function handleRequest(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
   try {
+    if (path.endsWith("/api/marketplace/source")) {
+      return handleMarketplaceSource(request, env, url);
+    }
+
     if (path.endsWith("/api/technicals/refresh")) {
       return handleTechnicalsRefresh(request, env);
     }
@@ -386,6 +394,73 @@ function jsonResponse(request, env, status, payload, extraHeaders = {}) {
       "Content-Type": "application/json; charset=utf-8"
     }
   });
+}
+
+async function handleMarketplaceSource(request, env, url) {
+  if (request.method !== "GET") {
+    return jsonResponse(request, env, 405, { error: "Method not allowed" });
+  }
+
+  const kind = String(url.searchParams.get("kind") || "");
+  let upstreamUrl;
+
+  if (kind === "sales") {
+    const from = Math.max(0, Number.parseInt(url.searchParams.get("from") || "0", 10) || 0);
+    const size = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("size") || "50", 10) || 50));
+    upstreamUrl = new URL(`${MARKETPLACE_MVX_API}/accounts/${MARKETPLACE_SC_ADDRESS}/transactions`);
+    upstreamUrl.searchParams.set("from", String(from));
+    upstreamUrl.searchParams.set("size", String(size));
+    upstreamUrl.searchParams.set("status", "success");
+    upstreamUrl.searchParams.set("function", "buyNFT");
+    upstreamUrl.searchParams.set("withLogs", "true");
+  } else if (kind === "pair") {
+    const before = Number.parseInt(url.searchParams.get("before") || "0", 10);
+    const size = Math.min(500, Math.max(20, Number.parseInt(url.searchParams.get("size") || "200", 10) || 200));
+    if (!Number.isFinite(before) || before <= 0) {
+      return jsonResponse(request, env, 400, { error: "Invalid before timestamp" });
+    }
+    upstreamUrl = new URL(`${MARKETPLACE_MVX_API}/accounts/${MARKETPLACE_PAIR_ADDRESS}/transfers`);
+    upstreamUrl.searchParams.set("size", String(size));
+    upstreamUrl.searchParams.set("status", "success");
+    upstreamUrl.searchParams.set("order", "desc");
+    upstreamUrl.searchParams.set("before", String(before));
+  } else if (kind === "transaction") {
+    const hash = String(url.searchParams.get("hash") || "").toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(hash)) {
+      return jsonResponse(request, env, 400, { error: "Invalid transaction hash" });
+    }
+    upstreamUrl = new URL(`${MARKETPLACE_MVX_API}/transactions/${hash}`);
+    upstreamUrl.searchParams.set("withResults", "true");
+  } else if (kind === "wallet") {
+    const address = String(url.searchParams.get("address") || "");
+    if (!isMultiversXAddress(address)) {
+      return jsonResponse(request, env, 400, { error: "Invalid address" });
+    }
+    const [account, token, economics] = await Promise.all([
+      fetchAnalyticsJson(`${MARKETPLACE_MVX_API}/accounts/${address}`, 3),
+      fetch(`${MARKETPLACE_MVX_API}/accounts/${address}/tokens/${MARKETPLACE_TOKEN}`, {
+        headers: { Accept: "application/json", "User-Agent": "TCLExplorerMarketplaceRelay/1.0" },
+        cache: "no-store",
+      }).then(response => response.ok ? response.json() : null).catch(() => null),
+      fetchAnalyticsJson(`${MARKETPLACE_MVX_API}/economics`, 3),
+    ]);
+    return jsonResponse(request, env, 200, { account, token, economics }, {
+      "Cache-Control": "public, max-age=15",
+    });
+  } else {
+    return jsonResponse(request, env, 400, { error: "Invalid source kind" });
+  }
+
+  try {
+    const payload = await fetchAnalyticsJson(upstreamUrl.toString(), 3);
+    return jsonResponse(request, env, 200, payload, {
+      "Cache-Control": "public, max-age=10",
+    });
+  } catch (error) {
+    return jsonResponse(request, env, 502, {
+      error: error?.message || "MultiversX source unavailable",
+    });
+  }
 }
 
 async function readJson(request) {

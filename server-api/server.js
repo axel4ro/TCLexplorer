@@ -56,7 +56,12 @@ const TCL_TOKEN = "TCL-fe459d";
 const TCL_DECIMALS = 18n;
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
 const WHEEL_PAYOUT_PEM_PATH = process.env.WHEEL_PAYOUT_PEM_PATH || "";
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "https://tclexplorer.com,https://axel4ro.github.io").split(",").map(s => s.trim());
+const ALLOWED_ORIGINS = [...new Set([
+  ...(process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean),
+  "https://tclexplorer.com",
+  "https://www.tclexplorer.com",
+  "https://axel4ro.github.io",
+])];
 const WHEEL_DRAW_INTERVAL_MS = 60 * 1000;
 const WHEEL_ENTRY_DOMAIN = "tclexplorer.com";
 const WHEEL_PAYOUT_PENDING_STATUSES = ["submitting", "submitted"];
@@ -2552,7 +2557,34 @@ app.post("/api/nfts/sync", async (req, res) => {
 //  MARKETPLACE — sales history + sync
 // ══════════════════════════════════════════════════════════════════════════════
 const MARKETPLACE_SC = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvscppu7fqmsypuu25";
-const MVX_API_BASE   = "https://api.multiversx.com";
+const MARKETPLACE_SOURCE_URL = process.env.MARKETPLACE_SOURCE_URL
+  || "https://tcl-event-push.axel4ro.workers.dev/api/marketplace/source";
+const MARKETPLACE_SYNC_LOCK = 713240621;
+const marketplacePriceCache = new Map();
+let marketplaceSyncPromise = null;
+
+async function fetchMarketplaceSource(kind, params = {}) {
+  const url = new URL(MARKETPLACE_SOURCE_URL);
+  url.searchParams.set("kind", kind);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  }
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(30000),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Marketplace source HTTP ${response.status}: ${text.slice(0, 120)}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Marketplace source returned invalid JSON: ${text.slice(0, 120)}`);
+  }
+}
 
 async function fetchTclPriceUsd() {
   try {
@@ -2562,68 +2594,225 @@ async function fetchTclPriceUsd() {
   } catch { return 0; }
 }
 
-async function runMarketplaceSync() {
-  const tclUsd = await fetchTclPriceUsd();
-  let from = 0, indexed = 0;
-  while (true) {
-    const url = `${MVX_API_BASE}/accounts/${MARKETPLACE_SC}/transactions?size=50&from=${from}&status=success&function=buyNFT&withLogs=true`;
-    const txs = await fetch(url).then(r => r.json());
-    if (!Array.isArray(txs) || !txs.length) break;
+function decodeBase64Unsigned(value) {
+  const hex = Buffer.from(value || "", "base64").toString("hex");
+  return hex ? BigInt(`0x${hex}`) : 0n;
+}
 
-    const client = await pool.connect();
-    try {
-      for (const tx of txs) {
+function decodeBase64Address(value) {
+  try {
+    const bytes = Buffer.from(value || "", "base64");
+    return bytes.length === 32 ? new Address(bytes).toBech32() : null;
+  } catch {
+    return null;
+  }
+}
+
+function findListingSoldEvent(events) {
+  return (Array.isArray(events) ? events : []).find(event => {
+    if (event?.identifier === "listingSold") return true;
+    return Buffer.from(event?.topics?.[0] || "", "base64").toString("utf8") === "listingSold";
+  });
+}
+
+function parseMarketplaceSale(tx) {
+  const events = tx?.logs?.events || [];
+  const soldEvent = findListingSoldEvent(events);
+  const nftEvent = events.find(event =>
+    event?.identifier === "ESDTNFTTransfer"
+    && event?.address === MARKETPLACE_SC
+    && Array.isArray(event?.topics)
+  );
+  const callData = Buffer.from(tx?.data || "", "base64").toString("utf8").split("@");
+  const transfer = tx?.action?.arguments?.transfers?.find(item => item?.token === TCL_TOKEN);
+
+  const listingIdRaw = soldEvent?.topics?.[1]
+    ? decodeBase64Unsigned(soldEvent.topics[1])
+    : tx?.action?.arguments?.functionArgs?.[0]
+      ? BigInt(`0x${tx.action.arguments.functionArgs[0]}`)
+      : callData[4]
+        ? BigInt(`0x${callData[4]}`)
+        : 0n;
+  const priceRaw = soldEvent?.data
+    ? decodeBase64Unsigned(soldEvent.data)
+    : transfer?.value
+      ? BigInt(transfer.value)
+      : callData[2]
+        ? BigInt(`0x${callData[2]}`)
+        : 0n;
+
+  return {
+    txHash: tx?.txHash || tx?.hash || "",
+    listingId: Number(listingIdRaw),
+    buyer: decodeBase64Address(soldEvent?.topics?.[2]) || tx?.sender || null,
+    nftToken: nftEvent?.topics?.[0]
+      ? Buffer.from(nftEvent.topics[0], "base64").toString("utf8")
+      : null,
+    nftNonce: nftEvent?.topics?.[1]
+      ? Number(decodeBase64Unsigned(nftEvent.topics[1]))
+      : null,
+    price: priceRaw,
+    timestamp: Number(tx?.timestamp) || Math.floor(Date.now() / 1000),
+  };
+}
+
+async function enrichMarketplaceSale(sale) {
+  const details = await fetchMarketplaceSource("transaction", { hash: sale.txHash });
+  const operations = Array.isArray(details?.operations) ? details.operations : [];
+  const nftTransfer = operations.find(operation =>
+    operation?.type === "nft"
+    && operation?.sender === MARKETPLACE_SC
+    && operation?.receiver === sale.buyer
+  );
+  const sellerTransfer = operations
+    .filter(operation =>
+      operation?.action === "transfer"
+      && operation?.type === "esdt"
+      && operation?.identifier === TCL_TOKEN
+      && operation?.sender === MARKETPLACE_SC
+    )
+    .sort((left, right) => {
+      const leftValue = BigInt(left?.value || "0");
+      const rightValue = BigInt(right?.value || "0");
+      return leftValue === rightValue ? 0 : leftValue > rightValue ? -1 : 1;
+    })[0];
+
+  return {
+    ...sale,
+    seller: sellerTransfer?.receiver || null,
+    nftToken: sale.nftToken || nftTransfer?.collection || null,
+    nftNonce: sale.nftNonce ?? (
+      nftTransfer?.identifier?.includes("-")
+        ? Number.parseInt(nftTransfer.identifier.split("-").at(-1), 16)
+        : null
+    ),
+  };
+}
+
+async function fetchTclPriceAt(timestamp) {
+  const cacheKey = Math.floor(timestamp / 300);
+  if (marketplacePriceCache.has(cacheKey)) return marketplacePriceCache.get(cacheKey);
+
+  const transfers = await fetchMarketplaceSource("pair", {
+    before: timestamp + 1,
+    size: 200,
+  });
+  const pair = {
+    pairAddress: VOLUME_CONFIG.pairAddress,
+    baseToken: { address: VOLUME_CONFIG.baseTokenAddress },
+    quoteToken: { address: VOLUME_CONFIG.quoteTokenAddress },
+  };
+  const trade = parseVolumeTrades(transfers, pair)
+    .filter(item => item.timestamp <= timestamp)
+    .sort((left, right) => right.timestamp - left.timestamp)[0];
+  const result = trade
+    ? { price: trade.price, timestamp: trade.timestamp, source: "xexchange-nearest-swap" }
+    : { price: null, timestamp: null, source: "unavailable" };
+  marketplacePriceCache.set(cacheKey, result);
+  return result;
+}
+
+async function performMarketplaceSync() {
+  const lockClient = await pool.connect();
+  let locked = false;
+  try {
+    const lockResult = await lockClient.query(
+      "SELECT pg_try_advisory_lock($1) AS locked",
+      [MARKETPLACE_SYNC_LOCK]
+    );
+    locked = Boolean(lockResult.rows[0]?.locked);
+    if (!locked) return 0;
+
+    let from = 0;
+    let indexed = 0;
+    const pageSize = 50;
+
+    while (true) {
+      const txs = await fetchMarketplaceSource("sales", { from, size: pageSize });
+      if (!Array.isArray(txs) || !txs.length) break;
+
+      const hashes = txs.map(tx => tx?.txHash || tx?.hash).filter(Boolean);
+      const { rows: completeRows } = hashes.length
+        ? await lockClient.query(
+            `SELECT tx_hash
+             FROM tcl_marketplace_sales
+             WHERE tx_hash = ANY($1::text[])
+               AND price_usd IS NOT NULL
+               AND seller IS NOT NULL
+               AND nft_token IS NOT NULL`,
+            [hashes]
+          )
+        : { rows: [] };
+      const completeHashes = new Set(completeRows.map(row => row.tx_hash));
+      const pending = txs.filter(tx => !completeHashes.has(tx?.txHash || tx?.hash));
+      if (!pending.length) break;
+
+      for (const tx of pending) {
         try {
-          const data  = Buffer.from(tx.data || "", "base64").toString("utf8");
-          const parts = data.split("@");
-          if (parts[0] !== "ESDTTransfer" || parts.length < 5) continue;
-          const price     = parts[2] ? BigInt("0x" + parts[2]) : 0n;
-          const listingId = parts[4] ? parseInt(parts[4], 16) : 0;
-          const priceTcl  = Number(price) / 1e18;
-          const priceUsd  = tclUsd > 0 ? priceTcl * tclUsd : null;
+          let sale = parseMarketplaceSale(tx);
+          if (!sale.txHash || !sale.listingId || sale.price <= 0n) continue;
+          sale = await enrichMarketplaceSale(sale);
+          const valuation = await fetchTclPriceAt(sale.timestamp);
+          const priceTcl = decimalStringToNumber(sale.price.toString(), 18);
+          const priceUsd = valuation.price ? priceTcl * valuation.price : null;
 
-          // Extract NFT info from listingSold event topics
-          const events   = tx.logs?.events || [];
-          const soldEv   = events.find(e => e.identifier === "listingSold");
-          const nftToken = soldEv?.topics?.[2]
-            ? Buffer.from(soldEv.topics[2], "base64").toString("utf8") : null;
-          const nftNonce = soldEv?.topics?.[3]
-            ? parseInt(Buffer.from(soldEv.topics[3], "base64").toString("hex") || "0", 16) : null;
-
-          // seller = contract receiver (SC is the contract, seller is in ESDT transfer target)
-          // buyer = tx.sender (who sent TCL to SC)
-          const seller = soldEv?.topics?.[1]
-            ? (() => { try { const b = Buffer.from(soldEv.topics[1], "base64"); return new Address(b).toBech32(); } catch { return null; } })()
-            : null;
-
-          const { rowCount } = await client.query(`
+          await lockClient.query(`
             INSERT INTO tcl_marketplace_sales
-              (listing_id, seller, buyer, nft_token, nft_nonce, price, price_usd, tx_hash, sold_at)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            ON CONFLICT (tx_hash) DO NOTHING
+              (listing_id, seller, buyer, nft_token, nft_nonce, price, price_usd,
+               tcl_price_usd, price_source, price_timestamp, tx_hash, sold_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+            ON CONFLICT (tx_hash) DO UPDATE SET
+              listing_id = EXCLUDED.listing_id,
+              seller = COALESCE(EXCLUDED.seller, tcl_marketplace_sales.seller),
+              buyer = COALESCE(EXCLUDED.buyer, tcl_marketplace_sales.buyer),
+              nft_token = COALESCE(EXCLUDED.nft_token, tcl_marketplace_sales.nft_token),
+              nft_nonce = COALESCE(EXCLUDED.nft_nonce, tcl_marketplace_sales.nft_nonce),
+              price = EXCLUDED.price,
+              price_usd = COALESCE(EXCLUDED.price_usd, tcl_marketplace_sales.price_usd),
+              tcl_price_usd = COALESCE(EXCLUDED.tcl_price_usd, tcl_marketplace_sales.tcl_price_usd),
+              price_source = EXCLUDED.price_source,
+              price_timestamp = COALESCE(EXCLUDED.price_timestamp, tcl_marketplace_sales.price_timestamp),
+              sold_at = EXCLUDED.sold_at
           `, [
-            listingId,
-            seller,
-            tx.sender || null,
-            nftToken,
-            nftNonce,
-            price.toString(),
+            sale.listingId,
+            sale.seller,
+            sale.buyer,
+            sale.nftToken,
+            sale.nftNonce,
+            sale.price.toString(),
             priceUsd,
-            tx.txHash || tx.hash,
-            tx.timestamp ? new Date(tx.timestamp * 1000) : new Date(),
+            valuation.price,
+            valuation.source,
+            valuation.timestamp ? new Date(valuation.timestamp * 1000) : null,
+            sale.txHash,
+            new Date(sale.timestamp * 1000),
           ]);
-          if (rowCount > 0) indexed++;
-        } catch { /* skip malformed tx */ }
+          indexed++;
+        } catch (error) {
+          console.warn(`Marketplace sale skipped: ${error?.message || error}`);
+        }
       }
-    } finally {
-      client.release();
+
+      from += txs.length;
+      if (txs.length < pageSize) break;
     }
 
-    from += txs.length;
-    if (txs.length < 50) break;
+    if (indexed > 0) console.log(`Marketplace sync: indexed ${indexed} sales`);
+    return indexed;
+  } finally {
+    if (locked) {
+      await lockClient.query("SELECT pg_advisory_unlock($1)", [MARKETPLACE_SYNC_LOCK]).catch(() => {});
+    }
+    lockClient.release();
   }
-  if (indexed > 0) console.log(`Marketplace sync: indexed ${indexed} new sales`);
-  return indexed;
+}
+
+function runMarketplaceSync() {
+  if (!marketplaceSyncPromise) {
+    marketplaceSyncPromise = performMarketplaceSync()
+      .finally(() => { marketplaceSyncPromise = null; });
+  }
+  return marketplaceSyncPromise;
 }
 
 // GET /api/marketplace/sales — recent sales from DB
@@ -2650,6 +2839,7 @@ app.get("/api/marketplace/stats", async (req, res) => {
     const { rows } = await pool.query(`
       SELECT
         COUNT(*)::int                                                   AS total_sales,
+        COUNT(price_usd)::int                                           AS valued_sales,
         COALESCE(SUM(price::numeric) / 1e18, 0)                        AS volume_tcl,
         COALESCE(SUM(price_usd), 0)                                     AS volume_usd,
         COALESCE(MIN(price::numeric) / 1e18, 0)                        AS floor_price_tcl,
@@ -2670,12 +2860,13 @@ app.get("/api/marketplace/wallet/:address", async (req, res) => {
     if (!address.startsWith("erd1") || address.length < 60)
       return res.status(400).json({ error: "Invalid address" });
 
-    const [accountData, tokenData, tclUsd, egldData] = await Promise.all([
-      fetch(`${MVX_API_BASE}/accounts/${address}`).then(r => r.json()),
-      fetch(`${MVX_API_BASE}/accounts/${address}/tokens/TCL-fe459d`).then(r => r.json()).catch(() => null),
+    const [walletData, tclUsd] = await Promise.all([
+      fetchMarketplaceSource("wallet", { address }),
       fetchTclPriceUsd(),
-      fetch(`${MVX_API_BASE}/economics`).then(r => r.json()).catch(() => null),
     ]);
+    const accountData = walletData?.account;
+    const tokenData = walletData?.token;
+    const egldData = walletData?.economics;
 
     const egldRaw    = BigInt(accountData?.balance || "0");
     const egldAmount = Number(egldRaw) / 1e18;
@@ -2738,12 +2929,18 @@ async function runMigrations() {
        nft_token     TEXT,
        nft_nonce     BIGINT,
        price         NUMERIC(36,0),
-       price_usd     NUMERIC(18,6),
+       price_usd     NUMERIC(24,8),
+       tcl_price_usd NUMERIC(24,12),
+       price_source  TEXT,
+       price_timestamp TIMESTAMPTZ,
        royalty_pct   INT,
        tx_hash       TEXT UNIQUE,
        sold_at       TIMESTAMPTZ DEFAULT NOW()
      )`,
-    `ALTER TABLE tcl_marketplace_sales ADD COLUMN IF NOT EXISTS price_usd NUMERIC(18,6)`,
+    `ALTER TABLE tcl_marketplace_sales ADD COLUMN IF NOT EXISTS price_usd NUMERIC(24,8)`,
+    `ALTER TABLE tcl_marketplace_sales ADD COLUMN IF NOT EXISTS tcl_price_usd NUMERIC(24,12)`,
+    `ALTER TABLE tcl_marketplace_sales ADD COLUMN IF NOT EXISTS price_source TEXT`,
+    `ALTER TABLE tcl_marketplace_sales ADD COLUMN IF NOT EXISTS price_timestamp TIMESTAMPTZ`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_nft ON tcl_marketplace_sales(nft_token, nft_nonce)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_seller ON tcl_marketplace_sales(seller)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_buyer ON tcl_marketplace_sales(buyer)`,
@@ -2751,11 +2948,13 @@ async function runMigrations() {
   const client = await pool.connect();
   try {
     for (const sql of migrations) {
-      await client.query(sql);
+      try {
+        await client.query(sql);
+      } catch (error) {
+        console.warn(`Migration skipped: ${error.message}`);
+      }
     }
     console.log("DB migrations OK");
-  } catch (e) {
-    console.error("Migration error:", e.message);
   } finally {
     client.release();
   }

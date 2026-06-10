@@ -144,6 +144,17 @@
     .btn-disconnect-topbar:hover { background: rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.65); }
     .btn-explorer-sm { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(0,232,204,0.35); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); white-space: nowrap; text-decoration: none; }
     .wallet-addr-text { font-family: "Consolas","SFMono-Regular",monospace; font-size: 0.86rem; font-weight: 700; color: var(--text); flex: 1; }
+    .wallet-balances { display: flex; align-items: center; gap: 6px; }
+    .wallet-balance {
+      display: inline-flex; align-items: center; gap: 5px;
+      min-height: 28px; padding: 4px 9px;
+      border: 1px solid #2a3347; border-radius: 8px;
+      background: rgba(255,255,255,0.035);
+      color: var(--text); font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+    }
+    .wallet-balance strong { color: var(--accent); font-size: 0.7rem; letter-spacing: 0.04em; }
+    .wallet-balance.tcl strong { color: var(--gold); }
+    .wallet-balance.is-error { color: #fb7185; border-color: rgba(251,113,133,0.35); }
     @media (min-width: 641px) { .qr-popover #connectBtn { display: none; } }
     @media (max-width: 640px) {
       .qr-popover { padding: 14px; }
@@ -257,6 +268,23 @@
       gap: 20px;
       padding: 24px;
     }
+    #listings-grid.sales-mode { display: block; }
+    .sales-list { display: grid; gap: 10px; max-width: 980px; margin: 0 auto; }
+    .sale-row {
+      display: grid; grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 0.8fr) minmax(220px, 1fr) auto;
+      gap: 16px; align-items: center; padding: 14px 16px;
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card-bg);
+    }
+    .sale-nft { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .sale-nft img { width: 48px; height: 48px; border-radius: 9px; object-fit: cover; background: #080d1a; }
+    .sale-name { font-weight: 800; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sale-collection { color: var(--muted); font: 0.72rem "Consolas","SFMono-Regular",monospace; }
+    .sale-price strong { display: block; color: var(--gold); font-size: 1rem; }
+    .sale-price span { color: var(--accent); font-size: 0.78rem; }
+    .sale-parties { color: var(--muted); font-size: 0.76rem; line-height: 1.6; }
+    .sale-parties code { color: var(--text); }
+    .sale-time { color: var(--muted); font-size: 0.74rem; text-align: right; white-space: nowrap; }
+    .sale-time a { display: block; margin-top: 5px; color: var(--accent); text-decoration: none; font-weight: 700; }
 
     /* ── NFT Card ── */
     .nft-card {
@@ -957,6 +985,9 @@
       .stats-bar > div:last-child { grid-column: 1 / -1; text-align: right; padding-top: 4px; border-top: 1px solid #1e2a42; }
       .stat-value { font-size: 14px; }
       .stat-label { font-size: 10px; }
+      .sale-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .sale-parties { grid-column: 1 / -1; }
+      .sale-time { text-align: left; }
 
       /* Tabs — all 3 fit on one row, no scroll */
       .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: nowrap; overflow: visible; }
@@ -1044,14 +1075,13 @@
       </div>
     </div>
 
-    <!-- ── Connected: address chip + balances + disconnect -->
+    <!-- ── Connected: address + balances + disconnect -->
     <div id="connectedView" style="display:flex;align-items:center;gap:8px;" hidden>
-      <div id="walletBalances" style="display:flex;align-items:center;gap:6px;font-size:0.78rem;">
-        <span id="balEgld" style="color:var(--muted);">—</span>
-        <span style="color:#2a3347;">|</span>
-        <span id="balTcl" style="color:var(--gold);">—</span>
-      </div>
       <span class="wallet-addr-text" id="walletAddr" style="font-size:0.82rem;"></span>
+      <div id="walletBalances" class="wallet-balances" aria-live="polite">
+        <span id="balEgld" class="wallet-balance"><strong>EGLD</strong> Loading...</span>
+        <span id="balTcl" class="wallet-balance tcl"><strong>TCL</strong> Loading...</span>
+      </div>
       <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
     </div>
     <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" hidden>
@@ -1112,7 +1142,7 @@
     <option value="">All Collections</option>
   </select>
   <button class="btn-primary" onclick="openMyNFTsModal()">My NFTs</button>
-  <button class="btn-secondary" onclick="loadListings()">↻ Refresh</button>
+  <button class="btn-secondary" onclick="refreshMarketplace()">↻ Refresh</button>
 </div>
 
 <!-- ════════════ LISTINGS GRID ════════════ -->
@@ -1245,6 +1275,7 @@ let walletAddress = null;
 let tclPriceUSD = 0;
 let marketplaceFeePercent = 2;
 let allListings = [];      // on-chain listings enriched with NFT metadata
+let recentSales = [];      // indexed marketplace sales loaded from our API
 let myWalletNFTs = [];     // NFTs owned by connected wallet
 let selectedNFTForListing = null;
 let currentTab = "all";
@@ -1278,6 +1309,16 @@ const WD = {
 
 function truncAddr(a) {
   return a.length > 18 ? `${a.slice(0,10)}…${a.slice(-8)}` : a;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  })[char]);
 }
 
 function xportalDeepLink(uri) { return XPORTAL.getDeepLink(uri); }
@@ -1419,8 +1460,8 @@ function updateWalletUI(address) {
     myWalletNFTs = [];
     const egldEl = document.getElementById("balEgld");
     const tclEl  = document.getElementById("balTcl");
-    if (egldEl) egldEl.textContent = "—";
-    if (tclEl)  tclEl.textContent  = "—";
+    if (egldEl) egldEl.innerHTML = "<strong>EGLD</strong> Not connected";
+    if (tclEl)  tclEl.innerHTML  = "<strong>TCL</strong> Not connected";
   }
   renderCurrentTab();
 }
@@ -1499,6 +1540,7 @@ function switchTab(tab) {
 }
 
 function renderCurrentTab() {
+  document.getElementById("listings-grid")?.classList.toggle("sales-mode", currentTab === "activity");
   if (currentTab === "all") renderListings(allListings);
   else if (currentTab === "mine") renderMyListings();
   else renderActivity();
@@ -1727,12 +1769,50 @@ function renderMyListings() {
 }
 
 function renderActivity() {
-  document.getElementById("listings-grid").innerHTML = `
-    <div class="empty-msg">
-      <div class="empty-icon">📋</div>
-      <p>Recent sales will appear here</p>
-      <small>Connect a deployed contract to see real on-chain activity</small>
-    </div>`;
+  const grid = document.getElementById("listings-grid");
+  if (!recentSales.length) {
+    grid.innerHTML = `
+      <div class="empty-msg">
+        <div class="empty-icon">📋</div>
+        <p>No indexed sales yet</p>
+        <small>Sales are loaded from the TCL Explorer server API.</small>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = `<div class="sales-list">${recentSales.map(sale => {
+    const rawPrice = sale.price || "0";
+    const priceTcl = formatTCL(rawPrice);
+    const priceUsd = sale.price_usd == null ? Number.NaN : Number(sale.price_usd);
+    const soldAt = new Date(sale.sold_at);
+    const tokenLabel = sale.nft_token
+      ? `${sale.nft_token}${sale.nft_nonce != null ? ` #${sale.nft_nonce}` : ""}`
+      : `Listing #${sale.listing_id}`;
+    const name = sale.nft_name || tokenLabel;
+    const image = sale.image_url || "images/tcl_icon.png";
+    return `
+      <article class="sale-row">
+        <div class="sale-nft">
+          <img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" loading="lazy" onerror="this.src='images/tcl_icon.png'">
+          <div style="min-width:0">
+            <div class="sale-name">${escapeHtml(name)}</div>
+            <div class="sale-collection">${escapeHtml(tokenLabel)}</div>
+          </div>
+        </div>
+        <div class="sale-price">
+          <strong>${escapeHtml(priceTcl)} TCL</strong>
+          <span>${Number.isFinite(priceUsd) ? `$${priceUsd.toFixed(2)}` : "USD unavailable"}</span>
+        </div>
+        <div class="sale-parties">
+          Buyer <code>${escapeHtml(truncAddr(sale.buyer || "unknown"))}</code><br>
+          Seller <code>${escapeHtml(truncAddr(sale.seller || "unknown"))}</code>
+        </div>
+        <div class="sale-time">
+          ${Number.isNaN(soldAt.getTime()) ? "" : escapeHtml(soldAt.toLocaleString())}
+          <a href="https://explorer.multiversx.com/transactions/${escapeHtml(sale.tx_hash)}" target="_blank" rel="noreferrer">View transaction</a>
+        </div>
+      </article>`;
+  }).join("")}</div>`;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2948,7 +3028,9 @@ async function loadTCLPrice() {
 
 async function loadMarketplaceStats() {
   try {
-    const data = await fetch(`${TCL_API}/api/marketplace/stats`).then(r => r.json());
+    const response = await fetch(`${TCL_API}/api/marketplace/stats`);
+    const data = await response.json();
+    if (!response.ok || data.error) throw new Error(data.error || `Stats HTTP ${response.status}`);
     const volTcl = parseFloat(data.volume_tcl || 0);
     const volUsd = parseFloat(data.volume_usd || 0);
     document.getElementById("stat-volume-tcl").textContent =
@@ -2957,20 +3039,72 @@ async function loadMarketplaceStats() {
       volUsd >= 1000 ? "$" + (volUsd / 1000).toFixed(2) + "K" : "$" + volUsd.toFixed(2);
   } catch (e) {
     console.warn("Marketplace stats fetch error", e);
+    document.getElementById("stat-volume-tcl").textContent = "Unavailable";
+    document.getElementById("stat-volume-usd").textContent = "Unavailable";
   }
 }
 
-async function loadWalletBalances(address) {
+async function loadRecentSales() {
   try {
-    const data = await fetch(`${TCL_API}/api/marketplace/wallet/${address}`).then(r => r.json());
-    if (data.error) return;
-    const egldEl = document.getElementById("balEgld");
-    const tclEl  = document.getElementById("balTcl");
-    if (egldEl) egldEl.textContent = `${data.egld.toFixed(3)} EGLD ($${data.egld_usd.toFixed(2)})`;
-    if (tclEl)  tclEl.textContent  = `${data.tcl.toLocaleString(undefined,{maximumFractionDigits:0})} TCL ($${data.tcl_usd.toFixed(2)})`;
+    const response = await fetch(`${TCL_API}/api/marketplace/sales?limit=50`);
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data)) {
+      throw new Error(data?.error || `Sales HTTP ${response.status}`);
+    }
+    recentSales = data;
+  } catch (e) {
+    console.warn("Marketplace sales fetch error", e);
+    recentSales = [];
+  }
+  if (currentTab === "activity") renderActivity();
+}
+
+async function loadWalletBalances(address) {
+  const egldEl = document.getElementById("balEgld");
+  const tclEl  = document.getElementById("balTcl");
+  if (egldEl) {
+    egldEl.classList.remove("is-error");
+    egldEl.innerHTML = "<strong>EGLD</strong> Loading...";
+  }
+  if (tclEl) {
+    tclEl.classList.remove("is-error");
+    tclEl.innerHTML = "<strong>TCL</strong> Loading...";
+  }
+
+  try {
+    const response = await fetch(`${TCL_API}/api/marketplace/wallet/${address}`);
+    const data = await response.json();
+    if (!response.ok || data.error) throw new Error(data.error || `Wallet HTTP ${response.status}`);
+
+    const egld = Number(data.egld) || 0;
+    const egldUsd = Number(data.egld_usd) || 0;
+    const tcl = Number(data.tcl) || 0;
+    const tclUsd = Number(data.tcl_usd) || 0;
+    if (egldEl) {
+      egldEl.innerHTML = `<strong>EGLD</strong> ${egld.toLocaleString(undefined, { maximumFractionDigits: 3 })} ($${egldUsd.toFixed(2)})`;
+    }
+    if (tclEl) {
+      tclEl.innerHTML = `<strong>TCL</strong> ${tcl.toLocaleString(undefined, { maximumFractionDigits: 0 })} ($${tclUsd.toFixed(2)})`;
+    }
   } catch (e) {
     console.warn("Wallet balance fetch error", e);
+    if (egldEl) {
+      egldEl.classList.add("is-error");
+      egldEl.innerHTML = "<strong>EGLD</strong> Unavailable";
+    }
+    if (tclEl) {
+      tclEl.classList.add("is-error");
+      tclEl.innerHTML = "<strong>TCL</strong> Unavailable";
+    }
   }
+}
+
+async function refreshMarketplace() {
+  await Promise.all([
+    loadListings(),
+    loadMarketplaceStats(),
+    loadRecentSales(),
+  ]);
 }
 
 async function loadMarketplaceFee() {
@@ -3079,7 +3213,13 @@ document.getElementById("my-nfts-modal")?.addEventListener("click", e => {
     updateWalletUI(savedAddress);
   }
 
-  await Promise.all([loadTCLPrice(), loadMarketplaceFee(), loadListings(), loadMarketplaceStats()]);
+  await Promise.all([
+    loadTCLPrice(),
+    loadMarketplaceFee(),
+    loadListings(),
+    loadMarketplaceStats(),
+    loadRecentSales(),
+  ]);
 })();
 </script>
 </body>
