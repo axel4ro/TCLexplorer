@@ -354,6 +354,46 @@ body.page-sub {
   border-color: var(--border-subtle) !important;
 }
 
+/* === SC ATTRIBUTES BADGES === */
+.nft-badges { display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:6px; }
+.badge {
+  font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:3px; letter-spacing:0.3px;
+}
+.badge-quality-1 { background:#374151; color:#9ca3af; border:1px solid #4b5563; }
+.badge-quality-2 { background:#065f46; color:#34d399; border:1px solid #059669; }
+.badge-quality-3 { background:#1e3a8a; color:#60a5fa; border:1px solid #2563eb; }
+.badge-quality-4 { background:#4c1d95; color:#c084fc; border:1px solid #7c3aed; }
+.badge-quality-5 { background:#7c2d12; color:#fbbf24; border:1px solid #d97706; box-shadow:0 0 6px rgba(251,191,36,0.4); }
+.badge-wave      { background:#0c1a3a; color:#7dd3fc; border:1px solid #0ea5e9; }
+.badge-bonus     { background:#3b1f00; color:#fbbf24; border:1px solid #d97706; }
+.badge-crystal   { background:#001a3a; color:#67e8f9; border:1px solid #06b6d4; }
+.badge-socket    { background:#1a1a1a; color:#d1d5db; border:1px solid #4b5563; }
+
+/* === STORAGE BAR === */
+.storage-bar-wrap {
+  margin:6px 4px 2px;
+  background:#0d1120; border:1px solid #2a3347; border-radius:6px; overflow:hidden; height:10px;
+}
+.storage-bar-fill {
+  height:100%; border-radius:6px;
+  background:linear-gradient(90deg,#2ff6de,#0ea5e9);
+  transition:width 0.4s;
+}
+.storage-label { font-size:10px; color:#6b7280; margin:1px 4px 4px; display:block; }
+
+/* === SC SECTION IN MODAL === */
+.sc-attrs-section { margin-top:18px; }
+.sc-attrs-section h3 { font-size:13px; color:#2ff6de; margin:0 0 8px; text-transform:uppercase; letter-spacing:1px; }
+.sc-attrs-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.sc-attr-item { background:#0d1120; border:1px solid #1e2a42; border-radius:8px; padding:7px 10px; }
+.sc-attr-item .k { font-size:11px; color:#6b7280; display:block; }
+.sc-attr-item .v { font-size:14px; font-weight:700; color:#f1f1f1; }
+.sc-storage-full {
+  grid-column:1/-1; background:#0d1120; border:1px solid #1e2a42; border-radius:8px; padding:9px 12px;
+}
+.sc-storage-full .k { font-size:11px; color:#6b7280; margin-bottom:5px; display:block; }
+
 </style>
   <link rel="stylesheet" href="css/tcl-premium-pages.css?v=20260512-1">
 </head>
@@ -873,11 +913,43 @@ async function renderNFTs(nfts) {
 
     const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
 
+    // SC badges
+    const qualityNames = ["","Common","Uncommon","Rare","Epic","Legendary"];
+    const q = nft.sc_quality;
+    const qualityBadge = q > 0
+      ? `<span class="badge badge-quality-${Math.min(q,5)}">${qualityNames[q] || `Q${q}`}</span>` : "";
+    const waveBadge = nft.sc_wave > 0
+      ? `<span class="badge badge-wave">W${nft.sc_wave}</span>` : "";
+    const bonusBadge = nft.sc_has_bonus
+      ? `<span class="badge badge-bonus">✦ Bonus</span>` : "";
+    const crystalBadge = nft.sc_has_crystal
+      ? `<span class="badge badge-crystal">◈ Crystal</span>` : "";
+    const socketBadge = nft.sc_socket_count > 0
+      ? `<span class="badge badge-socket">⬡ ${nft.sc_socket_count}</span>` : "";
+
+    // Storage bar
+    const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
+    const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
+    const storageHtml = tclMax > 0n ? (() => {
+      const pct = Number(tclCount * 100n / tclMax);
+      const countFmt = (Number(tclCount) / 1e18).toFixed(0);
+      const maxFmt   = (Number(tclMax)   / 1e18).toFixed(0);
+      return `
+        <div class="storage-bar-wrap" title="TCL Storage">
+          <div class="storage-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <span class="storage-label">💾 ${countFmt} / ${maxFmt} TCL</span>`;
+    })() : "";
+
+    const hasBadges = qualityBadge || waveBadge || bonusBadge || crystalBadge || socketBadge;
+
     cardsHtml += `
       <div class="card" onclick="showNFTDetails('${nft.identifier}')">
         <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
         <h4>${title}</h4>
         ${attrValue ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
+        ${hasBadges ? `<div class="nft-badges">${qualityBadge}${waveBadge}${bonusBadge}${crystalBadge}${socketBadge}</div>` : ""}
+        ${storageHtml}
         <button style="margin-top:10px; background:#2ff6de; color:#161a24;
           font-weight:bold; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;"
           onclick="window.open('${nftLink}','_blank'); event.stopPropagation();">
@@ -983,6 +1055,56 @@ async function showNFTDetails(identifier) {
   // link direct NFT
   const nftLink = `https://xoxno.com/nft/${nft.identifier}`;
 
+  // SC attributes section
+  const qualityNames = ["","Common","Uncommon","Rare","Epic","Legendary"];
+  let scHtml = "";
+  const hasScData = nft.sc_quality != null || nft.sc_wave != null || nft.sc_tcl_max != null
+    || nft.sc_socket_count != null || nft.sc_has_bonus != null;
+  if (hasScData) {
+    const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
+    const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
+    const storagePct = tclMax > 0n ? Number(tclCount * 100n / tclMax) : 0;
+    const countFmt = (Number(tclCount) / 1e18).toFixed(2);
+    const maxFmt   = (Number(tclMax)   / 1e18).toFixed(2);
+
+    scHtml = `
+      <div class="sc-attrs-section">
+        <h3>⚙️ Game Attributes</h3>
+        <div class="sc-attrs-grid">
+          ${nft.sc_quality != null ? `<div class="sc-attr-item">
+            <span class="k">Quality</span>
+            <span class="v">${qualityNames[nft.sc_quality] || `Q${nft.sc_quality}`}</span>
+          </div>` : ""}
+          ${nft.sc_wave != null ? `<div class="sc-attr-item">
+            <span class="k">Wave</span>
+            <span class="v">${nft.sc_wave}</span>
+          </div>` : ""}
+          ${nft.sc_has_bonus != null ? `<div class="sc-attr-item">
+            <span class="k">Bonus</span>
+            <span class="v" style="color:${nft.sc_has_bonus ? '#fbbf24' : '#6b7280'}">${nft.sc_has_bonus ? "✦ Yes" : "No"}</span>
+          </div>` : ""}
+          ${nft.sc_has_crystal != null ? `<div class="sc-attr-item">
+            <span class="k">Crystal</span>
+            <span class="v" style="color:${nft.sc_has_crystal ? '#67e8f9' : '#6b7280'}">${nft.sc_has_crystal ? "◈ Yes" : "No"}</span>
+          </div>` : ""}
+          ${nft.sc_socket_count != null ? `<div class="sc-attr-item">
+            <span class="k">Sockets</span>
+            <span class="v">⬡ ${nft.sc_socket_count}</span>
+          </div>` : ""}
+          ${nft.sc_refinement_ts > 0 ? `<div class="sc-attr-item">
+            <span class="k">Refined</span>
+            <span class="v" style="font-size:11px">${new Date(nft.sc_refinement_ts * 1000).toLocaleDateString()}</span>
+          </div>` : ""}
+          ${tclMax > 0n ? `<div class="sc-storage-full">
+            <span class="k">💾 TCL Storage — ${countFmt} / ${maxFmt} TCL (${storagePct}%)</span>
+            <div class="storage-bar-wrap" style="height:14px">
+              <div class="storage-bar-fill" style="width:${storagePct}%"></div>
+            </div>
+          </div>` : ""}
+        </div>
+      </div>`;
+  }
+
 // 🔥 layout pe două coloane
 content.innerHTML = `
   <div class="modal-left">
@@ -994,15 +1116,14 @@ content.innerHTML = `
       <p><b>Royalties:</b> ${nft.royalties/100}%</p>
       <p><b>Nonce:</b> ${nft.nonce}</p>
     </div>
-
-    <!-- 👇 Mutăm butonul aici, sub Nonce -->
-    <button class="view-btn" style="margin-top:15px;" 
+    <button class="view-btn" style="margin-top:15px;"
       onclick="window.open('${nftLink}','_blank')">
       🛒 View on XOXNO
     </button>
   </div>
 
   <div class="modal-right">
+    ${scHtml}
     ${attributesHtml}
   </div>
 `;

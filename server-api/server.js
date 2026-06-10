@@ -2422,7 +2422,9 @@ app.get("/api/nfts/collection/:collection", async (req, res) => {
   try {
     const { collection } = req.params;
     const { rows } = await pool.query(
-      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner,
+              sc_quality, sc_wave, sc_has_bonus, sc_has_crystal,
+              sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts
        FROM tcl_nfts WHERE collection = $1 ORDER BY nonce ASC`,
       [collection]
     );
@@ -2437,7 +2439,9 @@ app.get("/api/nfts/collection/:collection", async (req, res) => {
 app.get("/api/nfts/all", async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner,
+              sc_quality, sc_wave, sc_has_bonus, sc_has_crystal,
+              sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts
        FROM tcl_nfts ORDER BY collection, nonce ASC`
     );
     // group by collection
@@ -2458,7 +2462,9 @@ app.get("/api/nfts/wallet/:address", async (req, res) => {
   try {
     const { address } = req.params;
     const { rows } = await pool.query(
-      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner,
+              sc_quality, sc_wave, sc_has_bonus, sc_has_crystal,
+              sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts
        FROM tcl_nfts WHERE owner = $1 ORDER BY collection, nonce ASC`,
       [address]
     );
@@ -2474,7 +2480,9 @@ app.get("/api/nfts/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params;
     const { rows } = await pool.query(
-      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner, raw_api
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner,
+              sc_quality, sc_wave, sc_has_bonus, sc_has_crystal,
+              sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts, raw_api
        FROM tcl_nfts WHERE identifier = $1`,
       [identifier]
     );
@@ -2507,6 +2515,116 @@ app.post("/api/nfts/sync", async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  MARKETPLACE — sales history + sync
+// ══════════════════════════════════════════════════════════════════════════════
+const MARKETPLACE_SC = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvscppu7fqmsypuu25";
+const MVX_API_BASE   = "https://api.multiversx.com";
+
+// GET /api/marketplace/sales — recent sales from DB
+app.get("/api/marketplace/sales", async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const { rows } = await pool.query(
+      `SELECT s.*, n.name AS nft_name, n.image_url
+       FROM tcl_marketplace_sales s
+       LEFT JOIN tcl_nfts n ON n.collection = s.nft_token AND n.nonce = s.nft_nonce
+       ORDER BY s.sold_at DESC LIMIT $1`,
+      [limit]
+    );
+    res.setHeader("Cache-Control", "public, max-age=30");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/marketplace/stats — floor price, volume, total sales
+app.get("/api/marketplace/stats", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        COUNT(*)                              AS total_sales,
+        SUM(price) / 1e18                    AS total_volume_tcl,
+        MIN(price) / 1e18                    AS floor_price_tcl,
+        MAX(price) / 1e18                    AS max_price_tcl
+      FROM tcl_marketplace_sales
+    `);
+    res.setHeader("Cache-Control", "public, max-age=60");
+    res.json(rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/marketplace/sync — index sales from blockchain transactions (admin)
+app.post("/api/marketplace/sync", async (req, res) => {
+  const secret = req.headers["x-admin-secret"] || "";
+  if (!ADMIN_SECRET || secret !== ADMIN_SECRET)
+    return res.status(401).json({ error: "Unauthorized" });
+
+  res.json({ ok: true, message: "Marketplace sync started" });
+
+  // Fire-and-forget: index listingSold events from blockchain
+  (async () => {
+    try {
+      let from = 0, indexed = 0;
+      while (true) {
+        const url = `${MVX_API_BASE}/accounts/${MARKETPLACE_SC}/transactions?size=50&from=${from}&status=success&function=buyNFT`;
+        const txs = await fetch(url).then(r => r.json());
+        if (!Array.isArray(txs) || !txs.length) break;
+
+        const client = await pool.connect();
+        try {
+          for (const tx of txs) {
+            // Parse buyNFT call: ESDTTransfer@tclHex@amountHex@buyNFTHex@listingIdHex
+            try {
+              const data = Buffer.from(tx.data || "", "base64").toString("utf8");
+              const parts = data.split("@");
+              if (parts[0] !== "ESDTTransfer" || parts.length < 5) continue;
+              const price     = parts[2] ? BigInt("0x" + parts[2]) : 0n;
+              const listingId = parts[4] ? parseInt(parts[4], 16) : 0;
+
+              // Get NFT info from SC events
+              const events = tx.logs?.events || [];
+              const soldEv = events.find(e => e.identifier === "listingSold" || e.topics?.[0]);
+              const nftToken = soldEv?.topics?.[2]
+                ? Buffer.from(soldEv.topics[2], "base64").toString("utf8") : null;
+              const nftNonce = soldEv?.topics?.[3]
+                ? parseInt(Buffer.from(soldEv.topics[3], "base64").toString("hex") || "0", 16) : null;
+
+              await client.query(`
+                INSERT INTO tcl_marketplace_sales
+                  (listing_id, seller, buyer, nft_token, nft_nonce, price, tx_hash, sold_at)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+                ON CONFLICT (tx_hash) DO NOTHING
+              `, [
+                listingId,
+                tx.receiver || null,
+                tx.sender || null,
+                nftToken,
+                nftNonce,
+                price.toString(),
+                tx.txHash || tx.hash,
+                tx.timestamp ? new Date(tx.timestamp * 1000) : new Date(),
+              ]);
+              indexed++;
+            } catch { /* skip malformed tx */ }
+          }
+        } finally {
+          client.release();
+        }
+
+        from += txs.length;
+        if (txs.length < 50) break;
+      }
+      console.log(`Marketplace sync: indexed ${indexed} sales`);
+    } catch (e) {
+      console.error("Marketplace sync error:", e.message);
+    }
+  })();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  HEALTH CHECK
 // ══════════════════════════════════════════════════════════════════════════════
 app.get("/health", async (req, res) => {
@@ -2518,9 +2636,50 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// ── DB Migration — add SC attribute columns if missing ────────────────────────
+async function runMigrations() {
+  const migrations = [
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_quality       INT`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_wave          INT`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_has_bonus     BOOLEAN`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_has_crystal   BOOLEAN`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_socket_count  INT`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_tcl_count     NUMERIC(36,0)`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_tcl_max       NUMERIC(36,0)`,
+    `ALTER TABLE tcl_nfts ADD COLUMN IF NOT EXISTS sc_refinement_ts BIGINT`,
+    `CREATE TABLE IF NOT EXISTS tcl_marketplace_sales (
+       id            BIGSERIAL PRIMARY KEY,
+       listing_id    BIGINT NOT NULL,
+       seller        TEXT,
+       buyer         TEXT,
+       nft_token     TEXT,
+       nft_nonce     BIGINT,
+       price         NUMERIC(36,0),
+       royalty_pct   INT,
+       tx_hash       TEXT UNIQUE,
+       sold_at       TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_sales_nft ON tcl_marketplace_sales(nft_token, nft_nonce)`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_sales_seller ON tcl_marketplace_sales(seller)`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_sales_buyer ON tcl_marketplace_sales(buyer)`,
+  ];
+  const client = await pool.connect();
+  try {
+    for (const sql of migrations) {
+      await client.query(sql);
+    }
+    console.log("DB migrations OK");
+  } catch (e) {
+    console.error("Migration error:", e.message);
+  } finally {
+    client.release();
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
-pool.connect().then(client => {
+pool.connect().then(async client => {
   client.release();
+  await runMigrations();
   app.listen(PORT, "127.0.0.1", () => {
     console.log(`TCL API listening on http://127.0.0.1:${PORT}`);
     runScheduledWheelDraws();
