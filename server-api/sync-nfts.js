@@ -37,15 +37,24 @@ const TCL_CREATORS = [
   "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
 ];
 const BATCH_SIZE  = 100;
-const DELAY_MS    = 300;
-const SC_PARALLEL = 5; // NFTs per SC attribute batch (5 NFTs × 8 calls = 40 parallel requests)
+const DELAY_MS    = 800;
+const SC_PARALLEL = 3; // NFTs per SC attribute batch (3 NFTs × 8 calls = 24 parallel SC requests)
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
-  return res.json();
+async function fetchJson(url, retries = 4) {
+  for (let i = 0; i <= retries; i++) {
+    const res = await fetch(url);
+    if (res.status === 429) {
+      const wait = 2000 * (i + 1);
+      console.warn(`  429 rate limit on ${url.split("?")[0].split("/").slice(-2).join("/")} — waiting ${wait}ms`);
+      await sleep(wait);
+      continue;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
+    return res.json();
+  }
+  throw new Error(`Max retries exceeded — ${url}`);
 }
 
 // ── SC vm-values query ─────────────────────────────────────────────────────────
