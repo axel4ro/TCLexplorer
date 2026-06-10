@@ -452,6 +452,10 @@ body.page-sub {
 
   <!-- ================== MARKETPLACE (cu filtre avansate) ================== -->
   <script>
+    // Server API — date pre-indexate, instant (fallback la MultiversX API dacă serverul e offline)
+    const TCL_API = "https://107.149.201.71.sslip.io";
+    const MVX_API_FALLBACK = "https://api.multiversx.com";
+
     const creators = [
       "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
       "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk"
@@ -460,13 +464,13 @@ body.page-sub {
     let currentView = "collections";
 	let allNFTs = [];
 	let forSaleList = [];
-    let allNFTsByCollection = {}; // 🔥 aici vom ține toate NFT-urile preload
-    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v2";
+    let allNFTsByCollection = {};
+    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v3"; // v3 = server-backed
     const NFTS_CACHE_TTL = {
-      collections: 15 * 60 * 1000,
-      allNFTs: 15 * 60 * 1000,
+      collections: 5 * 60 * 1000,   // 5 min (server e rapid)
+      allNFTs: 5 * 60 * 1000,
       collectionImage: 24 * 60 * 60 * 1000,
-      nftDetails: 15 * 60 * 1000,
+      nftDetails: 5 * 60 * 1000,
       walletBalance: 2 * 60 * 1000
     };
     const nftRequestPool = {};
@@ -582,15 +586,37 @@ async function loadCollections() {
 
   let all = getCache("collections", NFTS_CACHE_TTL.collections);
   if (all) {
-    console.log("Loaded collections from cache");
+    console.log("Loaded collections from localStorage cache");
   } else {
     all = await withNFTRequest("collections", async () => {
-      console.log("Fetching collections from API");
+      // Try server first (instant), fallback to MultiversX API
+      try {
+        const resp = await fetch(`${TCL_API}/api/nfts/collections`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.length) {
+            console.log(`Loaded ${data.length} collections from server`);
+            // normalize to same shape as MultiversX API response
+            const normalized = data.map(c => ({
+              collection: c.collection,
+              name: c.name,
+              nftCount: c.nft_count,
+              assets: { pngUrl: c.image_url },
+            }));
+            writeCache("collections", normalized);
+            return normalized;
+          }
+        }
+      } catch (e) {
+        console.warn("Server collections failed, fallback to MultiversX API:", e.message);
+      }
+
+      // Fallback: MultiversX API
       let freshCollections = [];
       for (const creator of creators) {
         try {
           await new Promise(r => setTimeout(r, 300));
-          const resp = await fetch(`https://api.multiversx.com/collections?creator=${creator}&size=50`);
+          const resp = await fetch(`${MVX_API_FALLBACK}/collections?creator=${creator}&size=50`);
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           const data = await resp.json();
           freshCollections = freshCollections.concat(data);
@@ -636,17 +662,40 @@ async function loadCollections() {
 async function preloadAllNFTs(collections) {
   let cache = getCache("allNFTs", NFTS_CACHE_TTL.allNFTs);
   if (cache) {
-    console.log("Loaded ALL NFTs from cache");
+    console.log("Loaded ALL NFTs from localStorage cache");
     allNFTsByCollection = cache;
     return;
   }
 
   allNFTsByCollection = await withNFTRequest("allNFTs", async () => {
+    // Try server bulk endpoint first
+    try {
+      const resp = await fetch(`${TCL_API}/api/nfts/all`);
+      if (resp.ok) {
+        const grouped = await resp.json();
+        const total = Object.values(grouped).reduce((s, a) => s + a.length, 0);
+        if (total > 0) {
+          console.log(`Loaded ${total} NFTs from server (bulk)`);
+          // normalize each NFT
+          const payload = {};
+          for (const [col, nfts] of Object.entries(grouped)) {
+            payload[col] = nfts.map(normalizeServerNFT);
+          }
+          writeCache("allNFTs", payload);
+          return payload;
+        }
+      }
+    } catch (e) {
+      console.warn("Server bulk NFT load failed, fallback to MultiversX API:", e.message);
+    }
+
+    // Fallback: per-collection from MultiversX API
     const payload = {};
     for (const col of collections) {
       try {
-        console.log("Fetching NFTs from API", col.collection);
-        const resp = await fetch(`https://api.multiversx.com/collections/${col.collection}/nfts?size=1000`);
+        await new Promise(r => setTimeout(r, 300));
+        console.log("Fetching NFTs from MultiversX API", col.collection);
+        const resp = await fetch(`${MVX_API_FALLBACK}/collections/${col.collection}/nfts?size=1000`);
         const data = await resp.json();
         payload[col.collection] = data;
       } catch (err) {
@@ -656,6 +705,25 @@ async function preloadAllNFTs(collections) {
     writeCache("allNFTs", payload);
     return payload;
   });
+}
+
+// Normalize server DB row → MultiversX API shape expected by renderer
+function normalizeServerNFT(nft) {
+  return {
+    identifier:  nft.identifier,
+    collection:  nft.collection,
+    nonce:       nft.nonce,
+    name:        nft.name,
+    royalties:   nft.royalties || 0,
+    creator:     nft.creator,
+    owner:       nft.owner,
+    media:       nft.image_url ? [{ url: nft.image_url }] : [],
+    metadata:    nft.metadata || null,
+    ...nft.raw_api,             // spread full API data if stored
+    // ensure media/metadata not overwritten by null from raw_api
+    media:       nft.image_url ? [{ url: nft.image_url }] : (nft.raw_api?.media || []),
+    metadata:    nft.metadata || nft.raw_api?.metadata || null,
+  };
 }
 
 async function ensureCollectionNFTs(collection) {
@@ -670,8 +738,26 @@ async function ensureCollectionNFTs(collection) {
   }
 
   return withNFTRequest(`collectionNFTs:${collection}`, async () => {
+    // Try server first
     try {
-      const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1000`);
+      const resp = await fetch(`${TCL_API}/api/nfts/collection/${collection}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.length) {
+          console.log(`Loaded ${data.length} NFTs from server for ${collection}`);
+          const normalized = data.map(normalizeServerNFT);
+          allNFTsByCollection[collection] = normalized;
+          persistAllNFTsCache();
+          return normalized;
+        }
+      }
+    } catch (e) {
+      console.warn(`Server NFT fetch failed for ${collection}, using MultiversX API`);
+    }
+
+    // Fallback: MultiversX API
+    try {
+      const resp = await fetch(`${MVX_API_FALLBACK}/collections/${collection}/nfts?size=1000`);
       const data = await resp.json();
       allNFTsByCollection[collection] = data;
       persistAllNFTsCache();
@@ -856,7 +942,17 @@ async function showNFTDetails(identifier) {
   let nft = getCache("nftDetails", NFTS_CACHE_TTL.nftDetails, identifier);
   if (!nft) {
     nft = await withNFTRequest(`nftDetails:${identifier}`, async () => {
-      const resp = await fetch(`https://api.multiversx.com/nfts/${identifier}`);
+      // Try server first
+      try {
+        const resp = await fetch(`${TCL_API}/api/nfts/${identifier}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          writeCache("nftDetails", data, identifier);
+          return data;
+        }
+      } catch (e) { /* fallback */ }
+      // Fallback: MultiversX API
+      const resp = await fetch(`${MVX_API_FALLBACK}/nfts/${identifier}`);
       const data = await resp.json();
       writeCache("nftDetails", data, identifier);
       return data;

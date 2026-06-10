@@ -2400,6 +2400,113 @@ app.get("/api/leaderboard", (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  NFT INDEX — serve cached NFTs from DB, avoid hammering MultiversX API
+// ══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/nfts/collections
+app.get("/api/nfts/collections", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT collection, name, image_url, nft_count, synced_at
+       FROM tcl_collections ORDER BY nft_count DESC`
+    );
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/nfts/collection/:collection  — all NFTs in a collection
+app.get("/api/nfts/collection/:collection", async (req, res) => {
+  try {
+    const { collection } = req.params;
+    const { rows } = await pool.query(
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner
+       FROM tcl_nfts WHERE collection = $1 ORDER BY nonce ASC`,
+      [collection]
+    );
+    res.setHeader("Cache-Control", "public, max-age=120");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/nfts/all  — all NFTs, grouped by collection
+app.get("/api/nfts/all", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner
+       FROM tcl_nfts ORDER BY collection, nonce ASC`
+    );
+    // group by collection
+    const grouped = {};
+    for (const nft of rows) {
+      if (!grouped[nft.collection]) grouped[nft.collection] = [];
+      grouped[nft.collection].push(nft);
+    }
+    res.setHeader("Cache-Control", "public, max-age=120");
+    res.json(grouped);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/nfts/wallet/:address  — NFTs owned by address
+app.get("/api/nfts/wallet/:address", async (req, res) => {
+  try {
+    const { address } = req.params;
+    const { rows } = await pool.query(
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator
+       FROM tcl_nfts WHERE owner = $1 ORDER BY collection, nonce ASC`,
+      [address]
+    );
+    res.setHeader("Cache-Control", "public, max-age=30");
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/nfts/:identifier  — single NFT
+app.get("/api/nfts/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { rows } = await pool.query(
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator, owner, raw_api
+       FROM tcl_nfts WHERE identifier = $1`,
+      [identifier]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Not found" });
+    const nft = rows[0];
+    // reshape to match MultiversX API format expected by frontend
+    nft.media = nft.image_url ? [{ url: nft.image_url }] : [];
+    res.setHeader("Cache-Control", "public, max-age=60");
+    res.json(nft);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/nfts/sync  — trigger manual sync (admin only)
+app.post("/api/nfts/sync", async (req, res) => {
+  const secret = req.headers["x-admin-secret"] || "";
+  if (!ADMIN_SECRET || secret !== ADMIN_SECRET)
+    return res.status(401).json({ error: "Unauthorized" });
+
+  res.json({ ok: true, message: "Sync started in background" });
+
+  // fire-and-forget — run sync-nfts.js as child process
+  import("child_process").then(({ spawn }) => {
+    const proc = spawn("node", ["/opt/tcl-api/sync-nfts.js"], {
+      detached: true, stdio: "ignore",
+    });
+    proc.unref();
+  }).catch(console.error);
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  HEALTH CHECK
 // ══════════════════════════════════════════════════════════════════════════════
 app.get("/health", async (req, res) => {
