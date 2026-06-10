@@ -34,4 +34,3 @@ contracts/
 *.cjs
 *.lock
 wrangler.jsonc
-lang/
