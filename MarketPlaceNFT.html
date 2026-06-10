@@ -823,14 +823,27 @@ function handleWalletClick() {
   }
 }
 
+const IN_IFRAME = window !== window.top;
+
 async function connectWallet() {
+  if (IN_IFRAME) {
+    // Delegate to parent TCL Explorer which manages the WalletConnect session
+    window.parent.postMessage({ type: "tcl:requestConnect" }, "*");
+    showToast("Opening wallet connection in TCL Explorer…", "info");
+    return;
+  }
+  // Standalone mode — full WalletConnect flow
   try {
-    const uri = await TCLXPortal.connect({
+    const pairing = await TCLXPortal.startPairing({
       name: "TCL Marketplace",
       description: "NFT Marketplace powered by TCL token",
       fallbackPath: "/MarketPlaceNFT.html",
     });
-    if (uri) showQR(uri);
+    if (pairing.uri) showQR(pairing.uri);
+    const approved = await TCLXPortal.approvePairing(pairing);
+    walletAddress = approved.address;
+    updateWalletUI(walletAddress);
+    closeQR();
   } catch (e) {
     showToast("Wallet connection failed", "error");
     console.error(e);
@@ -838,6 +851,10 @@ async function connectWallet() {
 }
 
 function disconnectWallet() {
+  if (IN_IFRAME) {
+    window.parent.postMessage({ type: "tcl:requestDisconnect" }, "*");
+    return;
+  }
   TCLXPortal.disconnect();
   walletAddress = null;
   updateWalletUI(null);
@@ -850,13 +867,13 @@ function updateWalletUI(address) {
     btn.classList.add("connected");
     loadMyNFTs();
   } else {
-    btn.textContent = "🔗 Connect xPortal";
+    btn.textContent = IN_IFRAME ? "🔗 Connect in TCL Explorer" : "🔗 Connect xPortal";
     btn.classList.remove("connected");
     myWalletNFTs = [];
   }
 }
 
-// Listen for wallet session changes
+// Listen for wallet session changes fired in same window (standalone mode)
 window.addEventListener("tcl:xportal-session", (e) => {
   const { address, connected } = e.detail || {};
   walletAddress = connected ? address : null;
@@ -864,6 +881,31 @@ window.addEventListener("tcl:xportal-session", (e) => {
   closeQR();
   if (connected) showToast(`Connected: ${address.slice(0,12)}…`, "success");
   renderCurrentTab();
+});
+
+// Listen for localStorage changes from parent window (iframe mode)
+window.addEventListener("storage", (e) => {
+  if (e.key !== "tclExplorer.xportal.address.v1") return;
+  const newAddress = e.newValue || null;
+  walletAddress = newAddress;
+  updateWalletUI(newAddress);
+  if (newAddress) showToast(`Connected: ${newAddress.slice(0,12)}…`, "success");
+  renderCurrentTab();
+});
+
+// Listen for postMessage from parent (connect/disconnect relay)
+window.addEventListener("message", (e) => {
+  if (!e.data || typeof e.data !== "object") return;
+  if (e.data.type === "tcl:walletConnected") {
+    walletAddress = e.data.address || null;
+    updateWalletUI(walletAddress);
+    if (walletAddress) showToast(`Connected: ${walletAddress.slice(0,12)}…`, "success");
+    renderCurrentTab();
+  } else if (e.data.type === "tcl:walletDisconnected") {
+    walletAddress = null;
+    updateWalletUI(null);
+    renderCurrentTab();
+  }
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1545,8 +1587,8 @@ document.getElementById("qr-modal")?.addEventListener("click", e => {
 // INIT
 // ══════════════════════════════════════════════════════════════════════════════
 (async function init() {
-  // Restore wallet session if exists
-  const savedAddress = TCLXPortal?.getSavedAddress?.();
+  // Restore wallet session from localStorage (shared with parent TCL Explorer)
+  const savedAddress = TCLXPortal?.getStoredSession?.()?.address;
   if (savedAddress) {
     walletAddress = savedAddress;
     updateWalletUI(savedAddress);

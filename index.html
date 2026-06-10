@@ -430,7 +430,6 @@
       </button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
-      <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart">📊 TCL Live Chart</button>
       <button type="button" class="nav-item" onclick="openLander()" id="btn-Lander">
         <img src="images/lander.png" alt=""> Lander
       </button>
@@ -452,7 +451,6 @@
       <button type="button" class="nav-item nav-item--external" onclick="openTCL()" id="btn-TCL">
         <img src="images/thecursedland.png" alt=""> The Cursed Land ↗
       </button>
-      <button type="button" class="nav-item" onclick="openSupportTCLPage()" id="btn-supportTcl" data-i18n="sidebar_support_tcl">🧡 TCLexplorer 🧡</button>
     </nav>
     <div class="sidebar-footer">
       <div>Developed with ❤️ for Community</div>
@@ -567,11 +565,6 @@
       <span class="token-accordion-card__hint">Clasamentul celor mai activi traderi TCL din comunitate.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-    <button type="button" class="token-accordion-card" onclick="openMarketplacePage()">
-      <span class="token-accordion-card__title">🛒 NFTs Marketplace</span>
-      <span class="token-accordion-card__hint">Cumpără și vinde NFT-uri TCL cu tokenul TCL.</span>
-      <span class="token-accordion-card__icon">↗</span>
-    </button>
     <button type="button" class="token-accordion-card" onclick="showPage('chart')">
       <span class="token-accordion-card__title">📊 TCL Live Chart</span>
       <span class="token-accordion-card__hint">Graficul live al prețului TCL direct din DexScreener.</span>
@@ -625,6 +618,11 @@
     <button type="button" class="token-accordion-card" onclick="openTransactionSimulatorPage()">
       <span class="token-accordion-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
       <span class="token-accordion-card__hint" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openMarketplacePage()">
+      <span class="token-accordion-card__title">🛒 NFTs Marketplace</span>
+      <span class="token-accordion-card__hint">Cumpără și vinde NFT-uri TCL cu tokenul TCL. În dezvoltare.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
   </div>
@@ -3373,7 +3371,7 @@ function loadNonCriticalServices() {
   nonCriticalServicesStarted = true;
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(new URL("sw.js?v=20260608-11", window.location.href))
+    navigator.serviceWorker.register(new URL("sw.js?v=20260610-1", window.location.href))
       .then((reg) => console.log("✅ SW registered", reg))
       .catch((err) => console.error("❌ SW error", err));
   }
@@ -4012,6 +4010,30 @@ window.addEventListener("message", (event) => {
     }
     syncInternalPageLang(currentLang);
     schedulePageFits();
+    return;
+  }
+
+  // Marketplace iframe requesting wallet connect/disconnect
+  if (data.type === "tcl:requestConnect") {
+    const frame = document.getElementById("internalPageFrame");
+    // If already connected, relay the address back to the iframe
+    const saved = (typeof XPORTAL !== "undefined") ? XPORTAL.getStoredSession?.() : null;
+    const savedAddr = saved?.address || "";
+    if (savedAddr && frame?.contentWindow) {
+      frame.contentWindow.postMessage({ type: "tcl:walletConnected", address: savedAddr }, "*");
+    } else {
+      // Trigger connect flow in parent
+      if (typeof startConnect === "function") startConnect();
+    }
+    return;
+  }
+
+  if (data.type === "tcl:requestDisconnect") {
+    if (typeof disconnectWallet === "function") disconnectWallet();
+    const frame = document.getElementById("internalPageFrame");
+    if (frame?.contentWindow) {
+      frame.contentWindow.postMessage({ type: "tcl:walletDisconnected" }, "*");
+    }
     return;
   }
 
@@ -5485,7 +5507,7 @@ function simulateApr() {
 
 <script src="lib/walletconnect-sign-client.umd.js"></script>
 <script src="lib/qrcode.min.js"></script>
-<script src="js/xportal-session.js?v=20260609-1"></script>
+<script src="js/xportal-session.js?v=20260610-1"></script>
 <script>
 (function () {
   "use strict";
@@ -5563,6 +5585,11 @@ function simulateApr() {
     hideGate();
     syncDisconnectBtn();
     setStatus("connected", "Connected: " + XPORTAL.truncateAddress(address));
+    // Relay to any open iframe (e.g. marketplace)
+    const frame = document.getElementById("internalPageFrame");
+    if (frame?.contentWindow) {
+      frame.contentWindow.postMessage({ type: "tcl:walletConnected", address }, "*");
+    }
   }
 
   function clearConn() {
@@ -5571,6 +5598,11 @@ function simulateApr() {
     XPORTAL.resetClient();
     syncDisconnectBtn();
     checkGate();
+    // Relay to any open iframe (e.g. marketplace)
+    const frame = document.getElementById("internalPageFrame");
+    if (frame?.contentWindow) {
+      frame.contentWindow.postMessage({ type: "tcl:walletDisconnected" }, "*");
+    }
   }
 
   async function startConnect() {
