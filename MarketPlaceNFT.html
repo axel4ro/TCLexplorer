@@ -467,6 +467,53 @@
     .modal-price-usd { font-size: 14px; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400; }
     .modal-action-row { display: flex; gap: 10px; margin-top: 14px; }
     .modal-action-row button { flex: 1; padding: 13px; font-size: 15px; border-radius: 10px; }
+    .modal-storage-section {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: rgba(47,246,222,0.04);
+      border: 1px solid #1e2a42;
+      border-radius: 10px;
+    }
+    .modal-storage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .modal-storage-header strong { color: var(--accent); font-size: 14px; }
+    .storage-bar-wrap {
+      margin-top: 7px;
+      height: 10px;
+      overflow: hidden;
+      background: #080d1a;
+      border: 1px solid #2a3347;
+      border-radius: 6px;
+    }
+    .storage-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #2ff6de, #0ea5e9);
+    }
+    .update-price-panel {
+      display: none;
+      gap: 8px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(167,139,250,0.07);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 10px;
+    }
+    .update-price-panel.open { display: flex; }
+    .update-price-panel .price-input-wrap { flex: 1; }
+    .update-price-panel .form-input { padding-top: 11px; padding-bottom: 11px; }
+    .update-price-panel button { padding: 11px 14px; white-space: nowrap; }
+    @media(max-width: 640px) {
+      .update-price-panel { flex-wrap: wrap; }
+      .update-price-panel .price-input-wrap { flex-basis: 100%; }
+    }
 
     /* ── List NFT Modal ── */
     #list-modal {
@@ -821,6 +868,9 @@ const TCL_DECIMALS = 18;
 const TCL_DENOMINATOR = BigInt("1000000000000000000"); // 10^18
 const MVX_API = "https://api.multiversx.com";
 const MVX_GATEWAY = "https://gateway.multiversx.com";
+const TCL_API = "https://api.tclexplorer.com";
+const SC_STORAGE_PRICE = 0.001;
+const GAME_CONTRACT = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
 
 // TCL game NFT creator addresses
 const TCL_CREATORS = [
@@ -1064,9 +1114,28 @@ async function fetchListingData(listingId) {
     const listing = decodeListingStruct(raw);
     // Enrich with NFT metadata
     const nftId = `${listing.nft_token}-${bigIntToHex(BigInt(listing.nft_nonce))}`;
-    const nftResp = await fetch(`${MVX_API}/nfts/${nftId}`);
+    const [nftResp, tclResp] = await Promise.all([
+      fetch(`${MVX_API}/nfts/${nftId}`),
+      fetch(`${TCL_API}/api/nfts/${nftId}`).catch(() => null),
+    ]);
     if (!nftResp.ok) throw new Error(`NFT metadata unavailable (${nftResp.status})`);
-    listing.nft = await nftResp.json();
+    const mvxNft = await nftResp.json();
+    const tclNft = tclResp?.ok ? await tclResp.json() : null;
+    listing.nft = tclNft
+      ? {
+          ...(tclNft.raw_api || {}),
+          ...mvxNft,
+          ...tclNft,
+          media: tclNft.media?.length ? tclNft.media : mvxNft.media,
+          metadata: tclNft.metadata || mvxNft.metadata,
+      }
+      : mvxNft;
+    if (listing.nft.sc_tcl_max == null) {
+      Object.assign(
+        listing.nft,
+        await fetchNFTStorageLive(listing.nft.collection, listing.nft.nonce)
+      );
+    }
     return listing;
   } catch (e) {
     console.warn("fetchListingData error", listingId, e);
@@ -1242,12 +1311,12 @@ function openDetail(listingId) {
     attrsHtml += "</div>";
   }
 
-  const xoxnoUrl = `https://xoxno.com/nft/${nft.identifier || ""}`;
   const sellerShort = listing.seller ? `${listing.seller.slice(0,10)}…${listing.seller.slice(-8)}` : "Unknown";
   const royPct = listing.royalty_percent
     ? `${formatPercent(listing.royalty_percent / 100)}%`
     : `${formatPercent(Number(nft.royalties || 0))}%`;
   const listedAt = listing.timestamp ? new Date(listing.timestamp * 1000).toLocaleString() : "Unknown";
+  const storageHtml = buildStorageHtml(nft);
 
   document.getElementById("detail-content").innerHTML = `
     <div class="modal-layout">
@@ -1260,13 +1329,13 @@ function openDetail(listingId) {
           <div class="modal-info-row"><span class="k">Royalties</span><span class="v">${royPct}</span></div>
           <div class="modal-info-row"><span class="k">Seller</span><span class="v"><a href="https://explorer.multiversx.com/accounts/${listing.seller}" target="_blank">${sellerShort}</a></span></div>
           <div class="modal-info-row"><span class="k">Listed at</span><span class="v">${listedAt}</span></div>
-          <div class="modal-info-row"><span class="k">View on</span><span class="v"><a href="${xoxnoUrl}" target="_blank">XOXNO ↗</a></span></div>
         </div>
       </div>
       <div class="modal-right-col">
         <h2 style="margin:0 0 4px; font-size:22px; font-weight:700;">${nft.name || "Unknown NFT"}</h2>
         <p style="color:var(--muted); margin:0 0 16px; font-size:13px;">${nft.collection || ""}</p>
         ${attrsHtml}
+        ${storageHtml}
         <div class="modal-price-section">
           <div class="modal-price-label">💰 Listed Price</div>
           <div class="modal-price-value">
@@ -1277,11 +1346,22 @@ function openDetail(listingId) {
         </div>
         <div class="modal-action-row">
           ${isMine
-            ? `<button class="btn-cancel" onclick="cancelListing(${listingId}); closeDetail()">Cancel Listing</button>`
+            ? `<button class="btn-cancel" onclick="cancelListing(${listingId}); closeDetail()">Cancel Listing</button>
+               <button class="btn-secondary" onclick="updateListingPrice(${listingId})">Update Price</button>`
             : `<button class="btn-buy" onclick="buyNFT(${listingId})">🛒 Buy with TCL</button>`
           }
-          <button class="btn-secondary" onclick="window.open('${xoxnoUrl}','_blank')">🔍 XOXNO</button>
         </div>
+        ${isMine ? `
+          <div class="update-price-panel" id="update-price-panel">
+            <div class="price-input-wrap">
+              <input type="text" inputmode="decimal" autocomplete="off" class="form-input"
+                     id="update-price-input" placeholder="New price"
+                     onkeydown="if(event.key === ',') this.dataset.typedDecimalComma = 'true'"
+                     oninput="formatPriceInputLive(event)">
+              <span class="price-suffix">TCL</span>
+            </div>
+            <button class="btn-primary" onclick="submitPriceUpdate(${listingId})">Save Price</button>
+          </div>` : ""}
         ${listing._demo ? '<p style="color:var(--muted);font-size:12px;margin-top:8px;text-align:center;">⚠️ Demo listing — deploy contract to enable real trades</p>' : ""}
       </div>
     </div>`;
@@ -1290,6 +1370,64 @@ function openDetail(listingId) {
 }
 
 function closeDetail() { document.getElementById("detail-modal").classList.remove("open"); }
+
+function buildStorageHtml(nft) {
+  const tclCount = nft?.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
+  const tclMax = nft?.sc_tcl_max ? BigInt(nft.sc_tcl_max) : 0n;
+  if (tclMax <= 0n) return "";
+
+  const storagePct = tclCount > 0n
+    ? Math.min(Number(tclCount * 100n / tclMax), 100)
+    : 0;
+  const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+  const usdValue = tclPriceUSD && maxDisplay > 0
+    ? ` <span style="color:var(--green)">≈ ${formatUSD(maxDisplay / 2 * tclPriceUSD)}</span>`
+    : "";
+
+  return `
+    <div class="modal-storage-section">
+      <div class="modal-storage-header">
+        <span>💾 Storage</span>
+        <strong>${formatStorage(tclMax)} TCL${usdValue}</strong>
+      </div>
+      <div class="storage-bar-wrap">
+        <div class="storage-bar-fill" style="width:${storagePct}%"></div>
+      </div>
+    </div>`;
+}
+
+async function fetchNFTStorageLive(collectionId, nonce) {
+  if (!collectionId || nonce == null) return {};
+
+  const queryStorage = async funcName => {
+    try {
+      const response = await fetch(`${MVX_API}/vm-values/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scAddress: GAME_CONTRACT,
+          funcName,
+          args: [stringToHex(collectionId), BigInt(nonce).toString(16).padStart(16, "0")],
+        }),
+      });
+      const data = await response.json();
+      const encoded = data?.data?.data?.returnData?.[0];
+      if (encoded == null || encoded === "") return 0n;
+      return bytesToBigInt(base64ToBytes(encoded));
+    } catch {
+      return null;
+    }
+  };
+
+  const [tclCount, tclMax] = await Promise.all([
+    queryStorage("getTclCount"),
+    queryStorage("getTclMax"),
+  ]);
+  return {
+    sc_tcl_count: tclCount !== null ? tclCount.toString() : null,
+    sc_tcl_max: tclMax !== null ? tclMax.toString() : null,
+  };
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BUY NFT
@@ -1348,6 +1486,61 @@ async function cancelListing(listingId) {
     setTimeout(loadListings, 4000);
   } catch (err) {
     showToast("Error: " + err.message, "error");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UPDATE LISTING PRICE
+// ══════════════════════════════════════════════════════════════════════════════
+function updateListingPrice(listingId) {
+  if (!walletAddress) { showToast("Connect wallet first", "error"); return; }
+  const listing = allListings.find(l => l.listing_id === listingId);
+  if (!listing || listing._demo) return;
+  if (listing.seller !== walletAddress) {
+    showToast("Only the seller can update this price", "error");
+    return;
+  }
+
+  const panel = document.getElementById("update-price-panel");
+  const input = document.getElementById("update-price-input");
+  if (!panel || !input) return;
+  panel.classList.toggle("open");
+  if (panel.classList.contains("open")) {
+    input.value = formatTokenInput(atomicTokenToDecimalString(listing.price, TCL_DECIMALS));
+    input.focus();
+    input.select();
+  }
+}
+
+async function submitPriceUpdate(listingId) {
+  const listing = allListings.find(l => l.listing_id === listingId);
+  const entered = document.getElementById("update-price-input")?.value || "";
+  if (!listing) return;
+  const newPrice = parseTokenAmount(entered, TCL_DECIMALS);
+  if (newPrice <= 0n) {
+    showToast("Enter a valid price", "error");
+    return;
+  }
+  if (newPrice === listing.price) {
+    showToast("The new price is unchanged", "info");
+    return;
+  }
+
+  try {
+    const listingIdHex = BigInt(listingId).toString(16).padStart(16, "0");
+    const newPriceHex = bigIntToHex(newPrice);
+    const tx = buildBaseTx(
+      walletAddress,
+      MARKETPLACE_CONTRACT,
+      `updatePrice@${listingIdHex}@${newPriceHex}`,
+      8_000_000
+    );
+    const hash = await signAndBroadcast(tx);
+    showToast("Price update sent! " + hash.slice(0, 12) + "…", "success");
+    closeDetail();
+    setTimeout(loadListings, 4000);
+  } catch (err) {
+    showToast("Price update failed: " + err.message, "error");
   }
 }
 
@@ -1925,6 +2118,14 @@ function atomicTokenToNumber(amount, decimals) {
   return Number(atomic) / (10 ** decimals);
 }
 
+function atomicTokenToDecimalString(amount, decimals) {
+  const atomic = typeof amount === "bigint" ? amount : BigInt(String(amount));
+  const divisor = 10n ** BigInt(decimals);
+  const whole = atomic / divisor;
+  const fraction = (atomic % divisor).toString().padStart(decimals, "0").replace(/0+$/, "");
+  return fraction ? `${whole}.${fraction}` : whole.toString();
+}
+
 const BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 
 function bech32Polymod(values) {
@@ -2060,6 +2261,11 @@ function formatPercent(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "0";
   return number.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function formatStorage(bigintValue) {
+  return (Number(bigintValue) / 1e18 / (SC_STORAGE_PRICE * 200))
+    .toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
 function formatTCL(amount) {
