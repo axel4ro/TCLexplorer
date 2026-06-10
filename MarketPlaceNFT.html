@@ -868,7 +868,13 @@
     .my-nft-item-body { display: grid; gap: 8px; padding: 10px; }
     .my-nft-item .nft-label { color: var(--text); font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .my-nft-identifier { color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .my-nft-storage { display: grid; gap: 5px; padding-top: 2px; }
+    .my-nft-storage-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
+    .my-nft-storage-row strong { color: var(--accent); font-size: 11px; }
+    .my-nft-storage .storage-bar-wrap { height: 7px; margin: 0; }
     .my-nft-list-btn { width: 100%; padding: 9px 10px; font-size: 12px; }
+    .price-breakdown { display: grid; gap: 4px; }
+    .price-breakdown-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
 
     .empty-msg {
       text-align: center;
@@ -981,10 +987,8 @@
         <span class="price-suffix">TCL</span>
       </div>
       <div class="price-usd-estimate" id="list-price-usd">Current USD value: —</div>
-      <div class="fee-note" id="price-breakdown">Enter a price to see breakdown</div>
+      <div class="fee-note price-breakdown" id="price-breakdown">Enter a price to see breakdown</div>
     </div>
-
-    <div class="fee-note" id="royalty-summary">Creator royalty and platform fee are calculated from the selected NFT.</div>
 
     <div class="xportal-transfer-note">
       <strong>xPortal notice:</strong> it will show your own wallet as the transaction receiver.
@@ -1847,7 +1851,6 @@ function closeListModal() {
   selectedNFTForListing = null;
   document.getElementById("nft-preview-card").innerHTML = "";
   document.getElementById("list-price").value = "";
-  updateRoyaltySummary();
   updateListingPriceBreakdown();
 }
 
@@ -1858,11 +1861,56 @@ async function loadMyNFTs() {
     const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
     if (!resp.ok) throw new Error("API error");
     const all = await resp.json();
-    myWalletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
+    const walletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
+    const storageByIdentifier = new Map();
+
+    try {
+      const serverResponse = await fetch(`${TCL_API}/api/nfts/all`);
+      if (serverResponse.ok) {
+        const grouped = await serverResponse.json();
+        Object.values(grouped || {}).flat().forEach(nft => {
+          if (nft?.identifier) storageByIdentifier.set(nft.identifier, nft);
+        });
+      }
+    } catch (error) {
+      console.warn("Could not load synced NFT storage", error);
+    }
+
+    myWalletNFTs = await Promise.all(walletNFTs.map(async nft => {
+      const synced = storageByIdentifier.get(nft.identifier);
+      const enriched = {
+        ...nft,
+        sc_tcl_count: synced?.sc_tcl_count ?? nft.sc_tcl_count ?? null,
+        sc_tcl_max: synced?.sc_tcl_max ?? nft.sc_tcl_max ?? null,
+      };
+      if (enriched.sc_tcl_max == null) {
+        Object.assign(enriched, await fetchNFTStorageLive(enriched.collection, enriched.nonce));
+      }
+      return enriched;
+    }));
   } catch (e) {
     console.warn("Could not load wallet NFTs", e);
     myWalletNFTs = [];
   }
+}
+
+function buildWalletStorageHtml(nft) {
+  const tclCount = nft?.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
+  const tclMax = nft?.sc_tcl_max ? BigInt(nft.sc_tcl_max) : 0n;
+  if (tclMax <= 0n) return "";
+  const storagePct = tclCount > 0n
+    ? Math.min(Number(tclCount * 100n / tclMax), 100)
+    : 0;
+  return `
+    <div class="my-nft-storage">
+      <div class="my-nft-storage-row">
+        <span>💾 Storage</span>
+        <strong>${formatStorage(tclMax)} TCL</strong>
+      </div>
+      <div class="storage-bar-wrap">
+        <div class="storage-bar-fill" style="width:${storagePct}%"></div>
+      </div>
+    </div>`;
 }
 
 function renderMyNFTWallet() {
@@ -1878,6 +1926,7 @@ function renderMyNFTWallet() {
       <div class="my-nft-item-body">
         <div class="nft-label">${nft.name || nft.identifier}</div>
         <div class="my-nft-identifier">${nft.identifier}</div>
+        ${buildWalletStorageHtml(nft)}
         <button class="btn-primary my-nft-list-btn" type="button" onclick="openListModal('${nft.identifier}')">List NFT</button>
       </div>
     </div>
@@ -1898,8 +1947,6 @@ function selectNFTForListing(identifier) {
       <div class="nft-select-id">${nft.identifier}</div>
     </div>`;
 
-  const royalty = getNFTRoyalty(nft);
-  updateRoyaltySummary();
   updateListingPriceBreakdown();
 }
 
@@ -1915,17 +1962,6 @@ function getNFTRoyalty(nft) {
     percent,
     basisPoints: Math.round(percent * 100),
   };
-}
-
-function updateRoyaltySummary() {
-  const summary = document.getElementById("royalty-summary");
-  if (!summary) return;
-  if (!selectedNFTForListing) {
-    summary.innerHTML = `Select an NFT to read its creator royalty. Platform fee: <span>${formatPercent(marketplaceFeePercent)}%</span>.`;
-    return;
-  }
-  const royalty = getNFTRoyalty(selectedNFTForListing);
-  summary.innerHTML = `Creator royalty from NFT metadata: <span>${formatPercent(royalty.percent)}%</span> + platform fee <span>${formatPercent(marketplaceFeePercent)}%</span> — both paid in TCL.`;
 }
 
 function updateListingPriceBreakdown() {
@@ -1954,9 +1990,9 @@ function updateListingPriceBreakdown() {
     ? `Current value: ≈ ${formatUSD(price * tclPriceUSD)} at ${formatUSD(tclPriceUSD, 6)} / TCL`
     : "Current USD value: loading…";
   breakdown.innerHTML = `
-    Platform fee (${formatPercent(marketplaceFeePercent)}%): <span>${formatDisplayTCL(fee)} TCL</span>${usd(fee)} &nbsp;|&nbsp;
-    Royalties (${formatPercent(royaltyPercent)}%): <span>${formatDisplayTCL(royalty)} TCL</span>${usd(royalty)} &nbsp;|&nbsp;
-    You receive: <span style="color:var(--green)">${formatDisplayTCL(seller)} TCL</span>${usd(seller)}`;
+    <div class="price-breakdown-row">Platform fee (${formatPercent(marketplaceFeePercent)}%): <span>${formatDisplayTCL(fee)} TCL</span>${usd(fee)}</div>
+    <div class="price-breakdown-row">Royalties (${formatPercent(royaltyPercent)}%): <span>${formatDisplayTCL(royalty)} TCL</span>${usd(royalty)}</div>
+    <div class="price-breakdown-row">You receive: <span style="color:var(--green)">${formatDisplayTCL(seller)} TCL</span>${usd(seller)}</div>`;
 }
 
 document.getElementById && (() => {
@@ -2639,7 +2675,6 @@ async function loadMarketplaceFee() {
   } catch (e) {
     console.warn("Marketplace fee query error", e);
   }
-  updateRoyaltySummary();
   updateListingPriceBreakdown();
 }
 
