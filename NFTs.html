@@ -505,7 +505,7 @@ body.page-sub {
 	let allNFTs = [];
 	let forSaleList = [];
     let allNFTsByCollection = {};
-    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v3"; // v3 = server-backed
+    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v4"; // v4 = includes SC attrs
     const NFTS_CACHE_TTL = {
       collections: 5 * 60 * 1000,   // 5 min (server e rapid)
       allNFTs: 5 * 60 * 1000,
@@ -750,19 +750,24 @@ async function preloadAllNFTs(collections) {
 // Normalize server DB row → MultiversX API shape expected by renderer
 function normalizeServerNFT(nft) {
   return {
-    identifier:  nft.identifier,
-    collection:  nft.collection,
-    nonce:       nft.nonce,
-    name:        nft.name,
-    royalties:   nft.royalties || 0,
-    creator:     nft.creator,
-    owner:       nft.owner,
-    media:       nft.image_url ? [{ url: nft.image_url }] : [],
-    metadata:    nft.metadata || null,
-    ...nft.raw_api,             // spread full API data if stored
-    // ensure media/metadata not overwritten by null from raw_api
-    media:       nft.image_url ? [{ url: nft.image_url }] : (nft.raw_api?.media || []),
-    metadata:    nft.metadata || nft.raw_api?.metadata || null,
+    ...nft.raw_api,
+    identifier:       nft.identifier,
+    collection:       nft.collection,
+    nonce:            nft.nonce,
+    name:             nft.name,
+    royalties:        nft.royalties || 0,
+    creator:          nft.creator,
+    owner:            nft.owner,
+    media:            nft.image_url ? [{ url: nft.image_url }] : (nft.raw_api?.media || []),
+    metadata:         nft.metadata || nft.raw_api?.metadata || null,
+    sc_quality:       nft.sc_quality       ?? null,
+    sc_wave:          nft.sc_wave          ?? null,
+    sc_has_bonus:     nft.sc_has_bonus     ?? null,
+    sc_has_crystal:   nft.sc_has_crystal   ?? null,
+    sc_socket_count:  nft.sc_socket_count  ?? null,
+    sc_tcl_count:     nft.sc_tcl_count     ?? null,
+    sc_tcl_max:       nft.sc_tcl_max       ?? null,
+    sc_refinement_ts: nft.sc_refinement_ts ?? null,
   };
 }
 
