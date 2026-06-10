@@ -957,18 +957,40 @@
        MOBILE RESPONSIVE
     ══════════════════════════════════════ */
     @media (max-width: 640px) {
-      /* Header — single compact row */
-      header { padding: 8px 12px; gap: 6px; flex-wrap: nowrap; align-items: center; overflow: hidden; }
-      .header-left { flex-shrink: 0; gap: 8px; min-width: 0; }
+      /* Header — wallet controls remain visible below the branding */
+      header { padding: 10px 12px; gap: 8px; flex-wrap: wrap; align-items: center; overflow: visible; }
+      .header-left { width: 100%; flex-shrink: 0; gap: 8px; min-width: 0; }
       .header-left img { width: 24px; height: 24px; }
       .site-title { font-size: 13px; }
       .site-subtitle { display: none; }
-      .header-right { gap: 5px; flex-wrap: nowrap; margin-left: auto; align-items: center; flex-shrink: 0; }
+      .header-right {
+        width: 100%; min-width: 0; margin-left: 0;
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        gap: 7px 8px; align-items: center;
+      }
       .nav-back { padding: 5px 8px; font-size: 13px; min-width: 0; }
       .nav-back .nav-label { display: none; }
-      /* hide address chip on mobile — just show Disconnect */
-      #connectedView { display: none !important; }
-      .btn-disconnect-topbar { padding: 5px 10px; font-size: 0.78rem; }
+      /* Address and disconnect first, balances underneath */
+      #connectView { grid-column: 1 / -1; justify-self: end; }
+      #connectedView[hidden] { display: none !important; }
+      #connectedView:not([hidden]) { display: contents !important; }
+      #walletAddr {
+        grid-column: 1; grid-row: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-size: 0.76rem !important;
+      }
+      #disconnectBtn { grid-column: 2; grid-row: 1; }
+      .btn-disconnect-topbar { padding: 7px 11px; font-size: 0.78rem; }
+      #walletBalances {
+        grid-column: 1 / -1; grid-row: 2;
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%; gap: 7px;
+      }
+      .wallet-balance {
+        min-width: 0; justify-content: center;
+        padding: 5px 7px; font-size: 0.7rem;
+      }
+      #explorerLink { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
       /* Connect button — icon only */
       #connectTriggerBtn #connectTitle { display: none; }
       #connectTriggerBtn { min-height: 32px; padding: 5px 10px; }
