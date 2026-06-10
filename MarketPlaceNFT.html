@@ -540,8 +540,15 @@
       font-size: 12px;
       color: var(--muted);
       margin-top: 6px;
+      line-height: 1.6;
     }
     .fee-note span { color: var(--accent2); font-weight: 600; }
+    .price-usd-estimate {
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 7px;
+    }
     .nft-select-card {
       display: flex;
       align-items: center;
@@ -741,9 +748,10 @@
     <div class="form-group">
       <label class="form-label">Price (TCL)</label>
       <div class="price-input-wrap">
-        <input type="number" class="form-input" id="list-price" placeholder="e.g. 500" min="0.000000000000000001" step="any">
+        <input type="text" inputmode="decimal" autocomplete="off" class="form-input" id="list-price" placeholder="e.g. 1,000,000">
         <span class="price-suffix">TCL</span>
       </div>
+      <div class="price-usd-estimate" id="list-price-usd">Current USD value: —</div>
       <div class="fee-note" id="price-breakdown">Enter a price to see breakdown</div>
     </div>
 
@@ -1113,7 +1121,9 @@ function renderListings(listings) {
 function buildListingCard(listing) {
   const nft = listing.nft || {};
   const priceWhole = formatTCL(listing.price);
-  const priceUSD = tclPriceUSD ? `≈$${(Number(priceWhole) * tclPriceUSD).toFixed(2)}` : "";
+  const priceUSD = tclPriceUSD
+    ? `≈ ${formatUSD(atomicTokenToNumber(listing.price, TCL_DECIMALS) * tclPriceUSD)}`
+    : "";
   const img = nft.media?.[0]?.url || nft.media?.[0]?.thumbnailUrl || "";
   const name = nft.name || `NFT #${listing.nft_nonce}`;
   const collection = nft.collection || listing.nft_token || "";
@@ -1187,7 +1197,9 @@ function openDetail(listingId) {
   if (!listing) return;
   const nft = listing.nft || {};
   const priceWhole = formatTCL(listing.price);
-  const priceUSD = tclPriceUSD ? `≈ $${(Number(priceWhole) * tclPriceUSD).toFixed(2)}` : "";
+  const priceUSD = tclPriceUSD
+    ? `≈ ${formatUSD(atomicTokenToNumber(listing.price, TCL_DECIMALS) * tclPriceUSD)}`
+    : "";
   const img = nft.media?.[0]?.url || "";
   const isMine = walletAddress && listing.seller === walletAddress;
 
@@ -1341,6 +1353,7 @@ function closeListModal() {
   selectedNFTForListing = null;
   document.getElementById("selected-nft-preview").style.display = "none";
   document.getElementById("list-price").value = "";
+  updateListingPriceBreakdown();
 }
 
 async function loadMyNFTs() {
@@ -1399,25 +1412,47 @@ function selectNFTForListing(identifier) {
   document.getElementById("royalty-address").value = TCL_ROYALTY_ADDRESS;
 }
 
-// Update fee breakdown as user types price
+function updateListingPriceBreakdown() {
+  const priceInput = document.getElementById("list-price");
+  const usdEstimate = document.getElementById("list-price-usd");
+  const breakdown = document.getElementById("price-breakdown");
+  if (!priceInput || !usdEstimate || !breakdown) return;
+
+  const normalized = normalizeTokenNumberInput(priceInput.value);
+  const price = Number(normalized);
+  if (!normalized || !Number.isFinite(price) || price <= 0) {
+    usdEstimate.textContent = "Current USD value: —";
+    breakdown.innerHTML = "Enter a price to see breakdown";
+    return;
+  }
+
+  const fee = price * 0.02;
+  const royalty = price * (TCL_ROYALTY_PCT / 100);
+  const seller = price - fee - royalty;
+  const usd = amount => tclPriceUSD ? ` <small>(≈ ${formatUSD(amount * tclPriceUSD)})</small>` : "";
+
+  usdEstimate.textContent = tclPriceUSD
+    ? `Current value: ≈ ${formatUSD(price * tclPriceUSD)} at ${formatUSD(tclPriceUSD, 6)} / TCL`
+    : "Current USD value: loading…";
+  breakdown.innerHTML = `
+    Platform fee (2%): <span>${formatDisplayTCL(fee)} TCL</span>${usd(fee)} &nbsp;|&nbsp;
+    Royalties: <span>${formatDisplayTCL(royalty)} TCL</span>${usd(royalty)} &nbsp;|&nbsp;
+    You receive: <span style="color:var(--green)">${formatDisplayTCL(seller)} TCL</span>${usd(seller)}`;
+}
+
 document.getElementById && (() => {
   const priceInput = document.getElementById("list-price");
-  if (priceInput) {
-    priceInput.addEventListener("input", () => {
-      const price = parseFloat(priceInput.value);
-      if (!price || price <= 0) {
-        document.getElementById("price-breakdown").innerHTML = "Enter a price to see breakdown";
-        return;
-      }
-      const fee = price * 0.02;
-      const royalty = price * (TCL_ROYALTY_PCT / 100);
-      const seller = price - fee - royalty;
-      document.getElementById("price-breakdown").innerHTML = `
-        Platform fee (2%): <span>${fee.toFixed(2)} TCL</span> &nbsp;|&nbsp;
-        Royalties: <span>${royalty.toFixed(2)} TCL</span> &nbsp;|&nbsp;
-        You receive: <span style="color:var(--green)">${seller.toFixed(2)} TCL</span>`;
-    });
-  }
+  if (!priceInput) return;
+  priceInput.addEventListener("input", updateListingPriceBreakdown);
+  priceInput.addEventListener("focus", () => {
+    const normalized = normalizeTokenNumberInput(priceInput.value);
+    if (normalized) priceInput.value = normalized;
+  });
+  priceInput.addEventListener("blur", () => {
+    const normalized = normalizeTokenNumberInput(priceInput.value);
+    if (normalized) priceInput.value = formatTokenInput(normalized);
+    updateListingPriceBreakdown();
+  });
 })();
 
 async function submitListing() {
@@ -1679,12 +1714,70 @@ function bigIntToHex(n) {
 }
 
 function parseTokenAmount(value, decimals) {
-  const raw = String(value || "").trim().replace(",", ".");
+  const raw = normalizeTokenNumberInput(value);
   if (!/^\d+(\.\d*)?$/.test(raw)) return 0n;
   const [whole, fraction = ""] = raw.split(".");
   if (fraction.length > decimals) return 0n;
   return BigInt(whole || "0") * (10n ** BigInt(decimals))
     + BigInt(fraction.padEnd(decimals, "0") || "0");
+}
+
+function normalizeTokenNumberInput(value) {
+  let raw = String(value || "").trim().replace(/[\s_]/g, "");
+  if (!raw) return "";
+  if (!/^[\d.,]+$/.test(raw)) return "";
+
+  const commas = (raw.match(/,/g) || []).length;
+  const dots = (raw.match(/\./g) || []).length;
+
+  if (commas && dots) {
+    if (raw.lastIndexOf(",") > raw.lastIndexOf(".")) {
+      raw = raw.replace(/\./g, "").replace(",", ".");
+    } else {
+      raw = raw.replace(/,/g, "");
+    }
+  } else if (commas > 1) {
+    raw = raw.replace(/,/g, "");
+  } else if (commas === 1) {
+    const [whole, fraction = ""] = raw.split(",");
+    raw = whole === "0" || fraction.length !== 3
+      ? `${whole}.${fraction}`
+      : `${whole}${fraction}`;
+  } else if (dots > 1) {
+    const groups = raw.split(".");
+    raw = groups.slice(1).every(group => group.length === 3)
+      ? groups.join("")
+      : `${groups.slice(0, -1).join("")}.${groups.at(-1)}`;
+  }
+
+  return /^\d+(\.\d*)?$/.test(raw) ? raw : "";
+}
+
+function formatTokenInput(normalized) {
+  const [whole, fraction = ""] = String(normalized).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fraction ? `${grouped}.${fraction}` : grouped;
+}
+
+function formatDisplayTCL(value) {
+  return Number(value).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6,
+  });
+}
+
+function formatUSD(value, maximumFractionDigits = 2) {
+  return Number(value).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits,
+  });
+}
+
+function atomicTokenToNumber(amount, decimals) {
+  const atomic = typeof amount === "bigint" ? amount : BigInt(String(amount));
+  return Number(atomic) / (10 ** decimals);
 }
 
 const BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
@@ -1791,6 +1884,7 @@ async function loadTCLPrice() {
     tclPriceUSD = parseFloat(data?.pairs?.[0]?.priceUsd || 0);
     if (tclPriceUSD) {
       document.getElementById("stat-tcl-price").textContent = `$${tclPriceUSD.toFixed(6)}`;
+      updateListingPriceBreakdown();
     }
   } catch (e) {
     console.warn("Price fetch error", e);
