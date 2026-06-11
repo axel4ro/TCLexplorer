@@ -520,7 +520,7 @@ body.page-sub {
 	let allNFTs = [];
 	let forSaleList = [];
     let allNFTsByCollection = {};
-    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v5"; // v5 = storage display × 5 formula
+    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v6";
     const NFTS_CACHE_TTL = {
       collections: 5 * 60 * 1000,   // 5 min (server e rapid)
       allNFTs: 5 * 60 * 1000,
@@ -1028,19 +1028,12 @@ async function fetchScDataLive(collectionId, nonce) {
       return hex ? BigInt('0x' + hex) : 0n;
     } catch { return null; }
   }
-  const [socketCount, tclCount, tclMax, refinementTs, quality, wave, hasBonus, hasCrystal] = await Promise.all([
-    scQ('getSocketCount'), scQ('getTclCount'), scQ('getTclMax'), scQ('getRefinementTimestamp'),
-    scQ('getNftQuality'), scQ('getNftWave'), scQ('getHasBonus'), scQ('getHasCrystal')
+  const [tclCount, tclMax] = await Promise.all([
+    scQ('getTclCount'), scQ('getTclMax'),
   ]);
   return {
-    sc_socket_count:  socketCount   !== null ? Number(socketCount)  : null,
-    sc_tcl_count:     tclCount      !== null ? tclCount.toString()  : null,
-    sc_tcl_max:       tclMax        !== null ? tclMax.toString()    : null,
-    sc_refinement_ts: refinementTs  !== null ? Number(refinementTs) : null,
-    sc_quality:       quality       !== null ? Number(quality)      : null,
-    sc_wave:          wave          !== null ? Number(wave)         : null,
-    sc_has_bonus:     hasBonus      !== null ? hasBonus > 0n        : null,
-    sc_has_crystal:   hasCrystal    !== null ? hasCrystal > 0n      : null,
+    sc_tcl_count: tclCount !== null ? tclCount.toString() : null,
+    sc_tcl_max:   tclMax   !== null ? tclMax.toString()   : null,
   };
 }
 
