@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ro">
 <head>
   <meta charset="UTF-8">
@@ -462,6 +462,38 @@
       min-height: 28px;
     }
 
+    /* ── Wallet icon button + popup ─────────────────────────── */
+    .btn-wallet-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 12px;
+      border: 1px solid #2a3347; background: rgba(47,246,222,0.07) !important;
+      padding: 2px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+    }
+    .btn-wallet-icon:hover { background: rgba(47,246,222,0.18) !important; border-color: #2ff6de; }
+    .wallet-popup {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      width: 300px; background: #0d1120;
+      border: 1px solid #2a3347; border-radius: 12px;
+      padding: 16px; z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wallet-popup[hidden] { display: none !important; }
+    .wallet-popup-addr {
+      font-family: "Consolas","SFMono-Regular",monospace;
+      font-size: 14px; font-weight: 700; color: #e2e8f0;
+      padding: 10px 12px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42; text-align: center;
+    }
+    .btn-wallet-disconnect {
+      display: flex !important; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 10px 14px; border: none !important; border-radius: 8px;
+      background: rgba(239,68,68,0.2) !important;
+      color: #fb7185; font-weight: 800; font-size: 0.88rem; cursor: pointer;
+    }
+    .btn-wallet-disconnect:hover { background: rgba(239,68,68,0.38) !important; }
+
     .ads-support-card {
       margin-top: 14px;
       padding: 14px;
@@ -881,10 +913,21 @@
         </section>
 
         <section class="connect-panel" aria-labelledby="connectTitle">
-          <div class="panel-head">
+          <div class="panel-head" style="position:relative;">
             <h2 class="panel-title" id="connectTitle" data-i18n="Connect xPortal">Connect xPortal</h2>
-            <button class="btn btn-danger btn-sm-inline" id="disconnectBtn" type="button" hidden data-i18n="Disconnect">Disconnect</button>
-            <span class="panel-icon"><img src="images/xPortal.png" alt=""></span>
+            <!-- Wallet icon + popup shown when connected -->
+            <div id="walletIconWrap" style="display:none;align-items:center;position:relative;">
+              <button class="btn-wallet-icon" id="walletPopupBtn" type="button" onclick="toggleWalletPopup(event)" title="Wallet">
+                <img src="images/wallet.png" width="48" height="48" alt="wallet" style="display:block;pointer-events:none;border-radius:10px;">
+              </button>
+              <div class="wallet-popup" id="walletPopup" hidden>
+                <div class="wallet-popup-addr" id="walletAddrFull"></div>
+                <a id="walletExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer"
+                   style="display:inline-flex;align-items:center;padding:3px 10px;font-size:0.76rem;font-weight:700;border:1px solid rgba(0,232,204,0.35);border-radius:999px;background:rgba(0,232,204,0.08);color:#2ff6de;text-decoration:none;">View on Explorer ↗</a>
+                <button class="btn-wallet-disconnect" id="disconnectBtn" type="button" data-i18n="Disconnect">Disconnect ✕</button>
+              </div>
+            </div>
+            <span class="panel-icon" id="connectPanelIcon"><img src="images/xPortal.png" alt=""></span>
           </div>
 
           <div id="connectView">
@@ -929,16 +972,10 @@
           </div>
 
           <div id="connectedView" hidden>
-            <div class="wallet-balance-card connected-balance-card" aria-live="polite">
-              <div class="wallet-balance-header">
-                <div class="eyebrow" data-i18n="Your Wallet Balance">Your Wallet Balance</div>
-                <a class="btn-explorer-sm" id="balanceExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
-              </div>
-              <div class="wallet-balance-values">
-                <span class="wallet-balance-egld" id="userBalanceEgld">-- EGLD</span>
-                <span class="wallet-balance-usd" id="userBalanceUsd">$--</span>
-              </div>
-            </div>
+            <!-- balance display kept for JS compat; popup holds the wallet icon -->
+            <span id="userBalanceEgld" hidden>-- EGLD</span>
+            <span id="userBalanceUsd" hidden>$--</span>
+            <a id="balanceExplorerLink" href="https://explorer.multiversx.com/" hidden></a>
           </div>
 
           <div class="status-line connect-help" role="status" aria-live="polite">
@@ -984,6 +1021,20 @@
   <script src="lib/qrcode.min.js"></script>
   <script src="js/xportal-session.js?v=20260605-1"></script>
   <script src="lang/support-tcl.bundle.js?v=20260603-10"></script>
+  <script>
+    function toggleWalletPopup(e) {
+      e.stopPropagation();
+      const popup = document.getElementById("walletPopup");
+      if (popup) popup.hidden = !popup.hidden;
+    }
+    document.addEventListener("click", function(e) {
+      const popup = document.getElementById("walletPopup");
+      const btn   = document.getElementById("walletPopupBtn");
+      if (popup && !popup.hidden && !popup.contains(e.target) && e.target !== btn) {
+        popup.hidden = true;
+      }
+    });
+  </script>
   <script>
     (function () {
       "use strict";
@@ -1361,7 +1412,19 @@
         dom.connectedView.hidden = !connected;
         if (dom.sendPanel) dom.sendPanel.hidden = !connected;
         if (dom.disclaimerPanel) dom.disclaimerPanel.hidden = !connected;
-        if (dom.disconnectBtn) dom.disconnectBtn.hidden = !connected;
+        // wallet icon wrap
+        const walletIconWrap = document.getElementById("walletIconWrap");
+        if (walletIconWrap) walletIconWrap.style.display = connected ? "flex" : "none";
+        // hide the panel icon when connected (wallet button replaces it)
+        const panelIcon = document.getElementById("connectPanelIcon");
+        if (panelIcon) panelIcon.style.display = connected ? "none" : "";
+        // populate popup
+        if (connected) {
+          const fullEl = document.getElementById("walletAddrFull");
+          if (fullEl) fullEl.textContent = truncateAddress(state.address);
+          const explorerEl = document.getElementById("walletExplorerLink");
+          if (explorerEl) explorerEl.href = `https://explorer.multiversx.com/accounts/${state.address}`;
+        }
         setDynamicText(dom.connectTitle, connected ? "xPortal Connected" : "Connect xPortal");
         if (dom.connectedAddress) {
           if (connected) {
