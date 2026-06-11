@@ -2877,10 +2877,25 @@ async function runTrackedTransaction(tx, options) {
     }
     return hash;
   } catch (error) {
-    const normalizedError = error instanceof Error
-      ? error
-      : new Error(String(error || "Transaction could not be completed."));
-    const message = normalizedError.message;
+    let message;
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error?.message === "string") {
+      message = error.message;
+    } else if (typeof error === "string") {
+      message = error;
+    } else {
+      message = "Transaction could not be completed.";
+    }
+    if (
+      message.toLowerCase().includes("reject") ||
+      message.toLowerCase().includes("cancel") ||
+      error?.code === 5000
+    ) {
+      message = "Transaction was cancelled in xPortal.";
+    }
+    const normalizedError = error instanceof Error ? error : new Error(message);
+    normalizedError.message = message;
     showTransactionStatus("error", `${label} failed`, message, hash);
     normalizedError.transactionStatusShown = true;
     throw normalizedError;
