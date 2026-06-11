@@ -520,7 +520,7 @@ body.page-sub {
 	let allNFTs = [];
 	let forSaleList = [];
     let allNFTsByCollection = {};
-    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v5"; // v5 = storage display × 5 formula
+    const NFTS_CACHE_PREFIX = "tclExplorer.nfts.v6";
     const NFTS_CACHE_TTL = {
       collections: 5 * 60 * 1000,   // 5 min (server e rapid)
       allNFTs: 5 * 60 * 1000,
@@ -931,20 +931,6 @@ async function renderNFTs(nfts) {
       if (found) attrValue = found.value;
     }
 
-    // SC badges
-    const qualityNames = ["","Common","Uncommon","Rare","Epic","Legendary"];
-    const q = nft.sc_quality;
-    const qualityBadge = q > 0
-      ? `<span class="badge badge-quality-${Math.min(q,5)}">${qualityNames[q] || `Q${q}`}</span>` : "";
-    const waveBadge = nft.sc_wave > 0
-      ? `<span class="badge badge-wave">W${nft.sc_wave}</span>` : "";
-    const bonusBadge = nft.sc_has_bonus
-      ? `<span class="badge badge-bonus">✦ Bonus</span>` : "";
-    const crystalBadge = nft.sc_has_crystal
-      ? `<span class="badge badge-crystal">◈ Crystal</span>` : "";
-    const socketBadge = nft.sc_socket_count > 0
-      ? `<span class="badge badge-socket">⬡ ${nft.sc_socket_count}</span>` : "";
-
     // Storage bar
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
@@ -952,14 +938,9 @@ async function renderNFTs(nfts) {
       const pct = Math.min(Number(tclCount * 100n / tclMax), 100);
       const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
       const usdVal = tclPriceUSD && maxDisplay > 0 ? ` ≈ $${(maxDisplay / 2 * tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '';
-      return `
-        <div class="storage-bar-wrap" title="TCL Storage">
-          <div class="storage-bar-fill" style="width:${pct}%"></div>
-        </div>
-        <span class="storage-label">💾 ${fmtStorage(tclMax)} TCL${usdVal}</span>`;
+      return `<span class="storage-label">💾 ${fmtStorage(tclMax)} TCL${usdVal}</span>`;
     })() : "";
 
-    const hasBadges = qualityBadge || waveBadge || bonusBadge || crystalBadge || socketBadge;
     // don't repeat attrValue if it's already the title
     const showAttr = attrValue && attrValue !== title;
 
@@ -968,7 +949,6 @@ async function renderNFTs(nfts) {
         <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
         <h4>${title}</h4>
         ${showAttr ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
-        ${hasBadges ? `<div class="nft-badges">${qualityBadge}${waveBadge}${bonusBadge}${crystalBadge}${socketBadge}</div>` : ""}
         ${storageHtml}
       </div>
     `;
@@ -1044,19 +1024,12 @@ async function fetchScDataLive(collectionId, nonce) {
       return hex ? BigInt('0x' + hex) : 0n;
     } catch { return null; }
   }
-  const [socketCount, tclCount, tclMax, refinementTs, quality, wave, hasBonus, hasCrystal] = await Promise.all([
-    scQ('getSocketCount'), scQ('getTclCount'), scQ('getTclMax'), scQ('getRefinementTimestamp'),
-    scQ('getNftQuality'), scQ('getNftWave'), scQ('getHasBonus'), scQ('getHasCrystal')
+  const [tclCount, tclMax] = await Promise.all([
+    scQ('getTclCount'), scQ('getTclMax'),
   ]);
   return {
-    sc_socket_count:  socketCount   !== null ? Number(socketCount)  : null,
-    sc_tcl_count:     tclCount      !== null ? tclCount.toString()  : null,
-    sc_tcl_max:       tclMax        !== null ? tclMax.toString()    : null,
-    sc_refinement_ts: refinementTs  !== null ? Number(refinementTs) : null,
-    sc_quality:       quality       !== null ? Number(quality)      : null,
-    sc_wave:          wave          !== null ? Number(wave)         : null,
-    sc_has_bonus:     hasBonus      !== null ? hasBonus > 0n        : null,
-    sc_has_crystal:   hasCrystal    !== null ? hasCrystal > 0n      : null,
+    sc_tcl_count: tclCount !== null ? tclCount.toString() : null,
+    sc_tcl_max:   tclMax   !== null ? tclMax.toString()   : null,
   };
 }
 
@@ -1129,9 +1102,6 @@ async function showNFTDetails(identifier) {
       scHtml = `
         <div class="sc-storage-full" style="margin-bottom:10px;">
           <span class="k">💾 Storage: ${fmtStorage(tclMax)} TCL${usdVal}</span>
-          <div class="storage-bar-wrap" style="height:10px; margin-top:5px;">
-            <div class="storage-bar-fill" style="width:${storagePct}%"></div>
-          </div>
         </div>`;
     }
   }

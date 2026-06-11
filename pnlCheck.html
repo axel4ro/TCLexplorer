@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -809,6 +809,44 @@
     /* Asigura ca atributul hidden ascunde elementele chiar daca .btn seteaza display */
     [hidden] { display: none !important; }
 
+    /* ── Wallet icon button + popup ─────────────────────────── */
+    .btn-wallet-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 12px;
+      border: 1px solid #2a3347; background: rgba(47,246,222,0.07) !important;
+      padding: 2px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+    }
+    .btn-wallet-icon:hover { background: rgba(47,246,222,0.18) !important; border-color: #2ff6de; }
+    .wallet-popup {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      width: 300px; background: #0d1120;
+      border: 1px solid #2a3347; border-radius: 12px;
+      padding: 16px; z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wallet-popup[hidden] { display: none !important; }
+    .wallet-popup-addr {
+      font-family: "Consolas","SFMono-Regular",monospace;
+      font-size: 14px; font-weight: 700; color: #e2e8f0;
+      padding: 10px 12px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42; text-align: center;
+    }
+    .wallet-popup-balances { display: flex; flex-direction: column; gap: 6px; }
+    .wallet-popup-balances .wallet-balance {
+      display: flex; justify-content: space-between;
+      padding: 6px 10px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42; font-size: 13px;
+    }
+    .btn-wallet-disconnect {
+      display: flex !important; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 10px 14px; border: none !important; border-radius: 8px;
+      background: rgba(239,68,68,0.2) !important;
+      color: #fb7185; font-weight: 800; font-size: 0.88rem; cursor: pointer;
+    }
+    .btn-wallet-disconnect:hover { background: rgba(239,68,68,0.38) !important; }
+
     .connect-aside {
       min-width: 0;
       align-self: stretch;
@@ -1049,8 +1087,33 @@
         <img src="images/tcl_icon.png" alt="">
         <span>TCL Explorer</span>
       </a>
-      <div class="topbar-actions">
-        <button class="btn btn-danger" id="disconnectBtn" type="button" hidden>Disconnect</button>
+      <div class="topbar-actions" style="position:relative;">
+        <!-- Wallet icon + popup (hidden until connected) -->
+        <div id="walletIconWrap" style="display:none;align-items:center;position:relative;">
+          <button class="btn-wallet-icon" id="walletPopupBtn" type="button" onclick="toggleWalletPopup(event)" title="Wallet">
+            <img src="images/wallet.png" width="48" height="48" alt="wallet" style="display:block;pointer-events:none;border-radius:10px;">
+          </button>
+          <div class="wallet-popup" id="walletPopup" hidden>
+            <div class="wallet-popup-addr" id="walletAddrFull"></div>
+            <a id="walletExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer"
+               style="display:inline-flex;align-items:center;padding:3px 10px;font-size:0.76rem;font-weight:700;border:1px solid rgba(0,232,204,0.35);border-radius:999px;background:rgba(0,232,204,0.08);color:#2ff6de;text-decoration:none;">View on Explorer ↗</a>
+            <div class="wallet-popup-balances">
+              <div class="wallet-balance">
+                <span id="popupEgldAmount">-- EGLD</span>
+                <span id="popupEgldUsd" style="color:#4be2a3;">$--</span>
+              </div>
+              <div class="wallet-balance">
+                <span id="popupUsdcAmount">-- USDC</span>
+                <span id="popupUsdcUsd" style="color:#4be2a3;">$--</span>
+              </div>
+              <div class="wallet-balance">
+                <span id="popupTclAmount">-- TCL</span>
+                <span id="popupTclUsd" style="color:#4be2a3;">$--</span>
+              </div>
+            </div>
+            <button class="btn-wallet-disconnect" id="disconnectBtn" type="button">Disconnect ✕</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1318,6 +1381,20 @@
   <script src="lib/walletconnect-sign-client.umd.js"></script>
   <script src="lib/qrcode.min.js"></script>
   <script src="js/xportal-session.js?v=20260605-1"></script>
+  <script>
+    function toggleWalletPopup(e) {
+      e.stopPropagation();
+      const popup = document.getElementById("walletPopup");
+      if (popup) popup.hidden = !popup.hidden;
+    }
+    document.addEventListener("click", function(e) {
+      const popup = document.getElementById("walletPopup");
+      const btn   = document.getElementById("walletPopupBtn");
+      if (popup && !popup.hidden && !popup.contains(e.target) && e.target !== btn) {
+        popup.hidden = true;
+      }
+    });
+  </script>
   <script>
     (function () {
       "use strict";
@@ -1928,8 +2005,15 @@
         dom.heroActions.hidden = connected;
         updateConnectionView();
         dom.copyBtn.disabled = !connected;
-        dom.disconnectBtn.disabled = !connected;
-        dom.disconnectBtn.hidden = !connected;
+        // wallet icon wrap in topbar
+        const walletIconWrap = document.getElementById("walletIconWrap");
+        if (walletIconWrap) walletIconWrap.style.display = connected ? "flex" : "none";
+        if (connected) {
+          const fullEl = document.getElementById("walletAddrFull");
+          if (fullEl) fullEl.textContent = truncateAddress(address);
+          const explorerEl = document.getElementById("walletExplorerLink");
+          if (explorerEl) explorerEl.href = `https://explorer.multiversx.com/accounts/${address}`;
+        }
         dom.pnlPanel.hidden = !connected;
         if (connected && (dom.pnlAddressInput.dataset.mode !== "manual" || !dom.pnlAddressInput.value.trim())) {
           dom.pnlAddressInput.value = address;
@@ -2133,6 +2217,13 @@
         if (amountEl) amountEl.textContent = amount;
         if (usdEl) usdEl.textContent = formatUsd(usdValue);
         if (priceEl) priceEl.textContent = formatPrice(price);
+
+        // Also update popup balance display
+        const symbol = key === "egld" ? "EGLD" : key === "usdc" ? "USDC" : "TCL";
+        const popupAmountEl = document.getElementById(`popup${symbol.charAt(0) + symbol.slice(1).toLowerCase()}Amount`);
+        const popupUsdEl    = document.getElementById(`popup${symbol.charAt(0) + symbol.slice(1).toLowerCase()}Usd`);
+        if (popupAmountEl) popupAmountEl.textContent = `${amount} ${symbol}`;
+        if (popupUsdEl)    popupUsdEl.textContent    = formatUsd(usdValue);
       }
 
       function renderEmptyBalances() {

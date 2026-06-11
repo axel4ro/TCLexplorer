@@ -134,14 +134,50 @@
     .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 260px; height: 260px; }
     .qr-popover .qr-loader { width: 260px; height: 260px; }
     .qr-popover .status-line { font-size: 0.82rem; margin: 0; }
+    .btn-wallet-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 12px;
+      border: 1px solid #2a3347; background: rgba(47,246,222,0.07) !important;
+      padding: 2px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+    }
+    .btn-wallet-icon:hover { background: rgba(47,246,222,0.18) !important; border-color: var(--accent); }
+
+    .wallet-popup {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      width: 300px; background: #0d1120;
+      border: 1px solid #2a3347; border-radius: 12px;
+      padding: 16px; z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wallet-popup[hidden] { display: none !important; }
+    .wallet-popup-addr {
+      font-family: "Consolas","SFMono-Regular",monospace;
+      font-size: 14px; font-weight: 700; color: var(--text);
+      padding: 10px 12px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42;
+      text-align: center; letter-spacing: 0.02em;
+    }
+    .wallet-popup-balances {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .wallet-popup-balances .wallet-balance {
+      display: flex; justify-content: space-between;
+      padding: 6px 10px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42;
+      font-size: 13px;
+    }
+
     .btn-disconnect-topbar {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 14px; border: 1px solid rgba(251,113,133,0.4);
+      display: flex !important; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 10px 14px; border: none !important;
+      background: rgba(239,68,68,0.2) !important;
       border-radius: var(--radius); background: rgba(251,113,133,0.08);
       color: #fb7185; font: inherit; font-weight: 800; font-size: 0.88rem;
       cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap;
     }
-    .btn-disconnect-topbar:hover { background: rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.65); }
+    .btn-disconnect-topbar:hover { background: rgba(239,68,68,0.38) !important; }
     .btn-explorer-sm { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(0,232,204,0.35); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); white-space: nowrap; text-decoration: none; }
     .wallet-addr-text { font-family: "Consolas","SFMono-Regular",monospace; font-size: 0.86rem; font-weight: 700; color: var(--text); flex: 1; }
     .wallet-balances { display: flex; align-items: center; gap: 6px; }
@@ -201,6 +237,8 @@
     }
     .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(47,246,222,0.06); }
+    .tab-action-btn { margin-bottom: 4px; padding: 7px 14px; font-size: 13px; }
+    .tab-action-btn:first-of-type { margin-left: auto; }
 
     /* ── Toolbar ── */
     .toolbar {
@@ -713,6 +751,7 @@
     .nft-select-card img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
     .nft-select-name { font-size: 13px; font-weight: 600; }
     .nft-select-id { font-size: 11px; color: var(--muted); }
+    .nft-select-storage { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     /* ── Toast ── */
     #toast {
@@ -965,32 +1004,27 @@
       .site-subtitle { display: none; }
       .header-right {
         width: 100%; min-width: 0; margin-left: 0;
-        display: grid; grid-template-columns: minmax(0, 1fr) auto;
-        gap: 7px 8px; align-items: center;
+        display: flex; gap: 8px; align-items: center; justify-content: flex-end;
       }
       .nav-back { padding: 5px 8px; font-size: 13px; min-width: 0; }
       .nav-back .nav-label { display: none; }
-      /* Address and disconnect first, balances underneath */
+      /* Address and wallet icon on one row */
       #connectView { grid-column: 1 / -1; justify-self: end; }
       #connectedView[hidden] { display: none !important; }
-      #connectedView:not([hidden]) { display: contents !important; }
+      #connectedView:not([hidden]) { display: flex !important; align-items: center; gap: 6px; }
       #walletAddr {
-        grid-column: 1; grid-row: 1; min-width: 0;
+        min-width: 0;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        font-size: 0.76rem !important;
+        font-size: 0.76rem !important; max-width: 120px;
       }
-      #disconnectBtn { grid-column: 2; grid-row: 1; }
-      .btn-disconnect-topbar { padding: 7px 11px; font-size: 0.78rem; }
+      .wallet-popup { right: 0; min-width: 260px; }
       #walletBalances {
-        grid-column: 1 / -1; grid-row: 2;
-        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-        width: 100%; gap: 7px;
+        display: flex; flex-direction: column;
       }
       .wallet-balance {
         min-width: 0; justify-content: center;
         padding: 5px 7px; font-size: 0.7rem;
       }
-      #explorerLink { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
       /* Connect button — icon only */
       #connectTriggerBtn #connectTitle { display: none; }
       #connectTriggerBtn { min-height: 32px; padding: 5px 10px; }
@@ -1011,9 +1045,10 @@
       .sale-parties { grid-column: 1 / -1; }
       .sale-time { text-align: left; }
 
-      /* Tabs — all 3 fit on one row, no scroll */
-      .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: nowrap; overflow: visible; }
+      /* Tabs — all fit on one row, no scroll */
+      .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: wrap; overflow: visible; }
       .tab-btn { flex: 1; padding: 8px 4px; font-size: 11px; white-space: nowrap; text-align: center; }
+      .tab-action-btn { flex: 0; font-size: 11px; padding: 6px 8px; margin-bottom: 2px; }
 
 
       /* Listings grid — 2 cols on mobile */
@@ -1097,18 +1132,24 @@
       </div>
     </div>
 
-    <!-- ── Connected: address + balances + disconnect -->
-    <div id="connectedView" style="display:flex;align-items:center;gap:8px;" hidden>
-      <span class="wallet-addr-text" id="walletAddr" style="font-size:0.82rem;"></span>
-      <div id="walletBalances" class="wallet-balances" aria-live="polite">
-        <span id="balEgld" class="wallet-balance"><strong>EGLD</strong> Loading...</span>
-        <span id="balTcl" class="wallet-balance tcl"><strong>TCL</strong> Loading...</span>
+    <!-- ── Connected: wallet popup button only -->
+    <div id="connectedView" style="display:flex;align-items:center;gap:8px;position:relative;" hidden>
+      <span id="walletAddr" style="display:none;"></span>
+      <button class="btn-wallet-icon" id="walletPopupBtn" type="button" onclick="toggleWalletPopup(event)" title="Wallet details">
+        <img src="images/wallet.png" width="48" height="48" alt="wallet" style="display:block;pointer-events:none;border-radius:10px;">
+      </button>
+      <div class="wallet-popup" id="walletPopup" hidden>
+        <div class="wallet-popup-addr" id="walletAddrFull"></div>
+        <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">View on Explorer ↗</a>
+        <div id="walletBalances" class="wallet-popup-balances" aria-live="polite">
+          <span id="balEgld" class="wallet-balance"><strong>EGLD</strong> Loading...</span>
+          <span id="balTcl" class="wallet-balance tcl"><strong>TCL</strong> Loading...</span>
+        </div>
+        <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" onclick="disconnectWallet()">
+          Disconnect <span>✕</span>
+        </button>
       </div>
-      <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
     </div>
-    <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" hidden>
-      Disconnect <span>✕</span>
-    </button>
   </div>
 </header>
 
@@ -1134,27 +1175,23 @@
     <div class="stat-label">Volume $</div>
     <div class="stat-value" id="stat-volume-usd">$—</div>
   </div>
-  <div class="stat-item">
-    <div class="stat-label">Contract</div>
-    <div class="stat-value" id="stat-contract" style="font-size:12px; font-family: monospace; color: var(--muted);">Not deployed</div>
-  </div>
-  <div style="margin-left:auto;">
-    <span style="font-size:12px; color: var(--muted);">Payment token: </span>
-    <span style="font-size:13px; color: var(--gold); font-weight:700;">TCL-fe459d</span>
-  </div>
+  <div id="stat-contract" style="display:none;"></div>
 </div>
 
 <!-- ════════════ TABS ════════════ -->
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('all')" id="tab-all">🛒 All Listings</button>
-  <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
   <button class="tab-btn" onclick="switchTab('activity')" id="tab-activity">📋 Recent Sales</button>
+  <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
+  <button class="btn-primary tab-action-btn" onclick="openMyNFTsModal()">My NFTs</button>
+  <button class="btn-secondary tab-action-btn" onclick="refreshMarketplace()">↻ Refresh</button>
 </div>
 
 <!-- ════════════ TOOLBAR ════════════ -->
 <div class="toolbar">
   <input type="text" class="search-box" id="search-input" placeholder="🔍 Search by name or identifier…" oninput="filterListings()">
   <select class="toolbar-select" id="sort-select" onchange="filterListings()">
+    <option value="">Sort by…</option>
     <option value="price_asc">Price: Low → High</option>
     <option value="price_desc">Price: High → Low</option>
     <option value="newest">Newest First</option>
@@ -1163,8 +1200,6 @@
   <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
     <option value="">All Collections</option>
   </select>
-  <button class="btn-primary" onclick="openMyNFTsModal()">My NFTs</button>
-  <button class="btn-secondary" onclick="refreshMarketplace()">↻ Refresh</button>
 </div>
 
 <!-- ════════════ LISTINGS GRID ════════════ -->
@@ -1364,16 +1399,38 @@ function syncConnectView() {
   const ok = Boolean(WS.address && WS.sessionTopic);
   if (WD.connectView)   WD.connectView.hidden   = ok;
   if (WD.connectedView) WD.connectedView.hidden = !ok;
-  if (WD.disconnectBtn) WD.disconnectBtn.hidden = !ok;
   if (ok) {
     if (WD.qrPopover)    WD.qrPopover.hidden = true;
     if (WD.walletAddr)   WD.walletAddr.textContent = truncAddr(WS.address);
     if (WD.explorerLink) WD.explorerLink.href = `https://explorer.multiversx.com/accounts/${WS.address}`;
+    const fullEl = document.getElementById("walletAddrFull");
+    if (fullEl) fullEl.textContent = truncAddr(WS.address);
+  } else {
+    closeWalletPopup();
   }
-  // keep walletAddress global in sync for the rest of the page
   walletAddress = ok ? WS.address : null;
   updateWalletUI(walletAddress);
 }
+
+function toggleWalletPopup(e) {
+  e.stopPropagation();
+  const popup = document.getElementById("walletPopup");
+  if (!popup) return;
+  popup.hidden = !popup.hidden;
+}
+
+function closeWalletPopup() {
+  const popup = document.getElementById("walletPopup");
+  if (popup) popup.hidden = true;
+}
+
+document.addEventListener("click", (e) => {
+  const popup = document.getElementById("walletPopup");
+  const btn   = document.getElementById("walletPopupBtn");
+  if (popup && !popup.hidden && !popup.contains(e.target) && e.target !== btn) {
+    popup.hidden = true;
+  }
+});
 
 function saveConnection(address, topic) {
   WS.address = address; WS.sessionTopic = topic || "";
@@ -1563,7 +1620,7 @@ function switchTab(tab) {
 
 function renderCurrentTab() {
   document.getElementById("listings-grid")?.classList.toggle("sales-mode", currentTab === "activity");
-  if (currentTab === "all") renderListings(allListings);
+  if (currentTab === "all") filterListings();
   else if (currentTab === "mine") renderMyListings();
   else renderActivity();
 }
@@ -1576,11 +1633,31 @@ async function loadListings() {
   grid.innerHTML = `<div class="loading-msg"><div class="loading-spinner"></div>Loading listings…</div>`;
 
   if (!MARKETPLACE_CONTRACT) {
-    // Demo mode: pull live TCL NFTs from MultiversX API as placeholder listings
     await loadDemoListings();
     return;
   }
 
+  // Try fast server cache first
+  try {
+    const resp = await fetch(`${TCL_API}/api/marketplace/active-listings`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data.listings) && data.listings.length > 0) {
+        allListings = data.listings.map(l => ({
+          ...l,
+          price: BigInt(l.price || "0"),
+          nft: l.nft || null,
+        }));
+        updateStats();
+        renderCurrentTab();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("Server listings failed, falling back to chain", e);
+  }
+
+  // Fallback: direct chain query
   try {
     const activeIds = (await queryContract("getActiveListings")).map(decodeBase64Unsigned);
     updateStats();
@@ -1643,27 +1720,22 @@ async function fetchListingData(listingId) {
     const listing = decodeListingStruct(raw);
     // Enrich with NFT metadata
     const nftId = `${listing.nft_token}-${bigIntToHex(BigInt(listing.nft_nonce))}`;
-    const [nftResp, tclResp] = await Promise.all([
-      fetch(`${MVX_API}/nfts/${nftId}`),
-      fetch(`${TCL_API}/api/nfts/${nftId}`).catch(() => null),
-    ]);
-    if (!nftResp.ok) throw new Error(`NFT metadata unavailable (${nftResp.status})`);
-    const mvxNft = await nftResp.json();
+    // Prefer server DB — no MultiversX call needed
+    const tclResp = await fetch(`${TCL_API}/api/nfts/${nftId}`).catch(() => null);
     const tclNft = tclResp?.ok ? await tclResp.json() : null;
-    listing.nft = tclNft
-      ? {
-          ...(tclNft.raw_api || {}),
-          ...mvxNft,
-          ...tclNft,
-          media: tclNft.media?.length ? tclNft.media : mvxNft.media,
-          metadata: tclNft.metadata || mvxNft.metadata,
-      }
-      : mvxNft;
-    if (listing.nft.sc_tcl_max == null) {
-      Object.assign(
-        listing.nft,
-        await fetchNFTStorageLive(listing.nft.collection, listing.nft.nonce)
-      );
+    if (tclNft) {
+      listing.nft = {
+        ...(tclNft.raw_api || {}),
+        ...tclNft,
+        identifier: tclNft.identifier || nftId,
+        collection: listing.nft_token,
+        nonce: listing.nft_nonce,
+      };
+    } else {
+      // Fallback to MultiversX only if server doesn't have it
+      const nftResp = await fetch(`${MVX_API}/nfts/${nftId}`);
+      if (!nftResp.ok) throw new Error(`NFT metadata unavailable (${nftResp.status})`);
+      listing.nft = await nftResp.json();
     }
     return listing;
   } catch (e) {
@@ -1950,15 +2022,26 @@ function buildStorageHtml(nft) {
         <span>💾 Storage</span>
         <strong>${formatStorage(tclMax)} TCL${usdValue}</strong>
       </div>
-      <div class="storage-bar-wrap">
-        <div class="storage-bar-fill" style="width:${storagePct}%"></div>
-      </div>
     </div>`;
 }
 
 async function fetchNFTStorageLive(collectionId, nonce) {
   if (!collectionId || nonce == null) return {};
 
+  // Try server DB first (no MultiversX call)
+  try {
+    const nonceHex = BigInt(nonce).toString(16).padStart(2, "0");
+    const identifier = `${collectionId}-${nonceHex}`;
+    const r = await fetch(`${TCL_API}/api/nfts/${identifier}`);
+    if (r.ok) {
+      const d = await r.json();
+      if (d.sc_tcl_max != null) {
+        return { sc_tcl_count: d.sc_tcl_count ?? null, sc_tcl_max: d.sc_tcl_max };
+      }
+    }
+  } catch { /* fallback below */ }
+
+  // Fallback: live SC query (only if server doesn't have the data)
   const queryStorage = async funcName => {
     try {
       const response = await fetch(`${MVX_API}/vm-values/query`, {
@@ -2031,6 +2114,7 @@ async function buyNFT(listingId) {
       successMessage: "The NFT purchase was completed successfully.",
       label: "Purchase transaction",
     });
+    invalidateServerCaches();
     setTimeout(loadListings, 5000);
   } catch (err) {
     if (!err?.transactionStatusShown) {
@@ -2070,6 +2154,7 @@ async function cancelListing(listingId) {
       successMessage: "The NFT was returned to your wallet.",
       label: "Cancel listing transaction",
     });
+    invalidateServerCaches();
     setTimeout(loadListings, 4000);
     setTimeout(loadMyNFTs, 5000);
   } catch (err) {
@@ -2136,6 +2221,7 @@ async function submitPriceUpdate(listingId) {
       label: "Price update transaction",
     });
     closeDetail();
+    invalidateServerCaches();
     setTimeout(loadListings, 4000);
   } catch (err) {
     if (!err?.transactionStatusShown) {
@@ -2145,7 +2231,18 @@ async function submitPriceUpdate(listingId) {
   }
 }
 
+function invalidateServerCaches() {
+  fetch(`${TCL_API}/api/marketplace/listings/invalidate`, { method: "POST" }).catch(() => {});
+  if (walletAddress) {
+    fetch(`${TCL_API}/api/marketplace/wallet-nfts/${walletAddress}/invalidate`, { method: "POST" }).catch(() => {});
+  }
+}
+
 async function getEditableListing(listingId) {
+  // Use in-memory cache first — avoids SC query
+  const cached = allListings.find(l => l.listing_id === listingId);
+  if (cached && cached.is_active !== false) return cached;
+  // Fallback to chain if not in cache
   const [raw] = await queryContract("getListing", [listingId]);
   if (!raw) throw new Error("Listing no longer exists");
   const listing = decodeListingStruct(raw);
@@ -2172,7 +2269,7 @@ async function openMyNFTsModal() {
   }
   document.getElementById("my-nfts-modal").classList.add("open");
   document.getElementById("my-nfts-grid").innerHTML =
-    `<div style="color:var(--muted);font-size:13px;padding:16px;">Loading NFTs from your wallet...</div>`;
+    `<div class="loading-msg" style="grid-column:1/-1;"><div class="loading-spinner"></div>Loading your NFTs…</div>`;
   await loadMyNFTs();
   renderMyNFTWallet();
 }
@@ -2211,40 +2308,21 @@ function closeListModal() {
 async function loadMyNFTs() {
   if (!walletAddress) return;
   try {
-    // Fetch all NFTs for this wallet and filter by TCL creator addresses
-    const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
-    if (!resp.ok) throw new Error("API error");
-    const all = await resp.json();
-    const walletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
-    const storageByIdentifier = new Map();
-
-    try {
-      const serverResponse = await fetch(`${TCL_API}/api/nfts/all`);
-      if (serverResponse.ok) {
-        const grouped = await serverResponse.json();
-        Object.values(grouped || {}).flat().forEach(nft => {
-          if (nft?.identifier) storageByIdentifier.set(nft.identifier, nft);
-        });
-      }
-    } catch (error) {
-      console.warn("Could not load synced NFT storage", error);
-    }
-
-    myWalletNFTs = await Promise.all(walletNFTs.map(async nft => {
-      const synced = storageByIdentifier.get(nft.identifier);
-      const enriched = {
-        ...nft,
-        sc_tcl_count: synced?.sc_tcl_count ?? nft.sc_tcl_count ?? null,
-        sc_tcl_max: synced?.sc_tcl_max ?? nft.sc_tcl_max ?? null,
-      };
-      if (enriched.sc_tcl_max == null) {
-        Object.assign(enriched, await fetchNFTStorageLive(enriched.collection, enriched.nonce));
-      }
-      return enriched;
-    }));
+    const resp = await fetch(`${TCL_API}/api/marketplace/wallet-nfts/${walletAddress}`);
+    if (!resp.ok) throw new Error("Server error");
+    const data = await resp.json();
+    myWalletNFTs = data.nfts || [];
   } catch (e) {
-    console.warn("Could not load wallet NFTs", e);
-    myWalletNFTs = [];
+    console.warn("Server wallet-nfts failed, falling back to MultiversX", e);
+    try {
+      const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
+      if (!resp.ok) throw new Error("API error");
+      const all = await resp.json();
+      myWalletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
+    } catch (e2) {
+      console.warn("Could not load wallet NFTs", e2);
+      myWalletNFTs = [];
+    }
   }
 }
 
@@ -2260,9 +2338,6 @@ function buildWalletStorageHtml(nft) {
       <div class="my-nft-storage-row">
         <span>💾 Storage</span>
         <strong>${formatStorage(tclMax)} TCL</strong>
-      </div>
-      <div class="storage-bar-wrap">
-        <div class="storage-bar-fill" style="width:${storagePct}%"></div>
       </div>
     </div>`;
 }
@@ -2294,11 +2369,20 @@ function selectNFTForListing(identifier) {
 
   // Show preview
   const preview = document.getElementById("nft-preview-card");
+  const _tclMax = nft?.sc_tcl_max ? BigInt(nft.sc_tcl_max) : 0n;
+  const _storageHtml = _tclMax > 0n ? (() => {
+    const _maxDisplay = Number(_tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+    const _usd = tclPriceUSD && _maxDisplay > 0
+      ? ` <span style="color:var(--green)">≈ ${formatUSD(_maxDisplay / 2 * tclPriceUSD)}</span>`
+      : "";
+    return `<div class="nft-select-storage">💾 ${formatStorage(_tclMax)} TCL${_usd}</div>`;
+  })() : "";
   preview.innerHTML = `
     <img src="${nft.media?.[0]?.url || ''}" onerror="this.src='images/tcl_icon.png'">
     <div>
       <div class="nft-select-name">${nft.name || "Unknown"}</div>
       <div class="nft-select-id">${nft.identifier}</div>
+      ${_storageHtml}
     </div>`;
 
   updateListingPriceBreakdown();
@@ -2439,6 +2523,7 @@ async function submitListing() {
       label: "NFT listing transaction",
     });
     closeListModal();
+    invalidateServerCaches();
     setTimeout(loadListings, 5000);
     setTimeout(loadMyNFTs, 5000);
   } catch (err) {
@@ -3131,12 +3216,23 @@ async function refreshMarketplace() {
 
 async function loadMarketplaceFee() {
   if (!MARKETPLACE_CONTRACT) return;
+  // Cache in localStorage — fee changes rarely
+  const cached = localStorage.getItem("tcl.mp.feePercent");
+  if (cached) {
+    const { fee, ts } = JSON.parse(cached);
+    if (Date.now() - ts < 60 * 60 * 1000) { // 1h
+      marketplaceFeePercent = fee;
+      updateListingPriceBreakdown();
+      return;
+    }
+  }
   try {
     const [rawFee] = await queryContract("getFeePercent");
     if (rawFee) {
       const fee = Number(decodeBase64Unsigned(rawFee));
       if (Number.isInteger(fee) && fee >= 0 && fee <= 10) {
         marketplaceFeePercent = fee;
+        localStorage.setItem("tcl.mp.feePercent", JSON.stringify({ fee, ts: Date.now() }));
       }
     }
   } catch (e) {
