@@ -134,14 +134,50 @@
     .qr-popover .qr-code canvas, .qr-popover .qr-code img { width: 260px; height: 260px; }
     .qr-popover .qr-loader { width: 260px; height: 260px; }
     .qr-popover .status-line { font-size: 0.82rem; margin: 0; }
+    .btn-wallet-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 12px;
+      border: 1px solid #2a3347; background: rgba(47,246,222,0.07) !important;
+      padding: 2px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+    }
+    .btn-wallet-icon:hover { background: rgba(47,246,222,0.18) !important; border-color: var(--accent); }
+
+    .wallet-popup {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      width: 300px; background: #0d1120;
+      border: 1px solid #2a3347; border-radius: 12px;
+      padding: 16px; z-index: 9999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wallet-popup[hidden] { display: none !important; }
+    .wallet-popup-addr {
+      font-family: "Consolas","SFMono-Regular",monospace;
+      font-size: 14px; font-weight: 700; color: var(--text);
+      padding: 10px 12px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42;
+      text-align: center; letter-spacing: 0.02em;
+    }
+    .wallet-popup-balances {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .wallet-popup-balances .wallet-balance {
+      display: flex; justify-content: space-between;
+      padding: 6px 10px; background: rgba(255,255,255,0.03);
+      border-radius: 6px; border: 1px solid #1e2a42;
+      font-size: 13px;
+    }
+
     .btn-disconnect-topbar {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 14px; border: 1px solid rgba(251,113,133,0.4);
+      display: flex !important; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 10px 14px; border: none !important;
+      background: rgba(239,68,68,0.2) !important;
       border-radius: var(--radius); background: rgba(251,113,133,0.08);
       color: #fb7185; font: inherit; font-weight: 800; font-size: 0.88rem;
       cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap;
     }
-    .btn-disconnect-topbar:hover { background: rgba(251,113,133,0.18); border-color: rgba(251,113,133,0.65); }
+    .btn-disconnect-topbar:hover { background: rgba(239,68,68,0.38) !important; }
     .btn-explorer-sm { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(0,232,204,0.35); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); white-space: nowrap; text-decoration: none; }
     .wallet-addr-text { font-family: "Consolas","SFMono-Regular",monospace; font-size: 0.86rem; font-weight: 700; color: var(--text); flex: 1; }
     .wallet-balances { display: flex; align-items: center; gap: 6px; }
@@ -201,6 +237,8 @@
     }
     .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(47,246,222,0.06); }
+    .tab-action-btn { margin-bottom: 4px; padding: 7px 14px; font-size: 13px; }
+    .tab-action-btn:first-of-type { margin-left: auto; }
 
     /* ── Toolbar ── */
     .toolbar {
@@ -966,32 +1004,27 @@
       .site-subtitle { display: none; }
       .header-right {
         width: 100%; min-width: 0; margin-left: 0;
-        display: grid; grid-template-columns: minmax(0, 1fr) auto;
-        gap: 7px 8px; align-items: center;
+        display: flex; gap: 8px; align-items: center; justify-content: flex-end;
       }
       .nav-back { padding: 5px 8px; font-size: 13px; min-width: 0; }
       .nav-back .nav-label { display: none; }
-      /* Address and disconnect first, balances underneath */
+      /* Address and wallet icon on one row */
       #connectView { grid-column: 1 / -1; justify-self: end; }
       #connectedView[hidden] { display: none !important; }
-      #connectedView:not([hidden]) { display: contents !important; }
+      #connectedView:not([hidden]) { display: flex !important; align-items: center; gap: 6px; }
       #walletAddr {
-        grid-column: 1; grid-row: 1; min-width: 0;
+        min-width: 0;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        font-size: 0.76rem !important;
+        font-size: 0.76rem !important; max-width: 120px;
       }
-      #disconnectBtn { grid-column: 2; grid-row: 1; }
-      .btn-disconnect-topbar { padding: 7px 11px; font-size: 0.78rem; }
+      .wallet-popup { right: 0; min-width: 260px; }
       #walletBalances {
-        grid-column: 1 / -1; grid-row: 2;
-        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-        width: 100%; gap: 7px;
+        display: flex; flex-direction: column;
       }
       .wallet-balance {
         min-width: 0; justify-content: center;
         padding: 5px 7px; font-size: 0.7rem;
       }
-      #explorerLink { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
       /* Connect button — icon only */
       #connectTriggerBtn #connectTitle { display: none; }
       #connectTriggerBtn { min-height: 32px; padding: 5px 10px; }
@@ -1012,9 +1045,10 @@
       .sale-parties { grid-column: 1 / -1; }
       .sale-time { text-align: left; }
 
-      /* Tabs — all 3 fit on one row, no scroll */
-      .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: nowrap; overflow: visible; }
+      /* Tabs — all fit on one row, no scroll */
+      .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: wrap; overflow: visible; }
       .tab-btn { flex: 1; padding: 8px 4px; font-size: 11px; white-space: nowrap; text-align: center; }
+      .tab-action-btn { flex: 0; font-size: 11px; padding: 6px 8px; margin-bottom: 2px; }
 
 
       /* Listings grid — 2 cols on mobile */
@@ -1098,18 +1132,24 @@
       </div>
     </div>
 
-    <!-- ── Connected: address + balances + disconnect -->
-    <div id="connectedView" style="display:flex;align-items:center;gap:8px;" hidden>
-      <span class="wallet-addr-text" id="walletAddr" style="font-size:0.82rem;"></span>
-      <div id="walletBalances" class="wallet-balances" aria-live="polite">
-        <span id="balEgld" class="wallet-balance"><strong>EGLD</strong> Loading...</span>
-        <span id="balTcl" class="wallet-balance tcl"><strong>TCL</strong> Loading...</span>
+    <!-- ── Connected: wallet popup button only -->
+    <div id="connectedView" style="display:flex;align-items:center;gap:8px;position:relative;" hidden>
+      <span id="walletAddr" style="display:none;"></span>
+      <button class="btn-wallet-icon" id="walletPopupBtn" type="button" onclick="toggleWalletPopup(event)" title="Wallet details">
+        <img src="images/wallet.png" width="48" height="48" alt="wallet" style="display:block;pointer-events:none;border-radius:10px;">
+      </button>
+      <div class="wallet-popup" id="walletPopup" hidden>
+        <div class="wallet-popup-addr" id="walletAddrFull"></div>
+        <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">View on Explorer ↗</a>
+        <div id="walletBalances" class="wallet-popup-balances" aria-live="polite">
+          <span id="balEgld" class="wallet-balance"><strong>EGLD</strong> Loading...</span>
+          <span id="balTcl" class="wallet-balance tcl"><strong>TCL</strong> Loading...</span>
+        </div>
+        <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" onclick="disconnectWallet()">
+          Disconnect <span>✕</span>
+        </button>
       </div>
-      <a class="btn-explorer-sm" id="explorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer">Explorer</a>
     </div>
-    <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" hidden>
-      Disconnect <span>✕</span>
-    </button>
   </div>
 </header>
 
@@ -1135,27 +1175,23 @@
     <div class="stat-label">Volume $</div>
     <div class="stat-value" id="stat-volume-usd">$—</div>
   </div>
-  <div class="stat-item">
-    <div class="stat-label">Contract</div>
-    <div class="stat-value" id="stat-contract" style="font-size:12px; font-family: monospace; color: var(--muted);">Not deployed</div>
-  </div>
-  <div style="margin-left:auto;">
-    <span style="font-size:12px; color: var(--muted);">Payment token: </span>
-    <span style="font-size:13px; color: var(--gold); font-weight:700;">TCL-fe459d</span>
-  </div>
+  <div id="stat-contract" style="display:none;"></div>
 </div>
 
 <!-- ════════════ TABS ════════════ -->
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('all')" id="tab-all">🛒 All Listings</button>
-  <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
   <button class="tab-btn" onclick="switchTab('activity')" id="tab-activity">📋 Recent Sales</button>
+  <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
+  <button class="btn-primary tab-action-btn" onclick="openMyNFTsModal()">My NFTs</button>
+  <button class="btn-secondary tab-action-btn" onclick="refreshMarketplace()">↻ Refresh</button>
 </div>
 
 <!-- ════════════ TOOLBAR ════════════ -->
 <div class="toolbar">
   <input type="text" class="search-box" id="search-input" placeholder="🔍 Search by name or identifier…" oninput="filterListings()">
   <select class="toolbar-select" id="sort-select" onchange="filterListings()">
+    <option value="">Sort by…</option>
     <option value="price_asc">Price: Low → High</option>
     <option value="price_desc">Price: High → Low</option>
     <option value="newest">Newest First</option>
@@ -1164,8 +1200,6 @@
   <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
     <option value="">All Collections</option>
   </select>
-  <button class="btn-primary" onclick="openMyNFTsModal()">My NFTs</button>
-  <button class="btn-secondary" onclick="refreshMarketplace()">↻ Refresh</button>
 </div>
 
 <!-- ════════════ LISTINGS GRID ════════════ -->
@@ -1365,16 +1399,38 @@ function syncConnectView() {
   const ok = Boolean(WS.address && WS.sessionTopic);
   if (WD.connectView)   WD.connectView.hidden   = ok;
   if (WD.connectedView) WD.connectedView.hidden = !ok;
-  if (WD.disconnectBtn) WD.disconnectBtn.hidden = !ok;
   if (ok) {
     if (WD.qrPopover)    WD.qrPopover.hidden = true;
     if (WD.walletAddr)   WD.walletAddr.textContent = truncAddr(WS.address);
     if (WD.explorerLink) WD.explorerLink.href = `https://explorer.multiversx.com/accounts/${WS.address}`;
+    const fullEl = document.getElementById("walletAddrFull");
+    if (fullEl) fullEl.textContent = truncAddr(WS.address);
+  } else {
+    closeWalletPopup();
   }
-  // keep walletAddress global in sync for the rest of the page
   walletAddress = ok ? WS.address : null;
   updateWalletUI(walletAddress);
 }
+
+function toggleWalletPopup(e) {
+  e.stopPropagation();
+  const popup = document.getElementById("walletPopup");
+  if (!popup) return;
+  popup.hidden = !popup.hidden;
+}
+
+function closeWalletPopup() {
+  const popup = document.getElementById("walletPopup");
+  if (popup) popup.hidden = true;
+}
+
+document.addEventListener("click", (e) => {
+  const popup = document.getElementById("walletPopup");
+  const btn   = document.getElementById("walletPopupBtn");
+  if (popup && !popup.hidden && !popup.contains(e.target) && e.target !== btn) {
+    popup.hidden = true;
+  }
+});
 
 function saveConnection(address, topic) {
   WS.address = address; WS.sessionTopic = topic || "";
@@ -1564,7 +1620,7 @@ function switchTab(tab) {
 
 function renderCurrentTab() {
   document.getElementById("listings-grid")?.classList.toggle("sales-mode", currentTab === "activity");
-  if (currentTab === "all") renderListings(allListings);
+  if (currentTab === "all") filterListings();
   else if (currentTab === "mine") renderMyListings();
   else renderActivity();
 }
