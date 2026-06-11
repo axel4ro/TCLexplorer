@@ -168,6 +168,27 @@ a:hover{
         font-size:2rem;
     }
 }
+
+    .back-btn {
+      align-self: flex-start;
+      border: 0;
+      border-radius: 12px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #7058ff 0%, #8d53ff 100%);
+      color: #fff;
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(112, 88, 255, 0.24);
+      transition: transform 0.18s ease;
+    }
+
+    .back-btn:hover {
+      transform: translateY(-1px);
+    }
+	
+	
 </style>
 </head>
 <body>
@@ -176,6 +197,11 @@ a:hover{
 <div class="card">
 
 <div class="header">
+    <button class="back-btn"
+        type="button"
+        onclick="window.location.href='https://tclexplorer.com/'">
+    &#11013; Back to TCLexplorer
+</button>
     <div class="badge">ⓘ TCLexplorer Legal Notice</div>
     <h1>Disclaimer</h1>
     <div class="updated">Last Updated: June 2026</div>
