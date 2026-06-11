@@ -713,6 +713,7 @@
     .nft-select-card img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
     .nft-select-name { font-size: 13px; font-weight: 600; }
     .nft-select-id { font-size: 11px; color: var(--muted); }
+    .nft-select-storage { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     /* ── Toast ── */
     #toast {
@@ -2312,11 +2313,20 @@ function selectNFTForListing(identifier) {
 
   // Show preview
   const preview = document.getElementById("nft-preview-card");
+  const _tclMax = nft?.sc_tcl_max ? BigInt(nft.sc_tcl_max) : 0n;
+  const _storageHtml = _tclMax > 0n ? (() => {
+    const _maxDisplay = Number(_tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+    const _usd = tclPriceUSD && _maxDisplay > 0
+      ? ` <span style="color:var(--green)">≈ ${formatUSD(_maxDisplay / 2 * tclPriceUSD)}</span>`
+      : "";
+    return `<div class="nft-select-storage">💾 ${formatStorage(_tclMax)} TCL${_usd}</div>`;
+  })() : "";
   preview.innerHTML = `
     <img src="${nft.media?.[0]?.url || ''}" onerror="this.src='images/tcl_icon.png'">
     <div>
       <div class="nft-select-name">${nft.name || "Unknown"}</div>
       <div class="nft-select-id">${nft.identifier}</div>
+      ${_storageHtml}
     </div>`;
 
   updateListingPriceBreakdown();
