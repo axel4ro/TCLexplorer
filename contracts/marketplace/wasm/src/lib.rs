@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           12
+// Endpoints:                           18
 // Async Callback (empty):               1
-// Total number of exported functions:  15
+// Total number of exported functions:  21
 
 #![no_std]
 
@@ -24,14 +24,20 @@ multiversx_sc_wasm_adapter::endpoints! {
         buyNFT => buy_nft
         cancelListing => cancel_listing
         updatePrice => update_price
+        addAllowedCreator => add_allowed_creator
+        removeAllowedCreator => remove_allowed_creator
+        pause => pause
+        unpause => unpause
         setFeePercent => set_fee_percent
-        withdrawFees => withdraw_fees
+        recoverTokens => recover_tokens
         getActiveListings => get_active_listings
         getListing => get_listing
         getListingCount => get_listing_count
         getFeePercent => get_fee_percent
         getTclToken => get_tcl_token
         getSellerListings => get_seller_listings
+        isPaused => is_paused
+        isCreatorAllowed => is_creator_allowed
     )
 }
 

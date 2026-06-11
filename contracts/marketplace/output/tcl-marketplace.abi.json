@@ -74,7 +74,7 @@
         },
         {
             "docs": [
-                "Seller (or contract owner) cancels a listing; NFT returned."
+                "Seller (or contract owner) cancels a listing; NFT returned to seller."
             ],
             "name": "cancelListing",
             "rustMethodName": "cancel_listing",
@@ -104,6 +104,49 @@
             "outputs": []
         },
         {
+            "docs": [
+                "Add a trusted NFT creator — all their collections become listable automatically."
+            ],
+            "name": "addAllowedCreator",
+            "rustMethodName": "add_allowed_creator",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "creator",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "removeAllowedCreator",
+            "rustMethodName": "remove_allowed_creator",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "creator",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "pause",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "unpause",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
             "name": "setFeePercent",
             "rustMethodName": "set_fee_percent",
             "onlyOwner": true,
@@ -117,11 +160,24 @@
             "outputs": []
         },
         {
-            "name": "withdrawFees",
-            "rustMethodName": "withdraw_fees",
+            "docs": [
+                "Recovers any tokens accidentally sent directly to the contract address.",
+                "NOTE: platform fees are forwarded to the owner per-sale, not accumulated here."
+            ],
+            "name": "recoverTokens",
+            "rustMethodName": "recover_tokens",
             "onlyOwner": true,
             "mutability": "mutable",
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ],
             "outputs": []
         },
         {
@@ -201,6 +257,33 @@
                     "multi_result": true
                 }
             ]
+        },
+        {
+            "name": "isPaused",
+            "rustMethodName": "is_paused",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "isCreatorAllowed",
+            "rustMethodName": "is_creator_allowed",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "creator",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool"
+                }
+            ]
         }
     ],
     "events": [
@@ -216,6 +299,21 @@
                     "name": "seller",
                     "type": "Address",
                     "indexed": true
+                },
+                {
+                    "name": "nft_token",
+                    "type": "TokenIdentifier",
+                    "indexed": true
+                },
+                {
+                    "name": "nft_nonce",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "price",
+                    "type": "BigUint",
+                    "indexed": true
                 }
             ]
         },
@@ -228,13 +326,39 @@
                     "indexed": true
                 },
                 {
+                    "name": "seller",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
                     "name": "buyer",
                     "type": "Address",
                     "indexed": true
                 },
                 {
+                    "name": "nft_token",
+                    "type": "TokenIdentifier",
+                    "indexed": true
+                },
+                {
+                    "name": "nft_nonce",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
                     "name": "price",
-                    "type": "BigUint"
+                    "type": "BigUint",
+                    "indexed": true
+                },
+                {
+                    "name": "platform_fee",
+                    "type": "BigUint",
+                    "indexed": true
+                },
+                {
+                    "name": "royalty_amount",
+                    "type": "BigUint",
+                    "indexed": true
                 }
             ]
         },
@@ -249,6 +373,41 @@
                 {
                     "name": "seller",
                     "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "cancelled_by",
+                    "type": "Address",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "identifier": "priceUpdated",
+            "inputs": [
+                {
+                    "name": "listing_id",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "seller",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "new_price",
+                    "type": "BigUint",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "identifier": "pauseToggled",
+            "inputs": [
+                {
+                    "name": "is_paused",
+                    "type": "bool",
                     "indexed": true
                 }
             ]

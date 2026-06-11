@@ -9,11 +9,11 @@ multiversx_sc::derive_imports!();
 /// Flow:
 ///   Seller: ESDTNFTTransfer → contract.listNFT(price_in_tcl, creator, royalties)
 ///   Buyer:  ESDTTransfer(TCL) → contract.buyNFT(listing_id)
-///   2% platform fee retained in contract; royalties paid to NFT creator.
+///   Platform fee retained and forwarded to owner per sale; royalties paid to NFT creator.
 
 const TCL_TOKEN_ID: &[u8] = b"TCL-fe459d";
 const MAX_FEE_PERCENT: u64 = 10;
-const ROYALTY_DENOMINATOR: u64 = 10_000; // royalties come as basis points (e.g. 500 = 5%)
+const ROYALTY_DENOMINATOR: u64 = 10_000; // basis points (e.g. 500 = 5%)
 
 #[derive(TypeAbi, TopEncode, TopDecode, NestedEncode, NestedDecode, ManagedVecItem, Clone)]
 pub struct Listing<M: ManagedTypeApi> {
@@ -37,6 +37,7 @@ pub trait TclMarketplace {
         require!(fee_percent <= MAX_FEE_PERCENT, "Fee too high (max 10%)");
         self.fee_percent().set(fee_percent);
         self.last_listing_id().set(0u64);
+        self.paused().set(false);
     }
 
     #[upgrade]
@@ -56,6 +57,8 @@ pub trait TclMarketplace {
         royalty_address: ManagedAddress,
         royalty_percent: u64,
     ) {
+        require!(!self.paused().get(), "Marketplace is paused");
+
         let caller = self.blockchain().get_caller();
         let payment = self.call_value().single_esdt();
 
@@ -69,6 +72,12 @@ pub trait TclMarketplace {
             &sc_address,
             &payment.token_identifier,
             payment.token_nonce,
+        );
+
+        // Only NFTs minted by an allowed creator can be listed
+        require!(
+            self.allowed_creators().contains(&nft_data.creator),
+            "NFT creator not authorized on this marketplace"
         );
         require!(
             royalty_address == nft_data.creator,
@@ -87,7 +96,7 @@ pub trait TclMarketplace {
             seller: caller.clone(),
             nft_token: payment.token_identifier.clone(),
             nft_nonce: payment.token_nonce,
-            price,
+            price: price.clone(),
             royalty_address,
             royalty_percent,
             #[allow(deprecated)]
@@ -99,7 +108,13 @@ pub trait TclMarketplace {
         self.active_listings().insert(listing_id);
         self.seller_listings(&caller).insert(listing_id);
 
-        self.listing_created_event(listing_id, &caller);
+        self.listing_created_event(
+            listing_id,
+            &caller,
+            &payment.token_identifier,
+            payment.token_nonce,
+            &price,
+        );
     }
 
     // ─── Buy NFT ─────────────────────────────────────────────────────────────
@@ -109,6 +124,8 @@ pub trait TclMarketplace {
     #[payable("*")]
     #[endpoint(buyNFT)]
     fn buy_nft(&self, listing_id: u64) {
+        require!(!self.paused().get(), "Marketplace is paused");
+
         let caller = self.blockchain().get_caller();
         let payment = self.call_value().single_esdt();
 
@@ -118,7 +135,7 @@ pub trait TclMarketplace {
             "Must pay with TCL-fe459d"
         );
 
-        require!(self.listings(listing_id).is_empty() == false, "Listing not found");
+        require!(!self.listings(listing_id).is_empty(), "Listing not found");
         let listing = self.listings(listing_id).get();
 
         require!(listing.is_active, "Listing is not active");
@@ -168,14 +185,32 @@ pub trait TclMarketplace {
             );
         }
 
-        // Platform fee stays in contract for owner withdrawal
+        // Send platform fee directly to owner
+        if platform_fee > BigUint::zero() {
+            let owner = self.blockchain().get_owner_address();
+            self.send().direct_esdt(
+                &owner,
+                &tcl_token,
+                0u64,
+                &platform_fee,
+            );
+        }
 
-        self.listing_sold_event(listing_id, &caller, &listing.price);
+        self.listing_sold_event(
+            listing_id,
+            &listing.seller,
+            &caller,
+            &listing.nft_token,
+            listing.nft_nonce,
+            &listing.price,
+            &platform_fee,
+            &royalty_amount,
+        );
     }
 
     // ─── Cancel Listing ───────────────────────────────────────────────────────
 
-    /// Seller (or contract owner) cancels a listing; NFT returned.
+    /// Seller (or contract owner) cancels a listing; NFT returned to seller.
     #[endpoint(cancelListing)]
     fn cancel_listing(&self, listing_id: u64) {
         let caller = self.blockchain().get_caller();
@@ -204,13 +239,14 @@ pub trait TclMarketplace {
             &BigUint::from(1u32),
         );
 
-        self.listing_cancelled_event(listing_id, &listing.seller);
+        self.listing_cancelled_event(listing_id, &listing.seller, &caller);
     }
 
     // ─── Update Price ─────────────────────────────────────────────────────────
 
     #[endpoint(updatePrice)]
     fn update_price(&self, listing_id: u64, new_price: BigUint) {
+        require!(!self.paused().get(), "Marketplace is paused");
         let caller = self.blockchain().get_caller();
 
         require!(!self.listings(listing_id).is_empty(), "Listing not found");
@@ -220,11 +256,46 @@ pub trait TclMarketplace {
         require!(caller == listing.seller, "Only seller can update price");
         require!(new_price > BigUint::zero(), "Price must be > 0");
 
-        listing.price = new_price;
+        listing.price = new_price.clone();
         self.listings(listing_id).set(listing);
+
+        self.price_updated_event(listing_id, &caller, &new_price);
     }
 
-    // ─── Owner Functions ──────────────────────────────────────────────────────
+    // ─── Owner: Creator Whitelist ─────────────────────────────────────────────
+
+    /// Add a trusted NFT creator — all their collections become listable automatically.
+    #[only_owner]
+    #[endpoint(addAllowedCreator)]
+    fn add_allowed_creator(&self, creator: ManagedAddress) {
+        self.allowed_creators().insert(creator);
+    }
+
+    #[only_owner]
+    #[endpoint(removeAllowedCreator)]
+    fn remove_allowed_creator(&self, creator: ManagedAddress) {
+        self.allowed_creators().swap_remove(&creator);
+    }
+
+    // ─── Owner: Pause / Unpause ───────────────────────────────────────────────
+
+    #[only_owner]
+    #[endpoint(pause)]
+    fn pause(&self) {
+        require!(!self.paused().get(), "Already paused");
+        self.paused().set(true);
+        self.pause_toggled_event(true);
+    }
+
+    #[only_owner]
+    #[endpoint(unpause)]
+    fn unpause(&self) {
+        require!(self.paused().get(), "Not paused");
+        self.paused().set(false);
+        self.pause_toggled_event(false);
+    }
+
+    // ─── Owner: Fee Config ────────────────────────────────────────────────────
 
     #[only_owner]
     #[endpoint(setFeePercent)]
@@ -233,15 +304,17 @@ pub trait TclMarketplace {
         self.fee_percent().set(fee);
     }
 
+    /// Recovers any tokens accidentally sent directly to the contract address.
+    /// NOTE: platform fees are forwarded to the owner per-sale, not accumulated here.
     #[only_owner]
-    #[endpoint(withdrawFees)]
-    fn withdraw_fees(&self) {
+    #[endpoint(recoverTokens)]
+    fn recover_tokens(&self, token_id: TokenIdentifier, amount: BigUint) {
+        require!(amount > BigUint::zero(), "Amount must be > 0");
         let owner = self.blockchain().get_owner_address();
-        let tcl_token = TokenIdentifier::from(TCL_TOKEN_ID);
-        let egld_tcl = EgldOrEsdtTokenIdentifier::esdt(tcl_token.clone());
-        let balance = self.blockchain().get_sc_balance(&egld_tcl, 0u64);
-        require!(balance > BigUint::zero(), "No fees to withdraw");
-        self.send().direct_esdt(&owner, &tcl_token, 0u64, &balance);
+        let egld_or_esdt = EgldOrEsdtTokenIdentifier::esdt(token_id.clone());
+        let balance = self.blockchain().get_sc_balance(&egld_or_esdt, 0u64);
+        require!(balance >= amount, "Insufficient contract balance");
+        self.send().direct_esdt(&owner, &token_id, 0u64, &amount);
     }
 
     // ─── Views ────────────────────────────────────────────────────────────────
@@ -285,16 +358,59 @@ pub trait TclMarketplace {
         result
     }
 
+    #[view(isPaused)]
+    fn is_paused(&self) -> bool {
+        self.paused().get()
+    }
+
+    #[view(isCreatorAllowed)]
+    fn is_creator_allowed(&self, creator: ManagedAddress) -> bool {
+        self.allowed_creators().contains(&creator)
+    }
+
     // ─── Events ───────────────────────────────────────────────────────────────
 
     #[event("listingCreated")]
-    fn listing_created_event(&self, #[indexed] listing_id: u64, #[indexed] seller: &ManagedAddress);
+    fn listing_created_event(
+        &self,
+        #[indexed] listing_id: u64,
+        #[indexed] seller: &ManagedAddress,
+        #[indexed] nft_token: &TokenIdentifier,
+        #[indexed] nft_nonce: u64,
+        #[indexed] price: &BigUint,
+    );
 
     #[event("listingSold")]
-    fn listing_sold_event(&self, #[indexed] listing_id: u64, #[indexed] buyer: &ManagedAddress, price: &BigUint);
+    fn listing_sold_event(
+        &self,
+        #[indexed] listing_id: u64,
+        #[indexed] seller: &ManagedAddress,
+        #[indexed] buyer: &ManagedAddress,
+        #[indexed] nft_token: &TokenIdentifier,
+        #[indexed] nft_nonce: u64,
+        #[indexed] price: &BigUint,
+        #[indexed] platform_fee: &BigUint,
+        #[indexed] royalty_amount: &BigUint,
+    );
 
     #[event("listingCancelled")]
-    fn listing_cancelled_event(&self, #[indexed] listing_id: u64, #[indexed] seller: &ManagedAddress);
+    fn listing_cancelled_event(
+        &self,
+        #[indexed] listing_id: u64,
+        #[indexed] seller: &ManagedAddress,
+        #[indexed] cancelled_by: &ManagedAddress,
+    );
+
+    #[event("priceUpdated")]
+    fn price_updated_event(
+        &self,
+        #[indexed] listing_id: u64,
+        #[indexed] seller: &ManagedAddress,
+        #[indexed] new_price: &BigUint,
+    );
+
+    #[event("pauseToggled")]
+    fn pause_toggled_event(&self, #[indexed] is_paused: bool);
 
     // ─── Storage ──────────────────────────────────────────────────────────────
 
@@ -312,4 +428,10 @@ pub trait TclMarketplace {
 
     #[storage_mapper("feePercent")]
     fn fee_percent(&self) -> SingleValueMapper<u64>;
+
+    #[storage_mapper("paused")]
+    fn paused(&self) -> SingleValueMapper<bool>;
+
+    #[storage_mapper("allowedCreators")]
+    fn allowed_creators(&self) -> UnorderedSetMapper<ManagedAddress>;
 }

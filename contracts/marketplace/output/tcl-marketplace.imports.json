@@ -13,6 +13,7 @@
   "bigIntSub",
   "bigIntTDiv",
   "checkNoPayment",
+  "finish",
   "getBlockTimestamp",
   "getNumArguments",
   "mBufferAppend",
