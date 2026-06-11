@@ -2297,6 +2297,7 @@ async function openMyNFTsModal() {
   document.getElementById("my-nfts-modal").classList.add("open");
   document.getElementById("my-nfts-grid").innerHTML =
     `<div class="loading-msg" style="grid-column:1/-1;"><div class="loading-spinner"></div>Loading your NFTs…</div>`;
+  fetch(`${TCL_API}/api/marketplace/wallet-nfts/${walletAddress}/invalidate`, { method: "POST" }).catch(() => {});
   await loadMyNFTs();
   renderMyNFTWallet();
 }
