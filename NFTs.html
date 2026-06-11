@@ -931,20 +931,6 @@ async function renderNFTs(nfts) {
       if (found) attrValue = found.value;
     }
 
-    // SC badges
-    const qualityNames = ["","Common","Uncommon","Rare","Epic","Legendary"];
-    const q = nft.sc_quality;
-    const qualityBadge = q > 0
-      ? `<span class="badge badge-quality-${Math.min(q,5)}">${qualityNames[q] || `Q${q}`}</span>` : "";
-    const waveBadge = nft.sc_wave > 0
-      ? `<span class="badge badge-wave">W${nft.sc_wave}</span>` : "";
-    const bonusBadge = nft.sc_has_bonus
-      ? `<span class="badge badge-bonus">✦ Bonus</span>` : "";
-    const crystalBadge = nft.sc_has_crystal
-      ? `<span class="badge badge-crystal">◈ Crystal</span>` : "";
-    const socketBadge = nft.sc_socket_count > 0
-      ? `<span class="badge badge-socket">⬡ ${nft.sc_socket_count}</span>` : "";
-
     // Storage bar
     const tclCount = nft.sc_tcl_count ? BigInt(nft.sc_tcl_count) : 0n;
     const tclMax   = nft.sc_tcl_max   ? BigInt(nft.sc_tcl_max)   : 0n;
@@ -959,7 +945,6 @@ async function renderNFTs(nfts) {
         <span class="storage-label">💾 ${fmtStorage(tclMax)} TCL${usdVal}</span>`;
     })() : "";
 
-    const hasBadges = qualityBadge || waveBadge || bonusBadge || crystalBadge || socketBadge;
     // don't repeat attrValue if it's already the title
     const showAttr = attrValue && attrValue !== title;
 
@@ -968,7 +953,6 @@ async function renderNFTs(nfts) {
         <img src="${nft.media?.[0]?.url || ''}" alt="${nft.name}">
         <h4>${title}</h4>
         ${showAttr ? `<p style="margin-top:6px; font-size:14px; color:#2ff6de;"><b>${selectedAttr}:</b> ${attrValue}</p>` : ""}
-        ${hasBadges ? `<div class="nft-badges">${qualityBadge}${waveBadge}${bonusBadge}${crystalBadge}${socketBadge}</div>` : ""}
         ${storageHtml}
       </div>
     `;
