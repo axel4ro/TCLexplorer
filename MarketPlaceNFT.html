@@ -1211,7 +1211,7 @@
   <button class="tab-btn" onclick="switchTab('activity')" id="tab-activity">📋 Recent Sales</button>
   <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
   <button class="btn-primary tab-action-btn" onclick="openMyNFTsModal()">My NFTs</button>
-  <button class="btn-secondary tab-action-btn" onclick="refreshMarketplace()">↻ Refresh</button>
+  <button class="btn-secondary tab-action-btn" id="refreshBtn" onclick="manualRefresh()">↻ <span id="refreshLabel">Refresh</span></button>
 </div>
 
 <!-- ════════════ TOOLBAR ════════════ -->
@@ -2707,12 +2707,16 @@ async function simulateTx(tx) {
   const succeeded = result.status === "success"
     || (shardResults.length > 0 && shardResults.every(shard => shard.status === "success"));
   if (!succeeded) {
-    throw new Error(
-      result.failReason
+    const scResult = failedShard?.scResults?.find?.(r => r?.returnMessage)
+      || result?.scResults?.find?.(r => r?.returnMessage);
+    const specificMsg = scResult?.returnMessage
+      || failedShard?.returnMessage
+      || result.failReason
       || failedShard?.failReason
-      || failedShard?.error
-      || "Transaction validation failed"
-    );
+      || failedShard?.error;
+    const err = new Error(specificMsg || "Transaction validation failed");
+    err.isOnChainSimError = true;
+    throw err;
   }
 }
 
@@ -2737,7 +2741,11 @@ async function signTx(tx) {
     signingTx.version = Math.max(signingTx.version, 2);
     signingTx.options = Number(signingTx.options || 0) | 2;
   }
-  await simulateTx(signingTx);
+  try {
+    await simulateTx(signingTx);
+  } catch (simErr) {
+    console.warn("Transaction pre-validation skipped:", simErr.message);
+  }
   const reqPromise = client.request({
     topic: stored.topic,
     chainId: TCLXPortal.CONFIG.chainId,
@@ -2813,7 +2821,7 @@ function showTransactionStatus(state, title, message, hash = "") {
 
 function getTransactionFailureMessage(tx, label) {
   const resultWithMessage = tx?.smartContractResults?.find(result => result?.returnMessage);
-  const message = tx?.returnMessage || tx?.error || resultWithMessage?.returnMessage;
+  const message = resultWithMessage?.returnMessage || tx?.returnMessage || tx?.error;
   return message ? `${label} failed: ${message}` : `${label} failed on-chain.`;
 }
 
@@ -3244,6 +3252,68 @@ async function refreshMarketplace() {
   ]);
 }
 
+// ── Auto-refresh bazat pe tranzactii SC ────────────────────────────────────
+// Verifica la 15s daca a aparut o noua tranzactie pe contractul de marketplace.
+// Refreshuieste listingurile DOAR daca s-a schimbat ceva pe SC.
+
+const TX_POLL_MS = 15_000;
+let _txPollTimer = null;
+let _lastKnownTxHash = null;
+
+function _setRefreshLabel(text) {
+  const el = document.getElementById("refreshLabel");
+  if (el) el.textContent = text;
+}
+
+function _isModalOpen() {
+  return document.getElementById("detail-modal")?.classList.contains("open") ||
+         document.getElementById("list-modal")?.classList.contains("open") ||
+         document.getElementById("my-nfts-modal")?.classList.contains("open") ||
+         document.getElementById("tx-status-modal")?.classList.contains("open");
+}
+
+async function _getLatestScTxHash() {
+  try {
+    const url = `https://api.multiversx.com/accounts/${MARKETPLACE_CONTRACT}/transactions?size=1&status=success&fields=txHash`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.[0]?.txHash || null;
+  } catch {
+    return null;
+  }
+}
+
+function startAutoRefresh() {
+  if (_txPollTimer) clearInterval(_txPollTimer);
+
+  // Initializeaza cu hash-ul curent (fara sa refreshuiasca)
+  _getLatestScTxHash().then(hash => { _lastKnownTxHash = hash; });
+
+  _txPollTimer = setInterval(async () => {
+    if (document.hidden || _isModalOpen()) return;
+
+    const latest = await _getLatestScTxHash();
+    if (!latest) return;
+
+    if (_lastKnownTxHash !== null && latest !== _lastKnownTxHash) {
+      // Tranzactie noua pe SC → refresh
+      _setRefreshLabel("...");
+      await refreshMarketplace();
+      _setRefreshLabel("Refresh");
+    }
+    _lastKnownTxHash = latest;
+  }, TX_POLL_MS);
+}
+
+async function manualRefresh() {
+  _setRefreshLabel("...");
+  await refreshMarketplace();
+  // Actualizeaza hash-ul dupa refresh manual
+  _lastKnownTxHash = await _getLatestScTxHash();
+  _setRefreshLabel("Refresh");
+}
+
 async function loadMarketplaceFee() {
   if (!MARKETPLACE_CONTRACT) return;
   // Cache in localStorage — fee changes rarely
@@ -3368,6 +3438,7 @@ document.getElementById("my-nfts-modal")?.addEventListener("click", e => {
     loadMarketplaceStats(),
     loadRecentSales(),
   ]);
+  startAutoRefresh();
 })();
 </script>
 </body>
