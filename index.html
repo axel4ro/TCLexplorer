@@ -306,6 +306,7 @@
         <img src="images/tcl_icon.png" alt=""> TCL Explorer
       </button>
       <button type="button" class="nav-item" onclick="openMarketplacePage()" id="btn-marketplace">🛒 NFTs Marketplace</button>
+      <button type="button" class="nav-item" onclick="openSwapPage()" id="btn-swap">💱 Swap</button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
       <button type="button" class="nav-item" onclick="openLander()" id="btn-Lander">
@@ -437,9 +438,9 @@
       <span class="token-accordion-card__hint">Verifică profitul și pierderea pe tranzacțiile tale TCL.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-	<button type="button" class="token-accordion-card" onclick="openSwapPage()">
-      <span class="token-accordion-card__title">💱 Swap</span>
-      <span class="token-accordion-card__hint">Schimbă TCL direct prin xExchange cu cele mai bune rate.</span>
+	<button type="button" class="token-accordion-card" onclick="openTopHoldersPage()">
+      <span class="token-accordion-card__title">💎 Top Holders</span>
+      <span class="token-accordion-card__hint">Top 100 wallet-uri cu cel mai mare balance TCL, cu distribuție și valoare.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
 	<button type="button" class="token-accordion-card" onclick="showPage('chart')">
@@ -2871,6 +2872,16 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true,
     readyFallbackMs: 20000
   },
+  TopHolders: {
+    src: "holders.html?v=20260611-1",
+    title: "Top Holders",
+    navId: "btn-token",
+    routeKey: "TopHolders",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Fetching top 100 TCL holders from MultiversX.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 20000
+  },
   signal: {
     src: "signal.html",
     title: "Signal",
@@ -5167,6 +5178,11 @@ function openSwapPage() {
 
 function openTopSpendersPage() {
   const route = INTERNAL_PAGE_ROUTES.TopSpenders;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openTopHoldersPage() {
+  const route = INTERNAL_PAGE_ROUTES.TopHolders;
   openInternalPage(route.src, route.title, route);
 }
 

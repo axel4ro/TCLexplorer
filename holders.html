@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071018">
+  <meta name="description" content="Top 100 TCL token holders ranked by balance, excluding smart contracts.">
+  <title>Top 100 TCL Holders - TCL Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05080d;
+      --panel: rgba(13, 20, 30, 0.94);
+      --panel-soft: rgba(17, 27, 40, 0.78);
+      --line: rgba(154, 178, 210, 0.14);
+      --line-strong: rgba(154, 178, 210, 0.25);
+      --text: #eff7ff;
+      --muted: #91a0b5;
+      --soft: #65758d;
+      --accent: #28e0c2;
+      --accent-soft: rgba(40, 224, 194, 0.13);
+      --blue: #55b8ff;
+      --blue-soft: rgba(85, 184, 255, 0.13);
+      --gold: #f7c968;
+      --silver: #cbd8e7;
+      --bronze: #d89764;
+      --danger: #ff7180;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+      --radius-lg: 22px;
+      --radius-md: 15px;
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-display: "Orbitron", var(--font-ui);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; background: var(--bg); }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-ui);
+      background:
+        radial-gradient(circle at 12% 2%, rgba(40, 224, 194, 0.14), transparent 28%),
+        radial-gradient(circle at 92% 8%, rgba(85, 184, 255, 0.14), transparent 25%),
+        linear-gradient(155deg, #04070b 0%, #09111b 48%, #05080d 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+
+    .page-shell {
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 42px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .back-link, .explorer-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.045);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .back-link:hover, .explorer-link:hover {
+      transform: translateY(-1px);
+      border-color: rgba(40, 224, 194, 0.38);
+      background: rgba(40, 224, 194, 0.08);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .update-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 46px;
+      max-width: min(520px, 58vw);
+      padding: 7px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .update-dot {
+      flex: 0 0 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(40, 224, 194, 0.12);
+    }
+
+    .update-card.is-loading .update-dot {
+      background: var(--gold);
+      box-shadow: 0 0 0 5px rgba(247, 201, 104, 0.12);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .update-card.is-error .update-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 5px rgba(255, 113, 128, 0.12);
+    }
+
+    .update-copy {
+      display: grid;
+      min-width: 0;
+      line-height: 1.2;
+    }
+
+    .update-copy strong {
+      color: var(--text);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .update-copy span {
+      margin-top: 3px;
+      color: var(--soft);
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    @keyframes pulse { 50% { opacity: 0.45; } }
+
+    .hero, .stat-card, .leaderboard-panel {
+      border: 1px solid rgba(255, 255, 255, 0.085);
+      background: linear-gradient(180deg, rgba(16, 25, 37, 0.96), rgba(9, 14, 23, 0.95));
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 24px;
+      min-height: 240px;
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -120px;
+      top: -190px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(40, 224, 194, 0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(40, 224, 194, 0.48), transparent);
+    }
+
+    .brand-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 22px;
+    }
+
+    .brand-row img {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 840px;
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 5vw, 4rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .function-card {
+      position: relative;
+      z-index: 1;
+      min-width: 190px;
+      padding: 18px;
+      border: 1px solid rgba(40, 224, 194, 0.2);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(40, 224, 194, 0.1), rgba(85, 184, 255, 0.07));
+    }
+
+    .function-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .function-card strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 13px;
+      margin: 16px 0;
+    }
+
+    .stat-card {
+      min-height: 120px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      display: block;
+      margin-top: 12px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(1.1rem, 2.4vw, 1.8rem);
+      line-height: 1.08;
+    }
+
+    .stat-note {
+      display: block;
+      margin-top: 8px;
+      color: var(--soft);
+      font-size: 0.78rem;
+    }
+
+    .leaderboard-panel {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+    }
+
+    .panel-title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .panel-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-input {
+      width: min(330px, 36vw);
+      min-height: 42px;
+      padding: 10px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(4, 8, 14, 0.72);
+      color: var(--text);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .search-input::placeholder { color: var(--soft); }
+
+    .search-input:focus {
+      border-color: rgba(40, 224, 194, 0.48);
+      box-shadow: 0 0 0 3px rgba(40, 224, 194, 0.1);
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      min-width: 800px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--soft);
+      background: rgba(4, 8, 14, 0.48);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    tbody tr { transition: background 0.16s ease; }
+    tbody tr:hover { background: rgba(40, 224, 194, 0.04); }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    .rank-cell { width: 74px; }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line-strong);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-family: var(--font-display);
+      font-size: 0.82rem;
+    }
+
+    .rank-badge.rank-1 {
+      border-color: rgba(247, 201, 104, 0.5);
+      background: rgba(247, 201, 104, 0.13);
+      color: var(--gold);
+      box-shadow: 0 0 24px rgba(247, 201, 104, 0.12);
+    }
+
+    .rank-badge.rank-2 {
+      border-color: rgba(203, 216, 231, 0.45);
+      background: rgba(203, 216, 231, 0.1);
+      color: var(--silver);
+    }
+
+    .rank-badge.rank-3 {
+      border-color: rgba(216, 151, 100, 0.48);
+      background: rgba(216, 151, 100, 0.11);
+      color: var(--bronze);
+    }
+
+    .wallet-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #dcecff;
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .wallet-link:hover { color: var(--accent); }
+
+    .wallet-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--blue));
+      box-shadow: 0 0 14px rgba(40, 224, 194, 0.35);
+      flex-shrink: 0;
+    }
+
+    .balance-cell strong {
+      display: block;
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+    }
+
+    .balance-cell span {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .pct-cell {
+      min-width: 130px;
+    }
+
+    .pct-val {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .pct-bar-wrap {
+      margin-top: 5px;
+      height: 4px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 9px;
+      overflow: hidden;
+    }
+
+    .pct-bar {
+      height: 100%;
+      border-radius: 9px;
+      background: linear-gradient(90deg, var(--accent), var(--blue));
+      min-width: 1px;
+    }
+
+    .value-cell {
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      display: none;
+      padding: 42px 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-state.is-visible { display: block; }
+
+    .loading-row td { height: 58px; }
+
+    .skeleton {
+      height: 13px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.035), rgba(255,255,255,0.09), rgba(255,255,255,0.035));
+      background-size: 220% 100%;
+      animation: shimmer 1.4s linear infinite;
+    }
+
+    @keyframes shimmer { to { background-position: -220% 0; } }
+
+    .footer-note {
+      margin: 16px 4px 0;
+      color: var(--soft);
+      font-size: 0.78rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+      .function-card { min-width: 0; width: fit-content; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .panel-head { align-items: flex-start; flex-direction: column; }
+      .panel-tools, .search-input { width: 100%; }
+      .search-input { max-width: none; }
+    }
+
+    @media (max-width: 620px) {
+      .page-shell {
+        width: min(100% - 18px, 1240px);
+        padding-top: 10px;
+      }
+      .topbar { align-items: stretch; flex-direction: column; }
+      .topbar-actions { justify-content: space-between; }
+      .update-card { max-width: calc(100% - 102px); }
+      .hero { min-height: 0; padding: 21px; }
+      .brand-row { margin-bottom: 18px; }
+      .brand-row img { width: 50px; height: 50px; }
+      .hero-copy { font-size: 0.92rem; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stat-card { min-height: 100px; }
+      .panel-tools { align-items: stretch; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <div class="topbar">
+      <a class="back-link" id="backToExplorer" href="index.html#token">Back to TCL Explorer</a>
+      <div class="topbar-actions">
+        <div class="update-card is-loading" id="updateCard" aria-live="polite">
+          <span class="update-dot" aria-hidden="true"></span>
+          <span class="update-copy">
+            <strong id="updateLabel">Loading holders</strong>
+            <span id="updateDetail">Live data from MultiversX</span>
+          </span>
+        </div>
+        <a
+          class="explorer-link"
+          href="https://explorer.multiversx.com/tokens/TCL-fe459d/accounts"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Explorer ↗</a>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div>
+        <div class="brand-row">
+          <img src="images/tcl_icon.png" alt="TCL token">
+          <div>
+            <span class="eyebrow">TCL Explorer · Token Holders</span>
+            <span>On-chain snapshot · excludes smart contracts</span>
+          </div>
+        </div>
+        <h1>Top 100 TCL Holders</h1>
+        <p class="hero-copy">
+          Real wallets ranked by $TCL balance. Smart contracts and protocol-owned addresses
+          are excluded to show only genuine holder distribution.
+        </p>
+      </div>
+      <div class="function-card">
+        <span>Token</span>
+        <strong>TCL-fe459d</strong>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Token statistics">
+      <article class="stat-card">
+        <span class="stat-label">TCL Price</span>
+        <strong class="stat-value" id="statPrice">--</strong>
+        <span class="stat-note" id="statPriceChange">Loading...</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Market Cap</span>
+        <strong class="stat-value" id="statMcap">--</strong>
+        <span class="stat-note">Circulating × price</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Total Holders</span>
+        <strong class="stat-value" id="statHolders">--</strong>
+        <span class="stat-note">Unique wallet addresses</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Circulating Supply</span>
+        <strong class="stat-value" id="statSupply">--</strong>
+        <span class="stat-note">Total on-chain supply</span>
+      </article>
+    </section>
+
+    <section class="leaderboard-panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <h2>Holder Leaderboard</h2>
+          <p id="resultSummary">Loading Top 100...</p>
+        </div>
+        <div class="panel-tools">
+          <input
+            class="search-input"
+            id="walletSearch"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            placeholder="Search wallet address…"
+            aria-label="Search wallet address"
+          >
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Top 100 TCL holders">
+          <thead>
+            <tr>
+              <th scope="col">Rank</th>
+              <th scope="col">Address</th>
+              <th scope="col">Balance</th>
+              <th scope="col">Percentage</th>
+              <th scope="col">Value</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr class="loading-row"><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="loading-row"><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="loading-row"><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="loading-row"><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+            <tr class="loading-row"><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>
+          </tbody>
+        </table>
+        <div class="empty-state" id="emptyState">No wallet matches this search.</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const TOKEN_ID = "TCL-fe459d";
+      const API_BASE = "https://api.multiversx.com";
+      const EXPLORER_ACCOUNTS = "https://explorer.multiversx.com/accounts/";
+      const FETCH_SIZE = 500;
+      const REFRESH_MS = 5 * 60 * 1000;
+
+      // Excluded: main wallet + any extra protocol-owned addresses
+      const EXCLUDED = new Set([
+        "erd1zm4cqdfqy05nczm9nnzxlph7ha8ykfz6mtkdkapuwltrec9wmsesarna0m"
+      ]);
+
+      const state = {
+        rows: [],
+        loading: false,
+        loadedAt: 0,
+        tokenDecimals: 18,
+        tokenPrice: 0,
+        tokenSupply: 0n
+      };
+
+      function notifyParentReady() {
+        if (window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); } catch (_) {}
+        }
+      }
+
+      const dom = {
+        updateCard: document.getElementById("updateCard"),
+        updateLabel: document.getElementById("updateLabel"),
+        updateDetail: document.getElementById("updateDetail"),
+        statPrice: document.getElementById("statPrice"),
+        statPriceChange: document.getElementById("statPriceChange"),
+        statMcap: document.getElementById("statMcap"),
+        statHolders: document.getElementById("statHolders"),
+        statSupply: document.getElementById("statSupply"),
+        resultSummary: document.getElementById("resultSummary"),
+        walletSearch: document.getElementById("walletSearch"),
+        leaderboardBody: document.getElementById("leaderboardBody"),
+        emptyState: document.getElementById("emptyState"),
+      };
+
+      // ── Formatting helpers ──────────────────────────────────────────────
+
+      function rawToFloat(raw, decimals) {
+        if (!raw || raw === "0") return 0;
+        const s = String(raw);
+        const neg = s.startsWith("-");
+        const abs = neg ? s.slice(1) : s;
+        if (abs.length <= decimals) {
+          return (neg ? -1 : 1) * parseFloat("0." + abs.padStart(decimals, "0"));
+        }
+        const whole = abs.slice(0, abs.length - decimals) || "0";
+        const frac = abs.slice(abs.length - decimals);
+        return (neg ? -1 : 1) * parseFloat(whole + "." + frac);
+      }
+
+      // MvX /tokens/{id} returns supply as whole-token count (not denominated)
+      // percentage = balance_in_tcl / supply_in_tcl * 100
+      function calcPct(balanceTcl, supplyTcl) {
+        if (!balanceTcl || !supplyTcl) return 0;
+        return (balanceTcl / supplyTcl) * 100;
+      }
+
+      function fmtTCL(num) {
+        if (!num) return "0 TCL";
+        if (num >= 1e9) return (num / 1e9).toFixed(2) + "B TCL";
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + "M TCL";
+        return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(num) + " TCL";
+      }
+
+      function fmtUSD(num) {
+        if (!num || num < 0.01) return "<$0.01";
+        if (num >= 1e9) return "$" + (num / 1e9).toFixed(2) + "B";
+        if (num >= 1e6) return "$" + (num / 1e6).toFixed(2) + "M";
+        if (num >= 1e3) return "$" + (num / 1e3).toFixed(2) + "K";
+        return "$" + num.toFixed(2);
+      }
+
+      function fmtInt(n) {
+        return new Intl.NumberFormat("en-US").format(Math.round(n));
+      }
+
+      function shortAddr(addr) {
+        if (!addr || addr.length <= 20) return addr;
+        return addr.slice(0, 10) + "…" + addr.slice(-8);
+      }
+
+      function isSC(holder) {
+        if (holder.isSmartContract) return true;
+        const addr = holder.address || "";
+        // MultiversX SC addresses are bech32 of zero-prefix bytes → many leading q's
+        return /^erd1q{6,}/.test(addr);
+      }
+
+      // ── Update card ─────────────────────────────────────────────────────
+
+      function renderUpdateCard(kind = "ready") {
+        dom.updateCard.className = `update-card is-${kind}`;
+        if (kind === "loading") {
+          dom.updateLabel.textContent = "Loading holders";
+          dom.updateDetail.textContent = "Live data from MultiversX";
+          return;
+        }
+        if (kind === "error") {
+          dom.updateLabel.textContent = "Update unavailable";
+          dom.updateDetail.textContent = "Retry in 5 minutes";
+          return;
+        }
+        if (!state.loadedAt) {
+          dom.updateLabel.textContent = "Live data";
+          dom.updateDetail.textContent = "Refreshes every 5 minutes";
+          return;
+        }
+        const elapsed = Math.floor((Date.now() - state.loadedAt) / 60000);
+        dom.updateLabel.textContent = elapsed < 1 ? "Updated just now" : `Updated ${elapsed}m ago`;
+        dom.updateDetail.textContent = `Next refresh in ${Math.max(0, 5 - elapsed)}m`;
+      }
+
+      // ── Render rows ─────────────────────────────────────────────────────
+
+      function renderRows() {
+        const q = dom.walletSearch.value.trim().toLowerCase();
+        const visible = q
+          ? state.rows.filter(r => r.address.toLowerCase().includes(q))
+          : state.rows;
+
+        dom.leaderboardBody.replaceChildren();
+        dom.emptyState.classList.toggle("is-visible", visible.length === 0);
+        dom.resultSummary.textContent = q
+          ? `${visible.length} result${visible.length === 1 ? "" : "s"} in Top 100`
+          : `${state.rows.length} wallets · ranked by $TCL balance`;
+
+        for (const r of visible) {
+          const tr = document.createElement("tr");
+
+          // Rank
+          const rankTd = document.createElement("td");
+          rankTd.className = "rank-cell";
+          const badge = document.createElement("span");
+          badge.className = "rank-badge" + (r.rank <= 3 ? ` rank-${r.rank}` : "");
+          badge.textContent = `#${r.rank}`;
+          rankTd.append(badge);
+
+          // Address
+          const addrTd = document.createElement("td");
+          const link = document.createElement("a");
+          link.className = "wallet-link";
+          link.href = EXPLORER_ACCOUNTS + encodeURIComponent(r.address);
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.title = r.address;
+          const dot = document.createElement("span");
+          dot.className = "wallet-dot";
+          const txt = document.createElement("span");
+          txt.textContent = shortAddr(r.address);
+          link.append(dot, txt);
+          addrTd.append(link);
+
+          // Balance
+          const balTd = document.createElement("td");
+          balTd.className = "balance-cell";
+          const balStrong = document.createElement("strong");
+          balStrong.textContent = fmtTCL(r.balance);
+          balStrong.title = r.balance.toLocaleString("en-US") + " TCL";
+          balTd.append(balStrong);
+
+          // Percentage
+          const pctTd = document.createElement("td");
+          pctTd.className = "pct-cell";
+          const pctVal = document.createElement("div");
+          pctVal.className = "pct-val";
+          pctVal.textContent = r.pct.toFixed(r.pct < 0.01 ? 4 : r.pct < 0.1 ? 3 : 2) + "%";
+          const barWrap = document.createElement("div");
+          barWrap.className = "pct-bar-wrap";
+          const bar = document.createElement("div");
+          bar.className = "pct-bar";
+          // Scale bar relative to #1 holder so bars are visible even for small holders
+          bar.style.width = (r.pctOfTop * 100).toFixed(2) + "%";
+          barWrap.append(bar);
+          pctTd.append(pctVal, barWrap);
+
+          // Value
+          const valTd = document.createElement("td");
+          valTd.className = "value-cell";
+          valTd.textContent = r.valueUsd > 0 ? "≈" + fmtUSD(r.valueUsd) : "—";
+
+          tr.append(rankTd, addrTd, balTd, pctTd, valTd);
+          dom.leaderboardBody.append(tr);
+        }
+      }
+
+      // ── Load data ────────────────────────────────────────────────────────
+
+      async function loadHolders() {
+        if (state.loading) return;
+        state.loading = true;
+        if (!state.rows.length) renderUpdateCard("loading");
+
+        try {
+          const [tokenRes, holdersRes] = await Promise.all([
+            fetch(`${API_BASE}/tokens/${TOKEN_ID}`),
+            fetch(`${API_BASE}/tokens/${TOKEN_ID}/accounts?size=${FETCH_SIZE}`)
+          ]);
+
+          if (!tokenRes.ok || !holdersRes.ok) throw new Error("MultiversX API error");
+
+          const token = await tokenRes.json();
+          const rawHolders = await holdersRes.json();
+
+          if (!Array.isArray(rawHolders)) throw new Error("Unexpected response format");
+
+          const decimals = token.decimals ?? 18;
+          const price = token.price || 0;
+          // MvX returns supply as whole-token count, not denominated
+          const supplyNum = Number(token.supply) || 0;
+          const circSupplyNum = Number(token.circulatingSupply) || supplyNum;
+
+          // Filter: remove SCs and excluded addresses
+          const filtered = rawHolders.filter(h => !isSC(h) && !EXCLUDED.has(h.address));
+          const top100 = filtered.slice(0, 100);
+
+          const top1Balance = top100.length ? rawToFloat(top100[0].balance, decimals) : 1;
+
+          state.rows = top100.map((h, i) => {
+            const balance = rawToFloat(h.balance, decimals);
+            const pct = calcPct(balance, supplyNum);
+            return {
+              rank: i + 1,
+              address: h.address,
+              balance,
+              pct,
+              pctOfTop: top1Balance > 0 ? balance / top1Balance : 0,
+              valueUsd: balance * price
+            };
+          });
+
+          state.tokenPrice = price;
+          state.loadedAt = Date.now();
+
+          // Stats
+          dom.statPrice.textContent = price > 0 ? "$" + price.toFixed(6) : "—";
+          const priceChange = token.priceChange24h;
+          if (priceChange !== undefined && priceChange !== null) {
+            const sign = priceChange >= 0 ? "+" : "";
+            dom.statPriceChange.textContent = `24h: ${sign}${Number(priceChange).toFixed(2)}%`;
+            dom.statPriceChange.style.color = priceChange >= 0 ? "var(--accent)" : "var(--danger)";
+          } else {
+            dom.statPriceChange.textContent = "24h change N/A";
+          }
+
+          const mcap = token.marketCap || (circSupplyNum * price);
+          dom.statMcap.textContent = mcap > 0 ? fmtUSD(mcap) : "—";
+          dom.statHolders.textContent = fmtInt(token.accounts || filtered.length);
+          dom.statSupply.textContent = circSupplyNum > 0 ? fmtTCL(circSupplyNum) : "—";
+
+
+          renderUpdateCard("ready");
+          renderRows();
+        } catch (err) {
+          dom.leaderboardBody.replaceChildren();
+          dom.emptyState.textContent = "Could not load holder data. MultiversX API may be temporarily unavailable.";
+          dom.emptyState.classList.add("is-visible");
+          dom.resultSummary.textContent = "Failed to load";
+          renderUpdateCard("error");
+        } finally {
+          state.loading = false;
+          notifyParentReady();
+        }
+      }
+
+      // ── Init ─────────────────────────────────────────────────────────────
+
+      document.getElementById("backToExplorer")?.addEventListener("click", e => {
+        if (window.parent && window.parent !== window) {
+          e.preventDefault();
+          try { window.parent.postMessage({ type: "tcl:navigate", page: "token" }, "*"); } catch (_) {}
+        }
+      });
+
+      dom.walletSearch.addEventListener("input", renderRows);
+
+      loadHolders();
+      setInterval(renderUpdateCard, 30_000);
+      setInterval(() => {
+        if (document.visibilityState === "visible") loadHolders();
+      }, REFRESH_MS);
+    })();
+  </script>
+</body>
+</html>
