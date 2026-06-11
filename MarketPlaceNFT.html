@@ -1576,11 +1576,31 @@ async function loadListings() {
   grid.innerHTML = `<div class="loading-msg"><div class="loading-spinner"></div>Loading listings…</div>`;
 
   if (!MARKETPLACE_CONTRACT) {
-    // Demo mode: pull live TCL NFTs from MultiversX API as placeholder listings
     await loadDemoListings();
     return;
   }
 
+  // Try fast server cache first
+  try {
+    const resp = await fetch(`${TCL_API}/api/marketplace/active-listings`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data.listings) && data.listings.length > 0) {
+        allListings = data.listings.map(l => ({
+          ...l,
+          price: BigInt(l.price || "0"),
+          nft: l.nft || null,
+        }));
+        updateStats();
+        renderCurrentTab();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("Server listings failed, falling back to chain", e);
+  }
+
+  // Fallback: direct chain query
   try {
     const activeIds = (await queryContract("getActiveListings")).map(decodeBase64Unsigned);
     updateStats();
@@ -1643,27 +1663,22 @@ async function fetchListingData(listingId) {
     const listing = decodeListingStruct(raw);
     // Enrich with NFT metadata
     const nftId = `${listing.nft_token}-${bigIntToHex(BigInt(listing.nft_nonce))}`;
-    const [nftResp, tclResp] = await Promise.all([
-      fetch(`${MVX_API}/nfts/${nftId}`),
-      fetch(`${TCL_API}/api/nfts/${nftId}`).catch(() => null),
-    ]);
-    if (!nftResp.ok) throw new Error(`NFT metadata unavailable (${nftResp.status})`);
-    const mvxNft = await nftResp.json();
+    // Prefer server DB — no MultiversX call needed
+    const tclResp = await fetch(`${TCL_API}/api/nfts/${nftId}`).catch(() => null);
     const tclNft = tclResp?.ok ? await tclResp.json() : null;
-    listing.nft = tclNft
-      ? {
-          ...(tclNft.raw_api || {}),
-          ...mvxNft,
-          ...tclNft,
-          media: tclNft.media?.length ? tclNft.media : mvxNft.media,
-          metadata: tclNft.metadata || mvxNft.metadata,
-      }
-      : mvxNft;
-    if (listing.nft.sc_tcl_max == null) {
-      Object.assign(
-        listing.nft,
-        await fetchNFTStorageLive(listing.nft.collection, listing.nft.nonce)
-      );
+    if (tclNft) {
+      listing.nft = {
+        ...(tclNft.raw_api || {}),
+        ...tclNft,
+        identifier: tclNft.identifier || nftId,
+        collection: listing.nft_token,
+        nonce: listing.nft_nonce,
+      };
+    } else {
+      // Fallback to MultiversX only if server doesn't have it
+      const nftResp = await fetch(`${MVX_API}/nfts/${nftId}`);
+      if (!nftResp.ok) throw new Error(`NFT metadata unavailable (${nftResp.status})`);
+      listing.nft = await nftResp.json();
     }
     return listing;
   } catch (e) {
@@ -1959,6 +1974,20 @@ function buildStorageHtml(nft) {
 async function fetchNFTStorageLive(collectionId, nonce) {
   if (!collectionId || nonce == null) return {};
 
+  // Try server DB first (no MultiversX call)
+  try {
+    const nonceHex = BigInt(nonce).toString(16).padStart(2, "0");
+    const identifier = `${collectionId}-${nonceHex}`;
+    const r = await fetch(`${TCL_API}/api/nfts/${identifier}`);
+    if (r.ok) {
+      const d = await r.json();
+      if (d.sc_tcl_max != null) {
+        return { sc_tcl_count: d.sc_tcl_count ?? null, sc_tcl_max: d.sc_tcl_max };
+      }
+    }
+  } catch { /* fallback below */ }
+
+  // Fallback: live SC query (only if server doesn't have the data)
   const queryStorage = async funcName => {
     try {
       const response = await fetch(`${MVX_API}/vm-values/query`, {
@@ -2031,6 +2060,7 @@ async function buyNFT(listingId) {
       successMessage: "The NFT purchase was completed successfully.",
       label: "Purchase transaction",
     });
+    invalidateServerCaches();
     setTimeout(loadListings, 5000);
   } catch (err) {
     if (!err?.transactionStatusShown) {
@@ -2070,6 +2100,7 @@ async function cancelListing(listingId) {
       successMessage: "The NFT was returned to your wallet.",
       label: "Cancel listing transaction",
     });
+    invalidateServerCaches();
     setTimeout(loadListings, 4000);
     setTimeout(loadMyNFTs, 5000);
   } catch (err) {
@@ -2136,6 +2167,7 @@ async function submitPriceUpdate(listingId) {
       label: "Price update transaction",
     });
     closeDetail();
+    invalidateServerCaches();
     setTimeout(loadListings, 4000);
   } catch (err) {
     if (!err?.transactionStatusShown) {
@@ -2145,7 +2177,18 @@ async function submitPriceUpdate(listingId) {
   }
 }
 
+function invalidateServerCaches() {
+  fetch(`${TCL_API}/api/marketplace/listings/invalidate`, { method: "POST" }).catch(() => {});
+  if (walletAddress) {
+    fetch(`${TCL_API}/api/marketplace/wallet-nfts/${walletAddress}/invalidate`, { method: "POST" }).catch(() => {});
+  }
+}
+
 async function getEditableListing(listingId) {
+  // Use in-memory cache first — avoids SC query
+  const cached = allListings.find(l => l.listing_id === listingId);
+  if (cached && cached.is_active !== false) return cached;
+  // Fallback to chain if not in cache
   const [raw] = await queryContract("getListing", [listingId]);
   if (!raw) throw new Error("Listing no longer exists");
   const listing = decodeListingStruct(raw);
@@ -2172,7 +2215,7 @@ async function openMyNFTsModal() {
   }
   document.getElementById("my-nfts-modal").classList.add("open");
   document.getElementById("my-nfts-grid").innerHTML =
-    `<div style="color:var(--muted);font-size:13px;padding:16px;">Loading NFTs from your wallet...</div>`;
+    `<div class="loading-msg" style="grid-column:1/-1;"><div class="loading-spinner"></div>Loading your NFTs…</div>`;
   await loadMyNFTs();
   renderMyNFTWallet();
 }
@@ -2211,40 +2254,21 @@ function closeListModal() {
 async function loadMyNFTs() {
   if (!walletAddress) return;
   try {
-    // Fetch all NFTs for this wallet and filter by TCL creator addresses
-    const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
-    if (!resp.ok) throw new Error("API error");
-    const all = await resp.json();
-    const walletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
-    const storageByIdentifier = new Map();
-
-    try {
-      const serverResponse = await fetch(`${TCL_API}/api/nfts/all`);
-      if (serverResponse.ok) {
-        const grouped = await serverResponse.json();
-        Object.values(grouped || {}).flat().forEach(nft => {
-          if (nft?.identifier) storageByIdentifier.set(nft.identifier, nft);
-        });
-      }
-    } catch (error) {
-      console.warn("Could not load synced NFT storage", error);
-    }
-
-    myWalletNFTs = await Promise.all(walletNFTs.map(async nft => {
-      const synced = storageByIdentifier.get(nft.identifier);
-      const enriched = {
-        ...nft,
-        sc_tcl_count: synced?.sc_tcl_count ?? nft.sc_tcl_count ?? null,
-        sc_tcl_max: synced?.sc_tcl_max ?? nft.sc_tcl_max ?? null,
-      };
-      if (enriched.sc_tcl_max == null) {
-        Object.assign(enriched, await fetchNFTStorageLive(enriched.collection, enriched.nonce));
-      }
-      return enriched;
-    }));
+    const resp = await fetch(`${TCL_API}/api/marketplace/wallet-nfts/${walletAddress}`);
+    if (!resp.ok) throw new Error("Server error");
+    const data = await resp.json();
+    myWalletNFTs = data.nfts || [];
   } catch (e) {
-    console.warn("Could not load wallet NFTs", e);
-    myWalletNFTs = [];
+    console.warn("Server wallet-nfts failed, falling back to MultiversX", e);
+    try {
+      const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
+      if (!resp.ok) throw new Error("API error");
+      const all = await resp.json();
+      myWalletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
+    } catch (e2) {
+      console.warn("Could not load wallet NFTs", e2);
+      myWalletNFTs = [];
+    }
   }
 }
 
@@ -2439,6 +2463,7 @@ async function submitListing() {
       label: "NFT listing transaction",
     });
     closeListModal();
+    invalidateServerCaches();
     setTimeout(loadListings, 5000);
     setTimeout(loadMyNFTs, 5000);
   } catch (err) {
@@ -3131,12 +3156,23 @@ async function refreshMarketplace() {
 
 async function loadMarketplaceFee() {
   if (!MARKETPLACE_CONTRACT) return;
+  // Cache in localStorage — fee changes rarely
+  const cached = localStorage.getItem("tcl.mp.feePercent");
+  if (cached) {
+    const { fee, ts } = JSON.parse(cached);
+    if (Date.now() - ts < 60 * 60 * 1000) { // 1h
+      marketplaceFeePercent = fee;
+      updateListingPriceBreakdown();
+      return;
+    }
+  }
   try {
     const [rawFee] = await queryContract("getFeePercent");
     if (rawFee) {
       const fee = Number(decodeBase64Unsigned(rawFee));
       if (Number.isInteger(fee) && fee >= 0 && fee <= 10) {
         marketplaceFeePercent = fee;
+        localStorage.setItem("tcl.mp.feePercent", JSON.stringify({ fee, ts: Date.now() }));
       }
     }
   } catch (e) {
