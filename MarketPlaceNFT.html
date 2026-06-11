@@ -2707,12 +2707,16 @@ async function simulateTx(tx) {
   const succeeded = result.status === "success"
     || (shardResults.length > 0 && shardResults.every(shard => shard.status === "success"));
   if (!succeeded) {
-    throw new Error(
-      result.failReason
+    const scResult = failedShard?.scResults?.find?.(r => r?.returnMessage)
+      || result?.scResults?.find?.(r => r?.returnMessage);
+    const specificMsg = scResult?.returnMessage
+      || failedShard?.returnMessage
+      || result.failReason
       || failedShard?.failReason
-      || failedShard?.error
-      || "Transaction validation failed"
-    );
+      || failedShard?.error;
+    const err = new Error(specificMsg || "Transaction validation failed");
+    err.isOnChainSimError = true;
+    throw err;
   }
 }
 
@@ -2737,7 +2741,12 @@ async function signTx(tx) {
     signingTx.version = Math.max(signingTx.version, 2);
     signingTx.options = Number(signingTx.options || 0) | 2;
   }
-  await simulateTx(signingTx);
+  try {
+    await simulateTx(signingTx);
+  } catch (simErr) {
+    if (simErr.isOnChainSimError) throw simErr;
+    console.warn("Transaction pre-validation skipped:", simErr.message);
+  }
   const reqPromise = client.request({
     topic: stored.topic,
     chainId: TCLXPortal.CONFIG.chainId,
@@ -2813,7 +2822,7 @@ function showTransactionStatus(state, title, message, hash = "") {
 
 function getTransactionFailureMessage(tx, label) {
   const resultWithMessage = tx?.smartContractResults?.find(result => result?.returnMessage);
-  const message = tx?.returnMessage || tx?.error || resultWithMessage?.returnMessage;
+  const message = resultWithMessage?.returnMessage || tx?.returnMessage || tx?.error;
   return message ? `${label} failed: ${message}` : `${label} failed on-chain.`;
 }
 
