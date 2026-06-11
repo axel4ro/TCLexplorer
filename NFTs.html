@@ -938,11 +938,7 @@ async function renderNFTs(nfts) {
       const pct = Math.min(Number(tclCount * 100n / tclMax), 100);
       const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
       const usdVal = tclPriceUSD && maxDisplay > 0 ? ` ≈ $${(maxDisplay / 2 * tclPriceUSD).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '';
-      return `
-        <div class="storage-bar-wrap" title="TCL Storage">
-          <div class="storage-bar-fill" style="width:${pct}%"></div>
-        </div>
-        <span class="storage-label">💾 ${fmtStorage(tclMax)} TCL${usdVal}</span>`;
+      return `<span class="storage-label">💾 ${fmtStorage(tclMax)} TCL${usdVal}</span>`;
     })() : "";
 
     // don't repeat attrValue if it's already the title
@@ -1106,9 +1102,6 @@ async function showNFTDetails(identifier) {
       scHtml = `
         <div class="sc-storage-full" style="margin-bottom:10px;">
           <span class="k">💾 Storage: ${fmtStorage(tclMax)} TCL${usdVal}</span>
-          <div class="storage-bar-wrap" style="height:10px; margin-top:5px;">
-            <div class="storage-bar-fill" style="width:${storagePct}%"></div>
-          </div>
         </div>`;
     }
   }
