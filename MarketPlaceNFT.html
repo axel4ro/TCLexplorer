@@ -997,13 +997,13 @@
     ══════════════════════════════════════ */
     @media (max-width: 640px) {
       /* Header — wallet controls remain visible below the branding */
-      header { padding: 10px 12px; gap: 8px; flex-wrap: wrap; align-items: center; overflow: visible; }
-      .header-left { width: 100%; flex-shrink: 0; gap: 8px; min-width: 0; }
+      header { padding: 10px 12px; gap: 8px; flex-wrap: nowrap; align-items: center; overflow: visible; }
+      .header-left { flex: 1; min-width: 0; gap: 8px; }
       .header-left img { width: 24px; height: 24px; }
-      .site-title { font-size: 13px; }
+      .site-title { font-size: 13px; white-space: nowrap; }
       .site-subtitle { display: none; }
       .header-right {
-        width: 100%; min-width: 0; margin-left: 0;
+        flex-shrink: 0; min-width: 0; margin-left: 0;
         display: flex; gap: 8px; align-items: center; justify-content: flex-end;
       }
       .nav-back { padding: 5px 8px; font-size: 13px; min-width: 0; }
@@ -1036,19 +1036,48 @@
       .toolbar .btn-primary,
       .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
 
-      /* Stats bar — 2-column grid */
-      .stats-bar { padding: 10px 14px; gap: 0; display: grid; grid-template-columns: 1fr 1fr; row-gap: 10px; column-gap: 12px; }
-      .stats-bar > div:last-child { grid-column: 1 / -1; text-align: right; padding-top: 4px; border-top: 1px solid #1e2a42; }
+      /* Stats bar — 2×2 cards (TCL Price hidden, moved to wallet popup) */
+      .stats-bar {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 8px; padding: 10px 12px;
+        background: transparent; border-bottom: none;
+      }
+      .stats-bar .stat-item {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+      .stat-tcl-price-item { display: none !important; }
       .stat-value { font-size: 14px; }
       .stat-label { font-size: 10px; }
       .sale-row { grid-template-columns: 1fr 1fr; gap: 10px; }
       .sale-parties { grid-column: 1 / -1; }
       .sale-time { text-align: left; }
 
-      /* Tabs — all fit on one row, no scroll */
-      .tabs { padding: 6px 8px 0; gap: 3px; flex-wrap: wrap; overflow: visible; }
-      .tab-btn { flex: 1; padding: 8px 4px; font-size: 11px; white-space: nowrap; text-align: center; }
-      .tab-action-btn { flex: 0; font-size: 11px; padding: 6px 8px; margin-bottom: 2px; }
+      /* Tabs — 2-column grid on mobile */
+      .tabs {
+        display: grid; grid-template-columns: 1fr 1fr;
+        padding: 8px; gap: 5px;
+        border-bottom: 1px solid #1e2a42;
+        background: rgba(13,17,32,0.5);
+      }
+      .tab-btn {
+        flex: none; padding: 9px 6px; font-size: 12px;
+        border-radius: 8px; text-align: center; white-space: nowrap;
+        border-bottom: none;
+      }
+      .tab-btn.active {
+        border: 1px solid var(--accent);
+        background: rgba(47,246,222,0.1);
+        border-bottom: 1px solid var(--accent);
+      }
+      .tab-action-btn {
+        flex: none; padding: 9px 8px; font-size: 12px; margin: 0;
+        border-radius: 8px;
+      }
+      .tab-action-btn:last-child { grid-column: 1 / -1; }
 
 
       /* Listings grid — 2 cols on mobile */
@@ -1088,10 +1117,7 @@
 <header>
   <div class="header-left">
     <img src="images/tcl_icon.png" alt="TCL" onerror="this.style.display='none'">
-    <div>
-      <h1 class="site-title">TCLexplorer</h1>
-      <p class="site-subtitle">NFT Marketplace</p>
-    </div>
+    <h1 class="site-title">NFT Marketplace</h1>
   </div>
   <div class="header-right">
     <!-- ── Connect button + QR popover (hidden when connected) -->
@@ -1144,6 +1170,7 @@
         <div id="walletBalances" class="wallet-popup-balances" aria-live="polite">
           <span id="balEgld" class="wallet-balance"><strong>EGLD</strong> Loading...</span>
           <span id="balTcl" class="wallet-balance tcl"><strong>TCL</strong> Loading...</span>
+          <span id="walletTclPrice" class="wallet-balance" style="border-color:rgba(47,246,222,0.25);background:rgba(47,246,222,0.04);"><strong style="color:var(--accent)">TCL Price</strong> $—</span>
         </div>
         <button class="btn-disconnect-topbar" id="disconnectBtn" type="button" onclick="disconnectWallet()">
           Disconnect <span>✕</span>
@@ -1163,7 +1190,7 @@
     <div class="stat-label">Floor Price</div>
     <div class="stat-value gold" id="stat-floor">— TCL</div>
   </div>
-  <div class="stat-item">
+  <div class="stat-item stat-tcl-price-item">
     <div class="stat-label">TCL Price</div>
     <div class="stat-value" id="stat-tcl-price">$—</div>
   </div>
@@ -1954,6 +1981,7 @@ function openDetail(listingId) {
     <div class="modal-layout">
       <div class="modal-img-col">
         <img src="${img}" alt="${nft.name}" onerror="this.src='images/tcl_icon.png'">
+        ${storageHtml}
         <div style="margin-top:12px;">
           <div class="modal-info-row"><span class="k">Collection</span><span class="v">${nft.collection || "—"}</span></div>
           <div class="modal-info-row"><span class="k">Identifier</span><span class="v" style="font-size:11px; font-family:monospace;">${nft.identifier || "—"}</span></div>
@@ -1967,7 +1995,6 @@ function openDetail(listingId) {
         <h2 style="margin:0 0 4px; font-size:22px; font-weight:700;">${nft.name || "Unknown NFT"}</h2>
         <p style="color:var(--muted); margin:0 0 16px; font-size:13px;">${nft.collection || ""}</p>
         ${attrsHtml}
-        ${storageHtml}
         <div class="modal-price-section">
           <div class="modal-price-label">💰 Listed Price</div>
           <div class="modal-price-value">
@@ -3125,7 +3152,10 @@ async function loadTCLPrice() {
     const data = await resp.json();
     tclPriceUSD = parseFloat(data?.pairs?.[0]?.priceUsd || 0);
     if (tclPriceUSD) {
-      document.getElementById("stat-tcl-price").textContent = `$${tclPriceUSD.toFixed(6)}`;
+      const priceText = `$${tclPriceUSD.toFixed(6)}`;
+      document.getElementById("stat-tcl-price").textContent = priceText;
+      const wtp = document.getElementById("walletTclPrice");
+      if (wtp) wtp.lastChild.textContent = " " + priceText;
       updateListingPriceBreakdown();
     }
   } catch (e) {
