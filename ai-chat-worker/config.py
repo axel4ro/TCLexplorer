@@ -16,7 +16,7 @@ ALLOWED_ORIGINS     = os.getenv(
 SYNC_SECRET         = os.getenv("SYNC_SECRET", "")
 
 MAX_QUESTION_CHARS  = 1000
-MAX_CONTEXT_CHARS   = 5000
+MAX_CONTEXT_CHARS   = 2500
 RAG_MATCH_COUNT     = int(os.getenv("RAG_MATCH_COUNT", "6"))
 
 CHUNK_SIZE          = int(os.getenv("CHUNK_SIZE",    "1400"))

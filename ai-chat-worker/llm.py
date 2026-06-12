@@ -56,7 +56,8 @@ async def generate_stream(
         "stream": True,
         "options": {
             "temperature": 0.25,
-            "num_predict": 350,
+            "num_predict": 300,
+            "num_ctx": 2048,
             "stop": ["<|im_end|>", "<|end|>", "</s>"],
         },
     }

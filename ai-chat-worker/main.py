@@ -99,6 +99,36 @@ async def _run_index():
 
 # ──────────────────────────── SSE streaming ────────────────────────────
 
+async def _with_keepalive(source: AsyncIterator[str], interval: float = 5.0) -> AsyncIterator[str]:
+    """Wraps any async generator, emitting SSE keepalive comments during gaps.
+    Prevents Cloudflare / browser from closing the connection while the LLM thinks."""
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def _producer():
+        try:
+            async for item in source:
+                await queue.put(item)
+        finally:
+            await queue.put(None)  # sentinel
+
+    task = asyncio.create_task(_producer())
+    try:
+        while True:
+            try:
+                item = await asyncio.wait_for(queue.get(), timeout=interval)
+                if item is None:
+                    break
+                yield item
+            except asyncio.TimeoutError:
+                yield ": keepalive\n\n"
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
 async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
     question = req.message.strip()[:config.MAX_QUESTION_CHARS]
     if not question:
@@ -221,11 +251,11 @@ async def health():
 @app.post("/chat")
 async def chat(req: ChatRequest):
     return StreamingResponse(
-        _stream_chat(req),
+        _with_keepalive(_stream_chat(req), interval=5.0),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",  # disable Nginx buffering
+            "X-Accel-Buffering": "no",
         },
     )
 
