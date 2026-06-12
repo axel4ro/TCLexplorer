@@ -23,31 +23,26 @@ RAG_MATCH_COUNT     = int(os.getenv("RAG_MATCH_COUNT", "6"))
 
 CHUNK_SIZE          = int(os.getenv("CHUNK_SIZE",    "1400"))
 CHUNK_OVERLAP       = int(os.getenv("CHUNK_OVERLAP", "220"))
-MAX_CHUNKS          = int(os.getenv("MAX_CHUNKS",    "500"))
+MAX_CHUNKS          = int(os.getenv("MAX_CHUNKS",    "2000"))
 
 TCL_EXPLORER_BASE = "https://tclexplorer.com/"
 TCL_EXPLORER_PATHS = [
+    # Main pages
     "",
-    "analytics.html", "CanIrunIt.html", "connect_xportal.html",
-    "earn.html", "flow.html", "Game_Requirements.html",
+    "analytics.html", "BuyCoins.html", "CanIrunIt.html",
+    "connect_xportal.html", "disclaimer.html",
+    "earn.html", "flow.html", "FreeMonthlyWheel.html",
+    "Game_Requirements.html", "holders.html",
     "Items_Upgrade_Simulator.html", "Item_Upgrade_Requirements.html",
-    "loot.html", "NFTs.html", "signal.html",
+    "loot.html", "MarketPlaceNFT.html", "NFTs.html",
+    "pnlCheck.html", "signal.html", "SupportTCLexplorer.html",
+    "swap.html",
     "TCL_apr_rewards_calculator.html", "TCL_trades.html",
     "TCL_transaction_simulator.html", "Technicals.html", "volume.html",
-    "wiki.html", "weekly_events.json", "leaderboard.json",
+    "wiki.html",
+    # Live data
+    "weekly_events.json", "leaderboard.json",
     "data/drop.json", "data/items_data.json", "data/tcl-analytics.json",
-    "lang/analytics.bundle.js", "lang/apr-rewards.bundle.js",
-    "lang/blacksmith.bundle.js", "lang/can-i-run-it.bundle.js",
-    "lang/claim-flow.bundle.js", "lang/common.bundle.js",
-    "lang/dashboard.bundle.js", "lang/earn.bundle.js",
-    "lang/events.bundle.js", "lang/exp-table.bundle.js",
-    "lang/game-requirements.bundle.js", "lang/item-upgrade.bundle.js",
-    "lang/loot.bundle.js", "lang/nfts.bundle.js",
-    "lang/page-common.bundle.js", "lang/signal.bundle.js",
-    "lang/tcl-trades.bundle.js", "lang/technicals.bundle.js",
-    "lang/token.bundle.js", "lang/transaction-simulator.bundle.js",
-    "lang/volume.bundle.js", "lang/web3.bundle.js",
-    "lang/wiki-ui.bundle.js", "lang/wiki.bundle.js",
 ]
 
 EXTRA_SOURCES = [

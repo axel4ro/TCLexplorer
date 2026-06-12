@@ -389,9 +389,12 @@ async def index_all(status_cb=None) -> dict:
 
     async with httpx.AsyncClient(timeout=30) as http:
         for url in all_sources:
-            follow = not _is_tcl_explorer_url(url)
+            is_tcl = _is_tcl_explorer_url(url)
+            follow = not is_tcl
+            # Whitepaper has many sub-pages; TCLexplorer paths are explicit so 1 page each
+            max_p = 1 if is_tcl else 60
             try:
-                pages = await crawl_url(url, http, max_pages=6, follow_links=follow)
+                pages = await crawl_url(url, http, max_pages=max_p, follow_links=follow)
             except Exception as e:
                 if status_cb:
                     await status_cb(f"Skip {url}: {e}")
