@@ -199,6 +199,26 @@
       border-color: rgba(255, 142, 108, 0.32);
     }
 
+    @keyframes tdot {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40%            { opacity: 1;   transform: scale(1);   }
+    }
+    .thinking-dots { display: flex; align-items: center; gap: 5px; }
+    .thinking-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      animation: tdot 1.3s ease-in-out infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.22s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.44s; }
+    .thinking-label {
+      margin-top: 7px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+    .thinking-timer { color: var(--accent); opacity: 0.75; font-variant-numeric: tabular-nums; }
+
     .sources {
       display: flex;
       flex-wrap: wrap;
@@ -594,7 +614,8 @@
           disclaimerTitle: "Active Development",
           disclaimerText: "Companion can make mistakes. Check important info.",
           newChatNotice: "Chat is getting long. Start fresh to keep it fast.",
-          newChatBtn: "New Chat"
+          newChatBtn: "New Chat",
+          thinking: ["Searching knowledge base...", "Analyzing your question...", "Generating response...", "Almost ready..."]
         },
         ro: {
           hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
@@ -606,7 +627,8 @@
           disclaimerTitle: "În Dezvoltare Activă",
           disclaimerText: "Companion poate face greșeli. Verifică informațiile importante.",
           newChatNotice: "Chatul devine lung. Începe o conversație nouă.",
-          newChatBtn: "Chat Nou"
+          newChatBtn: "Chat Nou",
+          thinking: ["Caut în baza de cunoștințe...", "Analizez întrebarea ta...", "Generez răspunsul...", "Aproape gata..."]
         },
         tr: {
           hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
@@ -618,7 +640,8 @@
           disclaimerTitle: "Aktif Geliştirme",
           disclaimerText: "Companion hata yapabilir. Önemli bilgileri kontrol edin.",
           newChatNotice: "Sohbet uzuyor. Hızlı kalmak için yeni başlayın.",
-          newChatBtn: "Yeni Sohbet"
+          newChatBtn: "Yeni Sohbet",
+          thinking: ["Bilgi tabanında aranıyor...", "Soru analiz ediliyor...", "Yanıt oluşturuluyor...", "Neredeyse hazır..."]
         },
         de: {
           hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
@@ -630,7 +653,8 @@
           disclaimerTitle: "Aktive Entwicklung",
           disclaimerText: "Companion kann Fehler machen. Wichtige Infos prüfen.",
           newChatNotice: "Chat wird lang. Neu starten für bessere Performance.",
-          newChatBtn: "Neuer Chat"
+          newChatBtn: "Neuer Chat",
+          thinking: ["Wissensdatenbank wird durchsucht...", "Frage wird analysiert...", "Antwort wird generiert...", "Fast fertig..."]
         },
         es: {
           hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
@@ -642,7 +666,8 @@
           disclaimerTitle: "Desarrollo Activo",
           disclaimerText: "Companion puede cometer errores. Verifica la información importante.",
           newChatNotice: "El chat se alarga. Empieza uno nuevo para ir más rápido.",
-          newChatBtn: "Nuevo Chat"
+          newChatBtn: "Nuevo Chat",
+          thinking: ["Buscando en la base de datos...", "Analizando tu pregunta...", "Generando respuesta...", "Casi listo..."]
         },
         fr: {
           hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
@@ -654,7 +679,8 @@
           disclaimerTitle: "Développement Actif",
           disclaimerText: "Companion peut se tromper. Vérifiez les infos importantes.",
           newChatNotice: "Le chat devient long. Démarre une nouvelle conversation.",
-          newChatBtn: "Nouveau Chat"
+          newChatBtn: "Nouveau Chat",
+          thinking: ["Recherche dans la base...", "Analyse de ta question...", "Génération de la réponse...", "Presque prêt..."]
         },
         it: {
           hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
@@ -666,7 +692,8 @@
           disclaimerTitle: "Sviluppo Attivo",
           disclaimerText: "Companion può sbagliare. Controlla le info importanti.",
           newChatNotice: "La chat si allunga. Inizia una nuova per rimanere veloce.",
-          newChatBtn: "Nuova Chat"
+          newChatBtn: "Nuova Chat",
+          thinking: ["Ricerca nella base dati...", "Analisi della domanda...", "Generazione risposta...", "Quasi pronto..."]
         },
         pl: {
           hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
@@ -678,7 +705,8 @@
           disclaimerTitle: "Aktywny Rozwój",
           disclaimerText: "Companion może się mylić. Sprawdź ważne informacje.",
           newChatNotice: "Czat robi się długi. Zacznij nowy dla lepszej wydajności.",
-          newChatBtn: "Nowy Czat"
+          newChatBtn: "Nowy Czat",
+          thinking: ["Przeszukuję bazę wiedzy...", "Analizuję pytanie...", "Generuję odpowiedź...", "Prawie gotowe..."]
         },
         pt: {
           hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
@@ -690,7 +718,8 @@
           disclaimerTitle: "Desenvolvimento Ativo",
           disclaimerText: "Companion pode cometer erros. Verifique informações importantes.",
           newChatNotice: "O chat está ficando longo. Inicie um novo para mais velocidade.",
-          newChatBtn: "Novo Chat"
+          newChatBtn: "Novo Chat",
+          thinking: ["Pesquisando na base de dados...", "Analisando a tua pergunta...", "Gerando resposta...", "Quase pronto..."]
         }
       };
 
@@ -794,7 +823,7 @@
         input.value = "";
         addMessage("user", message);
         historyPush({ kind: "msg", type: "user", text: message });
-        const loading = addMessage("bot", "...");
+        const thinkingNode = addThinkingMessage();
         setBusy(true);
         startCooldown();
 
@@ -809,16 +838,16 @@
             })
           });
 
-          loading.remove();
-
           if (!response.ok) {
-            addMessage("bot error", activeCopy().error);
+            thinkingNode._stopThinking();
+            thinkingNode.className = "msg bot error";
+            thinkingNode.textContent = activeCopy().error;
             historyPush({ kind: "msg", type: "bot error", text: activeCopy().error });
             return;
           }
 
-          // Streaming SSE
-          const botNode = addMessage("bot", "");
+          // Streaming SSE — reuse thinking node as bot node
+          const botNode = thinkingNode;
           let fullText = "";
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
@@ -839,11 +868,13 @@
               try { data = JSON.parse(raw); } catch { continue; }
 
               if (data.token) {
+                if (!fullText) thinkingNode._stopThinking();
                 fullText += data.token;
                 botNode.textContent = fullText;
                 log.scrollTop = log.scrollHeight;
               }
               if (data.error) {
+                thinkingNode._stopThinking();
                 botNode.className = "msg bot error";
                 botNode.textContent = data.error;
                 fullText = "";
@@ -859,14 +890,19 @@
             }
           }
 
+          if (!fullText) {
+            thinkingNode._stopThinking();
+            thinkingNode.className = "msg bot error";
+            thinkingNode.textContent = activeCopy().error;
+          }
           if (fullText && !historyContains(fullText)) {
             historyPush({ kind: "msg", type: "bot", text: fullText });
           }
         } catch {
-          loading.remove();
-          const errText = activeCopy().error;
-          addMessage("bot error", errText);
-          historyPush({ kind: "msg", type: "bot error", text: errText });
+          thinkingNode._stopThinking();
+          thinkingNode.className = "msg bot error";
+          thinkingNode.textContent = activeCopy().error;
+          historyPush({ kind: "msg", type: "bot error", text: activeCopy().error });
         } finally {
           setBusy(false);
           input.focus();
@@ -979,6 +1015,49 @@
         node.textContent = text;
         log.appendChild(node);
         log.scrollTop = log.scrollHeight;
+        return node;
+      }
+
+      function addThinkingMessage() {
+        const node = document.createElement("div");
+        node.className = "msg bot";
+
+        const dots = document.createElement("div");
+        dots.className = "thinking-dots";
+        dots.innerHTML = "<span></span><span></span><span></span>";
+
+        const label = document.createElement("div");
+        label.className = "thinking-label";
+
+        node.appendChild(dots);
+        node.appendChild(label);
+        log.appendChild(node);
+        log.scrollTop = log.scrollHeight;
+
+        const msgs = activeCopy().thinking || ["Thinking..."];
+        let msgIdx = 0;
+        let elapsed = 0;
+
+        function updateLabel() {
+          const timerPart = elapsed > 0
+            ? `<span class="thinking-timer">${elapsed}s</span> · `
+            : "";
+          label.innerHTML = timerPart + msgs[msgIdx % msgs.length];
+        }
+        updateLabel();
+
+        const ticker = setInterval(() => {
+          elapsed++;
+          if (elapsed % 5 === 0) msgIdx++;
+          updateLabel();
+        }, 1000);
+
+        node._stopThinking = () => {
+          clearInterval(ticker);
+          dots.remove();
+          label.remove();
+        };
+
         return node;
       }
 
