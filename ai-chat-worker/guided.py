@@ -102,7 +102,12 @@ def build_actions(question: str, language: str) -> list[dict]:
 
     lang = language
 
-    if is_events_intent(question):
+    _is_specific_event = bool(re.search(
+        r"\b(moonlight|clam|crystal|forge|experience|fishing|crystals.frenzy|"
+        r"cufar|comori|treasure.chest|eveniment\w*)\b",
+        question, re.I
+    ))
+    if is_events_intent(question) or _is_specific_event:
         add(_t(lang, {
             "en": "Open Events", "ro": "Deschide Evenimente", "tr": "Etkinlikleri Aç",
             "de": "Events öffnen", "es": "Abrir Eventos", "fr": "Ouvrir les événements",

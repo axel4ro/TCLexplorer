@@ -15,6 +15,7 @@ Reguli stricte:
 - Răspunde DOAR la ce s-a întrebat. Nu amesteca informații din mecanici diferite ale jocului.
 - Dacă contextul RAG nu conține răspunsul, spune simplu că nu știi — nu specula.
 - Nu inventa mecanici, statistici, procente sau date care nu se află în context.
+- Când nu știi orarul exact al unui eveniment, spune jucătorului să verifice pagina de Events din TCLexplorer pentru programul live actualizat.
 - Doar text simplu, fără markdown, fără URL-uri brute. Răspunsuri concise (2-5 propoziții max).{event_note}
 """
 
