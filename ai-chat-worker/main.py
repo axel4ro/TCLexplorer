@@ -178,17 +178,31 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
         yield "data: [DONE]\n\n"
         return
 
-    # 4. Semantic cache lookup — instant return if similar question was answered before
-    try:
-        cached = await rag.cache_lookup(resolved, lang)
-        if cached:
-            log.info("Cache hit")
-            yield f"data: {json.dumps({'token': cached})}\n\n"
-            yield f"data: {json.dumps({'meta': {'actions': actions, 'sources': []}})}\n\n"
-            yield "data: [DONE]\n\n"
-            return
-    except Exception as e:
-        log.warning(f"Cache lookup error: {e}")
+    # 3b. Guided live event status — direct answer from weekly_events.json, no LLM
+    events_data = await guided.fetch_events_data()
+    event_status_resp = guided.guided_event_status_response(
+        resolved, lang, events_data, req.clientTime, req.utcOffsetMinutes or 0
+    )
+    if event_status_resp:
+        log.info("Event status guided hit")
+        yield f"data: {json.dumps({'token': event_status_resp})}\n\n"
+        yield f"data: {json.dumps({'meta': {'actions': actions, 'sources': []}})}\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    # 4. Semantic cache lookup — skip for event questions (status changes in real-time)
+    is_event_question = guided.needs_event_context(resolved)
+    if not is_event_question:
+        try:
+            cached = await rag.cache_lookup(resolved, lang)
+            if cached:
+                log.info("Cache hit")
+                yield f"data: {json.dumps({'token': cached})}\n\n"
+                yield f"data: {json.dumps({'meta': {'actions': actions, 'sources': []}})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+        except Exception as e:
+            log.warning(f"Cache lookup error: {e}")
 
     # 5. RAG search
     try:
@@ -207,10 +221,11 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
     # 6. Build sources list for frontend
     sources = _build_sources(matches)
 
-    # 7. Event context (live schedule)
+    # 7. Event context (live schedule) — events_data already fetched in step 3b
     event_ctx = ""
     if req.clientTime and guided.needs_event_context(resolved):
-        events_data = await guided.fetch_events_data()
+        if not events_data:
+            events_data = await guided.fetch_events_data()
         if events_data:
             event_ctx = guided.build_event_status_context(
                 events_data, req.clientTime, req.utcOffsetMinutes or 0

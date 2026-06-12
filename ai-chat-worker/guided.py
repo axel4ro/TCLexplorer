@@ -359,6 +359,100 @@ def needs_event_context(question: str) -> bool:
     return bool(re.search(
         r"\b(moonlight|clam|crystal|treasure|cufar|forge|experience|fishing|"
         r"crystals.frenzy|cand|când|azi|astazi|acum|now|today|active|activ|"
-        r"urmeaza|urmează|next)\b",
+        r"urmeaza|urmează|next|item.drop|forge.boost)\b",
         question, re.I
     ) or is_events_intent(question))
+
+
+_EVENT_REGISTRY = [
+    (r"\bmoonlight\b",                   "Moonlight Treasure"),
+    (r"\bclam\b|\bfishing.clam\b",       "Fishing Clam"),
+    (r"\bcrystals?.frenzy\b|\bcrystal\b","Crystals Frenzy"),
+    (r"\bforge\b",                        "Forge Boost"),
+    (r"\bexperience\b|\bexp.boost\b",    "Experience"),
+    (r"\bitem.drop\b",                    "Item Drop"),
+]
+
+_EVENT_TIMING_RE = re.compile(
+    r"\b(cand|când|azi|acum|now|today|active|activ|urmeaza|urmează|next|"
+    r"starts?|ends?|incepe|termina|este.activ|is.active|program|ore|orele|"
+    r"se.termina|how.long|cat.mai|dureaza|schedule|upcoming)\b",
+    re.I,
+)
+
+
+def guided_event_status_response(
+    question: str,
+    language: str,
+    events_data: Optional[dict],
+    client_time: Optional[str],
+    utc_offset: int,
+) -> str:
+    """Return live event status directly from weekly_events.json — no LLM needed."""
+    if not events_data or not client_time:
+        return ""
+    if not _EVENT_TIMING_RE.search(question):
+        return ""
+
+    matched_name = None
+    for pattern, name in _EVENT_REGISTRY:
+        if re.search(pattern, question, re.I):
+            matched_name = name
+            break
+    if not matched_name:
+        return ""
+
+    context = build_event_status_context(events_data, client_time, utc_offset)
+    if not context:
+        return ""
+
+    event_line = next(
+        (l for l in context.split("\n") if matched_name.lower() in l.lower()), None
+    )
+    if not event_line:
+        return ""
+
+    status_m = re.search(r"\[([^\]]+)\]", event_line)
+    times_m  = re.search(r"local (\d{2}:\d{2}-\d{2}:\d{2})", event_line)
+    day_m    = re.search(r": (\w+) local", event_line)
+    if not status_m:
+        return ""
+
+    status   = status_m.group(1)
+    times    = times_m.group(1) if times_m else ""
+    day      = day_m.group(1) if day_m else ""
+    is_active = "ACTIVE NOW" in status
+    ends_m   = re.search(r"ends in (\d+) min", status)
+    ends_in  = ends_m.group(1) if ends_m else ""
+
+    if is_active:
+        suffix_en = f" — ends in {ends_in} min" if ends_in else ""
+        suffix_ro = f" — se termină în {ends_in} min" if ends_in else ""
+        time_ro   = f" (ora locală: {times})" if times else ""
+        time_en   = f" (local: {times})" if times else ""
+        return {
+            "en": f"{matched_name} is ACTIVE NOW{suffix_en}{time_en}.",
+            "ro": f"{matched_name} este ACTIV ACUM{suffix_ro}{time_ro}.",
+            "tr": f"{matched_name} ŞU AN AKTİF{(' — ' + ends_in + ' dakika kaldı') if ends_in else ''}.",
+            "de": f"{matched_name} ist JETZT AKTIV{(' — noch ' + ends_in + ' Min.') if ends_in else ''}.",
+            "es": f"{matched_name} está ACTIVO AHORA{(' — termina en ' + ends_in + ' min') if ends_in else ''}.",
+            "fr": f"{matched_name} est ACTIF MAINTENANT{(' — se termine dans ' + ends_in + ' min') if ends_in else ''}.",
+            "it": f"{matched_name} è ATTIVO ORA{(' — finisce in ' + ends_in + ' min') if ends_in else ''}.",
+            "pl": f"{matched_name} jest AKTYWNY TERAZ{(' — kończy się za ' + ends_in + ' min') if ends_in else ''}.",
+            "pt": f"{matched_name} está ATIVO AGORA{(' — termina em ' + ends_in + ' min') if ends_in else ''}.",
+        }.get(language, f"{matched_name} is ACTIVE NOW{suffix_en}{time_en}.")
+    else:
+        when = f"{day} {times}".strip()
+        detail = re.sub(r"(upcoming today in |next on \w+ in )", "", status).strip()
+        detail_ro = detail.replace("days", "zile").replace("day", "zi").replace("h ", "h ").replace("m", "min")
+        return {
+            "en": f"{matched_name} is not active right now. Next: {when}" + (f" (in {detail})" if detail else "") + ".",
+            "ro": f"{matched_name} nu este activ acum. Urmează: {when}" + (f" (peste {detail_ro})" if detail else "") + ".",
+            "tr": f"{matched_name} şu an aktif değil. Sonraki: {when}.",
+            "de": f"{matched_name} ist gerade nicht aktiv. Nächstes: {when}.",
+            "es": f"{matched_name} no está activo ahora. Próximo: {when}.",
+            "fr": f"{matched_name} n'est pas actif maintenant. Prochain: {when}.",
+            "it": f"{matched_name} non è attivo ora. Prossimo: {when}.",
+            "pl": f"{matched_name} nie jest teraz aktywny. Następny: {when}.",
+            "pt": f"{matched_name} não está ativo agora. Próximo: {when}.",
+        }.get(language, f"{matched_name} is not active right now. Next: {when}.")
