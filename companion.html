@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Companion | TCLexplorer</title>
+  <meta name="theme-color" content="#081113">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071011;
+      --panel: #0b1719;
+      --panel-2: #102225;
+      --line: rgba(144, 190, 182, 0.22);
+      --text: #f3faf8;
+      --muted: #91bdb5;
+      --accent: #8af7e7;
+      --danger: #ffb49f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      height: 100svh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(87, 235, 207, 0.16), transparent 34rem),
+        linear-gradient(180deg, #081214 0%, #05090a 100%);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .chat-page {
+      width: min(960px, 100%);
+      height: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .chat-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .chat-title {
+      margin: 0;
+      font-family: Orbitron, Inter, sans-serif;
+      font-size: clamp(1.15rem, 2.8vw, 1.75rem);
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    .chat-subtitle {
+      margin: 0;
+      font-size: clamp(0.7rem, 1.6vw, 0.82rem);
+      color: var(--muted);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lang-dropdown {
+      position: relative;
+      z-index: 20;
+    }
+
+    .lang-btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      background: rgba(8, 17, 19, 0.82);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .lang-btn img,
+    .lang-option img {
+      width: 20px;
+      height: 14px;
+      border-radius: 2px;
+      object-fit: cover;
+      flex: 0 0 auto;
+    }
+
+    .lang-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 180px;
+      max-height: min(320px, 70vh);
+      overflow: auto;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0a1517;
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
+    }
+
+    .lang-dropdown.open .lang-menu {
+      display: block;
+    }
+
+    .lang-option {
+      width: 100%;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--text);
+      background: transparent;
+      font: inherit;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .lang-option:hover,
+    .lang-option.is-active {
+      color: #061112;
+      background: var(--accent);
+    }
+
+    .chat-log {
+      flex: 1 1 0;
+      min-height: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(7, 16, 17, 0.74);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      width: fit-content;
+      max-width: min(760px, 92%);
+      padding: 12px 14px;
+      border-radius: 8px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .msg.bot {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      color: #061112;
+      background: var(--accent);
+    }
+
+    .msg.error {
+      color: #ffe8df;
+      background: #2a1410;
+      border-color: rgba(255, 142, 108, 0.32);
+    }
+
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: -4px;
+    }
+
+    .sources a {
+      max-width: 100%;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #b8f4eb;
+      background: var(--panel);
+      font-size: 0.78rem;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: -2px;
+    }
+
+    .action-link {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(138, 247, 231, 0.5);
+      border-radius: 999px;
+      color: #061112;
+      background: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .action-link.secondary {
+      color: #dffcf7;
+      background: var(--panel);
+    }
+
+    .chat-bottom {
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+
+    .chat-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+    }
+
+    .chat-powered {
+      margin: 0;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      opacity: 0.65;
+    }
+
+    .chat-powered a {
+      color: var(--accent);
+      text-decoration: none;
+      opacity: 0.85;
+    }
+
+    .info-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 5px;
+      padding: 0;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--muted);
+      font: italic 700 0.58rem/1 Georgia, serif;
+      cursor: pointer;
+      vertical-align: middle;
+      opacity: 0.55;
+      transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .info-btn:hover,
+    .info-btn:focus-visible {
+      opacity: 1;
+      color: var(--accent);
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .info-popup {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(310px, calc(100vw - 32px));
+      padding: 12px 36px 12px 14px;
+      border: 1px solid rgba(144, 190, 182, 0.28);
+      border-radius: 10px;
+      background: #0d1f22;
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
+      text-align: left;
+      z-index: 40;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .info-popup.is-open {
+      display: flex;
+    }
+
+    .info-popup-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
+    .info-popup-close:hover { opacity: 1; }
+
+    .new-chat-notice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(138, 247, 231, 0.22);
+      border-radius: 8px;
+      background: rgba(138, 247, 231, 0.05);
+      font-size: 0.8rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .new-chat-notice span { flex: 1; min-width: 0; }
+
+    .new-chat-notice-btn {
+      flex-shrink: 0;
+      padding: 5px 13px;
+      border: 1px solid rgba(138, 247, 231, 0.42);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--accent);
+      font: 700 0.78rem/1 inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .new-chat-notice-close {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      opacity: 0.5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .new-chat-notice-close:hover { opacity: 1; }
+
+    .info-popup-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 7px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .info-popup-title::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #8af7e7;
+      animation: pulse-dot 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .info-popup-body {
+      display: block;
+      margin: 0;
+      font-size: 0.77rem;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .chat-input {
+      min-height: 52px;
+      max-height: 150px;
+      width: 100%;
+      resize: vertical;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(8, 17, 19, 0.92);
+      font: inherit;
+      line-height: 1.35;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: rgba(138, 247, 231, 0.72);
+      box-shadow: 0 0 0 3px rgba(138, 247, 231, 0.12);
+    }
+
+    .chat-send {
+      width: 52px;
+      height: 52px;
+      border: 1px solid rgba(138, 247, 231, 0.42);
+      border-radius: 50%;
+      color: #061112;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .chat-send:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .chat-send svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .send-cd {
+      display: none;
+      font-family: Inter, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .chat-send.counting svg { display: none; }
+    .chat-send.counting .send-cd { display: block; }
+
+    @media (max-width: 620px) {
+      .chat-page {
+        padding: 12px;
+        gap: 10px;
+      }
+
+      .chat-log {
+        padding: 12px;
+      }
+
+      .chat-subtitle {
+        font-size: 0.68rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="chat-page">
+    <header class="chat-header">
+      <div class="chat-title-group">
+        <h1 class="chat-title">Companion</h1>
+        <p class="chat-subtitle">Your TCLexplorer AI companion for The Cursed Land</p>
+      </div>
+      <div class="lang-dropdown" id="chatLangControl">
+        <button type="button" class="lang-btn" id="currentLang" aria-haspopup="true" aria-expanded="false" aria-controls="langMenu">
+          <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English
+        </button>
+        <div class="lang-menu" id="langMenu" role="menu" aria-label="Language"></div>
+      </div>
+    </header>
+
+    <section class="chat-log" id="chatLog" aria-live="polite"></section>
+
+    <div class="chat-bottom">
+      <div class="info-popup" id="aiInfoPopup">
+        <button class="info-popup-close" id="aiInfoClose" type="button" aria-label="Close">✕</button>
+        <strong class="info-popup-title" id="aiInfoTitle"></strong>
+        <span class="info-popup-body" id="aiInfoText"></span>
+      </div>
+      <form class="chat-form" id="chatForm">
+        <textarea class="chat-input" id="chatInput" maxlength="1000" rows="1" placeholder="Ask about The Cursed Land..."></textarea>
+        <button class="chat-send" id="chatSend" type="submit" aria-label="Send">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
+            <path d="M22 2 11 13"></path>
+          </svg>
+          <span class="send-cd" aria-hidden="true"></span>
+        </button>
+      </form>
+      <div class="chat-powered">
+        Powered by <a href="https://tclexplorer.com/" target="_blank" rel="noopener noreferrer">TCLexplorer</a>
+        <button class="info-btn" id="aiInfoBtn" type="button" aria-label="About this AI">i</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const workerUrl = "https://api.tclexplorer.com/companion";
+      const log = document.getElementById("chatLog");
+      const form = document.getElementById("chatForm");
+      const input = document.getElementById("chatInput");
+      const send = document.getElementById("chatSend");
+      const langControl = document.getElementById("chatLangControl");
+      const langButton = document.getElementById("currentLang");
+      const langMenu = document.getElementById("langMenu");
+      const infoBtn = document.getElementById("aiInfoBtn");
+      const infoPopup = document.getElementById("aiInfoPopup");
+      const infoClose = document.getElementById("aiInfoClose");
+      const infoTitle = document.getElementById("aiInfoTitle");
+      const infoText = document.getElementById("aiInfoText");
+
+      const languages = [
+        { code: "en", label: "English", flag: "gb" },
+        { code: "ro", label: "Română", flag: "ro" },
+        { code: "tr", label: "Türkçe", flag: "tr" },
+        { code: "de", label: "Deutsch", flag: "de" },
+        { code: "es", label: "Español", flag: "es" },
+        { code: "fr", label: "Français", flag: "fr" },
+        { code: "it", label: "Italiano", flag: "it" },
+        { code: "pl", label: "Polski", flag: "pl" },
+        { code: "pt", label: "Português", flag: "pt" }
+      ];
+
+      let language = preferredLanguage();
+      let greetingNode = null;
+
+      const STORAGE_KEY = "tcl_companion_history";
+      const MAX_HISTORY = 80;
+      const NEW_CHAT_THRESHOLD = 40;
+      let chatHistory = [];
+
+      const MIN_WORDS = 3;
+      const SEND_COOLDOWN_S = 3; // minimal anti-double-click delay
+
+      const copy = {
+        en: {
+          hello: "Ask me about The Cursed Land. I answer using synced information from TCLexplorer and the Whitepaper.",
+          placeholder: "Ask about The Cursed Land... (min. 3 words)",
+          empty: "Write a question first.",
+          tooShort: "Please write at least 3 words so I can understand better.",
+          error: "The chat service did not answer. Please try again.",
+          send: "Send",
+          disclaimerTitle: "Active Development",
+          disclaimerText: "Companion can make mistakes. Check important info.",
+          newChatNotice: "Chat is getting long. Start fresh to keep it fast.",
+          newChatBtn: "New Chat"
+        },
+        ro: {
+          hello: "Întreabă-mă despre The Cursed Land. Răspund folosind informații sincronizate din TCLexplorer și Whitepaper.",
+          placeholder: "Întreabă despre The Cursed Land... (min. 3 cuvinte)",
+          empty: "Scrie mai întâi o întrebare.",
+          tooShort: "Scrie cel puțin 3 cuvinte ca să înțeleg mai bine.",
+          error: "Serviciul de chat nu a răspuns. Încearcă din nou.",
+          send: "Trimite",
+          disclaimerTitle: "În Dezvoltare Activă",
+          disclaimerText: "Companion poate face greșeli. Verifică informațiile importante.",
+          newChatNotice: "Chatul devine lung. Începe o conversație nouă.",
+          newChatBtn: "Chat Nou"
+        },
+        tr: {
+          hello: "The Cursed Land hakkında soru sor. TCLexplorer ve Whitepaper'dan senkronize bilgilerle yanıtlarım.",
+          placeholder: "The Cursed Land hakkında sor... (min. 3 kelime)",
+          empty: "Önce bir soru yaz.",
+          tooShort: "Daha iyi anlayabilmem için en az 3 kelime yaz.",
+          error: "Sohbet servisi yanıt vermedi. Lütfen tekrar dene.",
+          send: "Gönder",
+          disclaimerTitle: "Aktif Geliştirme",
+          disclaimerText: "Companion hata yapabilir. Önemli bilgileri kontrol edin.",
+          newChatNotice: "Sohbet uzuyor. Hızlı kalmak için yeni başlayın.",
+          newChatBtn: "Yeni Sohbet"
+        },
+        de: {
+          hello: "Frag mich über The Cursed Land. Ich antworte mit synchronisierten Informationen aus TCLexplorer und dem Whitepaper.",
+          placeholder: "Frag zu The Cursed Land... (min. 3 Wörter)",
+          empty: "Schreib zuerst eine Frage.",
+          tooShort: "Bitte mindestens 3 Wörter schreiben, damit ich besser verstehe.",
+          error: "Der Chatdienst hat nicht geantwortet. Versuch es bitte erneut.",
+          send: "Senden",
+          disclaimerTitle: "Aktive Entwicklung",
+          disclaimerText: "Companion kann Fehler machen. Wichtige Infos prüfen.",
+          newChatNotice: "Chat wird lang. Neu starten für bessere Performance.",
+          newChatBtn: "Neuer Chat"
+        },
+        es: {
+          hello: "Pregúntame sobre The Cursed Land. Respondo con información sincronizada de TCLexplorer y el Whitepaper.",
+          placeholder: "Pregunta sobre The Cursed Land... (mín. 3 palabras)",
+          empty: "Escribe una pregunta primero.",
+          tooShort: "Escribe al menos 3 palabras para que pueda entender mejor.",
+          error: "El servicio de chat no respondió. Inténtalo de nuevo.",
+          send: "Enviar",
+          disclaimerTitle: "Desarrollo Activo",
+          disclaimerText: "Companion puede cometer errores. Verifica la información importante.",
+          newChatNotice: "El chat se alarga. Empieza uno nuevo para ir más rápido.",
+          newChatBtn: "Nuevo Chat"
+        },
+        fr: {
+          hello: "Pose-moi une question sur The Cursed Land. Je réponds avec les informations synchronisées de TCLexplorer et du Whitepaper.",
+          placeholder: "Pose une question sur The Cursed Land... (min. 3 mots)",
+          empty: "Écris d'abord une question.",
+          tooShort: "Écris au moins 3 mots pour que je comprenne mieux.",
+          error: "Le service de chat n'a pas répondu. Réessaie.",
+          send: "Envoyer",
+          disclaimerTitle: "Développement Actif",
+          disclaimerText: "Companion peut se tromper. Vérifiez les infos importantes.",
+          newChatNotice: "Le chat devient long. Démarre une nouvelle conversation.",
+          newChatBtn: "Nouveau Chat"
+        },
+        it: {
+          hello: "Chiedimi di The Cursed Land. Rispondo usando le informazioni sincronizzate da TCLexplorer e dal Whitepaper.",
+          placeholder: "Chiedi di The Cursed Land... (min. 3 parole)",
+          empty: "Scrivi prima una domanda.",
+          tooShort: "Scrivi almeno 3 parole per farmi capire meglio.",
+          error: "Il servizio chat non ha risposto. Riprova.",
+          send: "Invia",
+          disclaimerTitle: "Sviluppo Attivo",
+          disclaimerText: "Companion può sbagliare. Controlla le info importanti.",
+          newChatNotice: "La chat si allunga. Inizia una nuova per rimanere veloce.",
+          newChatBtn: "Nuova Chat"
+        },
+        pl: {
+          hello: "Zapytaj mnie o The Cursed Land. Odpowiadam na podstawie informacji zsynchronizowanych z TCLexplorer i Whitepaper.",
+          placeholder: "Zapytaj o The Cursed Land... (min. 3 słowa)",
+          empty: "Najpierw wpisz pytanie.",
+          tooShort: "Wpisz co najmniej 3 słowa, żebym lepiej zrozumiał.",
+          error: "Usługa czatu nie odpowiedziała. Spróbuj ponownie.",
+          send: "Wyślij",
+          disclaimerTitle: "Aktywny Rozwój",
+          disclaimerText: "Companion może się mylić. Sprawdź ważne informacje.",
+          newChatNotice: "Czat robi się długi. Zacznij nowy dla lepszej wydajności.",
+          newChatBtn: "Nowy Czat"
+        },
+        pt: {
+          hello: "Pergunta-me sobre The Cursed Land. Respondo com informações sincronizadas do TCLexplorer e do Whitepaper.",
+          placeholder: "Pergunta sobre The Cursed Land... (mín. 3 palavras)",
+          empty: "Escreve uma pergunta primeiro.",
+          tooShort: "Escreve pelo menos 3 palavras para eu entender melhor.",
+          error: "O serviço de chat não respondeu. Tenta novamente.",
+          send: "Enviar",
+          disclaimerTitle: "Desenvolvimento Ativo",
+          disclaimerText: "Companion pode cometer erros. Verifique informações importantes.",
+          newChatNotice: "O chat está ficando longo. Inicie um novo para mais velocidade.",
+          newChatBtn: "Novo Chat"
+        }
+      };
+
+      const sendCd = send.querySelector(".send-cd");
+      let cooldownTimer = null;
+      let cooldownRemaining = 0;
+
+      function wordCount(value) {
+        return String(value || "").trim().split(/\s+/).filter((w) => w.length > 0).length;
+      }
+
+      function updateSendState() {
+        if (cooldownRemaining > 0 || input.disabled) {
+          send.disabled = true;
+          return;
+        }
+        send.disabled = wordCount(input.value) < MIN_WORDS;
+      }
+
+      function startCooldown() {
+        cooldownRemaining = SEND_COOLDOWN_S;
+        send.classList.add("counting");
+        sendCd.textContent = cooldownRemaining;
+        send.disabled = true;
+        clearInterval(cooldownTimer);
+        cooldownTimer = setInterval(() => {
+          cooldownRemaining--;
+          if (cooldownRemaining <= 0) {
+            clearInterval(cooldownTimer);
+            cooldownTimer = null;
+            cooldownRemaining = 0;
+            send.classList.remove("counting");
+            updateSendState();
+          } else {
+            sendCd.textContent = cooldownRemaining;
+          }
+        }, 1000);
+      }
+
+      input.addEventListener("input", updateSendState);
+
+      buildLanguageMenu();
+      setLanguage(language);
+      updateSendState();
+      if (!historyLoad()) {
+        greetingNode = addMessage("bot", activeCopy().hello);
+        historyPush({ kind: "msg", type: "bot", text: activeCopy().hello });
+      } else {
+        greetingNode = log.querySelector(".msg.bot");
+        checkNewChatThreshold();
+      }
+
+      langButton.addEventListener("click", () => {
+        const isOpen = langControl.classList.toggle("open");
+        langButton.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      infoBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        infoPopup.classList.toggle("is-open");
+      });
+
+      infoClose.addEventListener("click", (e) => {
+        e.stopPropagation();
+        infoPopup.classList.remove("is-open");
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!langControl.contains(event.target)) closeLanguageMenu();
+        if (!infoBtn.contains(event.target) && !infoPopup.contains(event.target)) {
+          infoPopup.classList.remove("is-open");
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeLanguageMenu();
+          infoPopup.classList.remove("is-open");
+        }
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const message = input.value.trim();
+        const text = activeCopy();
+        if (!message) {
+          addMessage("bot error", text.empty);
+          return;
+        }
+        if (wordCount(message) < MIN_WORDS) {
+          addMessage("bot error", text.tooShort);
+          return;
+        }
+
+        // Build context BEFORE pushing current message, so history = previous exchanges only
+        const conversationContext = chatHistory
+          .filter(h => h.kind === "msg" && (h.type === "user" || h.type === "bot") && h.text && h.text !== "...")
+          .slice(-6)
+          .map(h => ({ role: h.type === "user" ? "user" : "assistant", content: h.text }));
+
+        input.value = "";
+        addMessage("user", message);
+        historyPush({ kind: "msg", type: "user", text: message });
+        const loading = addMessage("bot", "...");
+        setBusy(true);
+        startCooldown();
+
+        try {
+          const response = await fetch(`${workerUrl}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message, language, history: conversationContext,
+              clientTime: new Date().toISOString(),
+              utcOffsetMinutes: -new Date().getTimezoneOffset()
+            })
+          });
+
+          loading.remove();
+
+          if (!response.ok) {
+            addMessage("bot error", activeCopy().error);
+            historyPush({ kind: "msg", type: "bot error", text: activeCopy().error });
+            return;
+          }
+
+          // Streaming SSE
+          const botNode = addMessage("bot", "");
+          let fullText = "";
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const raw = line.slice(6).trim();
+              if (raw === "[DONE]") break;
+              let data;
+              try { data = JSON.parse(raw); } catch { continue; }
+
+              if (data.token) {
+                fullText += data.token;
+                botNode.textContent = fullText;
+                log.scrollTop = log.scrollHeight;
+              }
+              if (data.error) {
+                botNode.className = "msg bot error";
+                botNode.textContent = data.error;
+                fullText = "";
+              }
+              if (data.meta) {
+                const acts = Array.isArray(data.meta.actions) ? data.meta.actions : [];
+                if (fullText) {
+                  historyPush({ kind: "msg", type: "bot", text: fullText });
+                  addActions(acts);
+                  if (acts.length) historyPush({ kind: "actions", items: acts });
+                }
+              }
+            }
+          }
+
+          if (fullText && !historyContains(fullText)) {
+            historyPush({ kind: "msg", type: "bot", text: fullText });
+          }
+        } catch {
+          loading.remove();
+          const errText = activeCopy().error;
+          addMessage("bot error", errText);
+          historyPush({ kind: "msg", type: "bot error", text: errText });
+        } finally {
+          setBusy(false);
+          input.focus();
+        }
+      });
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      function buildLanguageMenu() {
+        langMenu.innerHTML = "";
+        languages.forEach((lang) => {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.className = "lang-option";
+          option.dataset.lang = lang.code;
+          option.setAttribute("role", "menuitem");
+          option.innerHTML = `<img src="${flagUrl(lang.flag)}" alt=""> <span>${lang.label}</span>`;
+          option.addEventListener("click", () => {
+            setLanguage(lang.code);
+            closeLanguageMenu();
+            input.focus();
+          });
+          langMenu.appendChild(option);
+        });
+      }
+
+      function setLanguage(value) {
+        language = normalizeLanguage(value) || "en";
+        const meta = languageMeta(language);
+        const text = activeCopy();
+
+        document.documentElement.lang = language;
+        input.placeholder = text.placeholder;
+        send.setAttribute("aria-label", text.send);
+        langButton.innerHTML = `<img src="${flagUrl(meta.flag)}" alt="${language.toUpperCase()}"> ${meta.label}`;
+
+        langMenu.querySelectorAll(".lang-option").forEach((option) => {
+          option.classList.toggle("is-active", option.dataset.lang === language);
+        });
+
+        infoTitle.textContent = text.disclaimerTitle;
+        infoText.textContent = text.disclaimerText;
+
+        try {
+          localStorage.setItem("lang", language);
+        } catch {
+          // localStorage can be unavailable in private browser modes.
+        }
+
+        if (greetingNode && log.childElementCount === 1) {
+          greetingNode.textContent = text.hello;
+        }
+      }
+
+      function closeLanguageMenu() {
+        langControl.classList.remove("open");
+        langButton.setAttribute("aria-expanded", "false");
+      }
+
+      function preferredLanguage() {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = normalizeLanguage(params.get("lang"));
+        if (fromUrl) return fromUrl;
+
+        try {
+          const stored = normalizeLanguage(localStorage.getItem("lang"));
+          if (stored) return stored;
+        } catch {
+          // Ignore storage access errors.
+        }
+
+        const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language];
+        return browserLanguages.map(normalizeLanguage).find(Boolean) || "en";
+      }
+
+      function normalizeLanguage(value) {
+        const code = String(value || "").toLowerCase().split(/[-_]/)[0];
+        return languages.some((lang) => lang.code === code) ? code : "";
+      }
+
+      function activeCopy() {
+        return copy[language] || copy.en;
+      }
+
+      function languageMeta(code) {
+        return languages.find((lang) => lang.code === code) || languages[0];
+      }
+
+      function flagUrl(flag) {
+        return `https://flagcdn.com/w20/${flag}.png`;
+      }
+
+      function setBusy(value) {
+        input.disabled = value;
+        if (value) {
+          send.disabled = true;
+        } else {
+          updateSendState();
+        }
+      }
+
+      function addMessage(type, text) {
+        const node = document.createElement("div");
+        node.className = `msg ${type}`;
+        node.textContent = text;
+        log.appendChild(node);
+        log.scrollTop = log.scrollHeight;
+        return node;
+      }
+
+      function addSources(sources) {
+        const seen = new Set();
+        const unique = sources.filter((source) => {
+          if (!source || !source.url || seen.has(source.url)) return false;
+          seen.add(source.url);
+          return true;
+        }).slice(0, 4);
+
+        if (!unique.length) return;
+
+        const wrap = document.createElement("div");
+        wrap.className = "sources";
+        unique.forEach((source, index) => {
+          const link = document.createElement("a");
+          link.href = source.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = source.title || `Source ${index + 1}`;
+          wrap.appendChild(link);
+        });
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function addActions(actions) {
+        const seen = new Set();
+        const unique = actions.filter((action) => {
+          if (!action || !action.url || seen.has(action.url)) return false;
+          seen.add(action.url);
+          return true;
+        }).slice(0, 3);
+
+        if (!unique.length) return;
+
+        const wrap = document.createElement("div");
+        wrap.className = "actions";
+        unique.forEach((action) => {
+          const link = document.createElement("a");
+          link.className = "action-link " + (action.kind === "primary" ? "primary" : "secondary");
+          link.href = action.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = action.title || action.url;
+          wrap.appendChild(link);
+        });
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function historyPush(item) {
+        chatHistory.push(item);
+        if (chatHistory.length > MAX_HISTORY) chatHistory = chatHistory.slice(-MAX_HISTORY);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory)); } catch {}
+        checkNewChatThreshold();
+      }
+
+      function historyLoad() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          const items = JSON.parse(raw);
+          if (!Array.isArray(items) || !items.length) return false;
+          for (const item of items) {
+            if (item.kind === "msg") addMessage(item.type, item.text);
+            else if (item.kind === "actions") addActions(item.items || []);
+          }
+          chatHistory = items;
+          return true;
+        } catch { return false; }
+      }
+
+      function historyClear() {
+        chatHistory = [];
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      }
+
+      function historyContains(text) {
+        return chatHistory.some(h => h.kind === "msg" && h.text === text);
+      }
+
+      function checkNewChatThreshold() {
+        const msgCount = chatHistory.filter(h => h.kind === "msg").length;
+        if (msgCount >= NEW_CHAT_THRESHOLD && !document.getElementById("newChatNotice")) {
+          showNewChatNotice();
+        }
+      }
+
+      function showNewChatNotice() {
+        const t = activeCopy();
+        const el = document.createElement("div");
+        el.id = "newChatNotice";
+        el.className = "new-chat-notice";
+        const span = document.createElement("span");
+        span.textContent = t.newChatNotice;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "new-chat-notice-btn";
+        btn.textContent = t.newChatBtn;
+        btn.addEventListener("click", startNewChat);
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "new-chat-notice-close";
+        close.setAttribute("aria-label", "Dismiss");
+        close.textContent = "✕";
+        close.addEventListener("click", () => el.remove());
+        el.append(span, btn, close);
+        log.appendChild(el);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function startNewChat() {
+        historyClear();
+        log.innerHTML = "";
+        greetingNode = addMessage("bot", activeCopy().hello);
+        historyPush({ kind: "msg", type: "bot", text: activeCopy().hello });
+      }
+    })();
+  </script>
+</body>
+</html>
