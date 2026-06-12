@@ -178,7 +178,19 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
         yield "data: [DONE]\n\n"
         return
 
-    # 4. RAG search
+    # 4. Semantic cache lookup — instant return if similar question was answered before
+    try:
+        cached = await rag.cache_lookup(resolved, lang)
+        if cached:
+            log.info("Cache hit")
+            yield f"data: {json.dumps({'token': cached})}\n\n"
+            yield f"data: {json.dumps({'meta': {'actions': actions, 'sources': []}})}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+    except Exception as e:
+        log.warning(f"Cache lookup error: {e}")
+
+    # 5. RAG search
     try:
         matches = await rag.search(resolved, limit=config.RAG_MATCH_COUNT)
     except Exception as e:
@@ -192,10 +204,10 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
         yield "data: [DONE]\n\n"
         return
 
-    # 5. Build sources list for frontend
+    # 6. Build sources list for frontend
     sources = _build_sources(matches)
 
-    # 6. Event context (live schedule)
+    # 7. Event context (live schedule)
     event_ctx = ""
     if req.clientTime and guided.needs_event_context(resolved):
         events_data = await guided.fetch_events_data()
@@ -206,7 +218,7 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
 
     context = _build_context(matches)
 
-    # 7. Stream LLM response token by token
+    # 8. Stream LLM response token by token
     full_answer = ""
     try:
         async for token in llm.generate_stream(resolved, context, lang, history, event_ctx):
@@ -217,7 +229,12 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
         if not full_answer:
             yield f"data: {json.dumps({'token': missing_answer(lang)})}\n\n"
 
-    # 8. Final metadata frame
+    # 9. Store answer in semantic cache for future similar questions
+    if full_answer and len(full_answer) > 20:
+        cleaned = llm.clean_answer(full_answer, lang)
+        asyncio.create_task(rag.cache_store(resolved, cleaned, lang))
+
+    # 10. Final metadata frame
     yield f"data: {json.dumps({'meta': {'actions': actions, 'sources': sources}})}\n\n"
     yield "data: [DONE]\n\n"
 

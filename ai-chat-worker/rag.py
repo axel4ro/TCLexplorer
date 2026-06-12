@@ -1,11 +1,12 @@
 import re
+import time
 import hashlib
 import asyncio
 import httpx
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance, VectorParams, PointStruct,
-    NamedVector,
+    NamedVector, Filter, FieldCondition, MatchValue,
 )
 import config
 
@@ -27,6 +28,57 @@ def init_collection():
             collection_name=config.QDRANT_COLLECTION,
             vectors_config=VectorParams(size=config.VECTOR_SIZE, distance=Distance.COSINE),
         )
+    if config.CACHE_COLLECTION not in existing:
+        client.create_collection(
+            collection_name=config.CACHE_COLLECTION,
+            vectors_config=VectorParams(size=config.VECTOR_SIZE, distance=Distance.COSINE),
+        )
+
+
+async def cache_lookup(question: str, language: str) -> str | None:
+    try:
+        vector = await get_embedding(question)
+        client = get_client()
+        results = client.query_points(
+            collection_name=config.CACHE_COLLECTION,
+            query=vector,
+            limit=1,
+            with_payload=True,
+            score_threshold=config.CACHE_THRESHOLD,
+            query_filter=Filter(
+                must=[FieldCondition(key="language", match=MatchValue(value=language))]
+            ),
+        )
+        if results.points:
+            return results.points[0].payload.get("answer")
+    except Exception:
+        pass
+    return None
+
+
+async def cache_store(question: str, answer: str, language: str):
+    try:
+        vector = await get_embedding(question)
+        point_id = (
+            int(hashlib.sha256(f"{language}:{question.lower().strip()}".encode()).hexdigest()[:16], 16)
+            % (2 ** 63)
+        )
+        get_client().upsert(
+            collection_name=config.CACHE_COLLECTION,
+            points=[PointStruct(
+                id=point_id,
+                vector=vector,
+                payload={
+                    "question": question[:400],
+                    "answer": answer,
+                    "language": language,
+                    "created_at": int(time.time()),
+                },
+            )],
+            wait=False,
+        )
+    except Exception:
+        pass
 
 
 async def get_embedding(text: str) -> list[float]:

@@ -6,6 +6,8 @@ OLLAMA_EMBED_MODEL  = os.getenv("OLLAMA_EMBED_MODEL",  "nomic-embed-text")
 
 QDRANT_URL          = os.getenv("QDRANT_URL",          "http://localhost:6333")
 QDRANT_COLLECTION   = os.getenv("QDRANT_COLLECTION",   "tcl_knowledge")
+CACHE_COLLECTION    = os.getenv("CACHE_COLLECTION",    "tcl_answer_cache")
+CACHE_THRESHOLD     = float(os.getenv("CACHE_THRESHOLD", "0.93"))
 VECTOR_SIZE         = 768  # nomic-embed-text output dimension
 
 ALLOWED_ORIGINS     = os.getenv(
