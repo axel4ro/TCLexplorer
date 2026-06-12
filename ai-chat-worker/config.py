@@ -31,7 +31,7 @@ TCL_EXPLORER_PATHS = [
     "",
     "analytics.html", "BuyCoins.html", "CanIrunIt.html",
     "connect_xportal.html", "disclaimer.html",
-    "earn.html", "flow.html", "FreeMonthlyWheel.html",
+    "earn.html", "flow.html",
     "Game_Requirements.html", "holders.html",
     "Items_Upgrade_Simulator.html", "Item_Upgrade_Requirements.html",
     "loot.html", "MarketPlaceNFT.html", "NFTs.html",
@@ -43,6 +43,21 @@ TCL_EXPLORER_PATHS = [
     # Live data
     "weekly_events.json", "leaderboard.json",
     "data/drop.json", "data/items_data.json", "data/tcl-analytics.json",
+    # Translation bundles — contain UI text + explanations in all languages
+    "lang/analytics.bundle.js", "lang/apr-rewards.bundle.js",
+    "lang/blacksmith.bundle.js", "lang/can-i-run-it.bundle.js",
+    "lang/claim-flow.bundle.js", "lang/common.bundle.js",
+    "lang/connect-xportal.bundle.js",
+    "lang/dashboard.bundle.js", "lang/earn.bundle.js",
+    "lang/events.bundle.js", "lang/exp-table.bundle.js",
+    "lang/game-requirements.bundle.js", "lang/item-upgrade.bundle.js",
+    "lang/lang.bundle.js", "lang/loot.bundle.js", "lang/nfts.bundle.js",
+    "lang/page-common.bundle.js", "lang/signal.bundle.js",
+    "lang/support-tcl.bundle.js", "lang/tcl-trades.bundle.js",
+    "lang/technicals.bundle.js", "lang/token.bundle.js",
+    "lang/transaction-simulator.bundle.js",
+    "lang/volume.bundle.js", "lang/web3.bundle.js",
+    "lang/wiki-ui.bundle.js", "lang/wiki.bundle.js",
 ]
 
 EXTRA_SOURCES = [

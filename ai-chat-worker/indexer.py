@@ -79,10 +79,28 @@ def json_to_search_text(raw: str) -> str:
 
 
 def script_to_search_text(raw: str) -> str:
-    text = re.sub(r"window\.[A-Z0-9_]+\s*=\s*window\.[A-Z0-9_]+\s*\|\|\s*\{\};?", " ", raw, flags=re.I)
-    text = re.sub(r"[\"'`{}\[\]();,:]", " ", text)
-    text = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), text)
-    return _normalize_ws(_decode_entities(text))
+    # Decode unicode escapes first
+    raw = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), raw)
+    raw = _decode_entities(raw)
+    # Extract string literals >= 12 chars (translation values, descriptions)
+    found = re.findall(r'"([^"\\\n]{12,})"', raw)
+    found += re.findall(r"'([^'\\\n]{12,})'", raw)
+    useful = []
+    for s in found:
+        s = s.strip()
+        if not s:
+            continue
+        # Skip URLs, file paths, pure camelCase identifiers, base64, hex colors
+        if re.match(r"https?://", s):
+            continue
+        if re.match(r"^[a-zA-Z0-9_\-\./]+$", s):
+            continue
+        if re.match(r"^#[0-9a-fA-F]{3,8}$", s):
+            continue
+        if len(s) > 500:
+            continue
+        useful.append(s)
+    return _normalize_ws("\n".join(useful))
 
 
 def drop_json_to_search_text(raw: str) -> str:
