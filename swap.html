@@ -118,16 +118,41 @@
     .slippage-tag { padding: 4px 10px; border: 1px solid rgba(0,232,204,0.28); border-radius: 999px; background: rgba(0,232,204,0.08); color: var(--accent); font-size: 0.78rem; font-weight: 800; }
 
     .pair-select-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .pair-select-row select {
-      flex: 1; min-height: 42px; padding: 10px 12px;
+
+    /* Custom pair dropdown */
+    .custom-pair-select { position: relative; flex: 1; }
+    .custom-pair-trigger {
+      display: flex; align-items: center; gap: 9px;
+      min-height: 42px; padding: 10px 12px;
       border: 1px solid rgba(143,154,174,0.22); border-radius: var(--radius);
-      background: rgba(4,6,10,0.62); color: var(--text); outline: none;
-      appearance: none; -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238f9aae' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
-      padding-right: 32px;
+      background: rgba(4,6,10,0.62); color: var(--text);
+      cursor: pointer; user-select: none;
+      transition: border-color 0.15s;
     }
-    .pair-select-row select:focus { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(0,232,204,0.08); }
+    .custom-pair-trigger:hover { border-color: var(--line-strong); }
+    .custom-pair-trigger.is-open { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(0,232,204,0.08); }
+    .custom-pair-caret { margin-left: auto; flex-shrink: 0; color: var(--muted); transition: transform 0.18s; }
+    .custom-pair-trigger.is-open .custom-pair-caret { transform: rotate(180deg); }
+    .custom-pair-dropdown {
+      position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 200;
+      background: #0d111e;
+      border: 1px solid rgba(0,232,204,0.22); border-radius: var(--radius);
+      overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+    }
+    .custom-pair-dropdown[hidden] { display: none; }
+    .custom-pair-option {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 13px; cursor: pointer;
+      color: var(--text); font-size: 0.95rem; font-weight: 600;
+      transition: background 0.1s;
+    }
+    .custom-pair-option:hover { background: rgba(255,255,255,0.06); }
+    .custom-pair-option.is-selected { background: rgba(0,232,204,0.07); }
+    .pair-dir-arrow { font-size: 0.95rem; font-weight: 900; flex-shrink: 0; }
+    .pair-dir-arrow.buy  { color: #4ade80; }
+    .pair-dir-arrow.sell { color: #fb7185; }
+    .custom-pair-trigger.is-open #customPairArrowLeft,
+    .custom-pair-trigger.is-open #customPairArrowRight { display: none !important; }
 
     .token-box {
       padding: 14px; border: 1px solid rgba(143,154,174,0.2); border-radius: var(--radius);
@@ -394,7 +419,84 @@
       .swap-card-title { font-size: 1rem; }
       .usd-value-note  { font-size: 0.74rem; }
       .swap-status-msg { font-size: 0.8rem; min-height: 16px; }
+      .chart-modal-card { height: min(480px, calc(100dvh - 60px)); }
+      .bac-amount { font-size: 0.75rem; }
+      .bac-usd    { font-size: 0.66rem; }
+      .bac-icon   { width: 18px; height: 18px; }
     }
+
+    /* Balance card above swap */
+    .balance-above-card {
+      width: 100%; display: none;
+      padding: 10px 16px;
+      border: 1px solid rgba(0,232,204,0.14); border-radius: 12px;
+      background: rgba(0,232,204,0.04);
+    }
+    .balance-above-card.is-connected {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: center;
+    }
+    .bac-item { display: flex; align-items: center; gap: 8px; justify-content: center; }
+    .bac-item:first-child { justify-content: flex-start; }
+    .bac-item:last-child  { justify-content: flex-end; }
+    .bac-icon { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .bac-info { display: flex; flex-direction: column; min-width: 0; }
+    .bac-amount { font-size: 0.84rem; font-weight: 700; color: var(--text); line-height: 1.2; white-space: nowrap; }
+    .bac-usd    { font-size: 0.72rem; font-weight: 700; color: var(--success); line-height: 1.2; }
+    .bac-sep    { display: none; }
+
+    /* Tx count card */
+    .tx-count-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 13px;
+      border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius);
+      background: rgba(255,255,255,0.025);
+      font-size: 0.82rem;
+    }
+    .tx-count-label { color: var(--muted); }
+    .tx-count-value { font-weight: 800; color: var(--text); }
+    .tx-count-value.multi { color: var(--gold); }
+
+    /* Chart button */
+    .btn-chart {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 13px; min-height: 32px;
+      border: 1px solid rgba(0,232,204,0.32); border-radius: 999px;
+      background: rgba(0,232,204,0.07); color: var(--accent);
+      font-size: 0.78rem; font-weight: 800; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-chart:hover { background: rgba(0,232,204,0.15); border-color: rgba(0,232,204,0.6); }
+
+    /* Chart modal — fullscreen */
+    .chart-modal {
+      position: fixed; inset: 0; z-index: 600;
+      display: flex; flex-direction: column; background: #07080c;
+    }
+    .chart-modal[hidden] { display: none; }
+    .chart-modal-card { display: contents; }
+    .chart-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 42px; flex-shrink: 0;
+      padding: 0 14px;
+      background: #07080c;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .chart-modal-title {
+      font-family: var(--font-display); font-size: 0.88rem; font-weight: 700;
+      color: var(--accent); letter-spacing: 0.04em;
+    }
+    .chart-modal-close {
+      display: grid; place-items: center;
+      width: 32px; height: 32px;
+      border: 1px solid rgba(255,255,255,0.18); border-radius: 7px;
+      background: rgba(255,255,255,0.06); color: var(--muted);
+      font-weight: 900; font-size: 1rem; cursor: pointer;
+    }
+    .chart-modal-close:hover { border-color: rgba(255,255,255,0.4); color: var(--text); background: rgba(255,255,255,0.12); }
+    .chart-modal-body { flex: 1; position: relative; overflow: hidden; }
+    .chart-modal-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
   </style>
 </head>
 <body data-state="idle">
@@ -492,22 +594,73 @@
         <span id="stripTclAmount" hidden></span><span id="stripTclUsd" hidden></span>
       </div>
 
+      <!-- Balance above swap (shown when connected) -->
+      <div class="balance-above-card" id="balanceAboveCard">
+        <div class="bac-item">
+          <img class="bac-icon" id="bacEgldIcon" src="images/EGLD.png" alt="EGLD">
+          <div class="bac-info">
+            <span class="bac-amount" id="bacEgldAmount">-- EGLD</span>
+            <span class="bac-usd" id="bacEgldUsd">$--</span>
+          </div>
+        </div>
+        <span class="bac-sep">|</span>
+        <div class="bac-item">
+          <img class="bac-icon" id="bacUsdcIcon" src="images/USDC.png" alt="USDC">
+          <div class="bac-info">
+            <span class="bac-amount" id="bacUsdcAmount">-- USDC</span>
+            <span class="bac-usd" id="bacUsdcUsd">$--</span>
+          </div>
+        </div>
+        <span class="bac-sep">|</span>
+        <div class="bac-item">
+          <img class="bac-icon" id="bacTclIcon" src="images/tcl_icon.png" alt="TCL">
+          <div class="bac-info">
+            <span class="bac-amount" id="bacTclAmount">-- TCL</span>
+            <span class="bac-usd" id="bacTclUsd">$--</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Swap card -->
       <section class="swap-card" aria-labelledby="swapTitle">
         <div class="swap-card-head">
-          <h2 class="swap-card-title" id="swapTitle">Swap</h2>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <h2 class="swap-card-title" id="swapTitle">Swap</h2>
+            <button class="btn-chart" id="chartBtn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Chart
+            </button>
+          </div>
           <span class="slippage-tag">Slippage 1%</span>
         </div>
 
         <div class="pair-select-row">
-          <select id="pairSelect" aria-label="Select swap pair">
+          <!-- Hidden native select kept for JS compatibility -->
+          <select id="pairSelect" aria-label="Select swap pair" style="display:none;">
             <option value="EGLD-TCL">EGLD → TCL</option>
             <option value="WEGLD-TCL">WEGLD → TCL</option>
+            <option value="USDC-TCL">USDC → TCL</option>
             <option value="TCL-EGLD">TCL → EGLD</option>
             <option value="TCL-WEGLD">TCL → WEGLD</option>
-            <option value="USDC-TCL">USDC → TCL</option>
             <option value="TCL-USDC">TCL → USDC</option>
           </select>
+          <!-- Custom dropdown -->
+          <div class="custom-pair-select" id="customPairSelect">
+            <div class="custom-pair-trigger" id="customPairTrigger">
+              <span class="pair-dir-arrow sell" id="customPairArrowLeft" style="display:none;">▼</span>
+              <span id="customPairLabel">EGLD → TCL</span>
+              <span class="pair-dir-arrow buy" id="customPairArrowRight">▲</span>
+              <svg class="custom-pair-caret" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="#8f9aae" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div class="custom-pair-dropdown" id="customPairDropdown" hidden>
+              <div class="custom-pair-option is-selected" data-value="EGLD-TCL"  data-buy="1">EGLD → TCL <span class="pair-dir-arrow buy">▲</span></div>
+              <div class="custom-pair-option" data-value="WEGLD-TCL" data-buy="1">WEGLD → TCL <span class="pair-dir-arrow buy">▲</span></div>
+              <div class="custom-pair-option" data-value="USDC-TCL"  data-buy="1">USDC → TCL <span class="pair-dir-arrow buy">▲</span></div>
+              <div class="custom-pair-option" data-value="TCL-EGLD"  data-buy="0"><span class="pair-dir-arrow sell">▼</span> TCL → EGLD</div>
+              <div class="custom-pair-option" data-value="TCL-WEGLD" data-buy="0"><span class="pair-dir-arrow sell">▼</span> TCL → WEGLD</div>
+              <div class="custom-pair-option" data-value="TCL-USDC"  data-buy="0"><span class="pair-dir-arrow sell">▼</span> TCL → USDC</div>
+            </div>
+          </div>
         </div>
 
         <div class="token-box">
@@ -541,23 +694,40 @@
           <div class="usd-value-note" id="toUsd"></div>
         </div>
 
+        <div class="tx-count-card" id="txCountCard">
+          <span class="tx-count-label">Transactions to sign</span>
+          <span class="tx-count-value" id="txCountValue">1</span>
+        </div>
+
         <div class="rate-info-box" id="rateBox" hidden>
           <div class="rate-row">
             <span class="rate-label">Rate</span>
             <span class="rate-value accent" id="rateText">--</span>
           </div>
-          <div class="rate-row">
-            <span class="rate-label">Price impact</span>
-            <span class="rate-value" id="priceImpactText">--</span>
-          </div>
           <div class="rate-details" id="rateDetails">
+            <div class="rate-row">
+              <span class="rate-label">Price impact</span>
+              <span class="rate-value" id="priceImpactText">--</span>
+            </div>
             <div class="rate-row">
               <span class="rate-label">Avg. execution price</span>
               <span class="rate-value" id="avgPriceText">--</span>
             </div>
             <div class="rate-row">
-              <span class="rate-label">Price after swap</span>
-              <span class="rate-value" id="priceAfterText">--</span>
+              <span class="rate-label">Estimated price change</span>
+              <span class="rate-value" id="priceChangePctText">--</span>
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">Est. TCL price (after)</span>
+              <span class="rate-value" id="tclFinalPriceText">--</span>
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">TCL in pool (after)</span>
+              <span class="rate-value" id="poolTclAfterText">--</span>
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">USDC in pool (after)</span>
+              <span class="rate-value" id="poolUsdcAfterText">--</span>
             </div>
             <div class="rate-row">
               <span class="rate-label">Min. received (1% slippage)</span>
@@ -582,6 +752,19 @@
   </div>
 
 </main>
+
+<!-- Chart modal -->
+<div class="chart-modal" id="chartModal" hidden>
+  <div class="chart-modal-card">
+    <div class="chart-modal-head">
+      <span class="chart-modal-title">TCL/USDC – Live Chart</span>
+      <button class="chart-modal-close" id="chartModalClose" type="button" aria-label="Close chart">&#x2715;</button>
+    </div>
+    <div class="chart-modal-body">
+      <iframe id="chartModalFrame" src="about:blank" loading="lazy"></iframe>
+    </div>
+  </div>
+</div>
 
 <div class="swap-toast" id="swapToast" role="dialog" aria-modal="true" aria-labelledby="swapToastTitle" aria-live="polite" hidden>
   <div class="swap-toast-card">
@@ -611,6 +794,87 @@ document.addEventListener("click", function(e) {
     popup.hidden = true;
   }
 });
+
+// Custom pair select dropdown
+(function() {
+  const nativeSel  = document.getElementById("pairSelect");
+  const trigger    = document.getElementById("customPairTrigger");
+  const dropdown   = document.getElementById("customPairDropdown");
+  const label      = document.getElementById("customPairLabel");
+
+  const arrowLeft  = document.getElementById("customPairArrowLeft");
+  const arrowRight = document.getElementById("customPairArrowRight");
+
+  function applySelected(value) {
+    const opt = dropdown.querySelector(`[data-value="${value}"]`);
+    if (!opt) return;
+    const isBuy = opt.dataset.buy === "1";
+    label.textContent = opt.textContent.trim().replace(/^[▲▼]\s*/, "").replace(/\s*[▲▼]$/, "");
+    if (isBuy) {
+      arrowLeft.style.display  = "none";
+      arrowRight.style.display = "";
+    } else {
+      arrowLeft.style.display  = "";
+      arrowRight.style.display = "none";
+    }
+    dropdown.querySelectorAll(".custom-pair-option").forEach(el =>
+      el.classList.toggle("is-selected", el.dataset.value === value)
+    );
+    nativeSel.value = value;
+  }
+
+  function open()  { dropdown.hidden = false; trigger.classList.add("is-open"); }
+  function close() { dropdown.hidden = true;  trigger.classList.remove("is-open"); }
+
+  trigger.addEventListener("click", function(e) {
+    e.stopPropagation();
+    dropdown.hidden ? open() : close();
+  });
+  dropdown.addEventListener("click", function(e) {
+    const opt = e.target.closest(".custom-pair-option");
+    if (!opt) return;
+    applySelected(opt.dataset.value);
+    close();
+    nativeSel.dispatchEvent(new Event("change"));
+  });
+  document.addEventListener("click", function() { close(); });
+
+  applySelected(nativeSel.value);
+})();
+
+// Chart modal
+(function() {
+  const CHART_SRC = "https://dexscreener.com/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?embed=1&loadChartSettings=0&info=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=1&chartType=price&interval=15&resetChart=1";
+  let chartLoaded = false;
+
+  function openChart() {
+    const modal = document.getElementById("chartModal");
+    if (!modal) return;
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    if (!chartLoaded) {
+      const frame = document.getElementById("chartModalFrame");
+      if (frame) frame.src = CHART_SRC;
+      chartLoaded = true;
+    }
+  }
+
+  function closeChart() {
+    const modal = document.getElementById("chartModal");
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  document.getElementById("chartBtn").addEventListener("click", openChart);
+  document.getElementById("chartModalClose").addEventListener("click", closeChart);
+  document.getElementById("chartModal").addEventListener("click", function(e) {
+    if (e.target === this) closeChart();
+  });
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") closeChart();
+  });
+})();
 </script>
 <script>
 (function () {
@@ -743,9 +1007,12 @@ document.addEventListener("click", function(e) {
     stripTclIcon:   document.getElementById("stripTclIcon"),
     stripTclAmount: document.getElementById("stripTclAmount"),
     stripTclUsd:    document.getElementById("stripTclUsd"),
-    priceImpactText:document.getElementById("priceImpactText"),
-    avgPriceText:   document.getElementById("avgPriceText"),
-    priceAfterText: document.getElementById("priceAfterText"),
+    priceImpactText:   document.getElementById("priceImpactText"),
+    avgPriceText:      document.getElementById("avgPriceText"),
+    priceChangePctText:document.getElementById("priceChangePctText"),
+    tclFinalPriceText: document.getElementById("tclFinalPriceText"),
+    poolTclAfterText:  document.getElementById("poolTclAfterText"),
+    poolUsdcAfterText: document.getElementById("poolUsdcAfterText"),
     swapToast:      document.getElementById("swapToast"),
     swapToastClose: document.getElementById("swapToastClose"),
     swapToastReceived: document.getElementById("swapToastReceived"),
@@ -1116,13 +1383,17 @@ document.addEventListener("click", function(e) {
     if (pairKey === "USDC-TCL") {
       const h = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR, CONFIG.USDC_ID, amountInAtomic, CONFIG.TCL_ID);
       return { amountOut: h.amountOut, minOut: applySlippage(h.amountOut), hops: 1,
-               priceImpact: h.impactPct, spotScaled: h.spotScaled, newSpotScaled: h.newSpotScaled };
+               priceImpact: h.impactPct, spotScaled: h.spotScaled, newSpotScaled: h.newSpotScaled,
+               poolState: { tclReserve: h.rOut, usdcReserve: h.rIn,
+                            newTclReserve: h.rOut - h.amountOut, newUsdcReserve: h.rIn + amountInAtomic } };
     }
 
     if (pairKey === "TCL-USDC") {
       const h = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR, CONFIG.TCL_ID, amountInAtomic, CONFIG.USDC_ID);
       return { amountOut: h.amountOut, minOut: applySlippage(h.amountOut), hops: 1,
-               priceImpact: h.impactPct, spotScaled: h.spotScaled, newSpotScaled: h.newSpotScaled };
+               priceImpact: h.impactPct, spotScaled: h.spotScaled, newSpotScaled: h.newSpotScaled,
+               poolState: { tclReserve: h.rIn, usdcReserve: h.rOut,
+                            newTclReserve: h.rIn + amountInAtomic, newUsdcReserve: h.rOut - h.amountOut } };
     }
 
     // WEGLD ↔ TCL: 2-hop via router
@@ -1131,7 +1402,9 @@ document.addEventListener("click", function(e) {
       const h2 = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR,   CONFIG.USDC_ID,  h1.amountOut,    CONFIG.TCL_ID);
       return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 2,
                intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
-               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled,
+               poolState: { tclReserve: h2.rOut, usdcReserve: h2.rIn,
+                            newTclReserve: h2.rOut - h2.amountOut, newUsdcReserve: h2.rIn + h1.amountOut } };
     }
 
     if (pairKey === "TCL-WEGLD") {
@@ -1139,7 +1412,9 @@ document.addEventListener("click", function(e) {
       const h2 = await getDirectSwapOut(CONFIG.USDC_WEGLD_PAIR, CONFIG.USDC_ID, h1.amountOut,   CONFIG.WEGLD_ID);
       return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 2,
                intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
-               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled,
+               poolState: { tclReserve: h1.rIn, usdcReserve: h1.rOut,
+                            newTclReserve: h1.rIn + amountInAtomic, newUsdcReserve: h1.rOut - h1.amountOut } };
     }
 
     // EGLD ↔ TCL: wrap/unwrap + 2-hop router
@@ -1148,7 +1423,9 @@ document.addEventListener("click", function(e) {
       const h2 = await getDirectSwapOut(CONFIG.TCL_USDC_PAIR,   CONFIG.USDC_ID,  h1.amountOut,   CONFIG.TCL_ID);
       return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 3,
                intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
-               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled,
+               poolState: { tclReserve: h2.rOut, usdcReserve: h2.rIn,
+                            newTclReserve: h2.rOut - h2.amountOut, newUsdcReserve: h2.rIn + h1.amountOut } };
     }
 
     if (pairKey === "TCL-EGLD") {
@@ -1156,7 +1433,9 @@ document.addEventListener("click", function(e) {
       const h2 = await getDirectSwapOut(CONFIG.USDC_WEGLD_PAIR, CONFIG.USDC_ID, h1.amountOut,   CONFIG.WEGLD_ID);
       return { amountOut: h2.amountOut, minOut: applySlippage(h2.amountOut), hops: 3,
                intermediate: h1.amountOut, priceImpact: combineImpacts(h1.impactPct, h2.impactPct),
-               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled };
+               spotScaled: h2.spotScaled, newSpotScaled: h2.newSpotScaled,
+               poolState: { tclReserve: h1.rIn, usdcReserve: h1.rOut,
+                            newTclReserve: h1.rIn + amountInAtomic, newUsdcReserve: h1.rOut - h1.amountOut } };
     }
 
     return null;
@@ -1371,6 +1650,8 @@ document.addEventListener("click", function(e) {
     syncConnectView();
     setStatus("idle", "xPortal disconnected.");
     updatePairUI();
+    const bac = document.getElementById("balanceAboveCard");
+    if (bac) bac.classList.remove("is-connected");
     startConnection();
   }
 
@@ -1500,6 +1781,20 @@ document.addEventListener("click", function(e) {
       if (D.stripUsdcUsd)    D.stripUsdcUsd.textContent    = `$${fmt2(usdcNum * usdcP)}`;
       if (D.stripTclAmount)  D.stripTclAmount.textContent  = `${tclNum.toLocaleString("en-US", { maximumFractionDigits: 0 })} TCL`;
       if (D.stripTclUsd)     D.stripTclUsd.textContent     = tclP > 0 ? `$${fmt2(tclNum * tclP)}` : "$--";
+      // Update balance above swap card
+      const bac = document.getElementById("balanceAboveCard");
+      if (bac) bac.classList.add("is-connected");
+      const bacEgld  = document.getElementById("bacEgldAmount");  if (bacEgld)  bacEgld.textContent  = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
+      const bacEgldU = document.getElementById("bacEgldUsd");     if (bacEgldU) bacEgldU.textContent = egldP > 0 ? `$${fmt2(egldNum * egldP)}` : "$--";
+      const bacUsdc  = document.getElementById("bacUsdcAmount");  if (bacUsdc)  bacUsdc.textContent  = `${usdcNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDC`;
+      const bacUsdcU = document.getElementById("bacUsdcUsd");     if (bacUsdcU) bacUsdcU.textContent = `$${fmt2(usdcNum * usdcP)}`;
+      const bacTcl   = document.getElementById("bacTclAmount");   if (bacTcl)   bacTcl.textContent   = `${tclNum.toLocaleString("en-US", { maximumFractionDigits: 0 })} TCL`;
+      const bacTclU  = document.getElementById("bacTclUsd");      if (bacTclU)  bacTclU.textContent  = tclP > 0 ? `$${fmt2(tclNum * tclP)}` : "$--";
+      // Update token icons
+      const bacEgldI = document.getElementById("bacEgldIcon"); if (bacEgldI && TOKEN_META.EGLD.icon) bacEgldI.src = TOKEN_META.EGLD.icon;
+      const bacUsdcI = document.getElementById("bacUsdcIcon"); if (bacUsdcI && TOKEN_META.USDC.icon) bacUsdcI.src = TOKEN_META.USDC.icon;
+      const bacTclI  = document.getElementById("bacTclIcon");  if (bacTclI  && TOKEN_META.TCL.icon)  bacTclI.src  = TOKEN_META.TCL.icon;
+
       // Update popup balances
       const pe = document.getElementById("popupEgldAmount"); if (pe) pe.textContent = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
       const peu = document.getElementById("popupEgldUsd");   if (peu) peu.textContent = egldP > 0 ? `$${fmt2(egldNum * egldP)}` : "$--";
@@ -1535,6 +1830,13 @@ document.addEventListener("click", function(e) {
     D.amountOut.value = "";
     D.rateBox.hidden  = true;
     D.txResult.hidden = true;
+
+    const txCount = pair.multiStep ? 2 : 1;
+    const txEl = document.getElementById("txCountValue");
+    if (txEl) {
+      txEl.textContent = txCount;
+      txEl.className = "tx-count-value" + (txCount > 1 ? " multi" : "");
+    }
     if (D.fromUsd) D.fromUsd.textContent = "";
     if (D.toUsd)   D.toUsd.textContent   = "";
     S.multiStepPhase = 0;
@@ -1645,15 +1947,29 @@ document.addEventListener("click", function(e) {
       : execPriceRaw.toLocaleString("en-US", { maximumFractionDigits: execPriceRaw < 1 ? 6 : 4 });
     D.avgPriceText.textContent = `1 ${toMeta.symbol} = ${execFmt} ${fromMeta.symbol}`;
 
-    // Price after swap on TCL/USDC pair (in USDC per TCL)
-    if (quote.newSpotScaled && quote.newSpotScaled > 0) {
-      const decAdj = Math.pow(10, TOKEN_META.TCL.decimals - TOKEN_META.USDC.decimals); // 1e12
-      const newPriceUsdc = quote.newSpotScaled / decAdj;
-      const delta = quote.spotScaled ? (quote.newSpotScaled - quote.spotScaled) / quote.spotScaled * 100 : 0;
-      const deltaStr = Math.abs(delta) > 0.001 ? ` (${delta > 0 ? "+" : ""}${delta.toFixed(2)}%)` : "";
-      D.priceAfterText.textContent = `1 TCL = ${newPriceUsdc.toLocaleString("en-US", { maximumFractionDigits: 6 })} USDC${deltaStr}`;
+    // Simulator-style pool stats
+    if (quote.poolState) {
+      const ps = quote.poolState;
+      const curTclNum   = Number(ps.tclReserve)     / 1e18;
+      const curUsdcNum  = Number(ps.usdcReserve)    / 1e6;
+      const newTclNum   = Number(ps.newTclReserve)  / 1e18;
+      const newUsdcNum  = Number(ps.newUsdcReserve) / 1e6;
+      const curPrice    = curTclNum  > 0 ? curUsdcNum  / curTclNum  : 0;
+      const finalPrice  = newTclNum  > 0 ? newUsdcNum  / newTclNum  : 0;
+      const pctChange   = curPrice   > 0 ? (finalPrice - curPrice) / curPrice * 100 : 0;
+
+      D.priceChangePctText.textContent = `${pctChange >= 0 ? "+" : ""}${pctChange.toFixed(3)}%`;
+      D.priceChangePctText.style.color = pctChange > 0.01 ? "var(--success)" : pctChange < -0.01 ? "var(--danger)" : "var(--muted)";
+
+      D.tclFinalPriceText.textContent  = `${finalPrice.toLocaleString("en-US", { maximumFractionDigits: 6 })} USDC`;
+
+      D.poolTclAfterText.textContent   = newTclNum.toLocaleString("en-US",  { maximumFractionDigits: 2 }) + " TCL";
+      D.poolUsdcAfterText.textContent  = newUsdcNum.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " USDC";
     } else {
-      D.priceAfterText.textContent = "--";
+      D.priceChangePctText.textContent = "--";
+      D.tclFinalPriceText.textContent  = "--";
+      D.poolTclAfterText.textContent   = "--";
+      D.poolUsdcAfterText.textContent  = "--";
     }
 
     D.minReceivedText.textContent = `${formatAmount(quote.minOut, toMeta.decimals, 6)} ${toMeta.symbol}`;
