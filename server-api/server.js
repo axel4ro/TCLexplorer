@@ -2659,17 +2659,22 @@ function parseMarketplaceSale(tx) {
 async function enrichMarketplaceSale(sale) {
   const details = await fetchMarketplaceSource("transaction", { hash: sale.txHash });
   const operations = Array.isArray(details?.operations) ? details.operations : [];
+
+  // Buyer = whoever receives the NFT from the marketplace SC
   const nftTransfer = operations.find(operation =>
     operation?.type === "nft"
     && operation?.sender === MARKETPLACE_SC
-    && operation?.receiver === sale.buyer
   );
+  const buyer = nftTransfer?.receiver || sale.buyer;
+
+  // Seller = largest TCL transfer from SC to someone who is NOT the buyer
   const sellerTransfer = operations
     .filter(operation =>
       operation?.action === "transfer"
       && operation?.type === "esdt"
       && operation?.identifier === TCL_TOKEN
       && operation?.sender === MARKETPLACE_SC
+      && operation?.receiver !== buyer
     )
     .sort((left, right) => {
       const leftValue = BigInt(left?.value || "0");
@@ -2679,6 +2684,7 @@ async function enrichMarketplaceSale(sale) {
 
   return {
     ...sale,
+    buyer,
     seller: sellerTransfer?.receiver || null,
     nftToken: sale.nftToken || nftTransfer?.collection || null,
     nftNonce: sale.nftNonce ?? (
@@ -2823,12 +2829,38 @@ app.get("/api/marketplace/sales", async (req, res) => {
       `SELECT s.*, n.name AS nft_name, n.image_url
        FROM tcl_marketplace_sales s
        LEFT JOIN tcl_nfts n ON n.collection = s.nft_token AND n.nonce = s.nft_nonce
-       WHERE s.buyer != s.seller
        ORDER BY s.sold_at DESC LIMIT $1`,
       [limit]
     );
     res.setHeader("Cache-Control", "public, max-age=30");
     res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/marketplace/reenrich — re-fetch buyer/seller for rows where buyer == seller
+app.post("/api/marketplace/reenrich", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT tx_hash FROM tcl_marketplace_sales WHERE buyer = seller OR buyer IS NULL OR seller IS NULL LIMIT 200`
+    );
+    if (rows.length === 0) return res.json({ fixed: 0 });
+    let fixed = 0;
+    for (const { tx_hash } of rows) {
+      try {
+        const base = { txHash: tx_hash, buyer: null, nftToken: null, nftNonce: null, price: 0n, timestamp: 0 };
+        const enriched = await enrichMarketplaceSale(base);
+        if (enriched.buyer && enriched.seller && enriched.buyer !== enriched.seller) {
+          await pool.query(
+            `UPDATE tcl_marketplace_sales SET buyer = $1, seller = $2 WHERE tx_hash = $3`,
+            [enriched.buyer, enriched.seller, tx_hash]
+          );
+          fixed++;
+        }
+      } catch {}
+    }
+    res.json({ fixed, total: rows.length });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -2846,7 +2878,6 @@ app.get("/api/marketplace/stats", async (req, res) => {
         COALESCE(MIN(price::numeric) / 1e18, 0)                        AS floor_price_tcl,
         COALESCE(MAX(price::numeric) / 1e18, 0)                        AS max_price_tcl
       FROM tcl_marketplace_sales
-      WHERE buyer != seller
     `);
     res.setHeader("Cache-Control", "public, max-age=30");
     res.json(rows[0]);
