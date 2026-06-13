@@ -2823,6 +2823,7 @@ app.get("/api/marketplace/sales", async (req, res) => {
       `SELECT s.*, n.name AS nft_name, n.image_url
        FROM tcl_marketplace_sales s
        LEFT JOIN tcl_nfts n ON n.collection = s.nft_token AND n.nonce = s.nft_nonce
+       WHERE s.buyer != s.seller
        ORDER BY s.sold_at DESC LIMIT $1`,
       [limit]
     );
@@ -2845,6 +2846,7 @@ app.get("/api/marketplace/stats", async (req, res) => {
         COALESCE(MIN(price::numeric) / 1e18, 0)                        AS floor_price_tcl,
         COALESCE(MAX(price::numeric) / 1e18, 0)                        AS max_price_tcl
       FROM tcl_marketplace_sales
+      WHERE buyer != seller
     `);
     res.setHeader("Cache-Control", "public, max-age=30");
     res.json(rows[0]);
