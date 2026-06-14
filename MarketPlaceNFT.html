@@ -302,9 +302,21 @@
     /* ── Grid ── */
     #listings-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 20px;
       padding: 24px;
+    }
+    /* 4 cols ~1300px viewport */
+    @media (min-width: 1300px) {
+      #listings-grid:not(.sales-mode) { grid-template-columns: repeat(4, 1fr); }
+    }
+    /* 5 cols ~1600px viewport */
+    @media (min-width: 1600px) {
+      #listings-grid:not(.sales-mode) { grid-template-columns: repeat(5, 1fr); }
+    }
+    /* 7 cols ultrawide ~1900px+ viewport */
+    @media (min-width: 1900px) {
+      #listings-grid:not(.sales-mode) { grid-template-columns: repeat(7, 1fr); }
     }
     #listings-grid.sales-mode { display: block; }
     .sales-list { display: grid; gap: 10px; max-width: 980px; margin: 0 auto; }
@@ -991,6 +1003,7 @@
     .empty-msg small { font-size: 13px; color: #4a5568; }
 
     a.nav-back { text-decoration: none; }
+    .mobile-nav-menu { display: none; }
 
     /* ══════════════════════════════════════
        MOBILE RESPONSIVE
@@ -1030,58 +1043,80 @@
       #connectTriggerBtn { min-height: 32px; padding: 5px 10px; }
 
       /* Toolbar — selects on one row, buttons below */
-      .toolbar { padding: 10px 12px; gap: 7px; }
-      .search-box { min-width: 0; width: 100%; flex: 1 1 100%; }
-      .toolbar-select { flex: 1; min-width: 0; font-size: 12px; padding: 7px 8px; }
+      .toolbar { padding: 6px 10px; gap: 5px; }
+      .search-box { min-width: 0; width: 100%; flex: 1 1 100%; padding: 6px 10px; font-size: 12px; }
+      .toolbar-select { flex: 1; min-width: 0; font-size: 11px; padding: 5px 6px; }
       .toolbar .btn-primary,
       .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
 
-      /* Stats bar — 2×2 cards (TCL Price hidden, moved to wallet popup) */
+      /* Stats bar — 2×2 grid */
       .stats-bar {
         display: grid; grid-template-columns: 1fr 1fr;
-        gap: 8px; padding: 10px 12px;
+        gap: 7px; padding: 8px 10px;
         background: transparent; border-bottom: none;
       }
       .stats-bar .stat-item {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
-        border-radius: 10px;
-        padding: 10px 12px;
+        border-radius: 9px;
+        padding: 8px 10px;
         text-align: center;
       }
       .stat-tcl-price-item { display: none !important; }
-      .stat-value { font-size: 14px; }
+      .stat-value { font-size: 13px; }
       .stat-label { font-size: 10px; }
       .sale-row { grid-template-columns: 1fr 1fr; gap: 10px; }
       .sale-parties { grid-column: 1 / -1; }
       .sale-time { text-align: left; }
 
-      /* Tabs — 2-column grid on mobile */
-      .tabs {
-        display: grid; grid-template-columns: 1fr 1fr;
-        padding: 8px; gap: 5px;
-        border-bottom: 1px solid #1e2a42;
-        background: rgba(13,17,32,0.5);
+      /* Tabs — hidden on mobile, replaced by dropdown */
+      .tabs { display: none; }
+
+      /* Mobile nav dropdown */
+      .mobile-nav-menu { display: block; padding: 6px 10px 4px; position: relative; z-index: 50; }
+      .mobile-menu-trigger {
+        width: 100%; background: rgba(47,246,222,0.08);
+        border: 1px solid var(--accent); border-radius: 9px;
+        color: var(--text); padding: 10px 14px;
+        font-size: 13px; font-weight: 600; font-family: inherit;
+        display: flex; justify-content: space-between; align-items: center;
+        cursor: pointer; gap: 8px;
       }
-      .tab-btn {
-        flex: none; padding: 9px 6px; font-size: 12px;
-        border-radius: 8px; text-align: center; white-space: nowrap;
-        border-bottom: none;
-      }
-      .tab-btn.active {
-        border: 1px solid var(--accent);
-        background: rgba(47,246,222,0.1);
-        border-bottom: 1px solid var(--accent);
-      }
-      .tab-action-btn {
-        flex: none; padding: 9px 8px; font-size: 12px; margin: 0;
+      .mobile-menu-main { display: flex; align-items: center; gap: 6px; }
+      .mobile-menu-chevron { font-size: 14px; color: var(--accent); transition: transform 0.2s; }
+      .mobile-menu-chevron.open { transform: rotate(180deg); }
+      .mobile-menu-close-btn {
+        display: none; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 800; color: #fff;
+        background: linear-gradient(135deg, #7c3aed, #5b21b6);
         border-radius: 8px;
+        width: 28px; height: 28px; line-height: 1; flex-shrink: 0;
+        border: none;
+        box-shadow: 0 2px 8px rgba(109,40,217,0.7), 0 0 0 1.5px rgba(255,255,255,0.15);
       }
-      .tab-action-btn:last-child { grid-column: 1 / -1; }
+      .mobile-menu-close-btn.visible { display: flex; }
+      .mobile-menu-dropdown {
+        display: none; flex-direction: column; gap: 6px;
+        background: rgba(8,13,26,0.97); border: 1px solid var(--card-border);
+        border-radius: 12px; margin-top: 5px; padding: 8px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.75);
+        position: absolute; left: 10px; right: 10px; z-index: 100;
+      }
+      .mobile-menu-dropdown.open { display: flex; }
+      .mobile-menu-dropdown button {
+        background: #131c33; border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 8px; color: var(--text); padding: 13px 16px;
+        text-align: left; font-size: 14px; font-family: inherit;
+        cursor: pointer; display: flex; align-items: center; gap: 10px;
+        margin: 0; transition: background 0.15s, border-color 0.15s;
+      }
+      .mobile-menu-dropdown button:hover { background: #1a2640; border-color: rgba(255,255,255,0.15); }
+      .mobile-menu-dropdown button.mob-active { color: var(--accent); font-weight: 700; border-color: rgba(47,246,222,0.3); background: rgba(47,246,222,0.06); }
+      .mobile-menu-divider { display: none; }
 
 
-      /* Listings grid — 2 cols on mobile */
-      #listings-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px 10px; }
+      /* Listings grid — 1 col on mobile */
+      #listings-grid { grid-template-columns: 1fr; gap: 10px; padding: 12px 10px; }
 
       /* NFT Card compact */
       .nft-card .card-body { padding: 9px 10px; }
@@ -1212,6 +1247,25 @@
   <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
   <button class="btn-primary tab-action-btn" onclick="openMyNFTsModal()">My NFTs</button>
   <button class="btn-secondary tab-action-btn" id="refreshBtn" onclick="manualRefresh()">↻ <span id="refreshLabel">Refresh</span></button>
+</div>
+
+<!-- Mobile-only nav dropdown -->
+<div class="mobile-nav-menu" id="mobileNavMenu">
+  <button class="mobile-menu-trigger" id="mobileMenuTrigger" onclick="toggleMobileMenu()">
+    <span class="mobile-menu-main">
+      <span id="mobileMenuLabel">🛒 All Listings</span>
+      <span class="mobile-menu-chevron" id="mobileMenuChevron">▾</span>
+    </span>
+    <span class="mobile-menu-close-btn" id="mobileMenuClose" onclick="event.stopPropagation(); closeMobileMenu()">✕</span>
+  </button>
+  <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
+    <button id="mob-tab-all" class="mob-active" onclick="mobileTabSwitch('all','🛒 All Listings','mob-tab-all')">🛒 All Listings</button>
+    <button id="mob-tab-activity" onclick="mobileTabSwitch('activity','📋 Recent Sales','mob-tab-activity')">📋 Recent Sales</button>
+    <button id="mob-tab-mine" onclick="mobileTabSwitch('mine','👤 My Listings','mob-tab-mine')">👤 My Listings</button>
+    <div class="mobile-menu-divider"></div>
+    <button onclick="openMyNFTsModal(); closeMobileMenu()">📦 My NFTs</button>
+    <button onclick="manualRefresh(); closeMobileMenu()">↻ Refresh</button>
+  </div>
 </div>
 
 <!-- ════════════ TOOLBAR ════════════ -->
@@ -1643,6 +1697,30 @@ function switchTab(tab) {
     document.getElementById(`tab-${t}`).classList.toggle("active", t === tab);
   });
   renderCurrentTab();
+}
+
+function toggleMobileMenu() {
+  const dd = document.getElementById('mobileMenuDropdown');
+  const ch = document.getElementById('mobileMenuChevron');
+  const xBtn = document.getElementById('mobileMenuClose');
+  const open = dd.classList.toggle('open');
+  ch.classList.toggle('open', open);
+  xBtn?.classList.toggle('visible', open);
+}
+
+function closeMobileMenu() {
+  document.getElementById('mobileMenuDropdown')?.classList.remove('open');
+  document.getElementById('mobileMenuChevron')?.classList.remove('open');
+  document.getElementById('mobileMenuClose')?.classList.remove('visible');
+}
+
+function mobileTabSwitch(tab, label, btnId) {
+  switchTab(tab);
+  document.getElementById('mobileMenuLabel').textContent = label;
+  ['mob-tab-all','mob-tab-activity','mob-tab-mine'].forEach(id => {
+    document.getElementById(id)?.classList.toggle('mob-active', id === btnId);
+  });
+  closeMobileMenu();
 }
 
 function renderCurrentTab() {
