@@ -20,6 +20,8 @@ try {
 import express from "express";
 import pg from "pg";
 import { createHash, createHmac, randomBytes } from "crypto";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import {
   Account,
   Address,
@@ -68,7 +70,41 @@ const WHEEL_PAYOUT_PENDING_STATUSES = ["submitting", "submitted"];
 let wheelPayoutAccountPromise = null;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+// Trust Cloudflare as the single upstream proxy — gives correct req.ip
+app.set("trust proxy", 1);
+
 app.use(express.json());
+
+// Security headers
+app.use(helmet({ crossOriginEmbedderPolicy: false, contentSecurityPolicy: false }));
+
+// Rate limiters — keyed by CF-Connecting-IP (real client IP set by Cloudflare)
+const cfIp = (req) => req.headers["cf-connecting-ip"] || req.ip;
+
+// General: 120 req/min — covers any normal browsing pattern
+const generalLimiter = rateLimit({
+  windowMs: 60_000, max: 120, keyGenerator: cfIp,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many requests, please slow down." }
+});
+
+// Heavy: endpoints that hit DB or external APIs — 30 req/min
+const heavyLimiter = rateLimit({
+  windowMs: 60_000, max: 30, keyGenerator: cfIp,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many requests to this endpoint." }
+});
+
+// Write: POST endpoints — 20 req/min
+const writeLimiter = rateLimit({
+  windowMs: 60_000, max: 20, keyGenerator: cfIp,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many write requests, please slow down." }
+});
+
+app.use("/api", generalLimiter);
+app.use(["/api/analytics", "/api/leaderboard", "/api/technicals", "/api/volume"], heavyLimiter);
+app.use((req, res, next) => { if (req.method === "POST") return writeLimiter(req, res, next); next(); });
 
 // CORS
 app.use((req, res, next) => {

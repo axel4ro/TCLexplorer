@@ -241,11 +241,36 @@ export default {
   }
 };
 
+async function isRateLimited(env, ctx, ip, limit = 200, windowSec = 60) {
+  if (!env.TCL_EVENT_PUSH_KV || !ip || ip === "unknown") return false;
+  const window = Math.floor(Date.now() / (windowSec * 1000));
+  const key = `rl:${ip}:${window}`;
+  const current = parseInt(await env.TCL_EVENT_PUSH_KV.get(key) || "0");
+  if (current >= limit) return true;
+  ctx.waitUntil(env.TCL_EVENT_PUSH_KV.put(key, String(current + 1), { expirationTtl: windowSec * 2 }));
+  return false;
+}
+
 async function handleRequest(request, env, ctx) {
   if (request.method === "OPTIONS") return emptyResponse(request, env);
 
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "");
+
+  // Rate limit: 200 req/min per IP on API endpoints
+  if (path.includes("/api/")) {
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    if (await isRateLimited(env, ctx, ip, 200, 60)) {
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "60",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+  }
 
   try {
     if (path === "/ads.txt" || path.endsWith("/ads.txt")) {
