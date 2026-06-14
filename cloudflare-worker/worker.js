@@ -1093,6 +1093,10 @@ async function handleAnalyticsRefresh(request, env) {
 // ── Prices endpoint ──────────────────────────────────────────────────────────
 
 async function handlePrices(request, env, ctx) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: pricesCorsHeaders() });
+  }
+
   const kv = env.TCL_EVENT_PUSH_KV;
   const now = Math.floor(Date.now() / 1000);
 
@@ -1103,7 +1107,7 @@ async function handlePrices(request, env, ctx) {
       if (age >= PRICES_CACHE_TTL_SECONDS) {
         ctx.waitUntil(refreshPricesSnapshot(kv, now));
       }
-      return jsonResponse(request, env, 200, { ...cached, age });
+      return pricesJsonResponse({ ...cached, age });
     }
   }
 
@@ -1111,7 +1115,27 @@ async function handlePrices(request, env, ctx) {
   if (kv) {
     ctx.waitUntil(kv.put(PRICES_SNAPSHOT_KEY, JSON.stringify(snapshot), { expirationTtl: 300 }));
   }
-  return jsonResponse(request, env, 200, { ...snapshot, age: 0 });
+  return pricesJsonResponse({ ...snapshot, age: 0 });
+}
+
+function pricesCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Accept",
+    "Access-Control-Max-Age": "86400"
+  };
+}
+
+function pricesJsonResponse(payload) {
+  return new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: {
+      ...pricesCorsHeaders(),
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "public, max-age=30"
+    }
+  });
 }
 
 async function refreshPricesSnapshot(kv, now) {
