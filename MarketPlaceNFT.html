@@ -42,15 +42,15 @@
 
     /* ── Header ── */
     header {
-      background: linear-gradient(90deg, #101729, #141a33);
-      padding: 14px 24px;
+      background: #101729;
+      padding: 14px 24px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 12px;
-      border-bottom: 1px solid #2a3347;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+      border-bottom: none;
+      box-shadow: none;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -219,9 +219,13 @@
     .tabs {
       display: flex;
       gap: 4px;
-      padding: 16px 24px 0;
+      padding: 10px 24px 0;
       border-bottom: 1px solid #1e2a42;
-      background: rgba(13,17,32,0.5);
+      background: #101729;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+      position: sticky;
+      top: 61px;
+      z-index: 99;
     }
     .tab-btn {
       background: none;
@@ -1050,7 +1054,7 @@
       .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
 
       /* Header wraps on mobile — stats drop to second row as 2×2 grid */
-      header { flex-wrap: wrap; gap: 5px; padding: 8px 12px; }
+      header { flex-wrap: wrap; gap: 5px; padding: 8px 12px; border-bottom: none; box-shadow: none; }
       .header-logo-mobile { display: block !important; width: 28px; height: 28px; border-radius: 7px; }
       .header-left { flex: 1; min-width: 0; }
       .header-right { flex: 0 0 auto; }
@@ -1078,7 +1082,7 @@
       .tabs { display: none; }
 
       /* Mobile nav dropdown */
-      .mobile-nav-menu { display: block; padding: 6px 10px 4px; position: relative; z-index: 50; }
+      .mobile-nav-menu { display: block; padding: 6px 10px 10px; position: relative; z-index: 50; background: #101729; border-bottom: 1px solid #1e2a42; box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
       .mobile-menu-trigger {
         width: 100%; background: rgba(47,246,222,0.08);
         border: 1px solid var(--accent); border-radius: 9px;
