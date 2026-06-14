@@ -3172,9 +3172,9 @@ function updateStats() {
 
 async function loadTCLPrice() {
   try {
-    const resp = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+    const resp = await fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices");
     const data = await resp.json();
-    tclPriceUSD = parseFloat(data?.pairs?.[0]?.priceUsd || 0);
+    tclPriceUSD = parseFloat(data?.pair?.priceUsd || data?.pairs?.[0]?.priceUsd || 0);
     if (tclPriceUSD) {
       const priceText = `$${tclPriceUSD.toFixed(6)}`;
       document.getElementById("stat-tcl-price").textContent = priceText;

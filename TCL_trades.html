@@ -1483,7 +1483,7 @@ function isPristineSimulationState(){
 }
 
 async function fetchLiveMarketSnapshot(){
-    const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff?v=" + Date.now(), {
+    const response = await fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices", {
         cache: "no-store",
         headers: { Accept: "application/json" }
     });

@@ -853,14 +853,15 @@
         if (!state.rows.length) renderUpdateCard("loading");
 
         try {
-          const [tokenRes, holdersRes] = await Promise.all([
-            fetch(`${API_BASE}/tokens/${TOKEN_ID}`),
+          const [pricesRes, holdersRes] = await Promise.all([
+            fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices"),
             fetch(`${API_BASE}/tokens/${TOKEN_ID}/accounts?size=${FETCH_SIZE}`)
           ]);
 
-          if (!tokenRes.ok || !holdersRes.ok) throw new Error("MultiversX API error");
+          if (!pricesRes.ok || !holdersRes.ok) throw new Error("API error");
 
-          const token = await tokenRes.json();
+          const pricesData = await pricesRes.json();
+          const token = pricesData.token || {};
           const rawHolders = await holdersRes.json();
 
           if (!Array.isArray(rawHolders)) throw new Error("Unexpected response format");

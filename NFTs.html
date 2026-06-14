@@ -497,9 +497,9 @@ body.page-sub {
     let tclPriceUSD = 0;
     async function loadTCLPrice() {
       try {
-        const r = await fetch("https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff");
+        const r = await fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices");
         const d = await r.json();
-        tclPriceUSD = parseFloat(d?.pairs?.[0]?.priceUsd || 0);
+        tclPriceUSD = parseFloat(d?.pair?.priceUsd || d?.pairs?.[0]?.priceUsd || 0);
       } catch {}
     }
     function fmtTCL(bigintVal) {

@@ -36,6 +36,15 @@ const MARKETPLACE_SC_ADDRESS = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvsc
 const MARKETPLACE_PAIR_ADDRESS = "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
 const MARKETPLACE_TOKEN = "TCL-fe459d";
 const MARKETPLACE_MVX_API = "https://api.multiversx.com";
+const PRICES_SNAPSHOT_KEY = "prices:snapshot";
+const PRICES_GECKO_KEY = "prices:gecko";
+const PRICES_CACHE_TTL_SECONDS = 30;
+const PRICES_GECKO_TTL_SECONDS = 3600;
+const PRICES_TCL_PAIR_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
+const PRICES_EGLD_PAIR_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgqeel2kumf0r8ffyhth7pqdujjat9nx0862jpsg2pqaq";
+const PRICES_TOKEN_URL = "https://api.multiversx.com/tokens/TCL-fe459d";
+const PRICES_GECKO_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander";
+const PRICES_GECKO_FALLBACK = { ath: 0.010077, atl: 0.000372 };
 const PNL_DEXSCREENER_CACHE_PREFIX = "pnl:dexscreener:";
 const PNL_DEXSCREENER_CACHE_TTL_SECONDS = 10 * 60;
 const PNL_DEXSCREENER_CONFIG = {
@@ -239,6 +248,10 @@ async function handleRequest(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
   try {
+    if (path.endsWith("/api/prices")) {
+      return handlePrices(request, env, ctx);
+    }
+
     if (path.endsWith("/api/marketplace/source")) {
       return handleMarketplaceSource(request, env, url);
     }
@@ -1075,6 +1088,87 @@ async function handleAnalyticsRefresh(request, env) {
     ok: true,
     updatedAt: snapshot?.meta?.updatedAt || null
   });
+}
+
+// ── Prices endpoint ──────────────────────────────────────────────────────────
+
+async function handlePrices(request, env, ctx) {
+  const kv = env.TCL_EVENT_PUSH_KV;
+  const now = Math.floor(Date.now() / 1000);
+
+  if (kv) {
+    const cached = await kv.get(PRICES_SNAPSHOT_KEY, "json");
+    if (cached) {
+      const age = now - (cached.cachedAt || 0);
+      if (age >= PRICES_CACHE_TTL_SECONDS) {
+        ctx.waitUntil(refreshPricesSnapshot(kv, now));
+      }
+      return jsonResponse(request, env, 200, { ...cached, age });
+    }
+  }
+
+  const snapshot = await fetchPricesSnapshot(kv, now);
+  if (kv) {
+    ctx.waitUntil(kv.put(PRICES_SNAPSHOT_KEY, JSON.stringify(snapshot), { expirationTtl: 300 }));
+  }
+  return jsonResponse(request, env, 200, { ...snapshot, age: 0 });
+}
+
+async function refreshPricesSnapshot(kv, now) {
+  try {
+    const snapshot = await fetchPricesSnapshot(kv, now);
+    await kv.put(PRICES_SNAPSHOT_KEY, JSON.stringify(snapshot), { expirationTtl: 300 });
+  } catch (e) {
+    console.warn("Prices snapshot refresh failed", e?.message || e);
+  }
+}
+
+async function fetchPricesSnapshot(kv, now) {
+  // Gecko has its own 1hr cache to avoid rate limits
+  let gecko = PRICES_GECKO_FALLBACK;
+  if (kv) {
+    const cachedGecko = await kv.get(PRICES_GECKO_KEY, "json");
+    if (cachedGecko && (now - (cachedGecko.cachedAt || 0)) < PRICES_GECKO_TTL_SECONDS) {
+      gecko = { ath: cachedGecko.ath, atl: cachedGecko.atl };
+    } else {
+      try {
+        const geckoRes = await fetch(PRICES_GECKO_URL);
+        if (geckoRes.ok) {
+          const arr = await geckoRes.json();
+          if (Array.isArray(arr) && arr[0]) {
+            gecko = { ath: Number(arr[0].ath) || gecko.ath, atl: Number(arr[0].atl) || gecko.atl };
+            await kv.put(PRICES_GECKO_KEY, JSON.stringify({ ...gecko, cachedAt: now }), { expirationTtl: PRICES_GECKO_TTL_SECONDS });
+          }
+        }
+      } catch (e) {
+        console.warn("Gecko fetch failed, using fallback/cached", e?.message);
+        if (cachedGecko) gecko = { ath: cachedGecko.ath, atl: cachedGecko.atl };
+      }
+    }
+  }
+
+  const [tclRes, egldRes, tokenRes] = await Promise.all([
+    fetch(PRICES_TCL_PAIR_URL),
+    fetch(PRICES_EGLD_PAIR_URL),
+    fetch(PRICES_TOKEN_URL)
+  ]);
+
+  const tclData = tclRes.ok ? await tclRes.json() : {};
+  const egldData = egldRes.ok ? await egldRes.json() : {};
+  const tokenData = tokenRes.ok ? await tokenRes.json() : {};
+
+  const pair = tclData.pair || (Array.isArray(tclData.pairs) ? tclData.pairs[0] : null) || {};
+  const egldPair = egldData.pair || (Array.isArray(egldData.pairs) ? egldData.pairs[0] : null) || {};
+
+  return {
+    ok: true,
+    pair,
+    pairs: [pair],
+    token: tokenData,
+    gecko,
+    egld: { price: parseFloat(egldPair.priceUsd) || 0, pair: egldPair },
+    cachedAt: now
+  };
 }
 
 function authorizeDispatch(request, env) {

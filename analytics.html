@@ -906,8 +906,7 @@
 
   <script>
     const ANALYTICS_API_URL = resolveAnalyticsApiUrl();
-    const DEX_MARKET_URL = "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff";
-    const MULTIVERSX_TOKEN_URL = "https://api.multiversx.com/tokens/TCL-fe459d";
+    const PRICES_API_URL = "https://tcl-event-push.axel4ro.workers.dev/api/prices";
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     const SNAPSHOT_STALE_AFTER_MS = 40 * 60 * 1000;
     const TCL_LISTING_DATE = "2024-06-13";
@@ -1193,33 +1192,22 @@
 
     async function loadDexMarketStats() {
       try {
-        const [dexResponse, multiversxResponse] = await Promise.all([
-          fetch(`${DEX_MARKET_URL}?v=${Date.now()}`, {
-            headers: { Accept: "application/json" },
-            cache: "no-store"
-          }),
-          fetch(`${MULTIVERSX_TOKEN_URL}?v=${Date.now()}`, {
-            headers: { Accept: "application/json" },
-            cache: "no-store"
-          })
-        ]);
+        const pricesResponse = await fetch(PRICES_API_URL, {
+          headers: { Accept: "application/json" },
+          cache: "no-store"
+        });
 
-        if (!dexResponse.ok) {
-          throw new Error(`DexScreener request failed with ${dexResponse.status}`);
+        if (!pricesResponse.ok) {
+          throw new Error(`Prices API request failed with ${pricesResponse.status}`);
         }
 
-        if (!multiversxResponse.ok) {
-          throw new Error(`MultiversX request failed with ${multiversxResponse.status}`);
-        }
-
-        const dexPayload = await dexResponse.json();
-        const multiversxPayload = await multiversxResponse.json();
-        const pair = Array.isArray(dexPayload?.pairs) ? dexPayload.pairs[0] : null;
+        const pricesPayload = await pricesResponse.json();
+        const pair = pricesPayload.pair || (Array.isArray(pricesPayload.pairs) ? pricesPayload.pairs[0] : null);
         if (!pair) {
-          throw new Error("DexScreener response did not include a pair.");
+          throw new Error("Prices API response did not include a pair.");
         }
 
-        renderHeaderMarketStats(pair, multiversxPayload);
+        renderHeaderMarketStats(pair, pricesPayload.token || {});
       } catch (error) {
         console.error("Failed to load analytics header stats", error);
         currentPriceValueEl.textContent = "--";

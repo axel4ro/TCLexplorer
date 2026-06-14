@@ -1487,7 +1487,7 @@
     };
 
     const CACHE_KEY = "tcl-chart-trades-v1";
-    const TOKEN_PRICE_EXTREMES_API_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=lander";
+    const TOKEN_PRICE_EXTREMES_API_URL = "https://tcl-event-push.axel4ro.workers.dev/api/prices";
     const TOKEN_PRICE_EXTREMES_FALLBACK = {
       high: 0.010077,
       low: 0.000372,
@@ -1753,11 +1753,11 @@
           }
 
           const payload = await response.json();
-          const market = Array.isArray(payload) ? payload[0] : null;
+          const market = payload.gecko || (Array.isArray(payload) ? payload[0] : null);
           const extremes = applyTokenPriceExtremes({
             ath: market?.ath,
             atl: market?.atl,
-            sourceLabel: "CoinGecko ATH/ATL"
+            sourceLabel: "TCL ATH/ATL"
           });
           if (!extremes) {
             throw new Error("Token price extremes payload did not include ATH/ATL.");
