@@ -41,8 +41,15 @@
     }
 
     /* ── Header ── */
+    #sticky-top {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 12, 18, 0.9);
+      backdrop-filter: blur(12px);
+    }
     header {
-      background: #101729;
+      background: transparent;
       padding: 14px 24px 10px;
       display: flex;
       align-items: center;
@@ -51,9 +58,6 @@
       gap: 12px;
       border-bottom: none;
       box-shadow: none;
-      position: sticky;
-      top: 0;
-      z-index: 100;
     }
 
     .header-left { display: flex; align-items: center; gap: 14px; }
@@ -220,12 +224,9 @@
       display: flex;
       gap: 4px;
       padding: 10px 24px 0;
-      border-bottom: 1px solid #1e2a42;
-      background: #101729;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
-      position: sticky;
-      top: 61px;
-      z-index: 99;
+      border-bottom: none;
+      background: transparent;
+      box-shadow: none;
     }
     .tab-btn {
       background: none;
@@ -245,14 +246,29 @@
     .tab-action-btn:first-of-type { margin-left: auto; }
 
     /* ── Toolbar ── */
+    .tabs-toolbar-row {
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 1600px) {
+      .tabs-toolbar-row {
+        flex-direction: row;
+        align-items: center;
+        padding: 0 24px 10px;
+        gap: 16px;
+      }
+      .tabs-toolbar-row .tabs { padding: 0; flex-shrink: 0; }
+      .tabs-toolbar-row .toolbar { padding: 0; flex: 1; flex-wrap: nowrap; }
+      .tabs-toolbar-row .search-box { min-width: 120px; flex: 1; }
+    }
     .toolbar {
-      padding: 14px 24px;
+      padding: 10px 24px 14px;
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
-      background: rgba(5,8,16,0.6);
-      border-bottom: 1px solid #1a2235;
+      background: transparent;
+      border-bottom: none;
     }
     .search-box {
       flex: 1;
@@ -1046,7 +1062,8 @@
       #connectTriggerBtn #connectTitle { display: none; }
       #connectTriggerBtn { min-height: 32px; padding: 5px 10px; }
 
-      /* Toolbar — selects on one row, buttons below */
+      /* Toolbar — stacked below mobile nav */
+      .tabs-toolbar-row { flex-direction: column; padding: 0; gap: 0; }
       .toolbar { padding: 6px 10px; gap: 5px; }
       .search-box { min-width: 0; width: 100%; flex: 1 1 100%; padding: 6px 10px; font-size: 12px; }
       .toolbar-select { flex: 1; min-width: 0; font-size: 11px; padding: 5px 6px; }
@@ -1082,7 +1099,7 @@
       .tabs { display: none; }
 
       /* Mobile nav dropdown */
-      .mobile-nav-menu { display: block; padding: 6px 10px 10px; position: relative; z-index: 50; background: #101729; border-bottom: 1px solid #1e2a42; box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+      .mobile-nav-menu { display: block; padding: 6px 10px 10px; position: relative; z-index: 50; background: transparent; border-bottom: none; box-shadow: none; }
       .mobile-menu-trigger {
         width: 100%; background: rgba(47,246,222,0.08);
         border: 1px solid var(--accent); border-radius: 9px;
@@ -1158,6 +1175,7 @@
 <body>
 
 <!-- ════════════ HEADER ════════════ -->
+<div id="sticky-top">
 <header>
   <div class="header-left">
     <img class="header-logo-mobile" src="images/tcl_icon.png" alt="TCL" onerror="this.style.display='none'">
@@ -1247,15 +1265,6 @@
   </div>
 </header>
 
-<!-- ════════════ TABS ════════════ -->
-<div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('all')" id="tab-all">🛒 All Listings</button>
-  <button class="tab-btn" onclick="switchTab('activity')" id="tab-activity">📋 Recent Sales</button>
-  <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
-  <button class="btn-primary tab-action-btn" onclick="openMyNFTsModal()">My NFTs</button>
-  <button class="btn-secondary tab-action-btn" id="refreshBtn" onclick="manualRefresh()">↻ <span id="refreshLabel">Refresh</span></button>
-</div>
-
 <!-- Mobile-only nav dropdown -->
 <div class="mobile-nav-menu" id="mobileNavMenu">
   <button class="mobile-menu-trigger" id="mobileMenuTrigger" onclick="toggleMobileMenu()">
@@ -1275,20 +1284,31 @@
   </div>
 </div>
 
-<!-- ════════════ TOOLBAR ════════════ -->
-<div class="toolbar">
-  <input type="text" class="search-box" id="search-input" placeholder="🔍 Search by name or identifier…" oninput="filterListings()">
-  <select class="toolbar-select" id="sort-select" onchange="filterListings()">
-    <option value="">Sort by…</option>
-    <option value="price_asc">Price: Low → High</option>
-    <option value="price_desc">Price: High → Low</option>
-    <option value="newest">Newest First</option>
-    <option value="oldest">Oldest First</option>
-  </select>
-  <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
-    <option value="">All Collections</option>
-  </select>
+<!-- ════════════ TABS + TOOLBAR ════════════ -->
+<div class="tabs-toolbar-row">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('all')" id="tab-all">🛒 All Listings</button>
+    <button class="tab-btn" onclick="switchTab('activity')" id="tab-activity">📋 Recent Sales</button>
+    <button class="tab-btn" onclick="switchTab('mine')" id="tab-mine">👤 My Listings</button>
+    <button class="btn-primary tab-action-btn" onclick="openMyNFTsModal()">My NFTs</button>
+    <button class="btn-secondary tab-action-btn" id="refreshBtn" onclick="manualRefresh()">↻ <span id="refreshLabel">Refresh</span></button>
+  </div>
+  <div class="toolbar">
+    <input type="text" class="search-box" id="search-input" placeholder="🔍 Search by name or identifier…" oninput="filterListings()">
+    <select class="toolbar-select" id="sort-select" onchange="filterListings()">
+      <option value="">Sort by…</option>
+      <option value="price_asc">Price: Low → High</option>
+      <option value="price_desc">Price: High → Low</option>
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+    </select>
+    <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
+      <option value="">All Collections</option>
+    </select>
+  </div>
 </div>
+
+</div><!-- /#sticky-top -->
 
 <!-- ════════════ LISTINGS GRID ════════════ -->
 <div id="listings-grid">
