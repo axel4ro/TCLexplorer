@@ -1,0 +1,11 @@
+.tmp-mobile-browser/
+.claude/
+server-api/node_modules/
+node_modules/
+*.bak
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+staking_indexer.py
+backfill-sc.js
+sync-nfts.js
