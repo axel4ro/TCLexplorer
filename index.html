@@ -307,22 +307,18 @@
       </button>
       <button type="button" class="nav-item" onclick="openMarketplacePage()" id="btn-marketplace">🛒 NFTs Marketplace</button>
       <button type="button" class="nav-item" onclick="openSwapPage()" id="btn-swap">💱 Swap</button>
+      <button type="button" class="nav-item" onclick="showPage('chart')" id="btn-chart-nav">📊 TCL Live Chart</button>
       <button type="button" class="nav-item" onclick="showPage('events')" id="btn-events" data-i18n="sidebar_events">📅 Events</button>
       <button type="button" class="nav-item" onclick="showPage('claimReminder')" id="btn-claimReminder">⏰ Claim Reminder</button>
-      <button type="button" class="nav-item" onclick="openLander()" id="btn-Lander">
-        <img src="images/lander.png" alt=""> Lander
-      </button>
       <button type="button" class="nav-item" onclick="openCreatorDashboardPage()" id="btn-creatorDashboard">🎬 Creator Dashboard</button>
 	  <button type="button" class="nav-item" onclick="openGameRequirementsPage()" id="btn-gameRequirements" data-i18n="nav_game_requirements">⚙️ Game Requirements</button>
-      <button type="button" class="nav-item" onclick="openNFTs()" id="btn-nfts">🖼️ NFTs Explorer</button>
-      <button type="button" class="nav-item" onclick="showPage('expTable')" id="btn-expTable" data-i18n="exp_table_nav">⭐ EXP Table</button>
       <button type="button" class="nav-item" onclick="showPage('web3Guide')" id="btn-web3Guide" data-i18n="sidebar_web3_guides">ℹ️ Web3 Guides</button>
       <button type="button" class="nav-item" onclick="showPage('walletCheck')" id="btn-walletCheck" data-i18n="sidebar_wallet_check">🔎 Wallet Check</button>
-      <button type="button" class="nav-item" onclick="showPage('explorerIframe')" id="btn-explorerIframe">
-        <img src="images/EGLD.png" alt=""> MvX Explorer
-      </button>
       <button type="button" class="nav-item" onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">
         <img src="images/exchange.png" alt=""> xExchange
+      </button>
+      <button type="button" class="nav-item nav-item--external" onclick="window.open('https://www.thecursedland.com/lander', '_blank')" id="btn-Lander">
+        <img src="images/lander.png" alt=""> Lander ↗
       </button>
       <button type="button" class="nav-item nav-item--external" onclick="openXPortal()" id="btn-xportal">
         <img src="images/xPortal.png" alt=""> xPortal ↗
@@ -443,12 +439,7 @@
       <span class="token-accordion-card__hint">Top 100 wallet-uri cu cel mai mare balance TCL, cu distribuție și valoare.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
-	<button type="button" class="token-accordion-card" onclick="showPage('chart')">
-      <span class="token-accordion-card__title">📊 TCL Live Chart</span>
-      <span class="token-accordion-card__hint">Graficul live al prețului TCL direct din DexScreener.</span>
-      <span class="token-accordion-card__icon">↗</span>
-    </button>
-	<button type="button" class="token-accordion-card" onclick="openSupportTCLPage()">
+<button type="button" class="token-accordion-card" onclick="openSupportTCLPage()">
       <span class="token-accordion-card__title">🧡 TCLexplorer</span>
       <span class="token-accordion-card__hint">Suport TCL Explorer.</span>
       <span class="token-accordion-card__icon">↗</span>
@@ -501,6 +492,11 @@
     <button type="button" class="token-accordion-card" onclick="openTransactionSimulatorPage()">
       <span class="token-accordion-card__title" data-i18n="token_calculator_transaction_title">🧮 Transaction Simulator</span>
       <span class="token-accordion-card__hint" data-i18n="token_calculator_transaction_desc">Simulate buy or sell impact on the TCL/USDC pool using live reserves.</span>
+      <span class="token-accordion-card__icon">↗</span>
+    </button>
+    <button type="button" class="token-accordion-card" onclick="openNFTs()">
+      <span class="token-accordion-card__title">🖼️ NFTs Explorer</span>
+      <span class="token-accordion-card__hint">Explorează colecțiile NFT din The Cursed Land.</span>
       <span class="token-accordion-card__icon">↗</span>
     </button>
   </div>
@@ -807,6 +803,7 @@
     <h2 data-i18n="wiki_title">📖 The Cursed Land – Wiki</h2>
     <p class="muted" data-i18n="wiki_desc">Classes, races, bonuses, items — search or browse sections below. Language matches your app selection.</p>
     <button type="button" class="btn-primary-green wiki-can-run-btn" onclick="openCanIrunItAutoRunPage()">Can I Run It ?</button>
+    <button type="button" class="btn-primary-green wiki-can-run-btn" onclick="showPage('expTable')">⭐ EXP Table</button>
   </div>
   <div class="wiki-toolbar">
     <div class="wiki-search-row">
@@ -834,8 +831,13 @@
 <!-- 🌐 Web3 Guide -->
   <div id="expTable" class="section-page">
     <div class="page-hero">
-      <h2 data-i18n="exp_table_title">⭐ EXP Progression Table</h2>
-      <p class="muted" data-i18n="exp_table_desc">Level to next level EXP requirements for The Cursed Land.</p>
+      <div class="page-hero-actions">
+        <div>
+          <h2 data-i18n="exp_table_title">⭐ EXP Progression Table</h2>
+          <p class="muted" data-i18n="exp_table_desc">Level to next level EXP requirements for The Cursed Land.</p>
+        </div>
+        <button type="button" class="page-back-btn" onclick="showPage('wiki')">← Back to Wiki</button>
+      </div>
     </div>
     <div class="exp-table-panel">
       <div class="exp-table-header">
