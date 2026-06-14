@@ -1050,21 +1050,21 @@
       .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
 
       /* Header wraps on mobile — stats drop to second row as 2×2 grid */
-      header { flex-wrap: wrap; }
+      header { flex-wrap: wrap; gap: 5px; padding: 8px 12px; }
       .header-logo-mobile { display: block !important; width: 28px; height: 28px; border-radius: 7px; }
       .header-left { flex: 1; min-width: 0; }
       .header-right { flex: 0 0 auto; }
       .stats-bar {
         order: 3; flex: 0 0 100%;
         display: grid; grid-template-columns: 1fr 1fr;
-        gap: 7px; padding: 8px 0 2px;
+        gap: 5px; padding: 3px 0 0;
         justify-content: unset;
       }
       .stats-bar .stat-item {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
         border-radius: 9px;
-        padding: 8px 10px;
+        padding: 5px 10px;
         text-align: center;
       }
       .stat-tcl-price-item { display: none !important; }
