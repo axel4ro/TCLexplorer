@@ -248,6 +248,20 @@ async function handleRequest(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
   try {
+    if (path === "/ads.txt" || path.endsWith("/ads.txt")) {
+      return new Response(
+        "google.com, pub-1568493858640885, DIRECT, f08c47fec0942fa0\n",
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "public, max-age=86400",
+            "Access-Control-Allow-Origin": "*"
+          }
+        }
+      );
+    }
+
     if (path.endsWith("/api/prices")) {
       return handlePrices(request, env, ctx);
     }
