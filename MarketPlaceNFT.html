@@ -1064,6 +1064,12 @@
 
       /* Toolbar — stacked below mobile nav */
       .tabs-toolbar-row { flex-direction: column; padding: 0; gap: 0; }
+      .tabs-toolbar-row .toolbar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
+      .tabs-toolbar-row .search-box { grid-column: 1 / -1; min-width: 0; }
       .toolbar { padding: 6px 10px; gap: 5px; }
       .search-box { min-width: 0; width: 100%; flex: 1 1 100%; padding: 6px 10px; font-size: 12px; }
       .toolbar-select { flex: 1; min-width: 0; font-size: 11px; padding: 5px 6px; }
