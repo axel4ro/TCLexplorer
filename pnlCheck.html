@@ -1404,7 +1404,7 @@
       const CONFIG = {
         walletConnectProjectId: XPORTAL.CONFIG.projectId,
         apiBase: "https://api.multiversx.com",
-        dexPairUrl: "https://api.dexscreener.com/latest/dex/pairs/multiversx/erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
+        pricesApiUrl: "https://tcl-event-push.axel4ro.workers.dev/api/prices",
         pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
         // Worker Supabase sync — seteaza dupa deploy
         pnlSyncWorkerUrl: "https://tcl-pnl-sync.axel4ro.workers.dev",
@@ -2110,21 +2110,18 @@
       }
 
       async function fetchPrices() {
-        const economicsUrl = buildApiUrl("/economics");
         const tokenUrl = buildApiUrl(`/tokens/${CONFIG.tokens.usdc.identifier}`);
-        const tclTokenUrl = buildApiUrl(`/tokens/${CONFIG.tokens.tcl.identifier}`);
 
-        const [economics, dexPair, usdcToken, tclToken] = await Promise.allSettled([
-          fetchJson(economicsUrl),
-          fetchJson(CONFIG.dexPairUrl),
-          fetchJson(tokenUrl),
-          fetchJson(tclTokenUrl)
+        const [pricesPayload, usdcToken] = await Promise.allSettled([
+          fetchJson(CONFIG.pricesApiUrl),
+          fetchJson(tokenUrl)
         ]);
 
-        const egldPrice = economics.status === "fulfilled" ? readNumber(economics.value.price, 0) : 0;
+        const prices = pricesPayload.status === "fulfilled" ? pricesPayload.value : {};
+        const egldPrice = readNumber(prices.egld?.price, 0);
         const usdcPrice = usdcToken.status === "fulfilled" ? readNumber(usdcToken.value.price, 1) : 1;
-        const tclDexPrice = dexPair.status === "fulfilled" ? readNumber(dexPair.value?.pair?.priceUsd, 0) : 0;
-        const tclApiPrice = tclToken.status === "fulfilled" ? readNumber(tclToken.value.price, 0) : 0;
+        const tclDexPrice = readNumber(prices.pair?.priceUsd, 0);
+        const tclApiPrice = readNumber(prices.token?.price, 0);
 
         state.prices = {
           egld: egldPrice,
