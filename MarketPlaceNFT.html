@@ -58,6 +58,7 @@
 
     .header-left { display: flex; align-items: center; gap: 14px; }
     .header-left img { width: 36px; height: 36px; border-radius: 8px; }
+    .header-logo-mobile { display: none; }
     .site-title {
       font-family: 'Orbitron', sans-serif;
       font-size: 20px;
@@ -1050,6 +1051,7 @@
 
       /* Header wraps on mobile — stats drop to second row as 2×2 grid */
       header { flex-wrap: wrap; }
+      .header-logo-mobile { display: block !important; width: 28px; height: 28px; border-radius: 7px; }
       .header-left { flex: 1; min-width: 0; }
       .header-right { flex: 0 0 auto; }
       .stats-bar {
@@ -1154,6 +1156,7 @@
 <!-- ════════════ HEADER ════════════ -->
 <header>
   <div class="header-left">
+    <img class="header-logo-mobile" src="images/tcl_icon.png" alt="TCL" onerror="this.style.display='none'">
     <h1 class="site-title">NFT Marketplace</h1>
   </div>
   <div class="stats-bar">
