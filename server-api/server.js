@@ -3071,28 +3071,52 @@ app.get("/api/marketplace/wallet-nfts/:address", async (req, res) => {
       "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
     ]);
 
-    // 1. Get wallet NFTs from MultiversX (authoritative for ownership)
-    const mvxUrl = MVX_API + "/accounts/" + address +
-      "/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT" +
-      "&fields=identifier,collection,nonce,name,media,metadata,royalties,creator,owner,supply";
-    const mvxResp = await fetch(mvxUrl);
-    if (!mvxResp.ok) return res.json({ nfts: [] });
-    const mvxNfts = await mvxResp.json();
-    const tclNfts = mvxNfts.filter(n => TCL_CREATORS_SET.has(n.creator));
-    if (!tclNfts.length) return res.json({ nfts: [] });
+    // 1. Use gateway to get live wallet ESDs (gateway is not rate-limited unlike api.multiversx.com)
+    const gwResp = await fetch(`${MVX_GATEWAY}/address/${address}/esdt`, {
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!gwResp.ok) return res.json({ nfts: [] });
+    const gwData = await gwResp.json();
+    const esdts = gwData?.data?.esdts || {};
+    // Filter for TCL NFTs: identifier starts with "TCL", has a dash-nonce suffix, not the fungible token
+    const tclIds = Object.keys(esdts).filter(k =>
+      k.startsWith("TCL") && k !== TCL_TOKEN && /^TCL[A-Z]+-[0-9a-f]+-[0-9a-f]+$/i.test(k)
+    );
+    if (!tclIds.length) return res.json({ nfts: [] });
 
-    // 2. Enrich with SC storage data from our DB
-    const ids = tclNfts.map(n => n.identifier);
+    // 2. Get full NFT data from our DB (metadata, SC attributes, media)
     const { rows: dbRows } = await pool.query(
-      "SELECT identifier, sc_quality, sc_wave, sc_has_bonus, sc_has_crystal," +
-      " sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts" +
-      " FROM tcl_nfts WHERE identifier = ANY($1)",
-      [ids]
+      `SELECT identifier, collection, nonce, name, image_url, metadata, royalties, creator,
+              sc_quality, sc_wave, sc_has_bonus, sc_has_crystal,
+              sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts
+       FROM tcl_nfts WHERE identifier = ANY($1) ORDER BY collection, nonce`,
+      [tclIds]
     );
     const dbMap = {};
     for (const row of dbRows) dbMap[row.identifier] = row;
 
-    const nfts = tclNfts.map(n => Object.assign({}, n, dbMap[n.identifier] || {}));
+    // Build NFT objects: DB data + media formatted for frontend
+    const nfts = tclIds.map(id => {
+      const row = dbMap[id];
+      if (!row) return null;
+      return {
+        identifier: row.identifier,
+        collection: row.collection,
+        nonce: row.nonce,
+        name: row.name,
+        media: row.image_url ? [{ url: row.image_url }] : [],
+        royalties: row.royalties,
+        creator: row.creator,
+        sc_quality: row.sc_quality,
+        sc_wave: row.sc_wave,
+        sc_has_bonus: row.sc_has_bonus,
+        sc_has_crystal: row.sc_has_crystal,
+        sc_socket_count: row.sc_socket_count,
+        sc_tcl_count: row.sc_tcl_count,
+        sc_tcl_max: row.sc_tcl_max,
+        sc_refinement_ts: row.sc_refinement_ts,
+      };
+    }).filter(Boolean);
 
     res.setHeader("Cache-Control", "no-cache");
     res.json({ nfts });

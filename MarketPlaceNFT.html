@@ -2633,14 +2633,20 @@ async function loadMyNFTs() {
     myWalletNFTs = data.nfts || [];
   } catch (e) {
     console.warn("Server wallet-nfts failed, falling back to MultiversX", e);
-    try {
-      const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
-      if (!resp.ok) throw new Error("API error");
-      const all = await resp.json();
-      myWalletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
-    } catch (e2) {
-      console.warn("Could not load wallet NFTs", e2);
-      myWalletNFTs = [];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1500 * attempt));
+        const resp = await fetch(`${MVX_API}/accounts/${walletAddress}/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT`);
+        if (!resp.ok) throw new Error("API error");
+        const all = await resp.json();
+        myWalletNFTs = all.filter(n => TCL_CREATORS.includes(n.creator));
+        return;
+      } catch (e2) {
+        if (attempt === 2) {
+          console.warn("Could not load wallet NFTs after 3 attempts", e2);
+          myWalletNFTs = [];
+        }
+      }
     }
   }
 }
@@ -2665,7 +2671,7 @@ function renderMyNFTWallet() {
   const container = document.getElementById("my-nfts-grid");
   if (!container) return;
   if (!myWalletNFTs.length) {
-    container.innerHTML = `<div class="empty-msg"><p>No TCL NFTs found in your wallet</p></div>`;
+    container.innerHTML = `<div class="empty-msg"><p>No TCL NFTs found in your wallet</p><button class="btn-secondary" style="margin-top:10px;font-size:13px;" onclick="loadMyNFTs().then(renderMyNFTWallet)">↻ Retry</button></div>`;
     return;
   }
   container.innerHTML = myWalletNFTs.map(nft => `
