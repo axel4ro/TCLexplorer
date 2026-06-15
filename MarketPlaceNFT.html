@@ -265,11 +265,12 @@
       .tabs-toolbar-row {
         flex-direction: row;
         align-items: center;
+        justify-content: center;
         padding: 0 24px 10px;
         gap: 16px;
       }
-      .tabs-toolbar-row .tabs { padding: 0; flex-shrink: 0; }
-      .tabs-toolbar-row .toolbar { padding: 0; flex: 1; flex-wrap: nowrap; }
+      .tabs-toolbar-row .tabs { padding: 0; flex-shrink: 0; justify-content: center; }
+      .tabs-toolbar-row .toolbar { padding: 0; flex: 0 0 auto; flex-wrap: nowrap; justify-content: center; }
       .tabs-toolbar-row .search-box { min-width: 120px; flex: 1; }
     }
     .toolbar {
