@@ -3581,11 +3581,10 @@ function _isModalOpen() {
 
 async function _getLatestScTxHash() {
   try {
-    const url = `https://api.multiversx.com/accounts/${MARKETPLACE_CONTRACT}/transactions?size=1&status=success&fields=txHash`;
-    const res = await fetch(url);
+    const res = await fetch(`${TCL_API}/api/marketplace/latest-tx`);
     if (!res.ok) return null;
     const data = await res.json();
-    return data?.[0]?.txHash || null;
+    return data?.txHash || null;
   } catch {
     return null;
   }

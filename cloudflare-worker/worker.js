@@ -499,6 +499,14 @@ async function handleMarketplaceSource(request, env, url) {
     return jsonResponse(request, env, 200, { account, token, economics }, {
       "Cache-Control": "public, max-age=15",
     });
+  } else if (kind === "sc-events") {
+    const from = Math.max(0, Number.parseInt(url.searchParams.get("from") || "0", 10) || 0);
+    const size = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("size") || "50", 10) || 50));
+    upstreamUrl = new URL(`${MARKETPLACE_MVX_API}/accounts/${MARKETPLACE_SC_ADDRESS}/transactions`);
+    upstreamUrl.searchParams.set("from", String(from));
+    upstreamUrl.searchParams.set("size", String(size));
+    upstreamUrl.searchParams.set("status", "success");
+    upstreamUrl.searchParams.set("fields", "txHash,function,sender,timestamp,data");
   } else if (kind === "sc-query") {
     const scAddress = String(url.searchParams.get("scAddress") || "");
     const funcName = String(url.searchParams.get("funcName") || "");

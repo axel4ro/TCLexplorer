@@ -2650,6 +2650,83 @@ function decodeListingStruct(base64Data) {
   };
 }
 
+
+// ── Sync all marketplace SC events (listNFT, cancelListing, updatePrice, buyNFT) ──
+let _eventsSyncRunning = false;
+async function syncMarketplaceEvents() {
+  if (_eventsSyncRunning) return;
+  _eventsSyncRunning = true;
+  try {
+    const pageSize = 50;
+    let from = 0;
+    let indexed = 0;
+    const cancelledIds = [];
+    let hasNewListings = false;
+
+    while (true) {
+      const txs = await fetchMarketplaceSource("sc-events", { from, size: pageSize });
+      if (!Array.isArray(txs) || !txs.length) break;
+
+      const hashes = txs.map(tx => tx.txHash).filter(Boolean);
+      const { rows: existingRows } = await pool.query(
+        "SELECT tx_hash FROM tcl_marketplace_events WHERE tx_hash = ANY($1)",
+        [hashes]
+      );
+      const existingSet = new Set(existingRows.map(r => r.tx_hash));
+      const newTxs = txs.filter(tx => !existingSet.has(tx.txHash));
+
+      if (!newTxs.length) break;
+
+      for (const tx of newTxs) {
+        try {
+          const func = tx.function || "";
+          const sender = tx.sender || null;
+          const ts = tx.timestamp ? new Date(tx.timestamp * 1000) : null;
+          let listingId = null;
+
+          if ((func === "cancelListing" || func === "updatePrice") && tx.data) {
+            try {
+              const raw = Buffer.from(tx.data, "base64").toString("utf8");
+              const parts = raw.split("@");
+              if (parts.length >= 2 && parts[1]) listingId = Number(BigInt("0x" + parts[1]));
+            } catch {}
+          }
+
+          await pool.query(
+            `INSERT INTO tcl_marketplace_events (tx_hash, function, sender, listing_id, timestamp)
+             VALUES ($1,$2,$3,$4,$5) ON CONFLICT (tx_hash) DO NOTHING`,
+            [tx.txHash, func, sender, listingId, ts]
+          );
+          indexed++;
+          if (func === "cancelListing" && listingId) cancelledIds.push(listingId);
+          if (func === "listNFT") hasNewListings = true;
+        } catch (e) {
+          console.warn("Event index error:", e.message);
+        }
+      }
+
+      from += txs.length;
+      if (txs.length < pageSize || newTxs.length < txs.length) break;
+    }
+
+    if (cancelledIds.length > 0) {
+      await pool.query(
+        "UPDATE tcl_marketplace_listings SET is_active=false WHERE listing_id = ANY($1)",
+        [cancelledIds]
+      );
+      console.log(`Events sync: cancelled ${cancelledIds.length} listings immediately`);
+    }
+    if (hasNewListings) {
+      syncActiveListings().catch(e => console.warn("listings re-sync after listNFT:", e.message));
+    }
+    if (indexed > 0) console.log(`Events sync: indexed ${indexed} new events`);
+  } catch (e) {
+    console.warn("syncMarketplaceEvents error:", e.message);
+  } finally {
+    _eventsSyncRunning = false;
+  }
+}
+
 // ── Sync active listings from contract ────────────────────────────────────
 let _listingSyncRunning = false;
 async function syncActiveListings() {
@@ -3082,6 +3159,19 @@ app.get("/api/marketplace/active-listings", async (req, res) => {
   }
 });
 
+// GET /api/marketplace/latest-tx — latest event hash from DB (used by frontend instead of direct MVX call)
+app.get("/api/marketplace/latest-tx", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT tx_hash FROM tcl_marketplace_events ORDER BY timestamp DESC LIMIT 1"
+    );
+    res.setHeader("Cache-Control", "public, max-age=10");
+    res.json({ txHash: rows[0]?.tx_hash || null });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/marketplace/sales — recent sales from DB
 app.get("/api/marketplace/sales", async (req, res) => {
   try {
@@ -3252,6 +3342,16 @@ async function runMigrations() {
      )`,
     `CREATE INDEX IF NOT EXISTS idx_mp_listings_active ON tcl_marketplace_listings(is_active)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_listings_nft ON tcl_marketplace_listings(nft_token, nft_nonce)`,
+    `CREATE TABLE IF NOT EXISTS tcl_marketplace_events (
+       tx_hash    TEXT PRIMARY KEY,
+       function   TEXT NOT NULL,
+       sender     TEXT,
+       listing_id BIGINT,
+       timestamp  TIMESTAMPTZ,
+       indexed_at TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_events_ts ON tcl_marketplace_events(timestamp DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_events_fn ON tcl_marketplace_events(function)`,
   ];
   const client = await pool.connect();
   try {
@@ -3289,6 +3389,12 @@ pool.connect().then(async client => {
       syncActiveListings().catch(e => console.error("Listings sync:", e.message));
     }, 5 * 60 * 1000);
     listingSyncTimer.unref();
+    // Sync all SC events every 30s — powers /api/marketplace/latest-tx (eliminates direct MVX calls)
+    syncMarketplaceEvents().catch(e => console.error("Events initial sync:", e.message));
+    const eventsSyncTimer = setInterval(() => {
+      syncMarketplaceEvents().catch(e => console.error("Events sync:", e.message));
+    }, 30 * 1000);
+    eventsSyncTimer.unref();
   });
 }).catch(err => {
   console.error("DB connection failed:", err.message);
