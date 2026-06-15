@@ -1836,9 +1836,40 @@ function renderCurrentTab() {
 // ══════════════════════════════════════════════════════════════════════════════
 // LOAD LISTINGS  (on-chain contract query + MultiversX API enrichment)
 // ══════════════════════════════════════════════════════════════════════════════
+const _LISTINGS_CACHE_KEY = "tcl.mp.listingsCache";
+const _LISTINGS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function _saveListingsCache(listings) {
+  try {
+    const serializable = listings.map(l => ({ ...l, price: l.price.toString() }));
+    localStorage.setItem(_LISTINGS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: serializable }));
+  } catch (_) {}
+}
+
+function _loadListingsCache() {
+  try {
+    const raw = localStorage.getItem(_LISTINGS_CACHE_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > _LISTINGS_CACHE_TTL) return null;
+    return data.map(l => ({ ...l, price: BigInt(l.price || "0") }));
+  } catch (_) { return null; }
+}
+
+function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function loadListings() {
   const grid = document.getElementById("listings-grid");
-  grid.innerHTML = `<div class="loading-msg"><div class="loading-spinner"></div>Loading listings…</div>`;
+
+  // Show cached data instantly while fetching fresh data in background
+  const cached = _loadListingsCache();
+  if (cached && cached.length > 0) {
+    allListings = cached;
+    updateStats();
+    renderCurrentTab();
+  } else {
+    grid.innerHTML = `<div class="loading-msg"><div class="loading-spinner"></div>Loading listings…</div>`;
+  }
 
   if (!MARKETPLACE_CONTRACT) {
     await loadDemoListings();
@@ -1856,9 +1887,9 @@ async function loadListings() {
           price: BigInt(l.price || "0"),
           nft: l.nft || null,
         }));
+        _saveListingsCache(allListings);
         updateStats();
         renderCurrentTab();
-        // Enrich storage data in background (sc_tcl_max not included in cache)
         enrichListingsWithStorage(allListings);
         return;
       }
@@ -1867,66 +1898,84 @@ async function loadListings() {
     console.warn("Server listings failed, falling back to chain", e);
   }
 
-  // Fallback: direct chain query
-  try {
-    const activeIds = (await queryContract("getActiveListings")).map(decodeBase64Unsigned);
-    updateStats();
-    if (!activeIds || activeIds.length === 0) {
-      allListings = [];
-      renderListings([]);
+  // Fallback: direct chain query — retry once after 2s on failure
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) await _sleep(2000);
+      const activeIds = (await queryContract("getActiveListings")).map(decodeBase64Unsigned);
+      updateStats();
+      if (!activeIds || activeIds.length === 0) {
+        allListings = [];
+        renderListings([]);
+        return;
+      }
+      const listings = await Promise.all(activeIds.map(id => fetchListingData(id)));
+      allListings = listings.filter(Boolean);
+      _saveListingsCache(allListings);
+      updateStats();
+      renderCurrentTab();
       return;
+    } catch (err) {
+      console.warn(`Chain query attempt ${attempt + 1} failed:`, err);
     }
-    const listings = await Promise.all(activeIds.map(id => fetchListingData(id)));
-    allListings = listings.filter(Boolean);
-    updateStats();
-    renderCurrentTab();
-  } catch (err) {
-    console.error("Error loading listings:", err);
-    await loadDemoListings();
   }
+
+  // Last resort: demo listings (or keep showing cache silently)
+  if (cached && cached.length > 0) {
+    console.warn("All fetches failed; keeping cached listings.");
+    return;
+  }
+  await loadDemoListings();
 }
 
 async function loadDemoListings() {
-  // Fetch real NFTs from MultiversX API to populate marketplace visually
-  try {
-    const resp = await fetch(`${MVX_API}/collections?creator=${TCL_CREATORS[0]}&size=20`);
-    const collections = await resp.json();
-    const nfts = [];
-    for (const col of collections.slice(0, 4)) {
-      const r = await fetch(`${MVX_API}/collections/${col.collection}/nfts?size=8&fields=identifier,name,media,metadata,collection,royalties,nonce`);
-      const data = await r.json();
-      nfts.push(...data);
-    }
-
-    // Build demo listing objects with random TCL prices
-    allListings = nfts.map((nft, i) => {
-      // Give every 3rd NFT a demo storage value so the card badge is visible
-      if (i % 3 === 0) {
-        const slots = Math.floor(Math.random() * 200 + 50); // 50-250 slots
-        nft.sc_tcl_max = (BigInt(slots) * BigInt(SC_STORAGE_PRICE * 200 * 1e18 | 0)).toString();
-        nft.sc_tcl_count = (BigInt(nft.sc_tcl_max) / 2n).toString();
+  // Fetch real NFTs from MultiversX API — retry once after 3s on rate limit
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) await _sleep(3000);
+      const resp = await fetch(`${MVX_API}/collections?creator=${TCL_CREATORS[0]}&size=20`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const collections = await resp.json();
+      const nfts = [];
+      for (const col of collections.slice(0, 4)) {
+        const r = await fetch(`${MVX_API}/collections/${col.collection}/nfts?size=8&fields=identifier,name,media,metadata,collection,royalties,nonce`);
+        const data = await r.json();
+        nfts.push(...data);
       }
-      return {
-        listing_id: i + 1,
-        seller: "erd1demo000000000000000000000000000000000000000000000000000000000",
-        nft_token: nft.collection,
-        nft_nonce: nft.nonce,
-        price: BigInt(Math.floor(Math.random() * 900 + 100)) * TCL_DENOMINATOR,
-        royalty_percent: Math.round(Number(nft.royalties || 0) * 100),
-        timestamp: Date.now() / 1000 - Math.random() * 86400 * 7,
-        is_active: true,
-        // enriched fields:
-        nft,
-        _demo: true,
-      };
-    });
-    updateStats();
-    renderCurrentTab();
-  } catch (err) {
-    console.error("Demo load error:", err);
-    document.getElementById("listings-grid").innerHTML = `
+
+      allListings = nfts.map((nft, i) => {
+        if (i % 3 === 0) {
+          const slots = Math.floor(Math.random() * 200 + 50);
+          nft.sc_tcl_max = (BigInt(slots) * BigInt(SC_STORAGE_PRICE * 200 * 1e18 | 0)).toString();
+          nft.sc_tcl_count = (BigInt(nft.sc_tcl_max) / 2n).toString();
+        }
+        return {
+          listing_id: i + 1,
+          seller: "erd1demo000000000000000000000000000000000000000000000000000000000",
+          nft_token: nft.collection,
+          nft_nonce: nft.nonce,
+          price: BigInt(Math.floor(Math.random() * 900 + 100)) * TCL_DENOMINATOR,
+          royalty_percent: Math.round(Number(nft.royalties || 0) * 100),
+          timestamp: Date.now() / 1000 - Math.random() * 86400 * 7,
+          is_active: true,
+          nft,
+          _demo: true,
+        };
+      });
+      updateStats();
+      renderCurrentTab();
+      return;
+    } catch (err) {
+      console.warn(`Demo load attempt ${attempt + 1} failed:`, err);
+    }
+  }
+
+  // Only show error if grid is still showing spinner (no cached data was shown)
+  const grid = document.getElementById("listings-grid");
+  if (grid.querySelector(".loading-spinner")) {
+    grid.innerHTML = `
       <div class="loading-msg" style="color:var(--red);">
-        ⚠️ Could not load listings.<br><small>${err.message}</small>
+        ⚠️ Could not load listings.<br><small>Network unavailable. Try again later.</small>
       </div>`;
   }
 }
