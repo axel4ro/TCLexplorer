@@ -58,6 +58,7 @@
       gap: 12px;
       border-bottom: none;
       box-shadow: none;
+      position: relative;
     }
 
     .header-left { display: flex; align-items: center; gap: 14px; }
@@ -208,13 +209,22 @@
     /* ── Stats Bar — inline in header on desktop ── */
     .stats-bar {
       display: flex;
-      gap: 28px;
+      gap: 8px;
       align-items: center;
-      flex: 1;
       justify-content: center;
-      padding: 0 16px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
     }
-    .stat-item { text-align: center; }
+    .stats-bar .stat-item { pointer-events: auto; }
+    .stat-item {
+      text-align: center;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 6px 14px;
+    }
     .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
     .stat-value { font-size: 15px; font-weight: 700; color: var(--accent); font-family: 'Orbitron', sans-serif; }
     .stat-value.gold { color: var(--gold); }
@@ -227,6 +237,7 @@
       border-bottom: none;
       background: transparent;
       box-shadow: none;
+      justify-content: center;
     }
     .tab-btn {
       background: none;
@@ -243,7 +254,7 @@
     .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(47,246,222,0.06); }
     .tab-action-btn { margin-bottom: 4px; padding: 7px 14px; font-size: 13px; }
-    .tab-action-btn:first-of-type { margin-left: auto; }
+    .tab-action-btn:first-of-type { margin-left: 0; }
 
     /* ── Toolbar ── */
     .tabs-toolbar-row {
@@ -269,6 +280,7 @@
       flex-wrap: wrap;
       background: transparent;
       border-bottom: none;
+      justify-content: center;
     }
     .search-box {
       flex: 1;
