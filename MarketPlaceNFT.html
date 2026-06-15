@@ -349,7 +349,13 @@
     }
     /* 7 cols ultrawide ~1900px+ viewport */
     @media (min-width: 1900px) {
-      #listings-grid:not(.sales-mode) { grid-template-columns: repeat(7, 1fr); }
+      #listings-grid:not(.sales-mode) { grid-template-columns: repeat(8, 1fr); gap: 14px; padding: 16px 24px; }
+      .nft-card .card-body { padding: 9px 11px; }
+      .nft-card .card-name { font-size: 12px; margin: 0 0 2px; }
+      .nft-card .card-collection { font-size: 10px; margin: 0 0 6px; }
+      .price-tag .amount { font-size: 12px; }
+      .amount-usd { font-size: 10px; }
+      .btn-buy { padding: 8px; font-size: 12px; }
     }
     #listings-grid.sales-mode { display: block; }
     .sales-list { display: grid; gap: 10px; max-width: 980px; margin: 0 auto; }
