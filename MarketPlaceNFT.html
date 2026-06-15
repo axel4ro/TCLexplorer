@@ -1320,6 +1320,8 @@
       <option value="price_desc">Price: High → Low</option>
       <option value="newest">Newest First</option>
       <option value="oldest">Oldest First</option>
+      <option value="storage_desc">Storage: High → Low</option>
+      <option value="storage_asc">Storage: Low → High</option>
     </select>
     <select class="toolbar-select" id="collection-filter" onchange="filterListings()">
       <option value="">All Collections</option>
@@ -1927,6 +1929,11 @@ function filterListings() {
     if (sort === "price_desc") return compareBigInt(b.price, a.price);
     if (sort === "newest") return b.timestamp - a.timestamp;
     if (sort === "oldest") return a.timestamp - b.timestamp;
+    if (sort === "storage_desc" || sort === "storage_asc") {
+      const aMax = a.nft?.sc_tcl_max ? Number(BigInt(a.nft.sc_tcl_max)) : 0;
+      const bMax = b.nft?.sc_tcl_max ? Number(BigInt(b.nft.sc_tcl_max)) : 0;
+      return sort === "storage_desc" ? bMax - aMax : aMax - bMax;
+    }
     return 0;
   });
 
