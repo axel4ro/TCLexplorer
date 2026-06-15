@@ -2047,9 +2047,10 @@ function buildListingCard(listing) {
   const tclMax = nft.sc_tcl_max ? BigInt(nft.sc_tcl_max) : 0n;
   if (tclMax > 0n) {
     const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+    const tclDisplay = formatStorage(tclMax);
     const usdVal = tclPriceUSD && maxDisplay > 0
-      ? `<span class="storage-usd">≈ ${formatUSD(maxDisplay / 2 * tclPriceUSD)}</span>`
-      : `<span>${formatStorage(tclMax)} TCL</span>`;
+      ? `<span>${tclDisplay} TCL <span class="storage-usd">≈ ${formatUSD(maxDisplay / 2 * tclPriceUSD)}</span></span>`
+      : `<span>${tclDisplay} TCL</span>`;
     storageBarHtml = `<div class="card-storage-bar"><span>💾 Storage</span>${usdVal}</div>`;
   }
 
