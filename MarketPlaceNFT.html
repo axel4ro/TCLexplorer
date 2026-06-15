@@ -400,6 +400,19 @@
     }
     .nft-card:hover .nft-img-wrap img { transform: scale(1.04); }
 
+    .card-storage-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 10px;
+      background: rgba(5,8,16,0.78);
+      backdrop-filter: blur(4px);
+      font-size: 11px; font-weight: 600;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .card-storage-bar .storage-usd { color: var(--green); }
+
     .nft-card .card-body { padding: 14px; }
     .nft-card .card-name {
       font-weight: 700;
@@ -1788,6 +1801,8 @@ async function loadListings() {
         }));
         updateStats();
         renderCurrentTab();
+        // Enrich storage data in background (sc_tcl_max not included in cache)
+        enrichListingsWithStorage(allListings);
         return;
       }
     }
@@ -1827,19 +1842,27 @@ async function loadDemoListings() {
     }
 
     // Build demo listing objects with random TCL prices
-    allListings = nfts.map((nft, i) => ({
-      listing_id: i + 1,
-      seller: "erd1demo000000000000000000000000000000000000000000000000000000000",
-      nft_token: nft.collection,
-      nft_nonce: nft.nonce,
-      price: BigInt(Math.floor(Math.random() * 900 + 100)) * TCL_DENOMINATOR,
-      royalty_percent: Math.round(Number(nft.royalties || 0) * 100),
-      timestamp: Date.now() / 1000 - Math.random() * 86400 * 7,
-      is_active: true,
-      // enriched fields:
-      nft,
-      _demo: true,
-    }));
+    allListings = nfts.map((nft, i) => {
+      // Give every 3rd NFT a demo storage value so the card badge is visible
+      if (i % 3 === 0) {
+        const slots = Math.floor(Math.random() * 200 + 50); // 50-250 slots
+        nft.sc_tcl_max = (BigInt(slots) * BigInt(SC_STORAGE_PRICE * 200 * 1e18 | 0)).toString();
+        nft.sc_tcl_count = (BigInt(nft.sc_tcl_max) / 2n).toString();
+      }
+      return {
+        listing_id: i + 1,
+        seller: "erd1demo000000000000000000000000000000000000000000000000000000000",
+        nft_token: nft.collection,
+        nft_nonce: nft.nonce,
+        price: BigInt(Math.floor(Math.random() * 900 + 100)) * TCL_DENOMINATOR,
+        royalty_percent: Math.round(Number(nft.royalties || 0) * 100),
+        timestamp: Date.now() / 1000 - Math.random() * 86400 * 7,
+        is_active: true,
+        // enriched fields:
+        nft,
+        _demo: true,
+      };
+    });
     updateStats();
     renderCurrentTab();
   } catch (err) {
@@ -1958,12 +1981,23 @@ function buildListingCard(listing) {
 
   const demoNote = listing._demo ? `<span class="badge">Demo</span>` : "";
 
+  let storageBarHtml = "";
+  const tclMax = nft.sc_tcl_max ? BigInt(nft.sc_tcl_max) : 0n;
+  if (tclMax > 0n) {
+    const maxDisplay = Number(tclMax) / 1e18 / (SC_STORAGE_PRICE * 200);
+    const usdVal = tclPriceUSD && maxDisplay > 0
+      ? `<span class="storage-usd">≈ ${formatUSD(maxDisplay / 2 * tclPriceUSD)}</span>`
+      : `<span>${formatStorage(tclMax)} TCL</span>`;
+    storageBarHtml = `<div class="card-storage-bar"><span>💾 Storage</span>${usdVal}</div>`;
+  }
+
   return `
     <div class="nft-card" onclick="openDetail(${listing.listing_id})">
       ${demoNote}
-      <div class="nft-img-wrap">
+      <div class="nft-img-wrap" style="position:relative">
         <img src="${img}" alt="${name}" loading="lazy"
              onerror="this.src='images/tcl_icon.png'">
+        ${storageBarHtml}
       </div>
       <div class="card-body">
         <p class="card-name">${name}</p>
@@ -2161,6 +2195,26 @@ function buildStorageHtml(nft) {
         <strong>${formatStorage(tclMax)} TCL${usdValue}</strong>
       </div>
     </div>`;
+}
+
+async function enrichListingsWithStorage(listings) {
+  const needs = listings.filter(l => l.nft && l.nft.sc_tcl_max == null);
+  if (!needs.length) return;
+  await Promise.all(needs.map(async l => {
+    const nonceHex = BigInt(l.nft_nonce).toString(16).padStart(2, "0");
+    const identifier = `${l.nft_token}-${nonceHex}`;
+    try {
+      const r = await fetch(`${TCL_API}/api/nfts/${identifier}`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d.sc_tcl_max != null) {
+          l.nft.sc_tcl_max = d.sc_tcl_max;
+          l.nft.sc_tcl_count = d.sc_tcl_count ?? null;
+        }
+      }
+    } catch {}
+  }));
+  renderCurrentTab();
 }
 
 async function fetchNFTStorageLive(collectionId, nonce) {
