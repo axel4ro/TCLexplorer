@@ -2593,6 +2593,128 @@ app.post("/api/nfts/sync", async (req, res) => {
 //  MARKETPLACE — sales history + sync
 // ══════════════════════════════════════════════════════════════════════════════
 const MARKETPLACE_SC = "erd1qqqqqqqqqqqqqpgqfs74tc3e6k9lx6s67chyxylyjvscppu7fqmsypuu25";
+// ── Bech32 helpers for server-side address decoding ───────────────────────
+const _B32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+function _b32Polymod(vals) {
+  const G = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+  let chk = 1;
+  for (const v of vals) {
+    const b = chk >> 25;
+    chk = ((chk & 0x1ffffff) << 5) ^ v;
+    for (let i = 0; i < 5; i++) chk ^= (b >> i) & 1 ? G[i] : 0;
+  }
+  return chk;
+}
+function _b32Expand(hrp) {
+  return [...hrp].map(c => c.charCodeAt(0) >> 5).concat([0], [...hrp].map(c => c.charCodeAt(0) & 31));
+}
+function _b32Checksum(hrp, data) {
+  const poly = _b32Polymod(_b32Expand(hrp).concat(data, [0,0,0,0,0,0])) ^ 1;
+  return Array.from({length: 6}, (_, i) => (poly >> (5 * (5 - i))) & 31);
+}
+function _convertBits(data, from, to) {
+  let acc = 0, bits = 0; const ret = [], maxv = (1 << to) - 1;
+  for (const v of data) { acc = (acc << from) | v; bits += from; while (bits >= to) { bits -= to; ret.push((acc >> bits) & maxv); } }
+  if (bits) ret.push((acc << (to - bits)) & maxv);
+  return ret;
+}
+function bytesToErd(bytes32) {
+  const d = _convertBits(Array.from(bytes32), 8, 5);
+  return "erd1" + [...d, ..._b32Checksum("erd", d)].map(x => _B32_CHARSET[x]).join("");
+}
+function nonceToHex(nonce) {
+  let h = BigInt(nonce).toString(16);
+  return h.length % 2 ? "0" + h : h;
+}
+
+// ── Decode getListing response (mirrors frontend decodeListingStruct) ──────
+function decodeListingStruct(base64Data) {
+  const bytes = Buffer.from(base64Data, "base64");
+  let off = 0;
+  const take = n => { const v = bytes.slice(off, off + n); off += n; return v; };
+  const readU32 = () => take(4).readUInt32BE(0);
+  const readU64 = () => Number(take(8).readBigUInt64BE(0));
+  const readAddr = () => bytesToErd(take(32));
+  const readNested = () => take(readU32());
+  const readBigUint = () => { const b = readNested(); return b.reduce((a, x) => a * 256n + BigInt(x), 0n); };
+  return {
+    listing_id:      readU64(),
+    seller:          readAddr(),
+    nft_token:       readNested().toString("utf8"),
+    nft_nonce:       readU64(),
+    price:           readBigUint(),
+    royalty_address: readAddr(),
+    royalty_percent: readU64(),
+    timestamp:       readU64(),
+    is_active:       take(1)[0] === 1,
+  };
+}
+
+// ── Sync active listings from contract ────────────────────────────────────
+let _listingSyncRunning = false;
+async function syncActiveListings() {
+  if (_listingSyncRunning) return;
+  _listingSyncRunning = true;
+  try {
+    // 1. Get active listing IDs
+    const qData = await fetchMarketplaceSource("sc-query", { scAddress: MARKETPLACE_SC, funcName: "getActiveListings" });
+    const returnData = qData?.data?.data?.returnData || qData?.returnData || [];
+    const activeIds = returnData
+      .map(b64 => { try { const buf = Buffer.from(b64, "base64"); if (!buf.length) return null; let n = 0n; for (const byte of buf) n = (n << 8n) | BigInt(byte); return Number(n); } catch { return null; } })
+      .filter(id => id && id > 0);
+
+    const client = await pool.connect();
+    try {
+      // 2. Deactivate listings no longer on contract
+      if (activeIds.length > 0) {
+        await client.query(
+          "UPDATE tcl_marketplace_listings SET is_active=false WHERE is_active=true AND NOT (listing_id = ANY($1))",
+          [activeIds]
+        );
+      } else {
+        await client.query("UPDATE tcl_marketplace_listings SET is_active=false WHERE is_active=true");
+      }
+
+      // 3. Find which IDs are new
+      const { rows: existing } = await client.query(
+        "SELECT listing_id FROM tcl_marketplace_listings WHERE listing_id = ANY($1)",
+        [activeIds]
+      );
+      const existingSet = new Set(existing.map(r => Number(r.listing_id)));
+      const newIds = activeIds.filter(id => !existingSet.has(id));
+
+      // 4. Fetch + store new listings
+      for (const id of newIds) {
+        try {
+          const d = await fetchMarketplaceSource("sc-query", { scAddress: MARKETPLACE_SC, funcName: "getListing", args: id.toString(16).padStart(16, "0") });
+          const raw = d?.data?.data?.returnData?.[0] || d?.returnData?.[0];
+          if (!raw) continue;
+          const l = decodeListingStruct(raw);
+          await client.query(`
+            INSERT INTO tcl_marketplace_listings
+              (listing_id, seller, nft_token, nft_nonce, price, royalty_address, royalty_percent, timestamp_listed, is_active, synced_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,to_timestamp($8),true,NOW())
+            ON CONFLICT (listing_id) DO UPDATE SET
+              seller=$2, price=$5, is_active=true, synced_at=NOW()
+          `, [l.listing_id, l.seller, l.nft_token, l.nft_nonce, l.price.toString(),
+              l.royalty_address, l.royalty_percent, l.timestamp]);
+          await new Promise(r => setTimeout(r, 500)); // gentle rate-limit
+        } catch (e) {
+          console.warn(`Listing ${id} fetch error:`, e.message);
+        }
+      }
+      if (newIds.length > 0 || activeIds.length > 0)
+        console.log(`Listings sync: ${activeIds.length} active, ${newIds.length} new`);
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    console.warn("syncActiveListings error:", e.message);
+  } finally {
+    _listingSyncRunning = false;
+  }
+}
+
 const MARKETPLACE_SOURCE_URL = process.env.MARKETPLACE_SOURCE_URL
   || "https://tcl-event-push.axel4ro.workers.dev/api/marketplace/source";
 const MARKETPLACE_SYNC_LOCK = 713240621;
@@ -2857,6 +2979,109 @@ function runMarketplaceSync() {
   return marketplaceSyncPromise;
 }
 
+
+// GET /api/marketplace/wallet-nfts/:address — NFTs in wallet enriched with storage from DB
+// MVX /collections/{col}/nfts does not reliably return owner field;
+// fetch from /accounts/{addr}/nfts and merge sc_* storage fields from DB by identifier.
+app.get("/api/marketplace/wallet-nfts/:address", async (req, res) => {
+  try {
+    const { address } = req.params;
+    if (!address.startsWith("erd1") || address.length < 60)
+      return res.status(400).json({ error: "Invalid address" });
+
+    const TCL_CREATORS_SET = new Set([
+      "erd1tpayjteeg67rq7me94k36705dh2c077xjsmhzdmkkwjeg0w00ufsmmltyc",
+      "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk",
+    ]);
+
+    // 1. Get wallet NFTs from MultiversX (authoritative for ownership)
+    const mvxUrl = MVX_API + "/accounts/" + address +
+      "/nfts?size=250&type=NonFungibleESDT,SemiFungibleESDT" +
+      "&fields=identifier,collection,nonce,name,media,metadata,royalties,creator,owner,supply";
+    const mvxResp = await fetch(mvxUrl);
+    if (!mvxResp.ok) return res.json({ nfts: [] });
+    const mvxNfts = await mvxResp.json();
+    const tclNfts = mvxNfts.filter(n => TCL_CREATORS_SET.has(n.creator));
+    if (!tclNfts.length) return res.json({ nfts: [] });
+
+    // 2. Enrich with SC storage data from our DB
+    const ids = tclNfts.map(n => n.identifier);
+    const { rows: dbRows } = await pool.query(
+      "SELECT identifier, sc_quality, sc_wave, sc_has_bonus, sc_has_crystal," +
+      " sc_socket_count, sc_tcl_count, sc_tcl_max, sc_refinement_ts" +
+      " FROM tcl_nfts WHERE identifier = ANY($1)",
+      [ids]
+    );
+    const dbMap = {};
+    for (const row of dbRows) dbMap[row.identifier] = row;
+
+    const nfts = tclNfts.map(n => Object.assign({}, n, dbMap[n.identifier] || {}));
+
+    res.setHeader("Cache-Control", "no-cache");
+    res.json({ nfts });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/marketplace/wallet-nfts/:address/invalidate — cache bust (no-op, data always fresh)
+app.post("/api/marketplace/wallet-nfts/:address/invalidate", (req, res) => {
+  res.json({ ok: true });
+});
+
+// GET /api/marketplace/active-listings — serve from DB (synced from contract every 5 min)
+app.get("/api/marketplace/active-listings", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT l.listing_id, l.seller, l.nft_token, l.nft_nonce,
+             l.price::text AS price, l.royalty_address, l.royalty_percent,
+             EXTRACT(EPOCH FROM l.timestamp_listed)::bigint AS timestamp,
+             n.name AS nft_name, n.image_url, n.metadata, n.creator, n.royalties,
+             n.sc_quality, n.sc_wave, n.sc_has_bonus, n.sc_has_crystal,
+             n.sc_socket_count, n.sc_tcl_count::text AS sc_tcl_count,
+             n.sc_tcl_max::text AS sc_tcl_max, n.sc_refinement_ts
+      FROM tcl_marketplace_listings l
+      LEFT JOIN tcl_nfts n ON n.collection = l.nft_token AND n.nonce = l.nft_nonce
+      WHERE l.is_active = true
+      ORDER BY l.timestamp_listed DESC
+    `);
+    const listings = rows.map(l => ({
+      listing_id: Number(l.listing_id),
+      seller:     l.seller,
+      nft_token:  l.nft_token,
+      nft_nonce:  Number(l.nft_nonce),
+      price:      l.price,
+      royalty_address: l.royalty_address,
+      royalty_percent: Number(l.royalty_percent),
+      timestamp:  Number(l.timestamp),
+      is_active:  true,
+      nft: l.nft_name ? {
+        identifier: `${l.nft_token}-${nonceToHex(l.nft_nonce)}`,
+        collection: l.nft_token,
+        nonce:      Number(l.nft_nonce),
+        name:       l.nft_name,
+        media:      l.image_url ? [{ url: l.image_url }] : [],
+        image_url:  l.image_url,
+        metadata:   l.metadata,
+        creator:    l.creator,
+        royalties:  l.royalties,
+        sc_quality:       l.sc_quality,
+        sc_wave:          l.sc_wave,
+        sc_has_bonus:     l.sc_has_bonus,
+        sc_has_crystal:   l.sc_has_crystal,
+        sc_socket_count:  l.sc_socket_count,
+        sc_tcl_count:     l.sc_tcl_count,
+        sc_tcl_max:       l.sc_tcl_max,
+        sc_refinement_ts: l.sc_refinement_ts,
+      } : null,
+    }));
+    res.setHeader("Cache-Control", "public, max-age=30");
+    res.json({ listings });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/marketplace/sales — recent sales from DB
 app.get("/api/marketplace/sales", async (req, res) => {
   try {
@@ -3013,6 +3238,20 @@ async function runMigrations() {
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_nft ON tcl_marketplace_sales(nft_token, nft_nonce)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_seller ON tcl_marketplace_sales(seller)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_sales_buyer ON tcl_marketplace_sales(buyer)`,
+    `CREATE TABLE IF NOT EXISTS tcl_marketplace_listings (
+       listing_id       BIGINT PRIMARY KEY,
+       seller           TEXT,
+       nft_token        TEXT,
+       nft_nonce        BIGINT,
+       price            NUMERIC(36,0),
+       royalty_address  TEXT,
+       royalty_percent  INT,
+       timestamp_listed TIMESTAMPTZ,
+       is_active        BOOLEAN DEFAULT true,
+       synced_at        TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_listings_active ON tcl_marketplace_listings(is_active)`,
+    `CREATE INDEX IF NOT EXISTS idx_mp_listings_nft ON tcl_marketplace_listings(nft_token, nft_nonce)`,
   ];
   const client = await pool.connect();
   try {
@@ -3044,6 +3283,12 @@ pool.connect().then(async client => {
       runMarketplaceSync().catch(e => console.error("Marketplace sync:", e.message));
     }, 5 * 60 * 1000);
     mpSyncTimer.unref();
+    // Auto-sync active listings from contract every 5 minutes
+    syncActiveListings().catch(e => console.error("Listings initial sync:", e.message));
+    const listingSyncTimer = setInterval(() => {
+      syncActiveListings().catch(e => console.error("Listings sync:", e.message));
+    }, 5 * 60 * 1000);
+    listingSyncTimer.unref();
   });
 }).catch(err => {
   console.error("DB connection failed:", err.message);

@@ -499,6 +499,39 @@ async function handleMarketplaceSource(request, env, url) {
     return jsonResponse(request, env, 200, { account, token, economics }, {
       "Cache-Control": "public, max-age=15",
     });
+  } else if (kind === "sc-query") {
+    const scAddress = String(url.searchParams.get("scAddress") || "");
+    const funcName = String(url.searchParams.get("funcName") || "");
+    const argsParam = String(url.searchParams.get("args") || "");
+    if (!scAddress || !funcName) {
+      return jsonResponse(request, env, 400, { error: "scAddress and funcName are required" });
+    }
+    if (!isMultiversXAddress(scAddress)) {
+      return jsonResponse(request, env, 400, { error: "Invalid scAddress" });
+    }
+    const args = argsParam ? argsParam.split(",").filter(Boolean) : [];
+    try {
+      const mvxResp = await fetch(`${MARKETPLACE_MVX_API}/vm-values/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "TCLExplorerMarketplaceRelay/1.0"
+        },
+        body: JSON.stringify({ scAddress, funcName, args }),
+      });
+      if (!mvxResp.ok) {
+        const errText = await mvxResp.text();
+        return jsonResponse(request, env, 502, {
+          error: `MVX query failed ${mvxResp.status}: ${errText.slice(0, 120)}`
+        });
+      }
+      const data = await mvxResp.json();
+      return jsonResponse(request, env, 200, data, { "Cache-Control": "no-cache" });
+    } catch (error) {
+      return jsonResponse(request, env, 502, {
+        error: error?.message || "MVX vm-values query unavailable"
+      });
+    }
   } else {
     return jsonResponse(request, env, 400, { error: "Invalid source kind" });
   }
