@@ -1073,6 +1073,24 @@
     /* ══════════════════════════════════════
        MOBILE RESPONSIVE
     ══════════════════════════════════════ */
+
+    /* Tablet / narrow desktop: stats drop to second row */
+    @media (min-width: 641px) and (max-width: 1050px) {
+      header { flex-wrap: wrap; }
+      .stats-bar {
+        position: static;
+        transform: none;
+        order: 3;
+        flex: 0 0 100%;
+        justify-content: center;
+        gap: 6px;
+        padding: 4px 0 0;
+      }
+      .stat-item { padding: 5px 12px; }
+      .stat-value { font-size: 13px; }
+      .stat-label { font-size: 9px; }
+    }
+
     @media (max-width: 640px) {
       /* Header — wallet controls remain visible below the branding */
       header { padding: 10px 12px; gap: 8px; flex-wrap: nowrap; align-items: center; overflow: visible; }
