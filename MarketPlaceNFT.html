@@ -209,15 +209,23 @@
     /* ── Stats Bar — inline in header on desktop ── */
     .stats-bar {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
       justify-content: center;
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
       pointer-events: none;
+      flex-wrap: nowrap;
     }
-    .stats-bar .stat-item { pointer-events: auto; }
+    .stats-bar .stat-item { pointer-events: auto; flex-shrink: 1; }
+
+    @media (max-width: 1200px) {
+      .stats-bar { gap: 4px; }
+      .stat-item { padding: 4px 8px; }
+      .stat-value { font-size: 12px; }
+      .stat-label { font-size: 9px; letter-spacing: 0.4px; }
+    }
     .stat-item {
       text-align: center;
       background: var(--card-bg);
@@ -225,8 +233,8 @@
       border-radius: 10px;
       padding: 6px 14px;
     }
-    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
-    .stat-value { font-size: 15px; font-weight: 700; color: var(--accent); font-family: 'Orbitron', sans-serif; }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+    .stat-value { font-size: 15px; font-weight: 700; color: var(--accent); font-family: 'Orbitron', sans-serif; white-space: nowrap; }
     .stat-value.gold { color: var(--gold); }
 
     /* ── Tabs ── */
