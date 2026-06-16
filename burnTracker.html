@@ -407,7 +407,7 @@
     <div class="stat-card white">
       <div class="stat-label">📅 Avg Burn / Day</div>
       <div class="stat-value" id="statAvgDay">—</div>
-      <div class="stat-sub" id="statAvgDaySub">from in-game purchases</div>
+      <div class="stat-sub" id="statAvgDaySub">across all burn events</div>
     </div>
   </div>
 
@@ -423,7 +423,15 @@
     <div class="chart-wrap">
       <canvas id="burnChart"></canvas>
     </div>
-    <p class="chart-note">Chart based on in-game purchase burns (buyCoins). Total Burned reflects all on-chain burns.</p>
+    <p class="chart-note">
+      Burn data sourced from all on-chain <strong style="color:var(--muted)">ESDTLocalBurn</strong> events indexed in the TCL database.
+      <br>
+      <span style="opacity:.7">Sources included: &nbsp;
+        🔥 In-game coin purchases (buyCoins) &nbsp;·&nbsp;
+        🔥 Smart contract burns (game actions) &nbsp;·&nbsp;
+        🔥 Token management burns (ESDTLocalBurn)
+      </span>
+    </p>
   </div>
 
   <!-- Recent burns table -->
@@ -618,8 +626,8 @@
 
     document.getElementById("statAvgDay").textContent    = fmtTCL(avgDay) + " TCL";
     document.getElementById("statAvgDaySub").textContent = hist?.txCount
-      ? `across ${hist.txCount.toLocaleString()} purchases`
-      : "from in-game purchases";
+      ? `across ${hist.txCount.toLocaleString()} burn events`
+      : "across all burn events";
   }
 
   function renderTable(events) {
@@ -685,7 +693,7 @@
 
     if (!mvx && !hist) {
       document.getElementById("tableBody").innerHTML =
-        `<div class="error-box">⚠️ Could not load burn data. Make sure the API server is running on localhost:4000.</div>`;
+        `<div class="error-box">⚠️ Could not load burn data. The API may be temporarily unavailable — try refreshing in a moment.</div>`;
       return;
     }
 
