@@ -522,72 +522,113 @@
 
   // ── Chart ────────────────────────────────────────────────────────────────────
 
+  function fmtUSD(v) {
+    if (v >= 1_000_000) return "$" + fmt(v / 1_000_000, 2) + "M";
+    if (v >= 1_000)     return "$" + fmt(v / 1_000, 2) + "K";
+    return "$" + fmt(v, 2);
+  }
+
   function buildChart(data, mode) {
     const ctx = document.getElementById("burnChart").getContext("2d");
     if (burnChart) { burnChart.destroy(); burnChart = null; }
 
-    const labels  = data.map(d => d.date);
-    const values  = mode === "cumulative"
-      ? data.map(d => d.cumulative)
-      : data.map(d => d.burnt);
+    const isCum     = mode === "cumulative";
+    const labels    = data.map(d => d.date);
+    const tclValues = data.map(d => isCum ? d.cumulative : d.burnt);
+    const usdValues = livePrice > 0 ? tclValues.map(v => v * livePrice) : null;
 
-    const isCum = mode === "cumulative";
-    const color = "rgba(255,90,30,1)";
-    const colorFill = isCum
-      ? "rgba(255,90,30,0.12)"
-      : "rgba(255,90,30,0.55)";
+    const datasets = [
+      {
+        label:           isCum ? "Cumulative Burned (TCL)" : "Daily Burned (TCL)",
+        data:            tclValues,
+        yAxisID:         "yLeft",
+        type:            isCum ? "line" : "bar",
+        borderColor:     "rgba(255,90,30,1)",
+        backgroundColor: isCum ? "rgba(255,90,30,0.12)" : "rgba(255,90,30,0.55)",
+        borderWidth:     isCum ? 2 : 0,
+        pointRadius:     0,
+        pointHoverRadius: 4,
+        fill:            isCum,
+        tension:         0.35,
+        borderRadius:    isCum ? 0 : 4,
+        order:           2,
+      },
+    ];
+
+    if (usdValues) {
+      datasets.push({
+        label:           isCum ? "USD Value (current price)" : "Daily USD Value",
+        data:            usdValues,
+        yAxisID:         "yRight",
+        type:            "line",
+        borderColor:     "rgba(0,232,204,0.85)",
+        backgroundColor: "transparent",
+        borderWidth:     1.5,
+        borderDash:      isCum ? [] : [5, 3],
+        pointRadius:     0,
+        pointHoverRadius: 3,
+        fill:            false,
+        tension:         0.35,
+        order:           1,
+      });
+    }
 
     burnChart = new Chart(ctx, {
-      type: isCum ? "line" : "bar",
-      data: {
-        labels,
-        datasets: [{
-          label: isCum ? "Cumulative Burned (TCL)" : "Daily Burned (TCL)",
-          data: values,
-          borderColor: color,
-          backgroundColor: colorFill,
-          borderWidth: isCum ? 2 : 0,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          fill: isCum,
-          tension: 0.35,
-          borderRadius: isCum ? 0 : 4,
-        }],
-      },
+      type: "bar", // mixed chart — each dataset declares its own type
+      data: { labels, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: !!usdValues,
+            labels: {
+              color: "#8b95a8",
+              font: { size: 11 },
+              usePointStyle: true,
+              pointStyleWidth: 12,
+              padding: 16,
+            },
+          },
           tooltip: {
             backgroundColor: "#0f1118",
             borderColor: "rgba(255,90,30,0.3)",
             borderWidth: 1,
             titleColor: "#8b95a8",
             bodyColor: "#e8edf5",
-            padding: 10,
+            padding: 12,
             callbacks: {
-              label: ctx => ` ${fmt(ctx.parsed.y, 2)} TCL` + (livePrice ? `  (~$${fmt(ctx.parsed.y * livePrice, 2)})` : ""),
+              label: ctx => {
+                if (ctx.datasetIndex === 0)
+                  return `  🔥 ${fmt(ctx.parsed.y, 2)} TCL`;
+                return `  💵 ${fmtUSD(ctx.parsed.y)}  (@ $${livePrice.toFixed(6)}/TCL)`;
+              },
             },
           },
         },
         scales: {
           x: {
             grid: { color: "rgba(255,255,255,0.04)" },
-            ticks: {
-              color: "#596070",
-              font: { size: 11 },
-              maxTicksLimit: 8,
-              maxRotation: 0,
-            },
+            ticks: { color: "#596070", font: { size: 11 }, maxTicksLimit: 8, maxRotation: 0 },
           },
-          y: {
+          yLeft: {
+            position: "left",
             grid: { color: "rgba(255,255,255,0.04)" },
             ticks: {
               color: "#596070",
               font: { size: 11 },
               callback: v => fmtTCL(v),
+            },
+          },
+          yRight: {
+            position: "right",
+            display: !!usdValues,
+            grid: { drawOnChartArea: false },
+            ticks: {
+              color: "#00e8cc",
+              font: { size: 11 },
+              callback: v => fmtUSD(v),
             },
           },
         },
