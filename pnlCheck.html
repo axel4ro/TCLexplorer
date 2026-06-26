@@ -3737,15 +3737,9 @@
         setPnlStatus("Loading transaction history...");
 
         try {
-          // Asigura ca operations sunt enrichuite in Supabase pentru acest wallet
-          // inainte de citire. Fara asta, swap-urile prin aggregator/router (si cele
-          // foarte noi) au operations=null si nu pot fi parsate => apar cu 0 in PNL.
-          // E rapid la rulari repetate (gaseste 0 root-uri lipsa) si non-fatal.
-          try {
-            await ensurePnlSupabaseCache(walletAddress);
-          } catch (prepErr) {
-            console.warn("PNL cache preparation incomplete", prepErr);
-          }
+          // Enrichment-ul operations se face acum server-side de sync-pnl.js pe VPS
+          // (cron la 10 min). Nu mai apelam worker-ul de enrich pe Supabase-ul vechi —
+          // datele din DB-ul nostru sunt deja enrichuite. Zero dependenta de Supabase.
 
           const [pnlResult, earnedResult, infinityResult, stakingResult, presaleResult, walletResult] = await Promise.allSettled([
             fetchPnlFromSupabase(walletAddress),
