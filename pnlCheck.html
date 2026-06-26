@@ -1405,12 +1405,9 @@
         walletConnectProjectId: XPORTAL.CONFIG.projectId,
         apiBase: "https://api.multiversx.com",
         pricesApiUrl: "https://tcl-event-push.axel4ro.workers.dev/api/prices",
-        pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
-        // Worker Supabase sync — seteaza dupa deploy
-        pnlSyncWorkerUrl: "https://tcl-pnl-sync.axel4ro.workers.dev",
-        // Our own VPS PostgREST (via the Cloudflare tunnel) — the hosted Supabase
-        // at phhzrfzhwwooeqsdztee.supabase.co is frozen since the DB migrated to the
-        // VPS; sync-pnl.js now writes only to tcl_db, so read from there for fresh data.
+        // Our own VPS PostgREST (via the Cloudflare tunnel). All tcl_transfers reads
+        // go here — no hosted Supabase, no sync worker. sync-pnl.js (cron on the VPS)
+        // keeps tcl_db current and enriches operations server-side.
         pnlSupabaseUrl: "https://api.tclexplorer.com",
         pnlSupabaseAnonKey: "eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJyb2xlIjogImFub24iLCAiaXNzIjogInN1cGFiYXNlLWxvY2FsIiwgImlhdCI6IDE3ODEwODQ2MTMsICJleHAiOiAyMDk2NDQ0NjEzfQ.TAoqmNmUrljs97KnkvW1yS6H_A0igSH8zNlE2P7z0A0",
         listingDate: "2024-06-13T00:00:00Z",
@@ -2766,10 +2763,9 @@
 
       // Buy-uri prin aggregator (AshSwap/XOXNO/OneDex/xExchange): walletul primeste TCL
       // printr-un SCR de la aggregator, iar costul USDC intra in pool-ul TCL/USDC in
-      // interiorul tranzactiei root. Citim `operations` DIRECT din randurile Supabase
-      // aduse deja (fetchPnlEntriesByRootHashes) — fara fetch live la MultiversX.
-      // Root-urile sunt enrichuite de worker la sync + /api/enrich per-wallet (rulat
-      // de ensurePnlSupabaseCache inainte de citire).
+      // interiorul tranzactiei root. Citim `operations` DIRECT din randurile aduse
+      // deja din DB-ul nostru (fetchPnlEntriesByRootHashes) — fara fetch live la MVX.
+      // Root-urile sunt enrichuite server-side de sync-pnl.js (cron la 10 min pe VPS).
       function fetchAggregatorBuyFallbackTrades(transfers, walletAddress, knownTradeHashes = new Set()) {
         const candidates = collectAggregatorBuyCandidates(transfers, walletAddress, knownTradeHashes);
         if (!candidates.length) return [];
@@ -2955,83 +2951,7 @@
         return rows.map(supabaseRowToPnlEntry);
       }
 
-      // Verifica starea sync-ului in worker
-      async function fetchSyncStatus() {
-        const workerUrl = CONFIG.pnlSyncWorkerUrl;
-        if (!workerUrl || workerUrl.includes("workers.dev") === false) return null;
-        try {
-          const res = await fetch(`${workerUrl}/api/status`, {
-            signal: AbortSignal.timeout(5000)
-          });
-          if (!res.ok) return null;
-          return res.json();
-        } catch {
-          return null;
-        }
-      }
-
-      async function ensurePnlSupabaseCache(walletAddress) {
-        const workerUrl = CONFIG.pnlSyncWorkerUrl;
-        if (!workerUrl || workerUrl.includes("workers.dev") === false) return null;
-
-        let lastResult = null;
-        let totalUpserted = 0;
-        let cursor = 0;
-        const maxPasses = 80;
-
-        for (let pass = 0; pass < maxPasses; pass += 1) {
-          const url = new URL(`${workerUrl}/api/enrich`);
-          url.searchParams.set("wallet", walletAddress);
-          url.searchParams.set("limit", "300");
-          url.searchParams.set("cursor", String(cursor));
-
-          if (pass === 0) {
-            setPnlStatus("Preparing this wallet's transaction history...");
-          } else {
-            setPnlStatus("Preparing transaction history... {count} transactions checked", {
-              count: totalUpserted.toLocaleString(getLocale())
-            });
-          }
-
-          const res = await fetch(url.toString(), {
-            headers: { Accept: "application/json" },
-            signal: AbortSignal.timeout(70000)
-          }).catch(() => null);
-
-          if (!res || !res.ok) {
-            throw new Error("Could not prepare the transaction history for this wallet.");
-          }
-
-          const data = await res.json().catch(() => null);
-          if (!data?.ok) {
-            console.warn("PNL history preparation failed", data?.error || data);
-            throw new Error("Could not prepare the transaction history for this wallet.");
-          }
-
-          lastResult = data;
-          totalUpserted += Math.max(0, Number(data.upserted) || 0);
-
-          const remaining = Math.max(0, Number(data.remaining) || 0);
-          const nextCursor = Math.max(0, Number(data.nextCursor) || 0);
-          if (data.done || remaining === 0) {
-            return { ...data, totalUpserted };
-          }
-          if (nextCursor <= cursor) {
-            throw new Error("Could not prepare the transaction history for this wallet.");
-          }
-
-          cursor = nextCursor;
-          await wait(250);
-        }
-
-        if (lastResult && Number(lastResult.remaining) > 0) {
-          throw new Error("Transaction history is still being prepared. Try again in a few seconds.");
-        }
-
-        return lastResult ? { ...lastResult, totalUpserted } : null;
-      }
-
-      // PNL: calculeaza swap-urile doar din cache-ul Supabase.
+      // PNL: calculeaza swap-urile din DB-ul nostru (VPS PostgREST).
       async function fetchPnlFromSupabase(walletAddress) {
         const swapEntries = (await fetchSwapEntriesFromSupabase(walletAddress)) ?? [];
 
@@ -3189,34 +3109,7 @@
         };
       }
 
-      async function fetchFastPnl(walletAddress) {
-        if (!CONFIG.pnlFastUrl) return null;
-
-        const url = new URL(CONFIG.pnlFastUrl);
-        url.searchParams.set("wallet", walletAddress);
-
-        const payload = await fetchJson(url.toString(), {
-          retries: 1,
-          retryDelayMs: 1500,
-          timeoutMs: 60000,
-          timeoutMessage: "The fast PNL endpoint timed out."
-        });
-
-        if (!payload?.ok) {
-          throw new Error(payload?.error || "The fast PNL endpoint is unavailable.");
-        }
-
-        return {
-          totals: normalizePnlTotals(payload.totals),
-          meta: {
-            ...(payload.meta || {}),
-            sourceLabel: payload.meta?.sourceLabel || "DexScreener",
-            transfers: []
-          }
-        };
-      }
-
-      // ── Earned TCL: Supabase + breakdown complet pe functii ─────────────────────
+      // ── Earned TCL: from our DB + breakdown complet pe functii ──────────────────
       // Doar reward-uri reale si cashback/referral. Return/refund/withdraw nu intra in Earned.
       // Reward-uri claim (borrow, lending, infinity, staking, auto-claim)
       const EARNED_REWARD_FNS = new Set([
