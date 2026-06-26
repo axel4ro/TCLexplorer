@@ -2359,19 +2359,31 @@ app.get("/api/volume", async (req, res) => {
 //  TECHNICALS API  —  /api/technicals
 // ══════════════════════════════════════════════════════════════════════════════
 
+let _technicalsLastGood = null; // survives cache TTL; served stale when MVX 429s
 app.get("/api/technicals", async (req, res) => {
   try {
     const CACHE_KEY = "technicals:snapshot";
     const TTL_MS    = 5 * 60 * 1000; // 5 minutes
     let snapshot = cacheGet(CACHE_KEY);
     if (!snapshot) {
-      snapshot = await buildTechnicalsSnapshot(null);
-      cacheSet(CACHE_KEY, snapshot, TTL_MS);
+      try {
+        snapshot = await buildTechnicalsSnapshot(_technicalsLastGood);
+        cacheSet(CACHE_KEY, snapshot, TTL_MS);
+        _technicalsLastGood = snapshot;
+      } catch (buildErr) {
+        // api.multiversx.com transfers 429 → serve last-good instead of 502.
+        if (_technicalsLastGood) {
+          return ok(res, { ..._technicalsLastGood, meta: { ...(_technicalsLastGood.meta || {}), stale: true } });
+        }
+        throw buildErr;
+      }
     } else {
       // Refresh in background if stale
       const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
       if (Date.now() - updatedAt > 4 * 60 * 1000) {
-        buildTechnicalsSnapshot(snapshot).then(s => cacheSet(CACHE_KEY, s, TTL_MS)).catch(e => console.error("Technicals bg refresh:", e.message));
+        buildTechnicalsSnapshot(snapshot)
+          .then(s => { cacheSet(CACHE_KEY, s, TTL_MS); _technicalsLastGood = s; })
+          .catch(e => console.error("Technicals bg refresh:", e.message));
       }
     }
     ok(res, snapshot);
