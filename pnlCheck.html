@@ -1408,8 +1408,11 @@
         pnlFastUrl: "https://tcl-event-push.axel4ro.workers.dev/api/pnl",
         // Worker Supabase sync — seteaza dupa deploy
         pnlSyncWorkerUrl: "https://tcl-pnl-sync.axel4ro.workers.dev",
-        pnlSupabaseUrl: "https://phhzrfzhwwooeqsdztee.supabase.co",
-        pnlSupabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoaHpyZnpod3dvb2Vxc2R6dGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODI2MzksImV4cCI6MjA5NTQ1ODYzOX0.TPJ2e5FbbWNqthkgHAC-r2WsMiP29CbfNkBaMFyf-yw",
+        // Our own VPS PostgREST (via the Cloudflare tunnel) — the hosted Supabase
+        // at phhzrfzhwwooeqsdztee.supabase.co is frozen since the DB migrated to the
+        // VPS; sync-pnl.js now writes only to tcl_db, so read from there for fresh data.
+        pnlSupabaseUrl: "https://api.tclexplorer.com",
+        pnlSupabaseAnonKey: "eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJyb2xlIjogImFub24iLCAiaXNzIjogInN1cGFiYXNlLWxvY2FsIiwgImlhdCI6IDE3ODEwODQ2MTMsICJleHAiOiAyMDk2NDQ0NjEzfQ.TAoqmNmUrljs97KnkvW1yS6H_A0igSH8zNlE2P7z0A0",
         listingDate: "2024-06-13T00:00:00Z",
         pnlPairAddress: "erd1qqqqqqqqqqqqqpgq6quepqlx66rmwst8uxl6p28jhcrnva982jpszqhxff",
         // Aggregatorii MultiversX care ruteaza TCL (descoperiti scanand /tokens/TCL-fe459d/transfers).
