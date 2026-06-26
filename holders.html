@@ -853,16 +853,30 @@
         if (!state.rows.length) renderUpdateCard("loading");
 
         try {
-          const [pricesRes, holdersRes] = await Promise.all([
+          // Holders: prefer our own indexed snapshot; fall back to MultiversX
+          // directly (works from the user's browser) until the snapshot is warm.
+          async function fetchHolders() {
+            try {
+              const r = await fetch(`https://api.tclexplorer.com/api/holders?size=${FETCH_SIZE}`);
+              if (r.ok) {
+                const a = await r.json();
+                if (Array.isArray(a) && a.length) return a;
+              }
+            } catch (_) {}
+            const r2 = await fetch(`${API_BASE}/tokens/${TOKEN_ID}/accounts?size=${FETCH_SIZE}`);
+            if (!r2.ok) throw new Error("API error");
+            return r2.json();
+          }
+
+          const [pricesRes, rawHolders] = await Promise.all([
             fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices"),
-            fetch(`${API_BASE}/tokens/${TOKEN_ID}/accounts?size=${FETCH_SIZE}`)
+            fetchHolders()
           ]);
 
-          if (!pricesRes.ok || !holdersRes.ok) throw new Error("API error");
+          if (!pricesRes.ok) throw new Error("API error");
 
           const pricesData = await pricesRes.json();
           const token = pricesData.token || {};
-          const rawHolders = await holdersRes.json();
 
           if (!Array.isArray(rawHolders)) throw new Error("Unexpected response format");
 

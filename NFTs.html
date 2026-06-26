@@ -592,9 +592,12 @@ body.page-sub {
 
       return withNFTRequest(`collectionImage:${collection}`, async () => {
         try {
-          const resp = await fetch(`https://api.multiversx.com/collections/${collection}/nfts?size=1`);
+          const resp = await fetch(`https://api.tclexplorer.com/api/nfts/collection/${collection}`);
           const data = await resp.json();
-          const image = (data.length > 0 && data[0].media && data[0].media[0]) ? data[0].media[0].url : "";
+          const first = Array.isArray(data) && data.length > 0 ? data[0] : null;
+          const image = first
+            ? (first.image_url || (first.media && first.media[0] && first.media[0].url) || "")
+            : "";
           if (image) writeCache("collectionImage", image, collection);
           return image;
         } catch (e) {
@@ -1162,8 +1165,9 @@ async function loadBalance() {
   let data = getCache("walletBalance", NFTS_CACHE_TTL.walletBalance, addr);
   if (!data) {
     data = await withNFTRequest(`walletBalance:${addr}`, async () => {
-      const resp = await fetch(`https://api.multiversx.com/accounts/${addr}/nfts?size=1000`);
-      const payload = await resp.json();
+      const resp = await fetch(`https://api.tclexplorer.com/api/marketplace/wallet-nfts/${addr}`);
+      const json = await resp.json();
+      const payload = Array.isArray(json?.nfts) ? json.nfts : [];
       writeCache("walletBalance", payload, addr);
       return payload;
     });

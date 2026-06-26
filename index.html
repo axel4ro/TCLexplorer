@@ -4229,7 +4229,7 @@ function updateSentimentIndex(options = {}) {
     let stakedPct = 0;
     try {
       const hexAddr = bech32ToHex("erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk");
-      const stData = await fetchJsonWithTimeout("https://api.multiversx.com/query", {
+      const stData = await fetchJsonWithTimeout("https://api.tclexplorer.com/api/sc-query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -4258,8 +4258,8 @@ try {
   // 🧹 Filtrăm doar adrese valide și cu minim 1 TCL
   const balances = await mapWithConcurrency(lockedAddresses, SENTIMENT_LOCKED_FETCH_CONCURRENCY, async addr => {
     try {
-      const data = await fetchJsonWithTimeout(`https://api.multiversx.com/accounts/${addr}/tokens/TCL-fe459d`, {}, 2500);
-      const balance = parseFloat(data?.balance || 0) / 1e18;
+      const data = await fetchJsonWithTimeout(`https://api.tclexplorer.com/api/account/${addr}`, {}, 2500);
+      const balance = Number(data?.tclBalance || 0);
 
       // 🔥 skip complet dacă are sub 1 TCL
       if (balance < 1) return 0;
@@ -4772,21 +4772,16 @@ async function checkWallet() {
   resultBox.innerHTML = "⏳ Fetching wallet data...";
 
   try {
-    // === EGLD ===
-    const egldRes = await fetch(`https://api.multiversx.com/accounts/${address}`);
-    const egldData = await egldRes.json();
-    const egld = parseFloat(egldData.balance || 0) / 1e18;
-
-    // === TCL ===
+    // === EGLD + TCL (via our API — gateway-cached, no direct MultiversX) ===
+    const acctData = await fetch(`https://api.tclexplorer.com/api/account/${address}`).then(r => r.json());
+    const egld = Number(acctData.egldBalance || 0);
     const TCL_IDENTIFIER = "TCL-fe459d";
-    const tclRes = await fetch(`https://api.multiversx.com/accounts/${address}/tokens/${TCL_IDENTIFIER}`);
-    const tclData = await tclRes.json();
-    const tcl = tclData.balance ? parseFloat(tclData.balance) / 1e18 : 0;
+    const tcl = Number(acctData.tclBalance || 0);
 
-    // === NFTs ===
-    const nftRes = await fetch(`https://api.multiversx.com/accounts/${address}/nfts?size=1000`);
+    // === NFTs (via our API — indexed in our DB, no direct MultiversX) ===
+    const nftRes = await fetch(`https://api.tclexplorer.com/api/nfts/wallet/${address}`);
     const nftData = await nftRes.json();
-    const walletNfts = nftData.filter(n => n.collection.startsWith("TCL"));
+    const walletNfts = (Array.isArray(nftData) ? nftData : []).filter(n => n.collection && n.collection.startsWith("TCL"));
 
     // === Prices ===
     const pricesWallet = await fetch(PRICES_API_URL).then(r => r.json());
@@ -5112,7 +5107,7 @@ async function loadTCLStats(options = {}) {
     try {
       const hexAddr = bech32ToHex(SC_ADDRESS);
       const payload = { scAddress: SC_ADDRESS, funcName: "getRewardsData", args: [hexAddr] };
-      const res = await fetch("https://api.multiversx.com/query", {
+      const res = await fetch("https://api.tclexplorer.com/api/sc-query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

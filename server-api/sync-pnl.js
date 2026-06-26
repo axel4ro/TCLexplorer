@@ -87,14 +87,25 @@ async function mvxFetch(path, params = {}) {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
   }
   let lastErr;
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     if (attempt > 0) await sleep(1500 * attempt);
     try {
       const res = await fetch(url.toString(), {
         headers: { Accept: "application/json" },
         signal: AbortSignal.timeout(20000),
       });
-      if (res.status === 429 || res.status >= 500) { lastErr = new Error(`MVX ${res.status}`); continue; }
+      if (res.status === 429 || res.status >= 500) {
+        lastErr = new Error(`MVX ${res.status}`);
+        // api.multiversx.com is behind Cloudflare; on 429 (CF error 1015) it
+        // sends Retry-After. Honor it instead of hammering through the penalty
+        // window — otherwise every request in the run keeps tripping the limit.
+        if (res.status === 429) {
+          const ra = Number(res.headers.get("retry-after")) || 0;
+          const waitMs = Math.min(Math.max(ra * 1000, 5000), 30000);
+          await sleep(waitMs);
+        }
+        continue;
+      }
       if (!res.ok) throw new Error(`MVX ${res.status}`);
       return res.json();
     } catch (err) { lastErr = err; }
@@ -208,7 +219,7 @@ async function syncIncremental(log) {
     if (pageMax > newNewestTs) newNewestTs = pageMax;
     if (fresh.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
-    await sleep(120);
+    await sleep(250);
   }
 
   if (newNewestTs > newestTs) await setState("newest_ts", newNewestTs);
@@ -260,7 +271,7 @@ async function syncBackfill(log) {
     const pageMin = Math.min(...entries.map(e => Number(e.timestamp) || Infinity));
     if (pageMin < windowMin) windowMin = pageMin;
     if (pageMin <= LISTING_TS || entries.length < PAGE_SIZE) { reached = true; break; }
-    await sleep(120);
+    await sleep(250);
   }
 
   await setState("backfill_offset", offset);
@@ -285,7 +296,7 @@ async function enrichRoots_(rootHashes) {
       withOperations: "true",
     });
     if (Array.isArray(txs)) rows.push(...txs.map(txToRow).filter(r => validTxHash(r.tx_hash)));
-    await sleep(120);
+    await sleep(250);
   }
   if (rows.length) await upsertRows(rows);
   return rows.length;
@@ -383,7 +394,7 @@ async function syncBuyCoins(log) {
     }
 
     if (txs.length < BUY_COINS_PAGE_SIZE) { complete = true; break; }
-    await sleep(120);
+    await sleep(250);
   }
 
   const syncedAt = new Date().toISOString();

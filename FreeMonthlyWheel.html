@@ -1871,7 +1871,7 @@ document.addEventListener("click", function(e) {
       state.signClient = session.client;
       state.sessionTopic = session.topic;
       // Fetch herotag
-      const acc = await fetch(`https://api.multiversx.com/accounts/${session.address}`)
+      const acc = await fetch(`https://api.tclexplorer.com/api/account/${session.address}`)
         .then(r => r.ok ? r.json() : null).catch(() => null);
       setWalletUI(session.address, acc?.username || "");
       checkEligibility();
@@ -1914,7 +1914,7 @@ document.addEventListener("click", function(e) {
       state.sessionTopic = approved.topic;
       clearConnectUI();
 
-      const acc = await fetch(`https://api.multiversx.com/accounts/${approved.address}`)
+      const acc = await fetch(`https://api.tclexplorer.com/api/account/${approved.address}`)
         .then(r => r.ok ? r.json() : null).catch(() => null);
 
       setWalletUI(approved.address, acc?.username || "");

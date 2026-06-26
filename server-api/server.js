@@ -2421,6 +2421,297 @@ app.post("/ai/chat", async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  BURN HISTORY  —  /api/burn-history
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _burnCache    = null;
+let _burnCacheTs  = 0;
+let _burnSyncedAt = 0; // tracks tcl_burns last write (from tcl_sync_state)
+const BURN_CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+app.get("/api/burn-history", async (req, res) => {
+  // Public read-only stats — allow any origin (file://, embedded, etc.)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    // Invalidate cache if sync-burns.js wrote new data since last cache fill
+    let syncedAt = _burnSyncedAt;
+    try {
+      const row = await db.one("SELECT value FROM tcl_sync_state WHERE key='burns_updated_at'");
+      syncedAt = Number(row?.value || "0");
+    } catch (_) {}
+
+    if (_burnCache && Date.now() - _burnCacheTs < BURN_CACHE_TTL && syncedAt <= _burnSyncedAt) {
+      return ok(res, _burnCache);
+    }
+
+    // ── Primary: tcl_burns table (populated by sync-burns.js) ──────────────
+    const burnRows = await db.all(
+      "SELECT tx_hash, ts, amount_raw, wallet, fn FROM tcl_burns ORDER BY ts ASC"
+    );
+
+    let events = [];
+    let source = "legacy";
+
+    if (burnRows.length > 0) {
+      source = "indexed";
+      for (const row of burnRows) {
+        try {
+          const raw = BigInt(String(row.amount_raw || "0"));
+          if (raw <= 0n) continue;
+          events.push({
+            timestamp: Number(row.ts),
+            burnt:     parseFloat(rawToDecimal(raw)),
+            wallet:    String(row.wallet || ""),
+            txHash:    String(row.tx_hash || ""),
+          });
+        } catch (_) {}
+      }
+    } else {
+      // ── Fallback: tcl_transfers JSONB operations + computed buyCoins ──────
+      source = "legacy";
+      const rawRows = await db.all(`
+        SELECT tx_hash, original_tx_hash, ts, sender, operations
+        FROM tcl_transfers
+        WHERE status = 'success'
+          AND operations IS NOT NULL
+          AND jsonb_typeof(operations) = 'array'
+          AND operations @> $1::jsonb
+        ORDER BY ts ASC
+      `, [JSON.stringify([{ action: "localBurn", identifier: TCL_TOKEN }])]);
+
+      const seen = new Set();
+      for (const row of rawRows) {
+        try {
+          const ops = Array.isArray(row.operations)
+            ? row.operations
+            : JSON.parse(row.operations);
+          if (!Array.isArray(ops)) continue;
+          for (const op of ops) {
+            if (op?.action !== "localBurn" || op?.identifier !== TCL_TOKEN) continue;
+            const raw = BigInt(String(op.value || "0"));
+            if (raw <= 0n) continue;
+            const txKey = String(row.tx_hash || row.original_tx_hash || "");
+            if (seen.has(txKey)) continue;
+            seen.add(txKey);
+            events.push({
+              timestamp: Number(row.ts),
+              burnt:     parseFloat(rawToDecimal(raw)),
+              wallet:    String(row.sender || ""),
+              txHash:    txKey,
+            });
+          }
+        } catch (_) {}
+      }
+
+      // Merge computed buyCoins burns (tcl_sync_state) to fill missing period
+      const onChainHashes = new Set(events.map(e => e.txHash));
+      const syncRows = await db.all(
+        "SELECT value FROM tcl_sync_state WHERE key LIKE $1 ORDER BY key ASC",
+        [BUY_COINS_ROW_PREFIX + "%"]
+      );
+      for (const row of syncRows) {
+        try {
+          const tx = JSON.parse(row.value || "{}");
+          if (!tx.txHash || !tx.timestamp || !tx.burntRaw) continue;
+          if (onChainHashes.has(tx.txHash)) continue;
+          const burntVal = parseFloat(rawToDecimal(tx.burntRaw));
+          if (!burntVal || burntVal <= 0) continue;
+          events.push({
+            timestamp: Number(tx.timestamp),
+            burnt:     burntVal,
+            wallet:    String(tx.wallet || ""),
+            txHash:    String(tx.txHash),
+          });
+        } catch (_) {}
+      }
+    }
+
+    events.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Group by UTC day
+    const dailyMap = new Map();
+    for (const e of events) {
+      const date = new Date(e.timestamp * 1000).toISOString().slice(0, 10);
+      const day = dailyMap.get(date) || { date, burnt: 0, txCount: 0 };
+      day.burnt += e.burnt;
+      day.txCount++;
+      dailyMap.set(date, day);
+    }
+
+    const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+    let cum = 0;
+    for (const d of daily) {
+      cum += d.burnt;
+      d.cumulative = parseFloat(cum.toFixed(4));
+      d.burnt      = parseFloat(d.burnt.toFixed(4));
+    }
+
+    const totalBurnt = parseFloat(cum.toFixed(4));
+    const firstTs    = events.length ? events[0].timestamp : null;
+    const lastTs     = events.length ? events[events.length - 1].timestamp : null;
+    const daySpan    = (firstTs && lastTs && lastTs > firstTs)
+      ? Math.max(1, (lastTs - firstTs) / 86400)
+      : 1;
+    const avgPerDay  = parseFloat((totalBurnt / daySpan).toFixed(4));
+
+    const recentEvents = events.slice(-100).reverse().map(e => ({
+      timestamp: e.timestamp,
+      date: new Date(e.timestamp * 1000).toISOString(),
+      burnt: parseFloat(e.burnt.toFixed(4)),
+      wallet: e.wallet,
+      txHash: e.txHash,
+    }));
+
+    const payload = {
+      ok: true,
+      source,
+      totalBurnt,
+      avgPerDay,
+      txCount: events.length,
+      firstBurnAt: firstTs,
+      latestBurnAt: lastTs,
+      daily,
+      recentEvents,
+    };
+    _burnCache    = payload;
+    _burnCacheTs  = Date.now();
+    _burnSyncedAt = syncedAt;
+    ok(res, payload);
+  } catch (err) {
+    fail(res, err.message || "Internal error");
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  MVX PROXY  —  cached, gateway-first (so the frontend never calls MultiversX
+//  directly and api.multiversx.com is hit at most once per TTL per resource).
+//  gateway.multiversx.com is NOT rate-limited, unlike api.multiversx.com.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PROXY_TTL = {
+  account: 30 * 1000,
+  scQuery: 60 * 1000,
+  prices:  30 * 1000,
+};
+
+function allowPublic(res) { res.setHeader("Access-Control-Allow-Origin", "*"); }
+
+// GET /api/account/:address — EGLD balance + TCL balance, from the gateway.
+app.get("/api/account/:address", async (req, res) => {
+  allowPublic(res);
+  const address = String(req.params.address || "");
+  if (!address.startsWith("erd1") || address.length < 60) return fail(res, "Invalid address");
+  const cacheKey = `account:${address}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) return ok(res, { ...cached, cached: true });
+  try {
+    // /address/{addr} gives balance + nonce; /address/{addr}/esdt/{token} the TCL balance.
+    const [accResp, tclResp] = await Promise.all([
+      fetch(`${MVX_GATEWAY}/address/${address}`, { signal: AbortSignal.timeout(10000) }),
+      fetch(`${MVX_GATEWAY}/address/${address}/esdt/${TCL_TOKEN}`, { signal: AbortSignal.timeout(10000) }),
+    ]);
+    const accJson = accResp.ok ? await accResp.json() : null;
+    const tclJson = tclResp.ok ? await tclResp.json() : null;
+    const egldRaw = String(accJson?.data?.account?.balance || "0");
+    const tclRaw  = String(tclJson?.data?.tokenData?.balance || "0");
+    const payload = {
+      ok: true,
+      address,
+      egldBalance: parseFloat(rawToDecimal(BigInt(egldRaw || "0"))),
+      egldBalanceRaw: egldRaw,
+      tclBalance: parseFloat(rawToDecimal(BigInt(tclRaw || "0"))),
+      tclBalanceRaw: tclRaw,
+      nonce: Number(accJson?.data?.account?.nonce || 0),
+      username: String(accJson?.data?.account?.username || ""),
+      updatedAt: new Date().toISOString(),
+    };
+    cacheSet(cacheKey, payload, PROXY_TTL.account);
+    ok(res, payload);
+  } catch (err) {
+    fail(res, err.message || "account fetch failed", 502);
+  }
+});
+
+// POST /api/sc-query — generic smart-contract view query via the gateway.
+//  Body: { scAddress, funcName, args?: [hexString...] }
+//  Response mirrors api.multiversx.com/query: { returnData:[base64...], returnCode, returnMessage }.
+app.post("/api/sc-query", async (req, res) => {
+  allowPublic(res);
+  const { scAddress, funcName, args = [] } = req.body || {};
+  if (!scAddress || !funcName) return fail(res, "scAddress and funcName required");
+  const argList = Array.isArray(args) ? args.map(String) : [];
+  const cacheKey = `scq:${scAddress}:${funcName}:${argList.join(",")}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) return ok(res, { ...cached, cached: true });
+  try {
+    const r = await fetch(`${MVX_GATEWAY}/vm-values/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ scAddress, funcName, args: argList }),
+      signal: AbortSignal.timeout(12000),
+    });
+    const j = await r.json();
+    const inner = j?.data?.data || {};
+    const payload = {
+      ok: true,
+      returnData: inner.returnData || [],
+      returnCode: inner.returnCode || j?.code || "",
+      returnMessage: inner.returnMessage || "",
+    };
+    cacheSet(cacheKey, payload, PROXY_TTL.scQuery);
+    ok(res, payload);
+  } catch (err) {
+    fail(res, err.message || "sc-query failed", 502);
+  }
+});
+
+// GET /api/prices — TCL (and pair stats) from DexScreener, cached server-side.
+app.get("/api/prices", async (req, res) => {
+  allowPublic(res);
+  const cacheKey = "prices:tcl";
+  const cached = cacheGet(cacheKey);
+  if (cached) return ok(res, { ...cached, cached: true });
+  try {
+    const d = await fetch(VOLUME_CONFIG.dexUrl, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
+    const pair = d?.pairs?.[0] || d?.pair || {};
+    const payload = {
+      ok: true,
+      tcl: {
+        priceUsd:    parseFloat(pair?.priceUsd || 0) || 0,
+        priceChange: pair?.priceChange || {},
+        liquidityUsd: parseFloat(pair?.liquidity?.usd || 0) || 0,
+        volume24h:   parseFloat(pair?.volume?.h24 || 0) || 0,
+        fdv:         parseFloat(pair?.fdv || 0) || 0,
+      },
+      updatedAt: new Date().toISOString(),
+    };
+    cacheSet(cacheKey, payload, PROXY_TTL.prices);
+    ok(res, payload);
+  } catch (err) {
+    fail(res, err.message || "prices fetch failed", 502);
+  }
+});
+
+// GET /api/holders?size=N — TCL holder list (array of { address, balance }),
+//  served from the DB snapshot written by sync-holders.js (the list lives only on
+//  api.multiversx.com, which 429s the VPS IP — so we never proxy it live here).
+app.get("/api/holders", async (req, res) => {
+  allowPublic(res);
+  const size = Math.min(Math.max(Number(req.query.size) || 500, 1), 10000);
+  try {
+    const row = await db.one("SELECT value FROM tcl_sync_state WHERE key='holders_snapshot'");
+    const tsRow = await db.one("SELECT value FROM tcl_sync_state WHERE key='holders_updated_at'");
+    if (!row?.value) return fail(res, "holders snapshot not available yet", 503);
+    const arr = JSON.parse(row.value);
+    res.setHeader("X-Holders-Updated-At", String(tsRow?.value || ""));
+    res.json(Array.isArray(arr) ? arr.slice(0, size) : []);
+  } catch (err) {
+    fail(res, err.message || "holders read failed", 500);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  LEADERBOARD (generat de leaderboard.py via cron)
 // ══════════════════════════════════════════════════════════════════════════════
 const LEADERBOARD_PATH = "/opt/tcl-api/leaderboard.json";
