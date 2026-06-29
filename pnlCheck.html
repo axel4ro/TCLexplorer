@@ -3605,7 +3605,7 @@
         dom.pnlNetUsd.textContent = `${formatSignedUsd(pnlUsd)} USDC`;
         dom.pnlNetUsd.classList.toggle("is-positive", pnlUsd > 0);
         dom.pnlNetUsd.classList.toggle("is-negative", pnlUsd < 0);
-        setDynamicText(dom.pnlTradeCount, "Trades: {total} ({buy} buy / {sell} sell)", {
+        setDynamicText(dom.pnlTradeCount, "Trades: {total} ({buy} buy / {sell} sell) · incl. holdings at current price", {
           total: totals.tradeCount.toLocaleString(getLocale()),
           buy: totals.buyCount.toLocaleString(getLocale()),
           sell: totals.sellCount.toLocaleString(getLocale())
