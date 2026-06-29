@@ -317,8 +317,8 @@
       <button type="button" class="nav-item" onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">
         <img src="images/exchange.png" alt=""> xExchange
       </button>
-      <button type="button" class="nav-item nav-item--external" onclick="window.open('https://www.thecursedland.com/lander', '_blank')" id="btn-Lander">
-        <img src="images/lander.png" alt=""> Lander ↗
+      <button type="button" class="nav-item nav-item--external" onclick="openLanderSmart()" id="btn-Lander">
+        <img src="images/lander.png" alt=""> <span class="nav-label">Lander</span> <span class="nav-ext-arrow">↗</span>
       </button>
       <button type="button" class="nav-item nav-item--external" onclick="openXPortal()" id="btn-xportal">
         <img src="images/xPortal.png" alt=""> xPortal ↗
@@ -1177,6 +1177,26 @@ function openLander() {
   const route = INTERNAL_PAGE_ROUTES.lander;
   openInternalPage(route.src, route.title, route);
 }
+// Desktop → open Lander as an internal page (like xExchange); mobile → external link.
+function openLanderSmart() {
+  if (isMobile()) {
+    window.open('https://www.thecursedland.com/lander', '_blank');
+  } else {
+    openLander();
+  }
+}
+// On desktop the Lander item behaves like an internal page, so drop the external
+// styling + ↗ arrow there (mobile keeps them since it still opens externally).
+(function adjustLanderNav() {
+  try {
+    if (isMobile()) return;
+    const btn = document.getElementById("btn-Lander");
+    if (!btn) return;
+    btn.classList.remove("nav-item--external");
+    const arrow = btn.querySelector(".nav-ext-arrow");
+    if (arrow) arrow.style.display = "none";
+  } catch (_) {}
+})();
   let mode = 'buy';
   const PRICES_API_URL = "https://tcl-event-push.axel4ro.workers.dev/api/prices";
   const DEX_API_URL = PRICES_API_URL;
