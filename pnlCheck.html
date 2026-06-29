@@ -1179,7 +1179,7 @@
       <div class="panel-head">
         <div>
           <h2 class="panel-title" id="pnlTitle">PNL Check</h2>
-          <p class="panel-subtitle">TCL swaps valued in USDC $ for the selected wallet.</p>
+          <p class="panel-subtitle" id="pnlSubtitle">TCL swaps valued in USDC for the selected wallet.</p>
         </div>
       </div>
       <p class="pnl-limit-note">P2P buy and sell transactions are not included in this PNL calculation.</p>
@@ -2167,12 +2167,13 @@
         return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
 
+      // Plain number (no "USD" currency word) — callers append "USDC" or a "$" prefix
+      // themselves, so we never render the redundant "USD USDC".
       function formatUsd(value) {
         const amount = readNumber(value, 0);
         const decimals = Math.abs(amount) < 1 && amount !== 0 ? 4 : 2;
         return new Intl.NumberFormat(getLocale(), {
-          style: "currency",
-          currency: "USD",
+          style: "decimal",
           minimumFractionDigits: decimals,
           maximumFractionDigits: decimals
         }).format(amount);
@@ -2212,7 +2213,7 @@
         const priceEl = document.querySelector(`[data-token-price="${key}"]`);
 
         if (amountEl) amountEl.textContent = amount;
-        if (usdEl) usdEl.textContent = formatUsd(usdValue);
+        if (usdEl) usdEl.textContent = `$${formatUsd(usdValue)}`;
         if (priceEl) priceEl.textContent = formatPrice(price);
 
         // Also update popup balance display
@@ -2220,7 +2221,7 @@
         const popupAmountEl = document.getElementById(`popup${symbol.charAt(0) + symbol.slice(1).toLowerCase()}Amount`);
         const popupUsdEl    = document.getElementById(`popup${symbol.charAt(0) + symbol.slice(1).toLowerCase()}Usd`);
         if (popupAmountEl) popupAmountEl.textContent = `${amount} ${symbol}`;
-        if (popupUsdEl)    popupUsdEl.textContent    = formatUsd(usdValue);
+        if (popupUsdEl)    popupUsdEl.textContent    = `$${formatUsd(usdValue)}`;
       }
 
       function renderEmptyBalances() {
@@ -2302,7 +2303,7 @@
           setTokenRender("usdc", rawToDisplay(usdcRaw, CONFIG.tokens.usdc.decimals, 4), usdcUsd, state.prices.usdc);
           setTokenRender("tcl", rawToDisplay(tclRaw, CONFIG.tokens.tcl.decimals, 2), tclUsd, state.prices.tcl);
 
-          dom.totalUsd.textContent = formatUsd(total);
+          dom.totalUsd.textContent = `$${formatUsd(total)}`;
           dom.tclPrice.textContent = formatPrice(state.prices.tcl);
           dom.updatedAt.textContent = new Intl.DateTimeFormat(getLocale(), {
             hour: "2-digit",
@@ -3368,7 +3369,7 @@
         const tcl = readNumber(data.tcl, 0);
         const usdc = readNumber(data.usdc, 0);
         dom.pnlInfinityTcl.textContent = `${formatTokenAmount(tcl)} TCL`;
-        setDynamicText(dom.pnlInfinityUsd, "Cost: {value} USDC", { value: formatUsd(usdc) });
+        setDynamicText(dom.pnlInfinityUsd, "Cost: {value} USDC · price at trade time", { value: formatUsd(usdc) });
       }
 
       // ── Staking (NFT + Loan + Infinity) din leaderboard.json ─────────────────────
@@ -3403,7 +3404,7 @@
         const total = readNumber(data.total, 0);
         const usd = total * readNumber(state.prices.tcl, 0);
         dom.pnlStakingTcl.textContent = `${formatTokenAmount(total)} TCL`;
-        setDynamicText(dom.pnlStakingUsd, "Value: {value} USDC", { value: formatUsd(usd) });
+        setDynamicText(dom.pnlStakingUsd, "Value: {value} USDC · at current price", { value: formatUsd(usd) });
 
         const btn = document.getElementById("stakingInfoBtn");
         if (btn) {
@@ -3514,7 +3515,7 @@
         const totalTcl = readNumber(data.totalTcl, 0);
         const totalCost = readNumber(data.totalCost, 0);
         dom.pnlPresaleTcl.textContent = `${formatTokenAmount(totalTcl)} TCL`;
-        setDynamicText(dom.pnlPresaleUsd, "Cost: {value} USDC", { value: formatUsd(totalCost) });
+        setDynamicText(dom.pnlPresaleUsd, "Cost: {value} USDC · presale price", { value: formatUsd(totalCost) });
 
         const btn = document.getElementById("presaleInfoBtn");
         if (btn) {
@@ -3544,16 +3545,29 @@
         const tcl = readNumber(data.tcl, 0);
         const usd = tcl * readNumber(state.prices.tcl, 0);
         dom.pnlWalletTcl.textContent = `${formatTokenAmount(tcl)} TCL`;
-        setDynamicText(dom.pnlWalletUsd, "Value: {value} USDC", { value: formatUsd(usd) });
+        setDynamicText(dom.pnlWalletUsd, "Value: {value} USDC · at current price", { value: formatUsd(usd) });
       }
 
       function renderPnlResult(totals, historyMeta, earnedTcl = 0, infinity = null, staking = null, presale = null, wallet = null) {
         dom.pnlBoughtTcl.textContent = `${formatTokenAmount(totals.buyTcl)} TCL`;
-        setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC", { value: formatUsd(totals.buyUsd) });
+        setDynamicText(dom.pnlBoughtUsd, "Cost: {value} USDC · price at trade time", { value: formatUsd(totals.buyUsd) });
         dom.pnlSoldTcl.textContent = `${formatTokenAmount(totals.sellTcl)} TCL`;
-        setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC", { value: formatUsd(totals.sellUsd) });
+        setDynamicText(dom.pnlSoldUsd, "Received: {value} USDC · price at trade time", { value: formatUsd(totals.sellUsd) });
 
         const tclPrice = readNumber(state.prices.tcl, 0);
+        // Show the current TCL price used for the "at current price" cards.
+        const subtitleEl = document.getElementById("pnlSubtitle");
+        if (subtitleEl) {
+          if (tclPrice > 0) {
+            const priceStr = new Intl.NumberFormat(getLocale(), {
+              style: "decimal", minimumFractionDigits: 2,
+              maximumFractionDigits: tclPrice < 0.01 ? 8 : 4
+            }).format(tclPrice);
+            subtitleEl.textContent = `TCL swaps valued in USDC for the selected wallet · Current TCL price: $${priceStr}`;
+          } else {
+            subtitleEl.textContent = "TCL swaps valued in USDC for the selected wallet.";
+          }
+        }
         // Valoarea TCL earned + TCL staked (la pretul curent), plus costurile Presale si Infinity Offers.
         const earnedData = earnedTcl && typeof earnedTcl === "object" ? earnedTcl : { total: readNumber(earnedTcl, 0), breakdown: {} };
         const earnedAmount = readNumber(earnedData.total, 0);
@@ -3575,7 +3589,7 @@
         });
 
         dom.pnlEarnedTcl.textContent = `${formatTokenAmount(earnedAmount)} TCL`;
-        setDynamicText(dom.pnlEarnedUsd, "Value: {value} USDC", { value: formatUsd(earnedUsd) });
+        setDynamicText(dom.pnlEarnedUsd, "Value: {value} USDC · at current price", { value: formatUsd(earnedUsd) });
 
         // Buton info breakdown — vizibil daca avem date
         const infoBtn = document.getElementById("earnedInfoBtn");
