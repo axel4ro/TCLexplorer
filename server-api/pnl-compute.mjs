@@ -619,4 +619,114 @@ async function computeWalletSwapPnl(pool, walletAddress) {
   };
 }
 
-export { computeWalletSwapPnl };
+// ── Earned TCL (game-contract rewards/cashback/referral/sale) — verbatim logic ──
+const EARNED_REWARD_FNS = new Set([
+  "claimRewards","claimBorrowingRewards","claimLendingRewards","claimInfinityRewards",
+  "claimReferralRewards","claimManagerRewards","referral","addDaysAutoClaim"
+]);
+const EARNED_CASHBACK_5_FNS = new Set([
+  "buyCoins","buySft","upgradeNft","mintNft","addBonus","changeBonus","addCrystal",
+  "changeCrystal","addSocket","addRefinement","addStorage"
+]);
+const EARNED_CASHBACK_2_FNS = new Set(["withdrawBalancePrivateShop"]);
+const EARNED_ITEMSHOP_FNS = new Set(["buyCoins","buySft"]);
+function getEarnedSourceInfo(fn) {
+  if (EARNED_REWARD_FNS.has(fn)) return { kind: "reward", rate: "reward" };
+  if (EARNED_CASHBACK_5_FNS.has(fn)) return { kind: EARNED_ITEMSHOP_FNS.has(fn) ? "itemshop" : "nft", rate: "5%" };
+  if (EARNED_CASHBACK_2_FNS.has(fn)) return { kind: "shop", rate: "2%" };
+  return null;
+}
+
+async function computeWalletEarned(pool, walletAddress) {
+  const gameContract = CONFIG.pnlGameContract;
+  if (!gameContract) return { total: 0, breakdown: {} };
+  const claimRes = await pool.query(
+    `SELECT tx_hash, original_tx_hash, function, action_transfers, ts FROM tcl_transfers WHERE sender=$1 AND receiver=$2`,
+    [gameContract, walletAddress]
+  );
+  const rows = claimRes.rows;
+  if (!rows.length) return { total: 0, breakdown: {}, categories: { reward:0, sale:0, cashback:0, referral:0 } };
+
+  const rootTcl = new Map(), rootFn = new Map(), rootTs = new Map(), rootSender = new Map(), roots = new Set();
+  for (const row of rows) {
+    const root = row.original_tx_hash || row.tx_hash;
+    if (!root) continue;
+    roots.add(root);
+    if (row.ts && !rootTs.has(root)) rootTs.set(root, Number(row.ts) || 0);
+    const fn = String(row.function || "").trim();
+    if (fn && (!rootFn.has(root) || rootFn.get(root) === "_other")) rootFn.set(root, fn);
+    for (const t of (row.action_transfers || [])) {
+      if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+      const norm = normalizePnlTradeTransfer(t);
+      if (norm) rootTcl.set(root, (rootTcl.get(root) || 0) + norm.amount);
+    }
+  }
+
+  const rootArr = Array.from(roots);
+  let relatedEntries = [];
+  if (rootArr.length) {
+    const relRes = await pool.query(
+      `SELECT tx_hash, original_tx_hash, type, sender, receiver, ts, function, action_transfers
+         FROM tcl_transfers WHERE tx_hash = ANY($1::text[]) OR original_tx_hash = ANY($1::text[])`,
+      [rootArr]
+    );
+    relatedEntries = relRes.rows.map(supabaseRowToPnlEntry);
+  }
+  const rootTotalDist = new Map();
+  relatedEntries.forEach((entry) => {
+    const root = entry.originalTxHash || entry.txHash;
+    const fn = String(entry.function || "").trim();
+    if (root && !entry.originalTxHash) {
+      if (fn) rootFn.set(root, fn);
+      if (entry.timestamp) rootTs.set(root, Number(entry.timestamp) || 0);
+      if (entry.sender) rootSender.set(root, entry.sender);
+    }
+    if (root && entry.sender === gameContract) {
+      for (const t of (entry.action?.arguments?.transfers || [])) {
+        if ((t.token || t.identifier) !== CONFIG.tokens.tcl.identifier) continue;
+        const norm = normalizePnlTradeTransfer(t);
+        if (norm) rootTotalDist.set(root, (rootTotalDist.get(root) || 0) + norm.amount);
+      }
+    }
+  });
+
+  let needOwnerCheck = false;
+  for (const [root] of rootTcl) {
+    const si = getEarnedSourceInfo(rootFn.get(root) || "");
+    if (si && si.kind === "shop") { needOwnerCheck = true; break; }
+  }
+  let isOwner = false;
+  if (needOwnerCheck) {
+    const o = await pool.query(
+      `SELECT 1 FROM tcl_transfers WHERE sender=$1 AND receiver=$2 AND function='setReferralCodeOwner' LIMIT 1`,
+      [walletAddress, gameContract]
+    );
+    isOwner = o.rows.length > 0;
+  }
+
+  const breakdown = {};
+  let total = 0, rewardTotal = 0, saleTotal = 0, cashbackTotal = 0, referralTotal = 0;
+  for (const [root, tcl] of rootTcl) {
+    const fn = rootFn.get(root) || "_other";
+    const sourceInfo = getEarnedSourceInfo(fn);
+    if (!sourceInfo) continue;
+    const payer = rootSender.get(root) || "";
+    const isSelf = payer && payer === walletAddress;
+    let label;
+    if (sourceInfo.kind === "reward") { label = "Reward Pool"; rewardTotal += tcl; }
+    else if (sourceInfo.kind === "nft") { if (isSelf) { label = "NFTs - Cashback"; cashbackTotal += tcl; } else { label = "NFTs - Referral"; referralTotal += tcl; } }
+    else if (sourceInfo.kind === "itemshop") { if (isSelf) { label = "ItemShop - Karma Cashback"; cashbackTotal += tcl; } else { label = "ItemShop - Karma Referral"; referralTotal += tcl; } }
+    else {
+      const dist = rootTotalDist.get(root) || tcl;
+      const share = dist > 0 ? tcl / dist : 1;
+      if (share >= 0.5) { label = "Private Shop - Sale"; saleTotal += tcl; }
+      else if (isOwner) { label = "Private Shop - Referral"; referralTotal += tcl; }
+      else { label = "Private Shop Web3 - Cashback"; cashbackTotal += tcl; }
+    }
+    breakdown[label] = (breakdown[label] || 0) + tcl;
+    total += tcl;
+  }
+  return { total, breakdown, categories: { reward: rewardTotal, sale: saleTotal, cashback: cashbackTotal, referral: referralTotal } };
+}
+
+export { computeWalletSwapPnl, computeWalletEarned };

@@ -3162,6 +3162,25 @@
       }
 
       async function fetchEarnedTcl(walletAddress) {
+        // Earned is now computed SERVER-SIDE (pnl-compute.mjs) and returned by /api/pnl
+        // in <1s — no more fetching ~1800 reward roots into the browser.
+        try {
+          const data = await fetchJson(`https://api.tclexplorer.com/api/pnl/${encodeURIComponent(walletAddress)}`, { retries: 1, retryDelayMs: 1500, timeoutMs: 30000 });
+          const earned = data && data.earned;
+          if (earned && typeof earned === "object") {
+            return {
+              total: readNumber(earned.total, 0),
+              breakdown: earned.breakdown || {},
+              categories: earned.categories || {},
+              excluded: 0, excludedBreakdown: {}, details: []
+            };
+          }
+        } catch (_) {}
+        return { total: 0, breakdown: {} };
+      }
+
+      // Legacy client-side earned computation (kept for reference, no longer called).
+      async function fetchEarnedTclLegacy(walletAddress) {
         const gameContract = CONFIG.pnlGameContract;
         if (!gameContract) return { total: 0, breakdown: {} };
         try {
