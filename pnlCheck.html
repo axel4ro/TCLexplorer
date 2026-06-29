@@ -1671,13 +1671,35 @@
 
       function setPnlLoading(isLoading) {
         state.pnlLoading = Boolean(isLoading);
+        if (state.pnlLoading) {
+          state.pnlStartTime = Date.now();
+          state.pnlEtaSeconds = 0;
+          if (state.pnlTimer) clearInterval(state.pnlTimer);
+          state.pnlTimer = setInterval(syncPageOverlay, 500);
+        } else if (state.pnlTimer) {
+          clearInterval(state.pnlTimer);
+          state.pnlTimer = null;
+        }
         syncPageOverlay();
         syncLoadingState();
       }
 
       function syncPageOverlay() {
         const isActive = state.balanceLoading || state.pnlLoading;
-        setDynamicText(dom.pageOverlayText, state.pnlLoading ? "Calculating PNL..." : "Updating balance...");
+        let text = "Updating balance...";
+        if (state.pnlLoading) {
+          const elapsed = state.pnlStartTime ? Math.floor((Date.now() - state.pnlStartTime) / 1000) : 0;
+          // Show elapsed + estimate once we know roughly how long it'll take.
+          if (state.pnlEtaSeconds > 0) {
+            const remaining = Math.max(0, state.pnlEtaSeconds - elapsed);
+            text = remaining > 0
+              ? `Calculating PNL… ${elapsed}s (≈${remaining}s left)`
+              : `Calculating PNL… ${elapsed}s (almost done)`;
+          } else {
+            text = `Calculating PNL… ${elapsed}s`;
+          }
+        }
+        if (dom.pageOverlayText) dom.pageOverlayText.textContent = text;
         dom.balanceOverlay.classList.toggle("is-active", isActive);
         dom.balanceOverlay.setAttribute("aria-hidden", String(!isActive));
         document.body.classList.toggle("is-balance-loading", isActive);
@@ -2966,8 +2988,13 @@
                    reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
         }
 
-        setPnlStatus("{count} swaps found. Calculating PNL...", {
-          count: swapEntries.length.toLocaleString(getLocale())
+        // Rough time estimate now that we know the swap count — drives the overlay countdown.
+        const etaSeconds = Math.max(10, Math.round(swapEntries.length / 10) + 8);
+        state.pnlEtaSeconds = etaSeconds;
+        if (state.pnlLoading) syncPageOverlay();
+        setPnlStatus("{count} swaps found. Calculating PNL… (≈{eta}s)", {
+          count: swapEntries.length.toLocaleString(getLocale()),
+          eta: String(etaSeconds)
         });
 
         const rootHashes = Array.from(new Set(swapEntries.map((entry) => entry.originalTxHash || entry.txHash).filter(Boolean)));
