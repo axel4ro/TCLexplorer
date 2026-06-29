@@ -2975,76 +2975,39 @@
       }
 
       // PNL: calculeaza swap-urile din DB-ul nostru (VPS PostgREST).
+      // Swap PNL is now computed SERVER-SIDE (pnl-compute.mjs) and returned as totals
+      // in <1s — no more pulling every swap's `operations` into the browser (~40s).
       async function fetchPnlFromSupabase(walletAddress) {
-        const swapEntries = (await fetchSwapEntriesFromSupabase(walletAddress)) ?? [];
-
         const listingTs = Math.floor(new Date(CONFIG.listingDate).getTime() / 1000);
-        const timestamps = swapEntries.map(e => Number(e.timestamp)).filter(Number.isFinite);
-        let oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
-
-        if (swapEntries.length === 0) {
-          return { buyTcl:0, buyCost:0, sellTcl:0, sellReceived:0,
-                   tradeCount:0, buyCount:0, sellCount:0,
-                   reachedListingStart: false, checkedSwaps:0, oldestTimestamp:null, source:"supabase" };
+        const url = `https://api.tclexplorer.com/api/pnl/${encodeURIComponent(walletAddress)}`;
+        const data = await fetchJson(url, {
+          retries: 1,
+          retryDelayMs: 1500,
+          timeoutMs: 30000,
+          timeoutMessage: "The PNL endpoint timed out."
+        });
+        if (!data || data.ok === false) {
+          throw new Error(data?.error || "The PNL endpoint is unavailable.");
         }
 
-        // Rough time estimate now that we know the swap count — drives the overlay countdown.
-        const etaSeconds = Math.max(10, Math.round(swapEntries.length / 10) + 8);
-        state.pnlEtaSeconds = etaSeconds;
-        if (state.pnlLoading) syncPageOverlay();
-        setPnlStatus("{count} swaps found. Calculating PNL… (≈{eta}s)", {
-          count: swapEntries.length.toLocaleString(getLocale()),
-          eta: String(etaSeconds)
-        });
-
-        const rootHashes = Array.from(new Set(swapEntries.map((entry) => entry.originalTxHash || entry.txHash).filter(Boolean)));
-        const relatedEntries = await fetchPnlEntriesByRootHashes(rootHashes);
-
-        // Construim lista de transferuri numai din randurile Supabase.
-        const transfers = [];
-        const seen = new Set();
-        [...relatedEntries, ...swapEntries].forEach((e, i) => {
-          const hash = String(e.txHash || e.originalTxHash || `sb:${i}`);
-          const key = `${hash}|${e.type || ""}|${e.sender || ""}|${e.receiver || ""}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            transfers.push(e);
-          }
-        });
-
-        // parsePnlTrades foloseste operations/action_transfers stocate in Supabase.
-        let trades = parsePnlTrades(transfers, walletAddress);
-        const aggregatorBuyTrades = await fetchAggregatorBuyFallbackTrades(
-          transfers,
-          walletAddress,
-          new Set(trades.map((trade) => trade.hash).filter(Boolean))
-        );
-        if (aggregatorBuyTrades.length) {
-          const mergedTrades = new Map();
-          [...trades, ...aggregatorBuyTrades].forEach((trade) => {
-            if (trade?.hash) mergedTrades.set(trade.hash, trade);
-          });
-          trades = Array.from(mergedTrades.values()).sort((left, right) => left.timestamp - right.timestamp);
-          const aggregatorTimestamps = aggregatorBuyTrades.map((trade) => Number(trade.timestamp)).filter(Number.isFinite);
-          if (aggregatorTimestamps.length) {
-            const aggregatorOldest = Math.min(...aggregatorTimestamps);
-            oldestTimestamp = oldestTimestamp === null ? aggregatorOldest : Math.min(oldestTimestamp, aggregatorOldest);
-          }
+        const oldestTimestamp = Number.isFinite(Number(data.oldestTimestamp)) ? Number(data.oldestTimestamp) : null;
+        const checkedSwaps = readNumber(data.checkedSwaps, 0);
+        if (checkedSwaps > 0) {
+          setPnlStatus("{count} swaps found.", { count: checkedSwaps.toLocaleString(getLocale()) });
         }
-        const totals = aggregatePnlTrades(trades);
 
         return {
-          buyTcl:    totals.buyTcl,
-          buyCost:   totals.buyUsd,
-          sellTcl:   totals.sellTcl,
-          sellReceived: totals.sellUsd,
-          tradeCount: totals.tradeCount,
-          buyCount:   totals.buyCount,
-          sellCount:  totals.sellCount,
+          buyTcl:       readNumber(data.buyTcl, 0),
+          buyCost:      readNumber(data.buyCost, 0),
+          sellTcl:      readNumber(data.sellTcl, 0),
+          sellReceived: readNumber(data.sellReceived, 0),
+          tradeCount:   readNumber(data.tradeCount, 0),
+          buyCount:     readNumber(data.buyCount, 0),
+          sellCount:    readNumber(data.sellCount, 0),
           reachedListingStart: oldestTimestamp !== null && oldestTimestamp <= listingTs,
-          checkedSwaps: swapEntries.length,
+          checkedSwaps,
           oldestTimestamp,
-          source: "supabase"
+          source: "server"
         };
       }
 
@@ -3232,7 +3195,21 @@
             }
           }
 
-          const relatedEntries = await fetchPnlEntriesByRootHashes(Array.from(roots));
+          // Earned foloseste doar function/sender/action_transfers din randurile root —
+          // NU operations. Cerem un select usor (fara jsonb-ul mare operations) ca sa
+          // nu transferam MB inutili prin tunel (de ~10x mai rapid).
+          const earnedRootHashes = Array.from(roots);
+          const earnedLightRows = [];
+          const earnedSelect = "tx_hash,original_tx_hash,type,sender,receiver,ts,function,action_transfers";
+          for (let i = 0; i < earnedRootHashes.length; i += 80) {
+            const chunk = earnedRootHashes.slice(i, i + 80).join(",");
+            const chunkRows = await supabaseFetchAll("tcl_transfers", {
+              or:     `(tx_hash.in.(${chunk}),original_tx_hash.in.(${chunk}))`,
+              select: earnedSelect
+            });
+            if (Array.isArray(chunkRows)) earnedLightRows.push(...chunkRows);
+          }
+          const relatedEntries = earnedLightRows.map(supabaseRowToPnlEntry);
           // rootTotalDist = total TCL distribuit de game in acel root (toti destinatarii)
           // → folosit pentru cota wallet-ului la Private Shop (90% vanzare vs 2% cashback/referral)
           const rootTotalDist = new Map();

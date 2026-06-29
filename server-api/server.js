@@ -34,6 +34,7 @@ import {
   TransferTransactionsFactory,
   UserVerifier,
 } from "@multiversx/sdk-core";
+import { computeWalletSwapPnl } from "./pnl-compute.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -2720,6 +2721,26 @@ app.get("/api/holders", async (req, res) => {
     res.json(Array.isArray(arr) ? arr.slice(0, size) : []);
   } catch (err) {
     fail(res, err.message || "holders read failed", 500);
+  }
+});
+
+// GET /api/pnl/:address — TCL swap buy/sell PNL totals, computed server-side from
+//  our indexed tcl_transfers (no heavy data sent to the browser). Logic ported
+//  verbatim from pnlCheck.html (pnl-compute.mjs) so numbers match the old client path.
+app.get("/api/pnl/:address", async (req, res) => {
+  allowPublic(res);
+  const address = String(req.params.address || "");
+  if (!address.startsWith("erd1") || address.length < 60) return fail(res, "Invalid address");
+  const cacheKey = `pnl:${address}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) return ok(res, { ...cached, cached: true });
+  try {
+    const totals = await computeWalletSwapPnl(pool, address);
+    const payload = { ok: true, source: "server", ...totals, updatedAt: new Date().toISOString() };
+    cacheSet(cacheKey, payload, 60 * 1000); // 1 min — sync-pnl refreshes the DB every 10 min
+    ok(res, payload);
+  } catch (err) {
+    fail(res, err.message || "pnl compute failed", 500);
   }
 });
 
