@@ -546,6 +546,23 @@
     }
     .btn-cancel:hover { background: rgba(248,113,113,0.25); }
 
+    .card-action-row { display: flex; gap: 6px; width: 100%; align-items: stretch; }
+    .card-action-row .btn-buy, .card-action-row .btn-cancel { width: auto; flex: 1; }
+    .btn-share {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      background: rgba(108,99,255,0.14);
+      color: var(--accent);
+      border: 1px solid rgba(108,99,255,0.34);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-share:hover { background: rgba(108,99,255,0.26); transform: translateY(-1px); }
+
     /* ── Loading / Empty ── */
     .loading-msg {
       grid-column: 1/-1;
@@ -609,6 +626,26 @@
       backdrop-filter: blur(6px);
     }
     .modal-close:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+
+    .modal-share {
+      position: absolute;
+      top: 12px;
+      right: 56px;
+      z-index: 10;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: rgba(108,99,255,0.16);
+      border: 1px solid rgba(108,99,255,0.34);
+      color: var(--accent);
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+      backdrop-filter: blur(6px);
+    }
+    .modal-share:hover { background: rgba(108,99,255,0.28); }
 
     .modal-layout {
       display: grid;
@@ -1244,6 +1281,7 @@
       .modal-layout { grid-template-columns: 1fr; gap: 16px; }
       .modal-img-col img { max-height: 260px; }
       #detail-modal .modal-close { position: absolute; top: calc(40px + env(safe-area-inset-top, 0px)); right: 8px; }
+      #detail-modal .modal-share { top: calc(40px + env(safe-area-inset-top, 0px)); right: 52px; padding: 0 10px; font-size: 13px; }
 
       /* My NFTs modal */
       .my-nfts-modal-box { padding: 16px; border-radius: 0; }
@@ -1411,6 +1449,7 @@
 <!-- ════════════ DETAIL MODAL ════════════ -->
 <div id="detail-modal">
   <div class="modal-box">
+    <button class="modal-share" id="detail-share-btn" type="button" onclick="shareListing(currentDetailIdentifier, event)" title="Copy link to this NFT">🔗 Share</button>
     <button class="modal-close" onclick="closeDetail()">×</button>
     <div id="detail-content"></div>
   </div>
@@ -2136,12 +2175,15 @@ function buildListingCard(listing) {
               <div class="amount-usd">${priceUSD}</div>
             </div>
           </div>
-          ${currentTab === "mine"
-            ? `<button class="btn-cancel" onclick="event.stopPropagation(); cancelListing(${listing.listing_id})">Cancel Listing</button>`
-            : isMine
-              ? `<span style="font-size:11px;color:var(--muted);text-align:center;width:100%;display:block;">Your listing</span>`
-              : `<button class="btn-buy" onclick="event.stopPropagation(); openDetail(${listing.listing_id})">Buy</button>`
-          }
+          <div class="card-action-row">
+            <button class="btn-share" type="button" title="Copy link to this NFT" onclick="event.stopPropagation(); shareListing('${nft.identifier || ''}', event)">🔗 Share</button>
+            ${currentTab === "mine"
+              ? `<button class="btn-cancel" onclick="event.stopPropagation(); cancelListing(${listing.listing_id})">Cancel Listing</button>`
+              : isMine
+                ? `<span style="font-size:11px;color:var(--muted);text-align:center;flex:1;align-self:center;">Your listing</span>`
+                : `<button class="btn-buy" onclick="event.stopPropagation(); openDetail(${listing.listing_id})">Buy</button>`
+            }
+          </div>
         </div>
       </div>
     </div>`;
@@ -2210,9 +2252,13 @@ function renderActivity() {
 // ══════════════════════════════════════════════════════════════════════════════
 // DETAIL MODAL
 // ══════════════════════════════════════════════════════════════════════════════
+let currentDetailListingId = null;
+let currentDetailIdentifier = null;
 function openDetail(listingId) {
   const listing = allListings.find(l => l.listing_id === listingId);
   if (!listing) return;
+  currentDetailListingId = listingId;
+  currentDetailIdentifier = listing.nft?.identifier || null;
   const nft = listing.nft || {};
   const priceWhole = formatTCL(listing.price);
   const priceUSD = tclPriceUSD
@@ -3677,6 +3723,73 @@ function formatTCL(amount) {
   } catch { return String(amount); }
 }
 
+// ── Share / deep-link ──────────────────────────────────────────────
+function buildShareUrl(identifier) {
+  return `${location.origin}${location.pathname}?nft=${encodeURIComponent(identifier)}`;
+}
+function shareListing(identifier, ev) {
+  if (ev) ev.stopPropagation();
+  if (!identifier) return;
+  const url = buildShareUrl(identifier);
+  const ok = () => showToast("🔗 Link copied — open it to land on this NFT", "success");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(ok).catch(() => _fallbackCopy(url, ok));
+  } else {
+    _fallbackCopy(url, ok);
+  }
+}
+function _fallbackCopy(text, ok) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    ok();
+  } catch (_) {
+    showToast("Couldn't copy link automatically", "error");
+  }
+}
+
+// Open the xPortal connect popup (used when someone lands via a shared link)
+function openConnectPopup() {
+  if (typeof WS !== "undefined" && WS && WS.address) return;
+  if (typeof WS !== "undefined" && WS && !WS.connecting && typeof startConnection === "function") {
+    startConnection();
+  }
+  if (typeof WD !== "undefined" && WD && WD.qrPopover) WD.qrPopover.hidden = false;
+}
+
+// On load, if ?listing=<id> is present, open that NFT directly.
+// If the visitor isn't connected with xPortal, prompt the wallet popup.
+function handleShareDeepLink() {
+  const params = new URLSearchParams(location.search);
+  const identifier = params.get("nft");
+  const legacyId = params.get("listing");
+  if (!identifier && !legacyId) return;
+  let attempts = 0;
+  const tryOpen = () => {
+    let listing = null;
+    if (identifier) {
+      listing = allListings.find(l => (l.nft?.identifier || "") === identifier);
+    } else {
+      const id = Number(legacyId);
+      if (Number.isFinite(id)) listing = allListings.find(l => l.listing_id === id);
+    }
+    if (listing) {
+      openDetail(listing.listing_id);
+      if (!walletAddress) openConnectPopup();
+      return;
+    }
+    if (++attempts < 12) setTimeout(tryOpen, 600);
+    else showToast("That NFT listing is no longer available", "info");
+  };
+  tryOpen();
+}
+
 let _toastTimer;
 function showToast(msg, type = "info") {
   const el = document.getElementById("toast");
@@ -3751,6 +3864,7 @@ document.getElementById("my-nfts-modal")?.addEventListener("click", e => {
     loadRecentSales(),
   ]);
   startAutoRefresh();
+  handleShareDeepLink();
 })();
 </script>
 </body>
