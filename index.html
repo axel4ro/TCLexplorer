@@ -415,8 +415,9 @@
     <div class="token-hero-head">
       <h2 class="token-hero-title">
         <img src="images/tcl_icon.png" alt="" width="28" height="28" style="border-radius:8px;">
-        TCL Explorer
+        TCL Token
       </h2>
+      <button type="button" class="page-back-btn" onclick="openBurnTrackerPage()">🔥 Burn Tracker</button>
     </div>
     <p class="muted" style="margin-top:8px;">
       <span class="live-dot">Live</span>
@@ -2866,6 +2867,16 @@ const INTERNAL_PAGE_ROUTES = {
     waitForReadyMessage: true,
     readyFallbackMs: 120000
   },
+  burnTracker: {
+    src: "burnTracker.html",
+    title: "Burn Tracker",
+    navId: "btn-token",
+    routeKey: "burnTracker",
+    loadingTitle: "Loading <span>TCL Explorer</span>...",
+    loadingSubtitle: "Preparing TCL burn tracker.",
+    waitForReadyMessage: true,
+    readyFallbackMs: 20000
+  },
   "pnlCheck": {
     src: "pnlCheck.html?v=20260603-1",
     title: "PNL Check",
@@ -5175,6 +5186,11 @@ function closeAprCalculator() {
 
 function openFlowPage() {
   const route = INTERNAL_PAGE_ROUTES.flow;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openBurnTrackerPage() {
+  const route = INTERNAL_PAGE_ROUTES.burnTracker;
   openInternalPage(route.src, route.title, route);
 }
 
