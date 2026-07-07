@@ -1098,6 +1098,13 @@
 
   // ── Main load ────────────────────────────────────────────────────────────────
 
+  function notifyParentReady() {
+    if (window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); }
+      catch (_) {}
+    }
+  }
+
   async function loadAll(forceHistoric = false) {
     const sequence = ++loadSequence;
     const btn = document.getElementById("refreshBtn");
@@ -1116,6 +1123,7 @@
     if (!mvx && !hist) {
       document.getElementById("tableBody").innerHTML =
         `<div class="error-box">⚠️ Could not load burn data. The API may be temporarily unavailable — try refreshing in a moment.</div>`;
+      notifyParentReady();
       return;
     }
 
@@ -1139,6 +1147,8 @@
     const now = new Date();
     document.getElementById("lastUpdated").textContent =
       "Updated " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+    notifyParentReady();
 
     if (historicEvents.length) {
       const refreshDelay = hasCachedHistoricPrices ? 80 : 0;
