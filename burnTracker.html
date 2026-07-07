@@ -451,6 +451,7 @@
   const PAIR_TRANSFERS_URL = `${MVX_API}/accounts/${DEXSCREENER_PAIR}/transfers`;
   const TECHNICALS_API_URL = `${API_BASE}/api/technicals`;
   const FLOW_SNAPSHOT_API_URL = "https://tcl-event-push.axel4ro.workers.dev/api/technicals";
+  const PRICES_SNAPSHOT_API_URL = "https://tcl-event-push.axel4ro.workers.dev/api/prices";
   const HISTORIC_TRADES_CACHE_KEY = "tcl-burn-historic-trades-v1";
   const HISTORIC_TRADES_CACHE_TTL = 10 * 60 * 1000;
   const HISTORIC_TRADES_CACHE_EXACT_DAYS = 45;
@@ -523,6 +524,17 @@
   }
 
   async function fetchMvxBurned() {
+    // Cloudflare-worker snapshot instead of calling api.multiversx.com straight
+    // from the browser — direct calls are fragile (CORS/rate-limit per visitor).
+    try {
+      const snap = await fetchJson(PRICES_SNAPSHOT_API_URL);
+      const d = snap?.token;
+      if (d?.initialMinted) {
+        const burned  = parseFloat(d.burnt || "0") / 1e18;
+        const supply  = parseFloat(d.initialMinted || "0") / 1e18;
+        return { burned, supply };
+      }
+    } catch (_) {}
     try {
       const d = await fetchJson(`${MVX_API}/tokens/${TCL_TOKEN}`);
       if (!d) return null;
