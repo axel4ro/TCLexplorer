@@ -1196,9 +1196,8 @@
       /* Header wraps on mobile — stats drop to second row as 2×2 grid */
       header { flex-wrap: wrap; gap: 5px; padding: 8px 12px; border-bottom: none; box-shadow: none; }
       .header-logo-mobile { display: block !important; width: 28px; height: 28px; border-radius: 7px; }
-      .header-left { flex: 0 1 auto; min-width: 0; }
-      .site-title { max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
-      .header-right { flex: 1 1 auto; min-width: 0; }
+      .header-left { flex: 1; min-width: 0; }
+      .header-right { flex: 0 0 auto; }
       .stats-bar {
         order: 3; flex: 0 0 100%;
         display: flex; flex-wrap: wrap;
@@ -1230,26 +1229,25 @@
       /* Tabs — hidden on mobile, replaced by dropdown */
       .tabs { display: none; }
 
-      /* Mobile nav dropdown — inline in header, left of the wallet button */
-      .mobile-nav-menu { display: block; flex: 1 1 auto; min-width: 0; padding: 0; margin: 0; position: relative; z-index: 50; background: transparent; }
+      /* Mobile nav dropdown */
+      .mobile-nav-menu { display: block; padding: 6px 10px 10px; position: relative; z-index: 50; background: transparent; border-bottom: none; box-shadow: none; }
       .mobile-menu-trigger {
         width: 100%; background: rgba(47,246,222,0.08);
         border: 1px solid var(--accent); border-radius: 9px;
-        color: var(--text); padding: 7px 8px;
-        font-size: 11px; font-weight: 600; font-family: inherit;
+        color: var(--text); padding: 10px 14px;
+        font-size: 13px; font-weight: 600; font-family: inherit;
         display: flex; justify-content: space-between; align-items: center;
-        cursor: pointer; gap: 4px; min-height: 32px;
+        cursor: pointer; gap: 8px;
       }
-      .mobile-menu-main { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
-      #mobileMenuLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .mobile-menu-chevron { font-size: 12px; color: var(--accent); transition: transform 0.2s; flex-shrink: 0; }
+      .mobile-menu-main { display: flex; align-items: center; gap: 6px; }
+      .mobile-menu-chevron { font-size: 14px; color: var(--accent); transition: transform 0.2s; }
       .mobile-menu-chevron.open { transform: rotate(180deg); }
       .mobile-menu-close-btn {
         display: none; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 800; color: #fff;
         background: linear-gradient(135deg, #7c3aed, #5b21b6);
         border-radius: 8px;
-        width: 24px; height: 24px; line-height: 1; flex-shrink: 0;
+        width: 28px; height: 28px; line-height: 1; flex-shrink: 0;
         border: none;
         box-shadow: 0 2px 8px rgba(109,40,217,0.7), 0 0 0 1.5px rgba(255,255,255,0.15);
       }
@@ -1257,11 +1255,9 @@
       .mobile-menu-dropdown {
         display: none; flex-direction: column; gap: 6px;
         background: rgba(8,13,26,0.97); border: 1px solid var(--card-border);
-        border-radius: 12px; margin-top: 6px; padding: 8px;
+        border-radius: 12px; margin-top: 5px; padding: 8px;
         box-shadow: 0 12px 32px rgba(0,0,0,0.75);
-        position: absolute; top: 100%; right: 0; left: auto;
-        width: min(260px, calc(100vw - 24px));
-        z-index: 100;
+        position: absolute; left: 10px; right: 10px; z-index: 100;
       }
       .mobile-menu-dropdown.open { display: flex; }
       .mobile-menu-dropdown button {
@@ -1344,25 +1340,6 @@
     <div id="stat-contract" style="display:none;"></div>
   </div>
   <div class="header-right">
-    <!-- Mobile-only nav dropdown — sits left of the wallet button -->
-    <div class="mobile-nav-menu" id="mobileNavMenu">
-      <button class="mobile-menu-trigger" id="mobileMenuTrigger" onclick="toggleMobileMenu()">
-        <span class="mobile-menu-main">
-          <span id="mobileMenuLabel">🛒 All Listings</span>
-          <span class="mobile-menu-chevron" id="mobileMenuChevron">▾</span>
-        </span>
-        <span class="mobile-menu-close-btn" id="mobileMenuClose" onclick="event.stopPropagation(); closeMobileMenu()">✕</span>
-      </button>
-      <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
-        <button id="mob-tab-all" class="mob-active" onclick="mobileTabSwitch('all','🛒 All Listings','mob-tab-all')">🛒 All Listings</button>
-        <button id="mob-tab-activity" onclick="mobileTabSwitch('activity','📋 Recent Sales','mob-tab-activity')">📋 Recent Sales</button>
-        <button id="mob-tab-mine" onclick="mobileTabSwitch('mine','👤 My Listings','mob-tab-mine')">👤 My Listings</button>
-        <div class="mobile-menu-divider"></div>
-        <button onclick="openMyNFTsModal(); closeMobileMenu()">📦 My NFTs</button>
-        <button onclick="manualRefresh(); closeMobileMenu()">↻ Refresh</button>
-      </div>
-    </div>
-
     <!-- ── Connect button + QR popover (hidden when connected) -->
     <div class="connect-wrap" id="connectView">
       <button class="btn btn-blue" id="connectTriggerBtn" type="button">
@@ -1422,6 +1399,25 @@
     </div>
   </div>
 </header>
+
+<!-- Mobile-only nav dropdown -->
+<div class="mobile-nav-menu" id="mobileNavMenu">
+  <button class="mobile-menu-trigger" id="mobileMenuTrigger" onclick="toggleMobileMenu()">
+    <span class="mobile-menu-main">
+      <span id="mobileMenuLabel">🛒 All Listings</span>
+      <span class="mobile-menu-chevron" id="mobileMenuChevron">▾</span>
+    </span>
+    <span class="mobile-menu-close-btn" id="mobileMenuClose" onclick="event.stopPropagation(); closeMobileMenu()">✕</span>
+  </button>
+  <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
+    <button id="mob-tab-all" class="mob-active" onclick="mobileTabSwitch('all','🛒 All Listings','mob-tab-all')">🛒 All Listings</button>
+    <button id="mob-tab-activity" onclick="mobileTabSwitch('activity','📋 Recent Sales','mob-tab-activity')">📋 Recent Sales</button>
+    <button id="mob-tab-mine" onclick="mobileTabSwitch('mine','👤 My Listings','mob-tab-mine')">👤 My Listings</button>
+    <div class="mobile-menu-divider"></div>
+    <button onclick="openMyNFTsModal(); closeMobileMenu()">📦 My NFTs</button>
+    <button onclick="manualRefresh(); closeMobileMenu()">↻ Refresh</button>
+  </div>
+</div>
 
 <!-- ════════════ TABS + TOOLBAR ════════════ -->
 <div class="tabs-toolbar-row">
