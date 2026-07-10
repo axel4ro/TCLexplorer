@@ -1623,6 +1623,10 @@ body.sidebar-desktop .section-page.fullpage {
 }
 
 @media (max-width: 768px) {
+  .staking-grid {
+    grid-template-columns: 1fr;
+  }
+
   .staking-scale-shell {
     position: relative;
     width: 100%;
