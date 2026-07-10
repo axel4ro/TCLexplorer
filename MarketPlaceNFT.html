@@ -242,6 +242,7 @@
     .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
     .stat-value { font-size: 15px; font-weight: 700; color: var(--accent); font-family: 'Orbitron', sans-serif; white-space: nowrap; }
     .stat-value.gold { color: var(--gold); }
+    .stat-value-usd { font-size: 10px; font-weight: 600; color: var(--muted); white-space: nowrap; }
 
     /* ── Tabs ── */
     .tabs {
@@ -1317,8 +1318,9 @@
       <div class="stat-value gold" id="stat-floor">— TCL</div>
     </div>
     <div class="stat-item stat-tcl-price-item">
-      <div class="stat-label">TCL Price</div>
-      <div class="stat-value" id="stat-tcl-price">$—</div>
+      <div class="stat-label">Listings Value</div>
+      <div class="stat-value gold" id="stat-listings-value">— TCL</div>
+      <div class="stat-value-usd" id="stat-listings-value-usd">$—</div>
     </div>
     <div class="stat-item">
       <div class="stat-label">Volume TCL</div>
@@ -3511,6 +3513,25 @@ function updateStats() {
     document.getElementById("stat-contract").textContent = `${s.slice(0,10)}…${s.slice(-8)}`;
     document.getElementById("stat-contract").style.color = "var(--accent)";
   }
+  updateListingsValueStat();
+}
+
+function updateListingsValueStat() {
+  const tclEl = document.getElementById("stat-listings-value");
+  const usdEl = document.getElementById("stat-listings-value-usd");
+  if (!tclEl || !usdEl) return;
+  if (!allListings.length) {
+    tclEl.textContent = "— TCL";
+    usdEl.textContent = "$—";
+    return;
+  }
+  const totalAtomic = allListings.reduce((sum, l) => {
+    const p = typeof l.price === "bigint" ? l.price : BigInt(String(l.price));
+    return sum + p;
+  }, 0n);
+  const totalTCL = atomicTokenToNumber(totalAtomic, TCL_DECIMALS);
+  tclEl.textContent = formatDisplayTCL(totalTCL) + " TCL";
+  usdEl.textContent = tclPriceUSD ? `≈ ${formatUSD(totalTCL * tclPriceUSD)}` : "$—";
 }
 
 async function loadTCLPrice() {
@@ -3520,10 +3541,10 @@ async function loadTCLPrice() {
     tclPriceUSD = parseFloat(data?.pair?.priceUsd || data?.pairs?.[0]?.priceUsd || 0);
     if (tclPriceUSD) {
       const priceText = `$${tclPriceUSD.toFixed(6)}`;
-      document.getElementById("stat-tcl-price").textContent = priceText;
       const wtp = document.getElementById("walletTclPrice");
       if (wtp) wtp.lastChild.textContent = " " + priceText;
       updateListingPriceBreakdown();
+      updateListingsValueStat();
     }
   } catch (e) {
     console.warn("Price fetch error", e);
