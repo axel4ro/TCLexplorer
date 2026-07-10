@@ -1272,16 +1272,25 @@
       .mobile-menu-divider { display: none; }
 
 
-      /* Listings grid — 1 col on mobile */
-      #listings-grid { grid-template-columns: 1fr; gap: 10px; padding: 12px 10px; }
+      /* Listings grid — 2 cols on mobile so a full card (image + buttons) fits on screen */
+      #listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px 8px; }
 
       /* NFT Card compact */
-      .nft-card .card-body { padding: 9px 10px; }
-      .nft-card .card-name { font-size: 12px; }
-      .nft-card .card-collection { font-size: 10px; margin: 2px 0; }
+      .nft-card .nft-img-wrap { aspect-ratio: 1 / 0.85; }
+      .nft-card .badge { top: 6px; right: 6px; font-size: 9px; padding: 2px 6px; }
+      .nft-card .card-body { padding: 7px 8px; }
+      .nft-card .card-name { font-size: 11px; margin: 0 0 2px; }
+      .nft-card .card-collection { font-size: 9px; margin: 0 0 5px; }
+      .card-price-row { gap: 5px; margin-top: 2px; }
+      .price-tag { gap: 4px; }
+      .price-tag .tcl-icon { width: 14px; height: 14px; }
       .price-tag .amount { font-size: 12px; }
-      .price-tag .amount-usd { font-size: 10px; }
-      .btn-buy, .btn-cancel { font-size: 12px; padding: 7px 10px; min-height: 34px; }
+      .price-tag .amount-usd { font-size: 9px; }
+      .card-action-row { gap: 4px; flex-wrap: wrap; }
+      .btn-buy, .btn-cancel, .btn-share { font-size: 10px; padding: 6px 7px; min-height: 30px; }
+      .card-action-row .btn-share { flex: 1 1 100%; }
+      .card-action-row .btn-buy, .card-action-row .btn-cancel { flex: 1 1 100%; }
+      .card-storage-bar { font-size: 9px; padding: 3px 6px; }
 
       /* Detail modal — full screen on mobile */
       #detail-modal { align-items: flex-start; padding: 0; }
@@ -1300,7 +1309,6 @@
     }
 
     @media (max-width: 400px) {
-      #listings-grid { grid-template-columns: 1fr; }
       .my-nfts-grid { grid-template-columns: 1fr !important; }
       .tab-btn { font-size: 11px; padding: 7px 8px; }
     }
