@@ -1200,7 +1200,7 @@
       .header-right { flex: 0 0 auto; }
       .stats-bar {
         order: 3; flex: 0 0 100%;
-        display: grid; grid-template-columns: 1fr 1fr;
+        display: flex; flex-wrap: wrap;
         gap: 5px; padding: 3px 0 0;
         justify-content: unset;
       }
@@ -1208,13 +1208,19 @@
         background: var(--card-bg);
         border: 1px solid var(--card-border);
         border-radius: 9px;
-        padding: 5px 10px;
+        padding: 5px 6px;
         text-align: center;
       }
-      .stat-tcl-price-item { grid-column: 1 / -1; }
-      .stat-value { font-size: 13px; white-space: nowrap; }
-      .stat-label { font-size: 10px; white-space: normal; }
-      .stat-value-usd { font-size: 11px; }
+      /* Row 1: Active Listings, Floor Price, Listings Value — 3 across */
+      .stats-bar .stat-item:nth-child(1),
+      .stats-bar .stat-item:nth-child(2),
+      .stats-bar .stat-item:nth-child(3) { flex: 1 1 calc(33.333% - 4px); min-width: 0; }
+      /* Row 2: Volume TCL, Volume $ — 2 across */
+      .stats-bar .stat-item:nth-child(4),
+      .stats-bar .stat-item:nth-child(5) { flex: 1 1 calc(50% - 3px); min-width: 0; }
+      .stat-value { font-size: 12px; white-space: nowrap; }
+      .stat-label { font-size: 9px; white-space: normal; }
+      .stat-value-usd { font-size: 10px; }
       .stats-bar { position: static; transform: none; }
       .sale-row { grid-template-columns: 1fr 1fr; gap: 10px; }
       .sale-parties { grid-column: 1 / -1; }
