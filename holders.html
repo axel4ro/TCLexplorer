@@ -585,9 +585,9 @@
 
     <section class="stats-grid" aria-label="Token statistics">
       <article class="stat-card">
-        <span class="stat-label">TCL Price</span>
-        <strong class="stat-value" id="statPrice">--</strong>
-        <span class="stat-note" id="statPriceChange">Loading...</span>
+        <span class="stat-label">Total TCL Held (Top 100)</span>
+        <strong class="stat-value" id="statTotalHeld">--</strong>
+        <span class="stat-note" id="statTotalHeldUsd">Loading...</span>
       </article>
       <article class="stat-card">
         <span class="stat-label">Market Cap</span>
@@ -684,8 +684,8 @@
         updateCard: document.getElementById("updateCard"),
         updateLabel: document.getElementById("updateLabel"),
         updateDetail: document.getElementById("updateDetail"),
-        statPrice: document.getElementById("statPrice"),
-        statPriceChange: document.getElementById("statPriceChange"),
+        statTotalHeld: document.getElementById("statTotalHeld"),
+        statTotalHeldUsd: document.getElementById("statTotalHeldUsd"),
         statMcap: document.getElementById("statMcap"),
         statHolders: document.getElementById("statHolders"),
         statSupply: document.getElementById("statSupply"),
@@ -909,15 +909,10 @@
           state.loadedAt = Date.now();
 
           // Stats
-          dom.statPrice.textContent = price > 0 ? "$" + price.toFixed(6) : "—";
-          const priceChange = token.priceChange24h;
-          if (priceChange !== undefined && priceChange !== null) {
-            const sign = priceChange >= 0 ? "+" : "";
-            dom.statPriceChange.textContent = `24h: ${sign}${Number(priceChange).toFixed(2)}%`;
-            dom.statPriceChange.style.color = priceChange >= 0 ? "var(--accent)" : "var(--danger)";
-          } else {
-            dom.statPriceChange.textContent = "24h change N/A";
-          }
+          const totalHeld = state.rows.reduce((sum, r) => sum + r.balance, 0);
+          const totalHeldUsd = state.rows.reduce((sum, r) => sum + r.valueUsd, 0);
+          dom.statTotalHeld.textContent = totalHeld > 0 ? fmtTCL(totalHeld) : "—";
+          dom.statTotalHeldUsd.textContent = totalHeldUsd > 0 ? "≈ " + fmtUSD(totalHeldUsd) : "";
 
           const mcap = token.marketCap || (circSupplyNum * price);
           dom.statMcap.textContent = mcap > 0 ? fmtUSD(mcap) : "—";
