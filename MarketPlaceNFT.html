@@ -3575,6 +3575,7 @@ async function loadTCLPrice() {
       if (wtp) wtp.lastChild.textContent = " " + priceText;
       updateListingPriceBreakdown();
       updateListingsValueStat();
+      renderCurrentTab();
     }
   } catch (e) {
     console.warn("Price fetch error", e);
