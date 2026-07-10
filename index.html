@@ -710,6 +710,30 @@
       <div id="apr" class="stat-value">—</div>
       <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
     </div>
+
+    <div class="stat">
+      <div class="stat-top">
+        <span>TCL Staked on NFT - Equipped</span><span class="live-dot"></span>
+      </div>
+      <div id="stakedNft" class="stat-value">—</div>
+      <div id="stakedNftUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-top">
+        <span>TCL Staked on NFT - Loan</span><span class="live-dot"></span>
+      </div>
+      <div id="stakedLoan" class="stat-value">—</div>
+      <div id="stakedLoanUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-top">
+        <span>TCL Staked on Infinity</span><span class="live-dot"></span>
+      </div>
+      <div id="stakedInfinity" class="stat-value">—</div>
+      <div id="stakedInfinityUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+    </div>
   </div>
 
   <div class="staking-search-row">
@@ -2361,6 +2385,30 @@ function toggleLinkedStakingAddress(primaryAddress, event) {
   requestAnimationFrame(applyStakingPortraitScale);
 }
 
+function updateStakingCategoryTotals(data) {
+  const nftEl = document.getElementById("stakedNft");
+  const loanEl = document.getElementById("stakedLoan");
+  const infinityEl = document.getElementById("stakedInfinity");
+  if (!nftEl && !loanEl && !infinityEl) return;
+
+  let nftSum = 0n, loanSum = 0n, infinitySum = 0n;
+  Object.entries(data).forEach(([addr, v]) => {
+    if (addr === "_meta" || !v || typeof v !== "object") return;
+    try { nftSum += BigInt(normalizeIntegerLikeValue(v.nft ?? 0)); } catch {}
+    try { loanSum += BigInt(normalizeIntegerLikeValue(v.loan ?? 0)); } catch {}
+    try { infinitySum += BigInt(normalizeIntegerLikeValue(v.infinity ?? 0)); } catch {}
+  });
+
+  const priceUsd = getCurrentTclPriceUsd();
+  const setCategoryStat = (valueEl, usdEl, sum) => {
+    if (valueEl) valueEl.textContent = formatNumber(getWholeTclAmount(sum, 18)) + " TCL";
+    if (usdEl) usdEl.textContent = priceUsd ? formatTclUsdValue(sum, 18, priceUsd) : "≈ — $";
+  };
+  setCategoryStat(nftEl, document.getElementById("stakedNftUsd"), nftSum);
+  setCategoryStat(loanEl, document.getElementById("stakedLoanUsd"), loanSum);
+  setCategoryStat(infinityEl, document.getElementById("stakedInfinityUsd"), infinitySum);
+}
+
 function refreshLeaderboardMetaValues(options = {}) {
   const priceUsd = options.priceUsd || getCurrentTclPriceUsd();
   const rewardsPayload = getCurrentRewardsStats(options.rewards || null);
@@ -2399,6 +2447,8 @@ function renderLeaderboardRows(data) {
     body.innerHTML = '<tr><td colspan="6" style="padding:10px;text-align:center;">⚠️ No data available (update in progress)</td></tr>';
     return false;
   }
+
+  updateStakingCategoryTotals(data);
 
   const results = Object.entries(data).map(([addr, v]) => ({
     addr: String(addr || ""),
