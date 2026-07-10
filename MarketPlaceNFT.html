@@ -1211,13 +1211,13 @@
         padding: 5px 6px;
         text-align: center;
       }
-      /* Row 1: Active Listings, Floor Price, Listings Value — 3 across */
-      .stats-bar .stat-item:nth-child(1),
-      .stats-bar .stat-item:nth-child(2),
-      .stats-bar .stat-item:nth-child(3) { flex: 1 1 calc(33.333% - 4px); min-width: 0; }
-      /* Row 2: Volume TCL, Volume $ — 2 across */
-      .stats-bar .stat-item:nth-child(4),
-      .stats-bar .stat-item:nth-child(5) { flex: 1 1 calc(50% - 3px); min-width: 0; }
+      /* Row 1: Listings Value, Floor Price — 2 across */
+      .stats-bar .stat-tcl-price-item { order: 1; flex: 1 1 calc(50% - 3px); min-width: 0; }
+      .stats-bar .stat-floor-price { order: 2; flex: 1 1 calc(50% - 3px); min-width: 0; }
+      /* Row 2: Active Listings, Volume TCL, Volume $ — 3 across */
+      .stats-bar .stat-active-listings { order: 3; flex: 1 1 calc(33.333% - 4px); min-width: 0; }
+      .stats-bar .stat-volume-tcl { order: 4; flex: 1 1 calc(33.333% - 4px); min-width: 0; }
+      .stats-bar .stat-volume-usd { order: 5; flex: 1 1 calc(33.333% - 4px); min-width: 0; }
       .stat-value { font-size: 12px; white-space: nowrap; }
       .stat-label { font-size: 9px; white-space: normal; }
       .stat-value-usd { font-size: 10px; }
@@ -1316,11 +1316,11 @@
     <h1 class="site-title">NFT Marketplace</h1>
   </div>
   <div class="stats-bar">
-    <div class="stat-item">
+    <div class="stat-item stat-active-listings">
       <div class="stat-label">Active Listings</div>
       <div class="stat-value" id="stat-listings">—</div>
     </div>
-    <div class="stat-item">
+    <div class="stat-item stat-floor-price">
       <div class="stat-label">Floor Price</div>
       <div class="stat-value gold" id="stat-floor">— TCL</div>
     </div>
@@ -1329,11 +1329,11 @@
       <div class="stat-value gold" id="stat-listings-value">— TCL</div>
       <div class="stat-value-usd" id="stat-listings-value-usd">$—</div>
     </div>
-    <div class="stat-item">
+    <div class="stat-item stat-volume-tcl">
       <div class="stat-label">Volume TCL</div>
       <div class="stat-value gold" id="stat-volume-tcl">—</div>
     </div>
-    <div class="stat-item">
+    <div class="stat-item stat-volume-usd">
       <div class="stat-label">Volume $</div>
       <div class="stat-value" id="stat-volume-usd">$—</div>
     </div>
