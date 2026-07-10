@@ -40,6 +40,13 @@
       padding-top: env(safe-area-inset-top, 0px);
     }
 
+    /* Keep fullpage iframes (Marketplace, Swap, etc.) below the taller
+       iOS topbar — .app-topbar grows by 12px + the notch inset above,
+       but .section-page.fullpage otherwise anchors to a fixed 56px. */
+    html.is-ios .section-page.fullpage {
+      top: calc(var(--topbar-h) + 12px + env(safe-area-inset-top, 0px));
+    }
+
     .token-hero-head {
       display: flex;
       align-items: center;
