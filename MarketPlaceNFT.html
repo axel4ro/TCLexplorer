@@ -724,6 +724,7 @@
     .modal-price-usd { font-size: 14px; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400; }
     .modal-action-row { display: flex; gap: 10px; margin-top: 14px; }
     .modal-action-row button { flex: 1; padding: 13px; font-size: 15px; border-radius: 10px; }
+    .modal-action-row .btn-share { display: none; }
     .modal-storage-section {
       margin-top: 18px;
       padding: 12px 14px;
@@ -1298,7 +1299,8 @@
       .modal-layout { grid-template-columns: 1fr; gap: 16px; }
       .modal-img-col img { max-height: 260px; }
       #detail-modal .modal-close { position: absolute; top: calc(40px + env(safe-area-inset-top, 0px)); right: 8px; }
-      #detail-modal .modal-share { top: calc(40px + env(safe-area-inset-top, 0px)); right: 52px; padding: 0 10px; font-size: 13px; }
+      #detail-modal > .modal-box > .modal-share { display: none; }
+      .modal-action-row .btn-share { display: inline-flex; }
 
       /* My NFTs modal */
       .my-nfts-modal-box { padding: 16px; border-radius: 0; }
@@ -2341,7 +2343,8 @@ function openDetail(listingId) {
           ${isMine
             ? `<button class="btn-cancel" onclick="cancelListing(${listingId}); closeDetail()">Cancel Listing</button>
                <button class="btn-secondary" onclick="updateListingPrice(${listingId})">Update Price</button>`
-            : `<button class="btn-buy" onclick="buyNFT(${listingId})">🛒 Buy with TCL</button>`
+            : `<button class="btn-share" type="button" onclick="shareListing('${nft.identifier || ''}', event)" title="Copy link to this NFT">🔗 Share</button>
+               <button class="btn-buy" onclick="buyNFT(${listingId})">🛒 Buy with TCL</button>`
           }
         </div>
         ${isMine ? `
