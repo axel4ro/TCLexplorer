@@ -1188,14 +1188,15 @@
         gap: 5px;
       }
       .tabs-toolbar-row .search-box { grid-column: 1 / -1; min-width: 0; }
-      .toolbar { padding: 6px 10px; gap: 5px; }
+      .toolbar { padding: 4px 10px 6px; gap: 5px; }
       .search-box { min-width: 0; width: 100%; flex: 1 1 100%; padding: 6px 10px; font-size: 12px; }
       .toolbar-select { flex: 1; min-width: 0; font-size: 11px; padding: 5px 6px; }
       .toolbar .btn-primary,
       .toolbar .btn-secondary { flex: 1; font-size: 13px; padding: 8px 10px; }
 
       /* Header wraps on mobile — stats drop to second row as 2×2 grid */
-      header { flex-wrap: wrap; gap: 5px; padding: 8px 12px; border-bottom: none; box-shadow: none; }
+      #sticky-top { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); }
+      header { flex-wrap: wrap; gap: 4px; padding: 5px 12px; border-bottom: none; box-shadow: none; }
       .header-logo-mobile { display: block !important; width: 28px; height: 28px; border-radius: 7px; }
       .header-left { flex: 1; min-width: 0; }
       .header-right { flex: 0 0 auto; }
@@ -1231,7 +1232,7 @@
       .tabs { display: none; }
 
       /* Mobile nav dropdown */
-      .mobile-nav-menu { display: block; padding: 6px 10px 10px; position: relative; z-index: 50; background: transparent; border-bottom: none; box-shadow: none; }
+      .mobile-nav-menu { display: block; padding: 5px 10px 4px; position: relative; z-index: 50; background: transparent; border-bottom: none; box-shadow: none; }
       .mobile-menu-trigger {
         width: 100%; background: rgba(47,246,222,0.08);
         border: 1px solid var(--accent); border-radius: 9px;
@@ -1274,7 +1275,7 @@
 
 
       /* Listings grid — 2 cols on mobile so a full card (image + buttons) fits on screen */
-      #listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px 8px; }
+      #listings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 6px 8px; }
 
       /* NFT Card compact */
       .nft-card .nft-img-wrap { aspect-ratio: 1 / 0.85; }
@@ -1333,6 +1334,7 @@
     <div class="stat-item stat-floor-price">
       <div class="stat-label">Floor Price</div>
       <div class="stat-value gold" id="stat-floor">— TCL</div>
+      <div class="stat-value-usd" id="stat-floor-usd">$—</div>
     </div>
     <div class="stat-item stat-tcl-price-item">
       <div class="stat-label">Listings Value</div>
@@ -3537,19 +3539,24 @@ function updateStats() {
 function updateListingsValueStat() {
   const tclEl = document.getElementById("stat-listings-value");
   const usdEl = document.getElementById("stat-listings-value-usd");
-  if (!tclEl || !usdEl) return;
+  const floorUsdEl = document.getElementById("stat-floor-usd");
   if (!allListings.length) {
-    tclEl.textContent = "— TCL";
-    usdEl.textContent = "$—";
+    if (tclEl) tclEl.textContent = "— TCL";
+    if (usdEl) usdEl.textContent = "$—";
+    if (floorUsdEl) floorUsdEl.textContent = "$—";
     return;
   }
-  const totalAtomic = allListings.reduce((sum, l) => {
-    const p = typeof l.price === "bigint" ? l.price : BigInt(String(l.price));
-    return sum + p;
-  }, 0n);
+  const atomics = allListings.map(l => typeof l.price === "bigint" ? l.price : BigInt(String(l.price)));
+  const totalAtomic = atomics.reduce((sum, p) => sum + p, 0n);
   const totalTCL = atomicTokenToNumber(totalAtomic, TCL_DECIMALS);
-  tclEl.textContent = Math.round(totalTCL).toLocaleString("en-US") + " TCL";
-  usdEl.textContent = tclPriceUSD ? `≈ ${formatUSD(totalTCL * tclPriceUSD)}` : "$—";
+  if (tclEl) tclEl.textContent = Math.round(totalTCL).toLocaleString("en-US") + " TCL";
+  if (usdEl) usdEl.textContent = tclPriceUSD ? `≈ ${formatUSD(totalTCL * tclPriceUSD)}` : "$—";
+
+  if (floorUsdEl) {
+    const floorAtomic = atomics.reduce((min, p) => (p < min ? p : min), atomics[0]);
+    const floorTCL = atomicTokenToNumber(floorAtomic, TCL_DECIMALS);
+    floorUsdEl.textContent = tclPriceUSD ? `≈ ${formatUSD(floorTCL * tclPriceUSD)}` : "$—";
+  }
 }
 
 async function loadTCLPrice() {
