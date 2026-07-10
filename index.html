@@ -40,11 +40,12 @@
       padding-top: env(safe-area-inset-top, 0px);
     }
 
-    /* Keep fullpage iframes (Marketplace, Swap, etc.) below the taller
-       iOS topbar — .app-topbar grows by 12px + the notch inset above,
-       but .section-page.fullpage otherwise anchors to a fixed 56px. */
-    html.is-ios .section-page.fullpage {
-      top: calc(var(--topbar-h) + 12px + env(safe-area-inset-top, 0px));
+    /* Keep fullpage iframes (Marketplace, Swap, etc.) below the topbar.
+       --topbar-actual-h is measured live in JS (see syncTopbarHeight),
+       so this tracks the topbar's real rendered height on any device/
+       notch instead of guessing a fixed offset. */
+    .section-page.fullpage {
+      top: var(--topbar-actual-h, var(--topbar-h));
     }
 
     .token-hero-head {
@@ -4513,12 +4514,31 @@ function applySidebarLayout() {
   schedulePageFits();
 }
 
+// Measures the topbar's real rendered height (which varies by platform —
+// iOS adds extra padding for the notch/Dynamic Island) and exposes it as
+// --topbar-actual-h so fullpage iframes (Marketplace, Swap, etc.) start
+// exactly below it instead of relying on a guessed fixed offset.
+function syncTopbarHeight() {
+  const topbar = document.querySelector(".app-topbar");
+  if (!topbar) return;
+  const height = topbar.getBoundingClientRect().height;
+  if (height > 0) {
+    document.documentElement.style.setProperty("--topbar-actual-h", `${height}px`);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   syncPwaInstallState();
   bindPwaDisplayModeWatcher();
   applySidebarLayout();
+  syncTopbarHeight();
   window.addEventListener("resize", scheduleSidebarLayout, { passive: true });
   window.addEventListener("resize", syncTopbarCtaRail, { passive: true });
+  window.addEventListener("resize", syncTopbarHeight, { passive: true });
+  window.addEventListener("orientationchange", syncTopbarHeight, { passive: true });
+  if (window.ResizeObserver) {
+    new ResizeObserver(syncTopbarHeight).observe(document.querySelector(".app-topbar"));
+  }
   bindTopbarShareControls();
   syncTopbarUtilityRotation();
 
