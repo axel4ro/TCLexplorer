@@ -585,7 +585,7 @@
 
     <section class="stats-grid" aria-label="Token statistics">
       <article class="stat-card">
-        <span class="stat-label">Total TCL Held (Top 100)</span>
+        <span class="stat-label">Total TCL Held</span>
         <strong class="stat-value" id="statTotalHeld">--</strong>
         <span class="stat-note" id="statTotalHeldUsd">Loading...</span>
       </article>
@@ -658,6 +658,10 @@
       const API_BASE = "https://api.multiversx.com";
       const EXPLORER_ACCOUNTS = "https://explorer.multiversx.com/accounts/";
       const FETCH_SIZE = 500;
+      // Our own indexed snapshot caps out around 600 regardless of the size
+      // requested, so the full-holder total is summed straight from the
+      // MultiversX API instead, which reliably returns every holder.
+      const TOTAL_FETCH_SIZE = 2000;
       const REFRESH_MS = 5 * 60 * 1000;
 
       // Excluded: main wallet + any extra protocol-owned addresses
@@ -868,9 +872,21 @@
             return r2.json();
           }
 
-          const [pricesRes, rawHolders] = await Promise.all([
+          async function fetchAllHolderBalances() {
+            try {
+              const r = await fetch(`${API_BASE}/tokens/${TOKEN_ID}/accounts?size=${TOTAL_FETCH_SIZE}`);
+              if (!r.ok) return null;
+              const a = await r.json();
+              return Array.isArray(a) ? a : null;
+            } catch (_) {
+              return null;
+            }
+          }
+
+          const [pricesRes, rawHolders, allHolders] = await Promise.all([
             fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices"),
-            fetchHolders()
+            fetchHolders(),
+            fetchAllHolderBalances()
           ]);
 
           if (!pricesRes.ok) throw new Error("API error");
@@ -908,9 +924,18 @@
           state.tokenPrice = price;
           state.loadedAt = Date.now();
 
-          // Stats
-          const totalHeld = state.rows.reduce((sum, r) => sum + r.balance, 0);
-          const totalHeldUsd = state.rows.reduce((sum, r) => sum + r.valueUsd, 0);
+          // Stats — sum every holder we could fetch (not just the top 100
+          // shown in the leaderboard), falling back to the top-100 sum if
+          // the full-list fetch failed.
+          let totalHeld, totalHeldUsd;
+          if (allHolders) {
+            const allFiltered = allHolders.filter(h => !isSC(h) && !EXCLUDED.has(h.address));
+            totalHeld = allFiltered.reduce((sum, h) => sum + rawToFloat(h.balance, decimals), 0);
+            totalHeldUsd = totalHeld * price;
+          } else {
+            totalHeld = state.rows.reduce((sum, r) => sum + r.balance, 0);
+            totalHeldUsd = state.rows.reduce((sum, r) => sum + r.valueUsd, 0);
+          }
           dom.statTotalHeld.textContent = totalHeld > 0 ? fmtTCL(totalHeld) : "—";
           dom.statTotalHeldUsd.textContent = totalHeldUsd > 0 ? "≈ " + fmtUSD(totalHeldUsd) : "";
 
