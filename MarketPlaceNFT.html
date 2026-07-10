@@ -216,7 +216,7 @@
     .stats-bar {
       display: flex;
       gap: 6px;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
       position: absolute;
       left: 50%;
@@ -233,11 +233,16 @@
       .stat-label { font-size: 9px; letter-spacing: 0.4px; }
     }
     .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 10px;
       padding: 6px 14px;
+      min-width: 0;
     }
     .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
     .stat-value { font-size: 15px; font-weight: 700; color: var(--accent); font-family: 'Orbitron', sans-serif; white-space: nowrap; }
