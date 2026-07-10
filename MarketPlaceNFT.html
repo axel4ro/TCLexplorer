@@ -3530,7 +3530,7 @@ function updateListingsValueStat() {
     return sum + p;
   }, 0n);
   const totalTCL = atomicTokenToNumber(totalAtomic, TCL_DECIMALS);
-  tclEl.textContent = formatDisplayTCL(totalTCL) + " TCL";
+  tclEl.textContent = Math.round(totalTCL).toLocaleString("en-US") + " TCL";
   usdEl.textContent = tclPriceUSD ? `≈ ${formatUSD(totalTCL * tclPriceUSD)}` : "$—";
 }
 
