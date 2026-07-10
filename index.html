@@ -687,9 +687,13 @@
   </small>
 
   <div id="stakingStats" class="staking-grid">
-    <div class="stat">
+    <div class="stat stat-with-info">
       <div class="stat-top">
-        <span>Total TCL Staked</span><span class="live-dot"></span>
+        <span class="stat-info-wrap">
+          <span>Total TCL Staked</span>
+          <button type="button" class="stat-info-btn" id="stakedInfoBtn" onclick="toggleStakedInfo(event)" aria-label="Staking breakdown by category">ⓘ</button>
+        </span>
+        <span class="live-dot"></span>
       </div>
       <div id="staked" class="stat-value">—</div>
       <div id="stakedUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
@@ -710,29 +714,31 @@
       <div id="apr" class="stat-value">—</div>
       <div id="aprUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">—</div>
     </div>
+  </div>
 
-    <div class="stat">
-      <div class="stat-top">
-        <span>TCL Staked on NFT - Equipped</span><span class="live-dot"></span>
+  <div class="stat-info-overlay" id="stakedInfoPopover" hidden onclick="if (event.target === this) closeStakedInfo(event)">
+    <div class="stat-info-modal">
+      <div class="stat-info-modal-head">
+        <span class="stat-info-modal-title">🏆 Staking Breakdown</span>
+        <button type="button" class="stat-info-close" onclick="closeStakedInfo(event)" aria-label="Close">✕</button>
       </div>
-      <div id="stakedNft" class="stat-value">—</div>
-      <div id="stakedNftUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
-    </div>
-
-    <div class="stat">
-      <div class="stat-top">
-        <span>TCL Staked on NFT - Loan</span><span class="live-dot"></span>
+      <div class="stat-info-row">
+        <span>NFT - Equipped</span>
+        <span class="stat-info-values"><b id="stakedNft">—</b><small id="stakedNftUsd">≈ — $</small></span>
       </div>
-      <div id="stakedLoan" class="stat-value">—</div>
-      <div id="stakedLoanUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
-    </div>
-
-    <div class="stat">
-      <div class="stat-top">
-        <span>TCL Staked on Infinity</span><span class="live-dot"></span>
+      <div class="stat-info-row">
+        <span>NFT - Loan</span>
+        <span class="stat-info-values"><b id="stakedLoan">—</b><small id="stakedLoanUsd">≈ — $</small></span>
       </div>
-      <div id="stakedInfinity" class="stat-value">—</div>
-      <div id="stakedInfinityUsd" style="font-size:13px; color:#9ca3af; margin-top:4px;">≈ — $</div>
+      <div class="stat-info-row">
+        <span>Infinity</span>
+        <span class="stat-info-values"><b id="stakedInfinity">—</b><small id="stakedInfinityUsd">≈ — $</small></span>
+      </div>
+      <div class="stat-info-divider"></div>
+      <div class="stat-info-row stat-info-row-highlight">
+        <span>💰 Withdrawable</span>
+        <span class="stat-info-values"><b id="stakedWithdrawable">—</b><small id="stakedWithdrawableUsd">≈ — $</small></span>
+      </div>
     </div>
   </div>
 
@@ -2398,6 +2404,7 @@ function updateStakingCategoryTotals(data) {
     try { loanSum += BigInt(normalizeIntegerLikeValue(v.loan ?? 0)); } catch {}
     try { infinitySum += BigInt(normalizeIntegerLikeValue(v.infinity ?? 0)); } catch {}
   });
+  const withdrawableSum = nftSum + loanSum;
 
   const priceUsd = getCurrentTclPriceUsd();
   const setCategoryStat = (valueEl, usdEl, sum) => {
@@ -2407,7 +2414,28 @@ function updateStakingCategoryTotals(data) {
   setCategoryStat(nftEl, document.getElementById("stakedNftUsd"), nftSum);
   setCategoryStat(loanEl, document.getElementById("stakedLoanUsd"), loanSum);
   setCategoryStat(infinityEl, document.getElementById("stakedInfinityUsd"), infinitySum);
+  setCategoryStat(
+    document.getElementById("stakedWithdrawable"),
+    document.getElementById("stakedWithdrawableUsd"),
+    withdrawableSum
+  );
 }
+
+function toggleStakedInfo(event) {
+  event.stopPropagation();
+  const overlay = document.getElementById("stakedInfoPopover");
+  if (overlay) overlay.hidden = false;
+}
+
+function closeStakedInfo(event) {
+  if (event) event.stopPropagation();
+  const overlay = document.getElementById("stakedInfoPopover");
+  if (overlay) overlay.hidden = true;
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeStakedInfo();
+});
 
 function refreshLeaderboardMetaValues(options = {}) {
   const priceUsd = options.priceUsd || getCurrentTclPriceUsd();
