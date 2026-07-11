@@ -1889,46 +1889,6 @@ async function fetchVolumeDexPair() {
   return p?.pair || (Array.isArray(p?.pairs) ? p.pairs[0] : null);
 }
 
-async function fetchVolumeTransferHistory() {
-  const transfers = [];
-  const listingTs = Math.floor(new Date(VOLUME_CONFIG.listingDate).getTime()/1000);
-  let oldestTs=null, reachedListingStart=false, hitPageLimit=false, exhaustedHistory=false, beforeCursor=null;
-  for (let pi=0; pi<VOLUME_CONFIG.transferMaxPages; pi++) {
-    const params = new URLSearchParams({ size: String(VOLUME_CONFIG.transferPageSize), status:"success", order:"desc" });
-    if (beforeCursor!=null) params.set("before", String(beforeCursor));
-    const page = await fetchAnalyticsJson(`${VOLUME_CONFIG.transferUrlBase}?${params}`, 3);
-    if (!Array.isArray(page)||!page.length) { exhaustedHistory=true; break; }
-    transfers.push(...page);
-    const pts = page.map(i=>Number(i?.timestamp)).filter(Number.isFinite);
-    if (pts.length) oldestTs = oldestTs==null ? Math.min(...pts) : Math.min(oldestTs,...pts);
-    if (oldestTs!=null && oldestTs<=listingTs) { reachedListingStart=true; break; }
-    if (page.length < VOLUME_CONFIG.transferPageSize) { exhaustedHistory=true; break; }
-    beforeCursor = oldestTs!=null ? oldestTs-1 : null;
-    if (!beforeCursor || beforeCursor<=0) { exhaustedHistory=true; break; }
-    if (pi===VOLUME_CONFIG.transferMaxPages-1) hitPageLimit=true;
-  }
-  return { transfers, reachedListingStart, hitPageLimit, oldestTimestamp:oldestTs, exhaustedHistory };
-}
-
-async function fetchVolumeRecentTransferHistory(afterTimestamp) {
-  if (!Number.isFinite(afterTimestamp)) return { transfers:[], hitPageLimit:false, oldestTimestamp:null, exhaustedHistory:true };
-  const transfers = [];
-  let newestTs=null, hitPageLimit=false, exhaustedHistory=false, afterCursor=Math.floor(afterTimestamp)+1;
-  for (let pi=0; pi<VOLUME_CONFIG.recentTransferMaxPages; pi++) {
-    const params = new URLSearchParams({ size:String(VOLUME_CONFIG.recentTransferPageSize), status:"success", order:"asc", after:String(afterCursor) });
-    const page = await fetchAnalyticsJson(`${VOLUME_CONFIG.transferUrlBase}?${params}`, 3);
-    if (!Array.isArray(page)||!page.length) { exhaustedHistory=true; break; }
-    transfers.push(...page);
-    const pts = page.map(i=>Number(i?.timestamp)).filter(Number.isFinite);
-    if (pts.length) newestTs = newestTs==null ? Math.max(...pts) : Math.max(newestTs,...pts);
-    if (page.length < VOLUME_CONFIG.recentTransferPageSize) { exhaustedHistory=true; break; }
-    afterCursor = newestTs!=null ? newestTs+1 : afterCursor+1;
-    if (!Number.isFinite(afterCursor)||afterCursor<=0) { exhaustedHistory=true; break; }
-    if (pi===VOLUME_CONFIG.recentTransferMaxPages-1) hitPageLimit=true;
-  }
-  return { transfers, hitPageLimit, oldestTimestamp: transfers.length ? (Number(transfers[0]?.timestamp)||null) : null, exhaustedHistory };
-}
-
 // api.multiversx.com/accounts/{pair}/transfers is persistently 429-blocked for
 // the VPS's own IP (Cloudflare rate limiting), so incremental live fetches
 // above never land — the snapshot would otherwise freeze at whatever trade was
@@ -1959,42 +1919,22 @@ function isValidTechnicalTrade(t) {
 function normalizeTechnicalsTrades(trades) {
   return (Array.isArray(trades)?trades:[]).filter(isValidTechnicalTrade).map(normalizeTechnicalTrade).sort((a,b)=>a.timestamp-b.timestamp);
 }
-function mergeTechnicalTradeLists(existing, incoming) {
-  const m = new Map();
-  for (const t of existing||[]) if (isValidTechnicalTrade(t)) m.set(t.hash, normalizeTechnicalTrade(t));
-  for (const t of incoming||[]) if (isValidTechnicalTrade(t)) m.set(t.hash, normalizeTechnicalTrade(t));
-  return Array.from(m.values()).sort((a,b)=>a.timestamp-b.timestamp);
-}
 function createTechnicalsSnapshot({ pair, trades, warnings, fetchMeta }) {
   const nt = normalizeTechnicalsTrades(trades);
   const latestTradeTimestamp = Number(nt[nt.length-1]?.timestamp)||0;
-  return { ok:true, version:1, meta:{ updatedAt:new Date().toISOString(), source:"Server API", endpoints:{ dex:VOLUME_CONFIG.dexUrl, transfers:VOLUME_CONFIG.transferUrlBase }, warnings:Array.isArray(warnings)?warnings:[], fetchMeta }, pair, trades:nt, latestTradeTimestamp };
+  return { ok:true, version:1, meta:{ updatedAt:new Date().toISOString(), source:"Server API", warnings:Array.isArray(warnings)?warnings:[], fetchMeta }, pair, trades:nt, latestTradeTimestamp };
 }
 
-async function buildTechnicalsSnapshot(currentSnapshot=null) {
+// Same 429 wall as volume (see buildVolumeSnapshotFromDb) — rebuild from the
+// indexed DB instead of live api.multiversx.com transfer pagination.
+async function buildTechnicalsSnapshotFromDb() {
   const warnings = [];
   const nowSec = Math.floor(Date.now()/1000);
-  let pair = currentSnapshot?.pair || null;
+  let pair = null;
   try { pair = await fetchVolumeDexPair(); } catch(e) { warnings.push(`DexScreener: ${e?.message}`); }
-  const pairRef = { pairAddress:pair?.pairAddress||currentSnapshot?.pair?.pairAddress||VOLUME_CONFIG.pairAddress, baseToken:{address:pair?.baseToken?.address||currentSnapshot?.pair?.baseToken?.address||VOLUME_CONFIG.baseTokenAddress}, quoteToken:{address:pair?.quoteToken?.address||currentSnapshot?.pair?.quoteToken?.address||VOLUME_CONFIG.quoteTokenAddress} };
-  const baseTrades = normalizeTechnicalsTrades(currentSnapshot?.trades);
-  const latestTs = Number(currentSnapshot?.latestTradeTimestamp ?? baseTrades[baseTrades.length-1]?.timestamp);
-
-  if (!baseTrades.length) {
-    try {
-      const fh = await fetchVolumeTransferHistory();
-      const ft = normalizeTechnicalsTrades(parseVolumeTrades(fh.transfers, pairRef));
-      if (!ft.length) throw new Error("No trades from full history");
-      return createTechnicalsSnapshot({ pair, trades:ft, warnings, fetchMeta:{ reachedListingStart:fh.reachedListingStart, hitPageLimit:fh.hitPageLimit, oldestTimestamp:fh.oldestTimestamp, exhaustedHistory:fh.exhaustedHistory!==false, recentTransfers:fh.transfers.length, parsedTrades:ft.length, snapshotAt:nowSec, sourceLabel:"server full" } });
-    } catch(e) { warnings.push(`Full MVX refresh: ${e?.message}`); if (!baseTrades.length) throw e; }
-  }
-
-  let rh = { transfers:[], hitPageLimit:false, oldestTimestamp:null, exhaustedHistory:true };
-  try { rh = await fetchVolumeRecentTransferHistory(latestTs); } catch(e) { warnings.push(`MVX transfers: ${e?.message}`); }
-  const liveTrades = normalizeTechnicalsTrades(parseVolumeTrades(rh.transfers, pairRef));
-  const trades = mergeTechnicalTradeLists(baseTrades, liveTrades);
-  if (!trades.length) throw new Error("No cached swap trades available for technicals.");
-  return createTechnicalsSnapshot({ pair, trades, warnings, fetchMeta:{ hitPageLimit:rh.hitPageLimit, oldestTimestamp:rh.oldestTimestamp, exhaustedHistory:rh.exhaustedHistory!==false, recentTransfers:Array.isArray(rh.transfers)?rh.transfers.length:0, parsedTrades:liveTrades.length, snapshotAt:nowSec, sourceLabel:liveTrades.length?"server cache + live":"server cache" } });
+  const trades = await computeMarketTradesFromDb(pool, VOLUME_CONFIG.pairAddress);
+  if (!trades.length) throw new Error("No trades available from indexed DB for technicals.");
+  return createTechnicalsSnapshot({ pair, trades, warnings, fetchMeta:{ parsedTrades:trades.length, snapshotAt:nowSec, sourceLabel:"indexed DB (tcl_transfers)" } });
 }
 
 // ── PNL fast helpers ───────────────────────────────────────────────────────────
@@ -2389,11 +2329,10 @@ app.get("/api/technicals", async (req, res) => {
     let snapshot = cacheGet(CACHE_KEY);
     if (!snapshot) {
       try {
-        snapshot = await buildTechnicalsSnapshot(_technicalsLastGood);
+        snapshot = await buildTechnicalsSnapshotFromDb();
         cacheSet(CACHE_KEY, snapshot, TTL_MS);
         _technicalsLastGood = snapshot;
       } catch (buildErr) {
-        // api.multiversx.com transfers 429 → serve last-good instead of 502.
         if (_technicalsLastGood) {
           return ok(res, { ..._technicalsLastGood, meta: { ...(_technicalsLastGood.meta || {}), stale: true } });
         }
@@ -2403,7 +2342,7 @@ app.get("/api/technicals", async (req, res) => {
       // Refresh in background if stale
       const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
       if (Date.now() - updatedAt > 4 * 60 * 1000) {
-        buildTechnicalsSnapshot(snapshot)
+        buildTechnicalsSnapshotFromDb()
           .then(s => { cacheSet(CACHE_KEY, s, TTL_MS); _technicalsLastGood = s; })
           .catch(e => console.error("Technicals bg refresh:", e.message));
       }
