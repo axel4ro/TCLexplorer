@@ -22,6 +22,7 @@ import pg from "pg";
 import { createHash, createHmac, randomBytes } from "crypto";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import webpush from "web-push";
 import {
   Account,
   Address,
@@ -69,6 +70,60 @@ const WHEEL_DRAW_INTERVAL_MS = 60 * 1000;
 const WHEEL_ENTRY_DOMAIN = "tclexplorer.com";
 const WHEEL_PAYOUT_PENDING_STATUSES = ["submitting", "submitted"];
 let wheelPayoutAccountPromise = null;
+
+// ── Push notifications (event reminders + claim reminders) ────────────────────
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:admin@thecursedland.com";
+const PUSH_EVENTS_URL = process.env.EVENTS_URL || "https://tclexplorer.com/weekly_events.json";
+const PUSH_DISPATCH_INTERVAL_MS = 5 * 60 * 1000;
+const PUSH_LOOKBACK_MS = Number(process.env.EVENT_PUSH_LOOKBACK_MINUTES || 6) * 60 * 1000;
+const CLAIM_LOOKBACK_MS = Number(process.env.CLAIM_REMINDER_LOOKBACK_MINUTES || 6) * 60 * 1000;
+const PUSH_SENT_RETENTION_SQL = "14 days";
+const CLAIM_SENT_RETENTION_SQL = "60 days";
+const DEFAULT_REMINDER_MINUTES = 15;
+const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
+const CLAIM_DEFAULT_EARLY_DAYS = 7;
+const PUSH_DAY_MS = 24 * 60 * 60 * 1000;
+const PUSH_WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
+
+const EVENT_COPY = {
+  en: {
+    reminderTitle: "{name} starts in {minutes} min",
+    liveTitle: "{name} is live now",
+    midpointTitle: "{name} is halfway through",
+    endTitle: "{name} has ended",
+    defaultBody: "The Cursed Land weekly event"
+  },
+  ro: {
+    reminderTitle: "{name} incepe in {minutes} min",
+    liveTitle: "{name} este activ acum",
+    midpointTitle: "{name} este la jumatate",
+    endTitle: "{name} s-a incheiat",
+    defaultBody: "Eveniment saptamanal The Cursed Land"
+  }
+};
+
+const CLAIM_COPY = {
+  en: {
+    defaultLabel: "Automatic claim",
+    earlyTitle: "Claim reminder: {days} days left",
+    earlyBody: "{label}: {days} days left.",
+    finalTitle: "Claim reminder: last day",
+    finalBody: "{label}: final day."
+  },
+  ro: {
+    defaultLabel: "Revendicare automata",
+    earlyTitle: "Reminder claim: mai ai {days} zile",
+    earlyBody: "{label}: mai ai {days} zile.",
+    finalTitle: "Reminder claim: ultima zi",
+    finalBody: "{label}: ultima zi."
+  }
+};
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 // Trust Cloudflare as the single upstream proxy — gives correct req.ip
@@ -3645,6 +3700,533 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  PUSH NOTIFICATIONS API  —  /api/push/*  (event reminders + claim reminders)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function pushSubscriptionId(endpoint) {
+  return createHash("sha256").update(String(endpoint)).digest("hex");
+}
+
+function isValidPushSubscription(subscription) {
+  return Boolean(
+    subscription &&
+    typeof subscription.endpoint === "string" &&
+    subscription.keys &&
+    typeof subscription.keys.p256dh === "string" &&
+    typeof subscription.keys.auth === "string"
+  );
+}
+
+function normalizePushLang(value) {
+  const lang = String(value || "en").toLowerCase().split("-")[0];
+  return lang === "ro" ? "ro" : "en";
+}
+
+function normalizeReminderMinutes(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return DEFAULT_REMINDER_MINUTES;
+  return Math.min(120, Math.max(0, Math.round(parsed)));
+}
+
+function resolveReminderMinutes(value) {
+  const normalized = normalizeReminderMinutes(value);
+  return normalized === LEGACY_DEFAULT_REMINDER_MINUTES ? DEFAULT_REMINDER_MINUTES : normalized;
+}
+
+function normalizeClaimDays(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return NaN;
+  return Math.min(3650, Math.max(1, Math.round(parsed)));
+}
+
+function normalizeClaimEarlyDays(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return CLAIM_DEFAULT_EARLY_DAYS;
+  return Math.min(365, Math.max(1, Math.round(parsed)));
+}
+
+function normalizeClaimLabel(value, fallback = "Automatic claim") {
+  const label = String(value || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  return label || fallback;
+}
+
+function formatPushTemplate(template, vars) {
+  let value = template;
+  Object.entries(vars || {}).forEach(([key, replacement]) => {
+    value = value.split(`{${key}}`).join(String(replacement));
+  });
+  return value;
+}
+
+function minutesUntil(timestamp, nowMs) {
+  return Math.max(0, Math.ceil((timestamp - nowMs) / 60000));
+}
+
+function pushTodayIndex(date) {
+  return (date.getUTCDay() + 6) % 7;
+}
+
+function getPushEventOccurrence(day, event, now, lookbackMs = 0) {
+  const targetIndex = PUSH_WEEKDAYS.indexOf(day);
+  if (targetIndex < 0 || !event.start || !event.end) return null;
+
+  const [startHour, startMinute] = String(event.start).split(":").map(Number);
+  const [endHour, endMinute] = String(event.end).split(":").map(Number);
+  if (![startHour, startMinute, endHour, endMinute].every(Number.isFinite)) return null;
+
+  const dayOffset = (targetIndex - pushTodayIndex(now) + 7) % 7;
+  let start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + dayOffset, startHour, startMinute));
+  let end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + dayOffset, endHour, endMinute));
+
+  if (end <= start) end = new Date(end.getTime() + PUSH_DAY_MS);
+  if (end.getTime() < now.getTime() - Math.max(0, Number(lookbackMs) || 0)) {
+    start = new Date(start.getTime() + 7 * PUSH_DAY_MS);
+    end = new Date(end.getTime() + 7 * PUSH_DAY_MS);
+  }
+
+  return { start, end };
+}
+
+async function loadPushEvents() {
+  const url = PUSH_EVENTS_URL;
+  const response = await fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Events HTTP ${response.status}`);
+  return response.json();
+}
+
+function dueEventNotificationsForRecord(record, eventsData, now) {
+  const reminderMinutes = resolveReminderMinutes(record.reminderMinutes);
+  const lang = normalizePushLang(record.lang);
+  const templates = EVENT_COPY[lang] || EVENT_COPY.en;
+  const nowMs = now.getTime();
+  const due = [];
+
+  Object.entries(eventsData || {}).forEach(([day, events]) => {
+    (events || []).forEach((event) => {
+      const occurrence = getPushEventOccurrence(day, event, now, PUSH_LOOKBACK_MS);
+      if (!occurrence) return;
+
+      const startAt = occurrence.start.getTime();
+      const endAt = occurrence.end.getTime();
+      const midpointAt = startAt + Math.round((endAt - startAt) / 2);
+      const reminderAt = startAt - reminderMinutes * 60 * 1000;
+      const actualReminderMinutes = minutesUntil(startAt, nowMs);
+      const eventName = event.name || "TCL Event";
+      const base = { body: event.description || templates.defaultBody, url: "index.html#events", timestamp: startAt };
+
+      [
+        { type: "reminder", triggerAt: reminderAt, title: formatPushTemplate(templates.reminderTitle, { name: eventName, minutes: actualReminderMinutes }) },
+        { type: "live", triggerAt: startAt, title: formatPushTemplate(templates.liveTitle, { name: eventName }) },
+        { type: "midpoint", triggerAt: midpointAt, title: formatPushTemplate(templates.midpointTitle, { name: eventName }) },
+        { type: "end", triggerAt: endAt, title: formatPushTemplate(templates.endTitle, { name: eventName }) }
+      ].forEach((notification) => {
+        if (notification.triggerAt > nowMs) return;
+        if (notification.triggerAt < nowMs - PUSH_LOOKBACK_MS) return;
+
+        const sentKeySource = [record.id, day, eventName, event.start, startAt, notification.type, reminderMinutes].join("|");
+        const sentKey = createHash("sha256").update(sentKeySource).digest("hex");
+
+        due.push({
+          sentKey,
+          payload: { ...base, title: notification.title, tag: `tcl-event-${sentKey}`, renotify: true }
+        });
+      });
+    });
+  });
+
+  return due;
+}
+
+function dueClaimRemindersForRecord(record, now) {
+  if (!record || record.enabled === false || !isValidPushSubscription(record.subscription)) return [];
+
+  const expiresAt = Number(record.expiresAt);
+  if (!Number.isFinite(expiresAt)) return [];
+
+  const earlyDays = normalizeClaimEarlyDays(record.earlyDays);
+  const lang = normalizePushLang(record.lang);
+  const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
+  const nowMs = now.getTime();
+  const label = normalizeClaimLabel(record.label, templates.defaultLabel);
+  const daysLeft = Math.max(0, Math.ceil((expiresAt - nowMs) / PUSH_DAY_MS));
+  const base = { url: "index.html#claimReminder", timestamp: expiresAt };
+  const due = [];
+  const triggers = [];
+  const earlyAt = expiresAt - earlyDays * PUSH_DAY_MS;
+  const finalAt = expiresAt - PUSH_DAY_MS;
+
+  if (earlyDays > 1 && earlyAt < finalAt) {
+    triggers.push({
+      type: "early",
+      triggerAt: earlyAt,
+      title: formatPushTemplate(templates.earlyTitle, { days: daysLeft, label }),
+      body: formatPushTemplate(templates.earlyBody, { days: daysLeft, label })
+    });
+  }
+
+  triggers.push({
+    type: "final",
+    triggerAt: finalAt,
+    title: formatPushTemplate(templates.finalTitle, { days: daysLeft, label }),
+    body: formatPushTemplate(templates.finalBody, { days: daysLeft, label })
+  });
+
+  triggers.forEach((notification) => {
+    if (notification.triggerAt > nowMs) return;
+    if (notification.triggerAt < nowMs - CLAIM_LOOKBACK_MS) return;
+
+    const sentKeySource = [record.id, expiresAt, notification.type, earlyDays].join("|");
+    const sentKey = createHash("sha256").update(sentKeySource).digest("hex");
+
+    due.push({
+      sentKey,
+      payload: { ...base, title: notification.title, body: notification.body, tag: `tcl-claim-${sentKey}`, renotify: true }
+    });
+  });
+
+  return due;
+}
+
+function publicClaimReminderRecord(record) {
+  const expiresAt = Number(record?.expiresAt);
+  const earlyDays = normalizeClaimEarlyDays(record?.earlyDays);
+  const nowMs = Date.now();
+  return {
+    id: record?.id || "",
+    enabled: record?.enabled !== false,
+    label: record?.label || "Automatic claim",
+    lang: normalizePushLang(record?.lang),
+    timezone: String(record?.timezone || ""),
+    earlyDays,
+    expiresAt: Number.isFinite(expiresAt) ? expiresAt : null,
+    expiresAtIso: Number.isFinite(expiresAt) ? new Date(expiresAt).toISOString() : "",
+    daysLeft: Number.isFinite(expiresAt) ? Math.max(0, Math.ceil((expiresAt - nowMs) / PUSH_DAY_MS)) : null,
+    nextEarlyAtIso: Number.isFinite(expiresAt) ? new Date(expiresAt - earlyDays * PUSH_DAY_MS).toISOString() : "",
+    finalReminderAtIso: Number.isFinite(expiresAt) ? new Date(expiresAt - PUSH_DAY_MS).toISOString() : "",
+    createdAt: record?.createdAt || "",
+    updatedAt: record?.updatedAt || "",
+    lastAction: record?.lastAction || "",
+    lastInputDays: Number.isFinite(Number(record?.lastInputDays)) ? Number(record.lastInputDays) : null
+  };
+}
+
+function toClaimReminderRecord(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    subscription: row.subscription,
+    enabled: row.enabled,
+    label: row.label,
+    timezone: row.timezone,
+    lang: row.lang,
+    earlyDays: row.early_days,
+    expiresAt: Number(row.expires_at),
+    userAgent: row.user_agent,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastAction: row.last_action,
+    lastInputDays: row.last_input_days
+  };
+}
+
+async function sendWebPush(subscription, payload) {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) throw new Error("VAPID keys are not configured");
+  try {
+    await webpush.sendNotification(subscription, JSON.stringify(payload), { TTL: 3600, urgency: "normal" });
+  } catch (error) {
+    const err = new Error(`Push service HTTP ${error.statusCode || "unknown"}`);
+    err.statusCode = error.statusCode;
+    throw err;
+  }
+}
+
+/** Atomically claim a best-effort dispatch lock so the 2 PM2 cluster workers don't double-send. */
+async function acquirePushLock(name, ttlMs) {
+  const result = await db.query(
+    `INSERT INTO tcl_push_locks (name, locked_until) VALUES ($1, now() + ($2 || ' milliseconds')::interval)
+     ON CONFLICT (name) DO UPDATE SET locked_until = EXCLUDED.locked_until
+     WHERE tcl_push_locks.locked_until < now()
+     RETURNING name`,
+    [name, String(ttlMs)]
+  );
+  return result.rows.length > 0;
+}
+
+/** INSERT-only de-dup lock: returns false if this notification was already sent. */
+async function reserveSentKey(isClaim, key) {
+  const table = isClaim ? "tcl_claim_sent" : "tcl_push_sent";
+  try {
+    await db.query(`INSERT INTO ${table} (sent_key) VALUES ($1)`, [key]);
+    return true;
+  } catch (error) {
+    if (error.code === "23505") return false;
+    throw error;
+  }
+}
+
+async function dispatchDueEventNotifications(source) {
+  const startedAt = new Date();
+  const report = { ok: true, source, checked: 0, due: 0, sent: 0, skipped: 0, invalid: 0, errors: 0, startedAt: startedAt.toISOString() };
+
+  const subs = await db.all(`SELECT id, endpoint, keys, timezone, lang, reminder_minutes FROM tcl_push_subscriptions`);
+  report.checked = subs.length;
+  const events = await loadPushEvents();
+  const now = new Date();
+
+  for (const row of subs) {
+    const record = { id: row.id, subscription: { endpoint: row.endpoint, keys: row.keys }, lang: row.lang, reminderMinutes: row.reminder_minutes };
+    const dueItems = dueEventNotificationsForRecord(record, events, now);
+    report.due += dueItems.length;
+
+    for (const item of dueItems) {
+      const reserved = await reserveSentKey(false, item.sentKey);
+      if (!reserved) { report.skipped += 1; continue; }
+
+      try {
+        await sendWebPush(record.subscription, item.payload);
+        report.sent += 1;
+      } catch (error) {
+        if (error.statusCode === 404 || error.statusCode === 410) {
+          await db.query(`DELETE FROM tcl_push_subscriptions WHERE id=$1`, [record.id]);
+          report.invalid += 1;
+        } else {
+          await db.query(`DELETE FROM tcl_push_sent WHERE sent_key=$1`, [item.sentKey]);
+          report.errors += 1;
+        }
+      }
+    }
+  }
+
+  report.finishedAt = new Date().toISOString();
+  return report;
+}
+
+async function dispatchDueClaimReminders(source) {
+  const startedAt = new Date();
+  const report = { ok: true, source, checked: 0, due: 0, sent: 0, skipped: 0, invalid: 0, errors: 0, startedAt: startedAt.toISOString() };
+
+  const rows = await db.all(`SELECT * FROM tcl_claim_reminders WHERE enabled = true`);
+  report.checked = rows.length;
+  const now = new Date();
+
+  for (const row of rows) {
+    const record = toClaimReminderRecord(row);
+    const dueItems = dueClaimRemindersForRecord(record, now);
+    report.due += dueItems.length;
+
+    for (const item of dueItems) {
+      const reserved = await reserveSentKey(true, item.sentKey);
+      if (!reserved) { report.skipped += 1; continue; }
+
+      try {
+        await sendWebPush(record.subscription, item.payload);
+        report.sent += 1;
+      } catch (error) {
+        if (error.statusCode === 404 || error.statusCode === 410) {
+          await db.query(`DELETE FROM tcl_claim_reminders WHERE id=$1`, [record.id]);
+          report.invalid += 1;
+        } else {
+          await db.query(`DELETE FROM tcl_claim_sent WHERE sent_key=$1`, [item.sentKey]);
+          report.errors += 1;
+        }
+      }
+    }
+  }
+
+  report.finishedAt = new Date().toISOString();
+  return report;
+}
+
+async function runPushDispatchCycle() {
+  if (!(await acquirePushLock("push-dispatch-events", PUSH_DISPATCH_INTERVAL_MS - 5000))) return;
+  await db.query(`DELETE FROM tcl_push_sent WHERE sent_at < now() - interval '${PUSH_SENT_RETENTION_SQL}'`).catch(() => {});
+  const report = await dispatchDueEventNotifications("interval");
+  if (report.sent || report.errors) console.log("Push events dispatch:", report);
+}
+
+async function runClaimDispatchCycle() {
+  if (!(await acquirePushLock("push-dispatch-claims", PUSH_DISPATCH_INTERVAL_MS - 5000))) return;
+  await db.query(`DELETE FROM tcl_claim_sent WHERE sent_at < now() - interval '${CLAIM_SENT_RETENTION_SQL}'`).catch(() => {});
+  const report = await dispatchDueClaimReminders("interval");
+  if (report.sent || report.errors) console.log("Push claims dispatch:", report);
+}
+
+const pushApi = express.Router();
+
+pushApi.get("/config", (req, res) => {
+  ok(res, { ok: true, configured: Boolean(VAPID_PUBLIC_KEY), publicKey: VAPID_PUBLIC_KEY || "" });
+});
+
+pushApi.post("/subscribe", async (req, res) => {
+  try {
+    const subscription = req.body.subscription || req.body;
+    if (!isValidPushSubscription(subscription)) return fail(res, "Invalid push subscription", 400);
+
+    const id = pushSubscriptionId(subscription.endpoint);
+    await db.query(
+      `INSERT INTO tcl_push_subscriptions (id, endpoint, keys, timezone, lang, reminder_minutes, user_agent, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7, now())
+       ON CONFLICT (id) DO UPDATE SET endpoint=$2, keys=$3, timezone=$4, lang=$5, reminder_minutes=$6, user_agent=$7, updated_at=now()`,
+      [
+        id,
+        subscription.endpoint,
+        JSON.stringify(subscription.keys),
+        String(req.body.timezone || ""),
+        normalizePushLang(req.body.lang),
+        resolveReminderMinutes(req.body.reminderMinutes),
+        String(req.body.userAgent || "").slice(0, 500)
+      ]
+    );
+    ok(res, { ok: true, id });
+  } catch (error) {
+    fail(res, error.message || "Subscribe failed", 500);
+  }
+});
+
+pushApi.post("/unsubscribe", async (req, res) => {
+  try {
+    const subscription = req.body.subscription || null;
+    const id = req.body.id || (isValidPushSubscription(subscription) ? pushSubscriptionId(subscription.endpoint) : "");
+    if (!id) return fail(res, "Missing subscription id", 400);
+    await db.query(`DELETE FROM tcl_push_subscriptions WHERE id=$1`, [id]);
+    ok(res, { ok: true });
+  } catch (error) {
+    fail(res, error.message || "Unsubscribe failed", 500);
+  }
+});
+
+pushApi.post("/test", async (req, res) => {
+  const subscription = req.body.subscription || req.body;
+  if (!isValidPushSubscription(subscription)) return fail(res, "Invalid push subscription", 400);
+  const payload = req.body.payload || {
+    title: "TCL event notification test",
+    body: "Notifications are working on this device.",
+    url: "index.html#events",
+    tag: "tcl-event-test"
+  };
+  try {
+    await sendWebPush(subscription, payload);
+    ok(res, { ok: true });
+  } catch (error) {
+    fail(res, error.message || "Push failed", error.statusCode || 502);
+  }
+});
+
+pushApi.get("/stats", async (req, res) => {
+  try {
+    const row = await db.one(`SELECT COUNT(*)::int AS n FROM tcl_push_subscriptions`);
+    ok(res, { ok: true, subscribers: row?.n || 0, configured: Boolean(VAPID_PUBLIC_KEY), updatedAt: new Date().toISOString() });
+  } catch (error) {
+    fail(res, error.message || "Stats failed", 500);
+  }
+});
+
+pushApi.post("/claim/upsert", async (req, res) => {
+  try {
+    const subscription = req.body.subscription || req.body;
+    if (!isValidPushSubscription(subscription)) return fail(res, "Invalid push subscription", 400);
+
+    const days = normalizeClaimDays(req.body.days ?? req.body.remainingDays);
+    if (!Number.isFinite(days) || days <= 0) return fail(res, "Days must be at least 1", 400);
+
+    const id = pushSubscriptionId(subscription.endpoint);
+    const existing = await db.one(`SELECT * FROM tcl_claim_reminders WHERE id=$1`, [id]);
+    const nowMs = Date.now();
+    const expiresAt = nowMs + days * PUSH_DAY_MS;
+    const lang = normalizePushLang(req.body.lang);
+    const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
+    const label = normalizeClaimLabel(req.body.label, templates.defaultLabel);
+    const earlyDays = normalizeClaimEarlyDays(req.body.earlyDays ?? existing?.early_days);
+    const userAgent = String(req.body.userAgent || existing?.user_agent || "").slice(0, 500);
+    const timezone = String(req.body.timezone || existing?.timezone || "");
+
+    await db.query(
+      `INSERT INTO tcl_claim_reminders (id, endpoint, subscription, enabled, label, timezone, lang, early_days, expires_at, user_agent, last_action, last_input_days, updated_at)
+       VALUES ($1,$2,$3,true,$4,$5,$6,$7,$8,$9,'set',$10, now())
+       ON CONFLICT (id) DO UPDATE SET endpoint=$2, subscription=$3, enabled=true, label=$4, timezone=$5, lang=$6, early_days=$7, expires_at=$8, user_agent=$9, last_action='set', last_input_days=$10, updated_at=now()`,
+      [id, subscription.endpoint, JSON.stringify(subscription), label, timezone, lang, earlyDays, expiresAt, userAgent, days]
+    );
+
+    const record = await db.one(`SELECT * FROM tcl_claim_reminders WHERE id=$1`, [id]);
+    ok(res, { ok: true, reminder: publicClaimReminderRecord(toClaimReminderRecord(record)) });
+  } catch (error) {
+    fail(res, error.message || "Claim upsert failed", 500);
+  }
+});
+
+pushApi.post("/claim/delete", async (req, res) => {
+  try {
+    const subscription = req.body.subscription || null;
+    const id = req.body.id || (isValidPushSubscription(subscription) ? pushSubscriptionId(subscription.endpoint) : "");
+    if (!id) return fail(res, "Missing reminder id", 400);
+    await db.query(`DELETE FROM tcl_claim_reminders WHERE id=$1`, [id]);
+    ok(res, { ok: true });
+  } catch (error) {
+    fail(res, error.message || "Claim delete failed", 500);
+  }
+});
+
+pushApi.post("/claim/status", async (req, res) => {
+  try {
+    const subscription = req.body.subscription || null;
+    const id = req.body.id || (isValidPushSubscription(subscription) ? pushSubscriptionId(subscription.endpoint) : "");
+    if (!id) return fail(res, "Missing reminder id", 400);
+    const row = await db.one(`SELECT * FROM tcl_claim_reminders WHERE id=$1`, [id]);
+    ok(res, { ok: true, reminder: row ? publicClaimReminderRecord(toClaimReminderRecord(row)) : null });
+  } catch (error) {
+    fail(res, error.message || "Claim status failed", 500);
+  }
+});
+
+pushApi.post("/claim/test", async (req, res) => {
+  const subscription = req.body.subscription || req.body;
+  if (!isValidPushSubscription(subscription)) return fail(res, "Invalid push subscription", 400);
+  const lang = normalizePushLang(req.body.lang);
+  const templates = CLAIM_COPY[lang] || CLAIM_COPY.en;
+  const payload = req.body.payload || {
+    title: "TCL claim reminder test",
+    body: formatPushTemplate(templates.finalBody, { label: templates.defaultLabel, days: 0 }),
+    url: "index.html#claimReminder",
+    tag: "tcl-claim-reminder-test"
+  };
+  try {
+    await sendWebPush(subscription, payload);
+    ok(res, { ok: true });
+  } catch (error) {
+    fail(res, error.message || "Push failed", error.statusCode || 502);
+  }
+});
+
+pushApi.get("/claim/stats", async (req, res) => {
+  try {
+    const row = await db.one(`SELECT COUNT(*)::int AS n FROM tcl_claim_reminders WHERE enabled = true`);
+    ok(res, { ok: true, reminders: row?.n || 0, configured: Boolean(VAPID_PUBLIC_KEY), updatedAt: new Date().toISOString() });
+  } catch (error) {
+    fail(res, error.message || "Claim stats failed", 500);
+  }
+});
+
+pushApi.post("/dispatch-events", async (req, res) => {
+  if (!adminAuth(req, res)) return;
+  try {
+    ok(res, await dispatchDueEventNotifications("manual"));
+  } catch (error) {
+    fail(res, error.message || "Dispatch failed", 500);
+  }
+});
+
+pushApi.post("/dispatch-claims", async (req, res) => {
+  if (!adminAuth(req, res)) return;
+  try {
+    ok(res, await dispatchDueClaimReminders("manual"));
+  } catch (error) {
+    fail(res, error.message || "Dispatch failed", 500);
+  }
+});
+
+app.use("/api/push", pushApi);
+
 // ── DB Migration — add SC attribute columns if missing ────────────────────────
 async function runMigrations() {
   const migrations = [
@@ -3703,6 +4285,47 @@ async function runMigrations() {
      )`,
     `CREATE INDEX IF NOT EXISTS idx_mp_events_ts ON tcl_marketplace_events(timestamp DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_mp_events_fn ON tcl_marketplace_events(function)`,
+    `CREATE TABLE IF NOT EXISTS tcl_push_subscriptions (
+       id               TEXT PRIMARY KEY,
+       endpoint         TEXT NOT NULL,
+       keys             JSONB NOT NULL,
+       timezone         TEXT,
+       lang             TEXT,
+       reminder_minutes INT,
+       user_agent       TEXT,
+       created_at       TIMESTAMPTZ DEFAULT NOW(),
+       updated_at       TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE TABLE IF NOT EXISTS tcl_push_sent (
+       sent_key TEXT PRIMARY KEY,
+       sent_at  TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE INDEX IF NOT EXISTS idx_push_sent_at ON tcl_push_sent(sent_at)`,
+    `CREATE TABLE IF NOT EXISTS tcl_claim_reminders (
+       id              TEXT PRIMARY KEY,
+       endpoint        TEXT NOT NULL,
+       subscription    JSONB NOT NULL,
+       enabled         BOOLEAN DEFAULT true,
+       label           TEXT,
+       timezone        TEXT,
+       lang            TEXT,
+       early_days      INT,
+       expires_at      BIGINT,
+       user_agent      TEXT,
+       last_action     TEXT,
+       last_input_days INT,
+       created_at      TIMESTAMPTZ DEFAULT NOW(),
+       updated_at      TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE TABLE IF NOT EXISTS tcl_claim_sent (
+       sent_key TEXT PRIMARY KEY,
+       sent_at  TIMESTAMPTZ DEFAULT NOW()
+     )`,
+    `CREATE INDEX IF NOT EXISTS idx_claim_sent_at ON tcl_claim_sent(sent_at)`,
+    `CREATE TABLE IF NOT EXISTS tcl_push_locks (
+       name         TEXT PRIMARY KEY,
+       locked_until TIMESTAMPTZ NOT NULL
+     )`,
   ];
   const client = await pool.connect();
   try {
@@ -3746,6 +4369,18 @@ pool.connect().then(async client => {
       syncMarketplaceEvents().catch(e => console.error("Events sync:", e.message));
     }, 30 * 1000);
     eventsSyncTimer.unref();
+    // Dispatch due push notifications (weekly events + claim reminders) every 5 minutes.
+    // Lock-guarded in Postgres so the 2 PM2 cluster workers don't double-send.
+    runPushDispatchCycle().catch(e => console.error("Push dispatch:", e.message));
+    const pushDispatchTimer = setInterval(() => {
+      runPushDispatchCycle().catch(e => console.error("Push dispatch:", e.message));
+    }, PUSH_DISPATCH_INTERVAL_MS);
+    pushDispatchTimer.unref();
+    runClaimDispatchCycle().catch(e => console.error("Claim dispatch:", e.message));
+    const claimDispatchTimer = setInterval(() => {
+      runClaimDispatchCycle().catch(e => console.error("Claim dispatch:", e.message));
+    }, PUSH_DISPATCH_INTERVAL_MS);
+    claimDispatchTimer.unref();
   });
 }).catch(err => {
   console.error("DB connection failed:", err.message);

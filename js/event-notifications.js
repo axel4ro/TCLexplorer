@@ -4,6 +4,12 @@
   const LEGACY_DEFAULT_REMINDER_MINUTES = 10;
   const DAY_MS = 24 * 60 * 60 * 1000;
   const STATS_POLL_INTERVAL_MS = 5 * 60 * 1000;
+  // Site-wide auto-subscribe: how often we retry the native permission prompt
+  // while it's still undecided, and how long we honor an explicit Disable
+  // before silently re-subscribing on a later visit (browser permission stays
+  // granted even after our own UI toggle is switched off).
+  const AUTO_PROMPT_COOLDOWN_MS = DAY_MS;
+  const DISABLE_RESUBSCRIBE_COOLDOWN_MS = 60 * 60 * 1000;
   const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   const copy = {
@@ -259,16 +265,37 @@
     return typeof subscription.toJSON === "function" ? subscription.toJSON() : subscription;
   }
 
+  function subscriptionMatchesKey(subscription, publicKey) {
+    try {
+      const currentKey = subscription?.options?.applicationServerKey;
+      if (!currentKey) return true;
+      const expected = urlBase64ToUint8Array(publicKey);
+      const actual = new Uint8Array(currentKey);
+      if (actual.length !== expected.length) return false;
+      return actual.every((byte, index) => byte === expected[index]);
+    } catch (_) {
+      return true;
+    }
+  }
+
+  async function ensureFreshSubscription(registration, publicKey) {
+    const existing = await registration.pushManager.getSubscription();
+    if (existing && subscriptionMatchesKey(existing, publicKey)) return existing;
+
+    if (existing) await existing.unsubscribe().catch(() => {});
+    return registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
+  }
+
   async function subscribePush(registration) {
     if (!supportsPush()) return null;
     const publicKey = await getPushConfig();
     if (!publicKey) return null;
 
-    const existing = await registration.pushManager.getSubscription();
-    const subscription = existing || await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey)
-    });
+    const subscription = await ensureFreshSubscription(registration, publicKey);
+    if (!subscription) return null;
 
     const settings = getSettings();
     const payload = {
@@ -568,7 +595,7 @@
       const registration = await getServiceWorkerRegistration().catch(() => null);
       await unregisterPush(registration);
       await clearLocalSchedule();
-      saveSettings({ enabled: false, mode: "off" });
+      saveSettings({ enabled: false, mode: "off", disabledAt: Date.now() });
       await refreshSubscriberStats();
     } finally {
       state.busy = false;
@@ -641,6 +668,43 @@
     });
   }
 
+  /**
+   * Runs on every page (not just the Events tab). Decides, without requiring
+   * a click on our own UI, whether to show the browser's native permission
+   * prompt (first-time visitors) or silently re-subscribe (permission already
+   * granted, either restoring an active subscription or reinstating one the
+   * visitor had explicitly disabled, after a cooldown so Disable doesn't look
+   * broken for the rest of that same visit).
+   */
+  async function autoManagePushSubscription() {
+    if (!supportsNotifications()) return;
+
+    const settings = getSettings();
+
+    if (Notification.permission === "granted" && settings.enabled) {
+      await restoreServerSubscription();
+      await syncEvents(window.eventsData || null);
+      return;
+    }
+
+    if (Notification.permission === "denied") return;
+
+    if (Notification.permission === "default") {
+      const lastPromptAt = Number(settings.lastAutoPromptAt) || 0;
+      if (Date.now() - lastPromptAt < AUTO_PROMPT_COOLDOWN_MS) return;
+      saveSettings({ lastAutoPromptAt: Date.now() });
+      await enableNotifications();
+      return;
+    }
+
+    // Notification.permission === "granted" here, but our own settings say
+    // disabled — either never enabled on this device, or explicitly disabled.
+    const disabledAt = Number(settings.disabledAt) || 0;
+    if (disabledAt && Date.now() - disabledAt < DISABLE_RESUBSCRIBE_COOLDOWN_MS) return;
+
+    await enableNotifications();
+  }
+
   function bindControls() {
     document.getElementById("enableEventNotificationsBtn")?.addEventListener("click", () => {
       enableNotifications().catch((error) => {
@@ -670,10 +734,7 @@
     refreshStatus();
     startSubscriberStatsPolling();
 
-    if (getSettings().enabled) {
-      await restoreServerSubscription();
-      await syncEvents(window.eventsData || null);
-    }
+    await autoManagePushSubscription();
   }
 
   window.TCLEventNotifications = {
