@@ -35,7 +35,7 @@ import {
   TransferTransactionsFactory,
   UserVerifier,
 } from "@multiversx/sdk-core";
-import { computeWalletSwapPnl, computeWalletEarned } from "./pnl-compute.mjs";
+import { computeWalletSwapPnl, computeWalletEarned, computeMarketTradesFromDb } from "./pnl-compute.mjs";
 
 const { Pool } = pg;
 const app = express();
@@ -1809,10 +1809,6 @@ function normalizeVolumeAggregatedSnapshot(agg, endDate=new Date()) {
   return rebuildVolumeAggregatedDerivedState(c);
 }
 
-function hasValidVolumeAggregatedShape(v) {
-  return Boolean(v && Array.isArray(v.buyRows) && Array.isArray(v.sellRows) && Array.isArray(v.totalRows) && v.latestTrade && Number.isFinite(Number(v.latestTrade.timestamp)));
-}
-
 function normalizeVolumeTradeTransfer(transfer, pair) {
   if (!transfer?.token || !transfer?.value) return null;
   const decimals = Number(transfer.decimals ?? resolveVolumeTokenDecimals(transfer.token));
@@ -1888,33 +1884,6 @@ function aggregateVolumeTrades(trades, fetchMeta) {
   return rebuildVolumeAggregatedDerivedState({ version:2, buyRows, sellRows, totalRows, buyTrades, sellTrades, totalTclAmount, largestTclTrade, oldestTrade, latestTrade, fetchMeta });
 }
 
-function mergeVolumeTradesIntoAggregated(baseAgg, trades, fetchMeta) {
-  const agg = normalizeVolumeAggregatedSnapshot(baseAgg, new Date());
-  const buyMap   = new Map(agg.buyRows.map(r=>[r.label,r]));
-  const sellMap  = new Map(agg.sellRows.map(r=>[r.label,r]));
-  const totalMap = new Map(agg.totalRows.map(r=>[r.label,r]));
-  agg.buyTrades    = Number(agg.buyTrades)||0;
-  agg.sellTrades   = Number(agg.sellTrades)||0;
-  agg.totalTclAmount = Number(agg.totalTclAmount)||0;
-  for (const trade of Array.isArray(trades)?trades:[]) {
-    if (!Number.isFinite(trade.timestamp)||!Number.isFinite(trade.volumeUsd)||trade.volumeUsd<0) continue;
-    const d = new Date(trade.timestamp*1000);
-    const yk = String(d.getUTCFullYear()), mi = d.getUTCMonth();
-    const tr = totalMap.get(yk), br = buyMap.get(yk), sr = sellMap.get(yk);
-    if (tr) tr.cells[mi] = (Number(tr.cells[mi])||0) + trade.volumeUsd;
-    if (trade.side==="buy") { agg.buyTrades++; if (br) br.cells[mi]=(Number(br.cells[mi])||0)+trade.volumeUsd; }
-    else if (trade.side==="sell") { agg.sellTrades++; if (sr) sr.cells[mi]=(Number(sr.cells[mi])||0)+trade.volumeUsd; }
-    if (Number.isFinite(trade.tclAmount) && trade.tclAmount>0) {
-      agg.totalTclAmount += trade.tclAmount;
-      if (!agg.largestTclTrade || trade.tclAmount > agg.largestTclTrade.tclAmount) agg.largestTclTrade = cloneJson(trade);
-    }
-    if (!agg.oldestTrade || trade.timestamp < agg.oldestTrade.timestamp) agg.oldestTrade = cloneJson(trade);
-    if (!agg.latestTrade || trade.timestamp > agg.latestTrade.timestamp) agg.latestTrade = cloneJson(trade);
-  }
-  agg.fetchMeta = { ...(agg.fetchMeta||{}), ...(fetchMeta||{}) };
-  return rebuildVolumeAggregatedDerivedState(agg);
-}
-
 async function fetchVolumeDexPair() {
   const p = await fetchAnalyticsJson(VOLUME_CONFIG.dexUrl, 3);
   return p?.pair || (Array.isArray(p?.pairs) ? p.pairs[0] : null);
@@ -1960,26 +1929,23 @@ async function fetchVolumeRecentTransferHistory(afterTimestamp) {
   return { transfers, hitPageLimit, oldestTimestamp: transfers.length ? (Number(transfers[0]?.timestamp)||null) : null, exhaustedHistory };
 }
 
-async function buildVolumeSnapshot(currentSnapshot=null) {
+// api.multiversx.com/accounts/{pair}/transfers is persistently 429-blocked for
+// the VPS's own IP (Cloudflare rate limiting), so incremental live fetches
+// above never land — the snapshot would otherwise freeze at whatever trade was
+// last fetched. tcl_transfers is indexed independently (via the gateway, which
+// isn't rate-limited) and stays current, so rebuild the whole aggregation from
+// there instead. 17k+ rows aggregate in well under a second, so a full rebuild
+// on every cache refresh (every ~5 min) is cheap enough — no incremental merge
+// bookkeeping needed.
+async function buildVolumeSnapshotFromDb() {
   const nowSec = Math.floor(Date.now()/1000);
   const warnings = [];
-  let pair = currentSnapshot?.pair || null;
+  let pair = null;
   try { pair = await fetchVolumeDexPair(); } catch(e) { warnings.push(`DexScreener: ${e?.message}`); }
-  const baseAgg = hasValidVolumeAggregatedShape(currentSnapshot?.aggregated) ? currentSnapshot.aggregated : VOLUME_SEED_SNAPSHOT;
-  const normalizedBase = normalizeVolumeAggregatedSnapshot(baseAgg, new Date());
-  const latestTs = Number(normalizedBase?.latestTrade?.timestamp);
-  let recentHistory = { transfers:[], hitPageLimit:false, oldestTimestamp:null, exhaustedHistory:true };
-  try { recentHistory = await fetchVolumeRecentTransferHistory(latestTs); } catch(e) { warnings.push(`MVX transfers: ${e?.message}`); }
-  const pairRef = {
-    pairAddress:  pair?.pairAddress  || VOLUME_CONFIG.pairAddress,
-    baseToken:  { address: pair?.baseToken?.address  || VOLUME_CONFIG.baseTokenAddress },
-    quoteToken: { address: pair?.quoteToken?.address || VOLUME_CONFIG.quoteTokenAddress }
-  };
-  const trades = parseVolumeTrades(recentHistory.transfers, pairRef);
-  const sourceLabel = trades.length ? "server cache + live" : "server cache";
-  const fetchMeta = { hitPageLimit:recentHistory.hitPageLimit, oldestTimestamp:recentHistory.oldestTimestamp, exhaustedHistory:recentHistory.exhaustedHistory, recentTransfers:recentHistory.transfers.length, parsedTrades:trades.length, snapshotAt:nowSec, sourceLabel };
-  const aggregated = trades.length ? mergeVolumeTradesIntoAggregated(normalizedBase, trades, fetchMeta) : rebuildVolumeAggregatedDerivedState({ ...normalizedBase, fetchMeta:{...(normalizedBase.fetchMeta||{}),...fetchMeta} });
-  return { ok:true, meta:{ updatedAt:new Date().toISOString(), source:"Server API", endpoints:{ dex:VOLUME_CONFIG.dexUrl, transfers:VOLUME_CONFIG.transferUrlBase }, warnings }, pair, aggregated };
+  const trades = await computeMarketTradesFromDb(pool, VOLUME_CONFIG.pairAddress);
+  const fetchMeta = { parsedTrades: trades.length, snapshotAt: nowSec, sourceLabel: "indexed DB (tcl_transfers)" };
+  const aggregated = aggregateVolumeTrades(trades, fetchMeta);
+  return { ok:true, meta:{ updatedAt:new Date().toISOString(), source:"Server API (DB)", warnings }, pair, aggregated };
 }
 
 // ── Technicals helpers ─────────────────────────────────────────────────────────
@@ -2388,13 +2354,13 @@ app.get("/api/volume", async (req, res) => {
     const TTL_MS    = 5 * 60 * 1000; // 5 minutes
     let snapshot = cacheGet(CACHE_KEY);
     if (!snapshot) {
-      snapshot = await buildVolumeSnapshot(null);
+      snapshot = await buildVolumeSnapshotFromDb();
       cacheSet(CACHE_KEY, snapshot, TTL_MS);
     } else {
       // Refresh in background if stale (older than 4 min)
       const updatedAt = snapshot?.meta?.updatedAt ? new Date(snapshot.meta.updatedAt).getTime() : 0;
       if (Date.now() - updatedAt > 4 * 60 * 1000) {
-        buildVolumeSnapshot(snapshot).then(s => cacheSet(CACHE_KEY, s, TTL_MS)).catch(e => console.error("Volume bg refresh:", e.message));
+        buildVolumeSnapshotFromDb().then(s => cacheSet(CACHE_KEY, s, TTL_MS)).catch(e => console.error("Volume bg refresh:", e.message));
       }
     }
     ok(res, snapshot);

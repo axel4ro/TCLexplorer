@@ -619,6 +619,97 @@ async function computeWalletSwapPnl(pool, walletAddress) {
   };
 }
 
+// ── Market-wide trade volume (pair-perspective, for /api/volume) ─────────────
+// Same operations-based reconstruction as computeWalletSwapPnl, but net flow is
+// measured against the AMM pair address instead of a wallet: whatever TCL/USDC
+// leaves/enters the pair contract itself is unambiguous (no aggregator routing
+// guesswork needed), so no fallback heuristics are required here.
+async function computeMarketTradesFromDb(pool, pairAddress) {
+  const pairRes = await pool.query(
+    `SELECT ${_PNL_COLS} FROM tcl_transfers WHERE sender=$1 OR receiver=$1`,
+    [pairAddress]
+  );
+  const pairEntries = pairRes.rows.map(supabaseRowToPnlEntry);
+
+  const rootHashes = Array.from(new Set(pairEntries.map((e) => e.originalTxHash || e.txHash).filter(Boolean)));
+  let relatedEntries = [];
+  if (rootHashes.length) {
+    const relRes = await pool.query(
+      `SELECT ${_PNL_COLS} FROM tcl_transfers WHERE tx_hash = ANY($1::text[]) OR original_tx_hash = ANY($1::text[])`,
+      [rootHashes]
+    );
+    relatedEntries = relRes.rows.map(supabaseRowToPnlEntry);
+  }
+
+  const transfers = [];
+  const seen = new Set();
+  [...relatedEntries, ...pairEntries].forEach((e, i) => {
+    const hash = String(e.txHash || e.originalTxHash || `sb:${i}`);
+    const key = `${hash}|${e.type || ""}|${e.sender || ""}|${e.receiver || ""}`;
+    if (!seen.has(key)) { seen.add(key); transfers.push(e); }
+  });
+
+  const groups = groupPnlTransfers(transfers);
+  const trades = [];
+
+  for (const group of groups.values()) {
+    const seenOps = new Set();
+    const operations = [];
+    for (const entry of group.entries) {
+      if (!Array.isArray(entry.operations)) continue;
+      for (const rawOperation of entry.operations) {
+        const operation = normalizePnlOperation(rawOperation);
+        if (!operation || seenOps.has(operation.key)) continue;
+        seenOps.add(operation.key);
+        operations.push(operation);
+      }
+    }
+    if (!operations.length) continue;
+
+    const tclOutOfPair = operations
+      .filter((o) => o.token === CONFIG.tokens.tcl.identifier && o.sender === pairAddress)
+      .reduce((sum, o) => sum + o.amount, 0);
+    const tclIntoPair = operations
+      .filter((o) => o.token === CONFIG.tokens.tcl.identifier && o.receiver === pairAddress)
+      .reduce((sum, o) => sum + o.amount, 0);
+    const usdOutOfPair = operations
+      .filter((o) => o.token === CONFIG.tokens.usdc.identifier && o.sender === pairAddress && Number.isFinite(o.valueUsd))
+      .reduce((sum, o) => sum + o.valueUsd, 0);
+    const usdIntoPair = operations
+      .filter((o) => o.token === CONFIG.tokens.usdc.identifier && o.receiver === pairAddress && Number.isFinite(o.valueUsd))
+      .reduce((sum, o) => sum + o.valueUsd, 0);
+
+    const netTclOut = tclOutOfPair - tclIntoPair;
+    const netUsdIn = usdIntoPair - usdOutOfPair;
+
+    let side = "";
+    let tclAmount = 0;
+    let volumeUsd = 0;
+    if (netTclOut > 0 && netUsdIn > 0) {
+      side = "buy"; tclAmount = netTclOut; volumeUsd = netUsdIn;
+    } else if (netTclOut < 0 && netUsdIn < 0) {
+      side = "sell"; tclAmount = -netTclOut; volumeUsd = -netUsdIn;
+    } else {
+      continue;
+    }
+
+    const price = volumeUsd / tclAmount;
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(volumeUsd) || volumeUsd <= 0) continue;
+
+    trades.push({
+      hash: group.hash,
+      timestamp: group.timestamp,
+      side,
+      tclAmount,
+      volumeUsd,
+      price,
+      description: side === "buy" ? "Swap USDC for TCL" : "Swap TCL for USDC"
+    });
+  }
+
+  return trades.sort((a, b) => a.timestamp - b.timestamp);
+}
+
 // ── Earned TCL (game-contract rewards/cashback/referral/sale) — verbatim logic ──
 const EARNED_REWARD_FNS = new Set([
   "claimRewards","claimBorrowingRewards","claimLendingRewards","claimInfinityRewards",
@@ -729,4 +820,4 @@ async function computeWalletEarned(pool, walletAddress) {
   return { total, breakdown, categories: { reward: rewardTotal, sale: saleTotal, cashback: cashbackTotal, referral: referralTotal } };
 }
 
-export { computeWalletSwapPnl, computeWalletEarned };
+export { computeWalletSwapPnl, computeWalletEarned, computeMarketTradesFromDb };
