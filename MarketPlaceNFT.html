@@ -2412,6 +2412,18 @@ async function enrichListingsWithStorage(listings) {
         }
       }
     } catch {}
+
+    // Server DB didn't have it (not indexed yet) — fall back to a live
+    // on-chain query so the Storage badge doesn't stay permanently blank.
+    if (l.nft.sc_tcl_max == null) {
+      try {
+        const live = await fetchNFTStorageLive(l.nft_token, l.nft_nonce);
+        if (live.sc_tcl_max != null) {
+          l.nft.sc_tcl_max = live.sc_tcl_max;
+          l.nft.sc_tcl_count = live.sc_tcl_count ?? null;
+        }
+      } catch {}
+    }
   }));
   renderCurrentTab();
 }
