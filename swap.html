@@ -257,6 +257,14 @@
       transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
     }
     .btn-wallet-icon:hover { background: rgba(47,246,222,0.18) !important; border-color: #2ff6de; }
+    .topbar-tcl-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 999px;
+      border: 1px solid #2a3347; background: rgba(47,246,222,0.07);
+      flex-shrink: 0;
+    }
+    .topbar-tcl-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .topbar-tcl-chip span { font-size: 0.8rem; font-weight: 700; color: var(--text); white-space: nowrap; }
     .wallet-popup {
       position: absolute; top: calc(100% + 10px); right: 0;
       width: 300px; background: #0d1120;
@@ -550,6 +558,10 @@
       <!-- ── Connected wallet icon + popup (hidden when not connected) -->
       <div id="connectedTopbar" style="display:none;align-items:center;gap:8px;position:relative;">
         <span id="walletAddr" style="display:none;"></span>
+        <div class="topbar-tcl-chip" id="topbarTclChip" title="TCL balance">
+          <img id="topbarTclIcon" src="images/tcl_icon.png" alt="TCL">
+          <span id="topbarTclAmount">-- TCL</span>
+        </div>
         <button class="btn-wallet-icon" id="walletPopupBtn" type="button" onclick="toggleWalletPopup(event)" title="Wallet">
           <img src="images/wallet.png" width="48" height="48" alt="wallet" style="display:block;pointer-events:none;border-radius:10px;">
         </button>
@@ -613,10 +625,10 @@
         </div>
         <span class="bac-sep">|</span>
         <div class="bac-item">
-          <img class="bac-icon" id="bacTclIcon" src="images/tcl_icon.png" alt="TCL">
+          <img class="bac-icon" id="bacWegldIcon" src="images/EGLD.png" alt="WEGLD">
           <div class="bac-info">
-            <span class="bac-amount" id="bacTclAmount">-- TCL</span>
-            <span class="bac-usd" id="bacTclUsd">$--</span>
+            <span class="bac-amount" id="bacWegldAmount">-- WEGLD</span>
+            <span class="bac-usd" id="bacWegldUsd">$--</span>
           </div>
         </div>
       </div>
@@ -1770,10 +1782,12 @@ document.addEventListener("click", function(e) {
       D.userBalanceUsd.textContent  = egldP > 0 ? `$${(egldNum * egldP).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$--";
 
       // Update balance strip
-      const usdcNum = Number(S.tokenBalances.USDC) / 1e6;
-      const tclNum  = Number(S.tokenBalances.TCL)  / Math.pow(10, S.tclDecimals);
-      const usdcP   = S.tokenPrices.USDC || 1;
-      const tclP    = S.tokenPrices.TCL  || 0;
+      const usdcNum  = Number(S.tokenBalances.USDC)  / 1e6;
+      const tclNum   = Number(S.tokenBalances.TCL)   / Math.pow(10, S.tclDecimals);
+      const wegldNum = Number(S.tokenBalances.WEGLD) / 1e18;
+      const usdcP    = S.tokenPrices.USDC || 1;
+      const tclP     = S.tokenPrices.TCL  || 0;
+      const wegldP   = S.tokenPrices.WEGLD || egldP;
       const fmt2    = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       if (D.stripEgldAmount) D.stripEgldAmount.textContent = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
       if (D.stripEgldUsd)    D.stripEgldUsd.textContent    = egldP > 0 ? `$${fmt2(egldNum * egldP)}` : "$--";
@@ -1788,12 +1802,15 @@ document.addEventListener("click", function(e) {
       const bacEgldU = document.getElementById("bacEgldUsd");     if (bacEgldU) bacEgldU.textContent = egldP > 0 ? `$${fmt2(egldNum * egldP)}` : "$--";
       const bacUsdc  = document.getElementById("bacUsdcAmount");  if (bacUsdc)  bacUsdc.textContent  = `${usdcNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDC`;
       const bacUsdcU = document.getElementById("bacUsdcUsd");     if (bacUsdcU) bacUsdcU.textContent = `$${fmt2(usdcNum * usdcP)}`;
-      const bacTcl   = document.getElementById("bacTclAmount");   if (bacTcl)   bacTcl.textContent   = `${tclNum.toLocaleString("en-US", { maximumFractionDigits: 0 })} TCL`;
-      const bacTclU  = document.getElementById("bacTclUsd");      if (bacTclU)  bacTclU.textContent  = tclP > 0 ? `$${fmt2(tclNum * tclP)}` : "$--";
+      const bacWegld  = document.getElementById("bacWegldAmount"); if (bacWegld)  bacWegld.textContent  = `${wegldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} WEGLD`;
+      const bacWegldU = document.getElementById("bacWegldUsd");    if (bacWegldU) bacWegldU.textContent = wegldP > 0 ? `$${fmt2(wegldNum * wegldP)}` : "$--";
+      // Topbar TCL chip (balance-above card now shows EGLD/USDC/WEGLD)
+      const topbarTcl  = document.getElementById("topbarTclAmount"); if (topbarTcl)  topbarTcl.textContent = `${tclNum.toLocaleString("en-US", { maximumFractionDigits: 0 })} TCL`;
       // Update token icons
-      const bacEgldI = document.getElementById("bacEgldIcon"); if (bacEgldI && TOKEN_META.EGLD.icon) bacEgldI.src = TOKEN_META.EGLD.icon;
-      const bacUsdcI = document.getElementById("bacUsdcIcon"); if (bacUsdcI && TOKEN_META.USDC.icon) bacUsdcI.src = TOKEN_META.USDC.icon;
-      const bacTclI  = document.getElementById("bacTclIcon");  if (bacTclI  && TOKEN_META.TCL.icon)  bacTclI.src  = TOKEN_META.TCL.icon;
+      const bacEgldI  = document.getElementById("bacEgldIcon");  if (bacEgldI  && TOKEN_META.EGLD.icon)  bacEgldI.src  = TOKEN_META.EGLD.icon;
+      const bacUsdcI  = document.getElementById("bacUsdcIcon");  if (bacUsdcI  && TOKEN_META.USDC.icon)  bacUsdcI.src  = TOKEN_META.USDC.icon;
+      const bacWegldI = document.getElementById("bacWegldIcon"); if (bacWegldI && TOKEN_META.WEGLD.icon) bacWegldI.src = TOKEN_META.WEGLD.icon;
+      const topbarTclI = document.getElementById("topbarTclIcon"); if (topbarTclI && TOKEN_META.TCL.icon) topbarTclI.src = TOKEN_META.TCL.icon;
 
       // Update popup balances
       const pe = document.getElementById("popupEgldAmount"); if (pe) pe.textContent = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
