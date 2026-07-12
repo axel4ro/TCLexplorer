@@ -280,12 +280,6 @@
       padding: 10px 12px; background: rgba(255,255,255,0.03);
       border-radius: 6px; border: 1px solid #1e2a42; text-align: center;
     }
-    .wallet-popup-balances { display: flex; flex-direction: column; gap: 6px; }
-    .wallet-popup-balances .wallet-balance {
-      display: flex; justify-content: space-between;
-      padding: 6px 10px; background: rgba(255,255,255,0.03);
-      border-radius: 6px; border: 1px solid #1e2a42; font-size: 13px;
-    }
     .btn-wallet-disconnect {
       display: flex !important; align-items: center; justify-content: center; gap: 8px;
       width: 100%; padding: 10px 14px; border: none !important; border-radius: 8px;
@@ -569,20 +563,6 @@
           <div class="wallet-popup-addr" id="walletAddrFull"></div>
           <a id="explorerLinkPopup" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer"
              style="display:inline-flex;align-items:center;padding:3px 10px;font-size:0.76rem;font-weight:700;border:1px solid rgba(0,232,204,0.35);border-radius:999px;background:rgba(0,232,204,0.08);color:#2ff6de;text-decoration:none;">View on Explorer ↗</a>
-          <div class="wallet-popup-balances" id="popupBalances">
-            <div class="wallet-balance">
-              <span id="popupEgldAmount">-- EGLD</span>
-              <span id="popupEgldUsd" style="color:var(--success);">$--</span>
-            </div>
-            <div class="wallet-balance">
-              <span id="popupUsdcAmount">-- USDC</span>
-              <span id="popupUsdcUsd" style="color:var(--success);">$--</span>
-            </div>
-            <div class="wallet-balance">
-              <span id="popupTclAmount">-- TCL</span>
-              <span id="popupTclUsd" style="color:var(--success);">$--</span>
-            </div>
-          </div>
           <button class="btn-wallet-disconnect" id="disconnectBtn" type="button">Disconnect ✕</button>
         </div>
       </div>
@@ -1811,14 +1791,6 @@ document.addEventListener("click", function(e) {
       const bacUsdcI  = document.getElementById("bacUsdcIcon");  if (bacUsdcI  && TOKEN_META.USDC.icon)  bacUsdcI.src  = TOKEN_META.USDC.icon;
       const bacWegldI = document.getElementById("bacWegldIcon"); if (bacWegldI && TOKEN_META.WEGLD.icon) bacWegldI.src = TOKEN_META.WEGLD.icon;
       const topbarTclI = document.getElementById("topbarTclIcon"); if (topbarTclI && TOKEN_META.TCL.icon) topbarTclI.src = TOKEN_META.TCL.icon;
-
-      // Update popup balances
-      const pe = document.getElementById("popupEgldAmount"); if (pe) pe.textContent = `${egldNum.toLocaleString("en-US", { maximumFractionDigits: 4 })} EGLD`;
-      const peu = document.getElementById("popupEgldUsd");   if (peu) peu.textContent = egldP > 0 ? `$${fmt2(egldNum * egldP)}` : "$--";
-      const pu = document.getElementById("popupUsdcAmount"); if (pu) pu.textContent = `${usdcNum.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDC`;
-      const puu = document.getElementById("popupUsdcUsd");   if (puu) puu.textContent = `$${fmt2(usdcNum * usdcP)}`;
-      const pt = document.getElementById("popupTclAmount");  if (pt) pt.textContent = `${tclNum.toLocaleString("en-US", { maximumFractionDigits: 0 })} TCL`;
-      const ptu = document.getElementById("popupTclUsd");    if (ptu) ptu.textContent = tclP > 0 ? `$${fmt2(tclNum * tclP)}` : "$--";
       updatePairUI();
     } catch(e) {
       console.warn("loadAllBalances failed", e);
