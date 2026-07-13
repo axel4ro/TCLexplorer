@@ -836,6 +836,15 @@
   </div>
 </div>
 
+<div id="pnlCheckModal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closePnlCheckModal()">✖</span>
+    <div class="pnl-check-modal-frame-wrap">
+      <iframe id="pnlCheckModalFrame" src="about:blank" title="PNL Check"></iframe>
+    </div>
+  </div>
+</div>
+
 <!-- Wiki -->
 <div id="wiki" class="section-page">
   <div class="page-hero">
@@ -2242,32 +2251,29 @@ function formatTclUsdValue(val, decimals = 18, preferredPriceUsd = null) {
   return "≈ " + formatNumber(usdValue) + " $";
 }
 
-function formatTclRewardDayValue(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null, boostPct = 0) {
+function formatTclRewardDayLines(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null, boostPct = 0) {
   const rewardsPayload = getCurrentRewardsStats(preferredRewardsPayload);
-  if (!rewardsPayload) return "";
+  if (!rewardsPayload) return null;
 
   const wholeAmount = getWholeTclAmount(val, decimals);
-  if (!wholeAmount) return "";
+  if (!wholeAmount) return null;
 
   const boostMultiplier = 1 + (Number(boostPct) || 0) / 100;
   const rewardTclPerDay = (wholeAmount / rewardsPayload.totalStaked) * rewardsPayload.emission * boostMultiplier;
-  if (!Number.isFinite(rewardTclPerDay) || rewardTclPerDay <= 0) return "";
+  if (!Number.isFinite(rewardTclPerDay) || rewardTclPerDay <= 0) return null;
 
   const priceUsd = preferredPriceUsd || getCurrentTclPriceUsd();
   const rewardUsdPerDay = priceUsd ? rewardTclPerDay * priceUsd : 0;
-  const rewardTclText = formatNumber(rewardTclPerDay);
-  const boostSuffix = boostPct > 0 ? ` (+${boostPct}% boost)` : "";
 
-  if (rewardUsdPerDay > 0) {
-    return t("staking_reward_day_with_usd", {
-      tcl: rewardTclText,
-      usd: formatNumber(rewardUsdPerDay)
-    }) + boostSuffix;
+  const line1 = t("staking_reward_day", { tcl: formatNumber(rewardTclPerDay) });
+
+  let line2 = rewardUsdPerDay > 0 ? t("staking_reward_usd_day", { usd: formatNumber(rewardUsdPerDay) }) : "";
+  if (boostPct > 0) {
+    const boostText = t("staking_reward_boost_equipped", { pct: boostPct });
+    line2 = line2 ? `${line2} (${boostText})` : `(${boostText})`;
   }
 
-  return t("staking_reward_day", {
-    tcl: rewardTclText
-  }) + boostSuffix;
+  return { line1, line2 };
 }
 
 function formatShortAddress(address) {
@@ -2339,8 +2345,9 @@ function buildLeaderboardRowHtml(entry, options = {}) {
   const totalRaw = normalizeIntegerLikeValue(entry?.total ?? 0);
   const boostPct = Number(entry?.boostPct) || 0;
   const totalUsd = formatTclUsdValue(totalRaw);
-  const rewardDay = formatTclRewardDayValue(totalRaw, 18, null, null, boostPct);
+  const rewardLines = formatTclRewardDayLines(totalRaw, 18, null, null, boostPct);
   const copyLabel = t("common_copy", "Copy");
+  const checkLabel = t("staking_check_btn", "Check");
   const hasCustomRankDisplay = Object.prototype.hasOwnProperty.call(options, "rankDisplay");
   const rankDisplay = hasCustomRankDisplay
     ? options.rankDisplay
@@ -2359,6 +2366,13 @@ function buildLeaderboardRowHtml(entry, options = {}) {
   const totalCellHtml = totalUsd
     ? "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'>" + totalUsd + "</div></div>"
     : "<div class='staking-total-cell' data-raw-total='" + totalRaw + "'><div class='staking-total-value'>" + formatTcl(totalRaw) + "</div><div class='staking-total-usd'></div></div>";
+  const rewardHtml = rewardLines
+    ? "<div class='staking-address-reward-tcl'>" + rewardLines.line1 + "</div>" +
+      (rewardLines.line2 ? "<div class='staking-address-reward-usd'>" + rewardLines.line2 + "</div>" : "")
+    : "";
+  const checkBtnHtml = address
+    ? "<button type='button' onclick=\"openPnlCheckModal('" + address + "', event)\" class='staking-check-btn'>" + checkLabel + "</button>"
+    : "";
   const addressCellHtml =
     "<div class='staking-address-cell'>" +
       "<div class='staking-address-main'>" +
@@ -2369,7 +2383,8 @@ function buildLeaderboardRowHtml(entry, options = {}) {
           "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>" + copyLabel + "</button>" +
       "</div>" +
       subtitleHtml +
-      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "' data-boost-pct='" + boostPct + "'>" + (rewardDay || "") + "</div>" +
+      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "' data-boost-pct='" + boostPct + "'>" + rewardHtml + "</div>" +
+      checkBtnHtml +
     "</div>";
   const rowClass = options.rowClass ? " class='" + options.rowClass + "'" : "";
   const groupPrimaryAttr = groupPrimary ? " data-staking-group-primary='" + groupPrimary + "'" : "";
@@ -2472,7 +2487,11 @@ function refreshLeaderboardMetaValues(options = {}) {
   document.querySelectorAll(".staking-address-reward[data-raw-total]").forEach((rewardEl) => {
     const rawTotal = rewardEl.getAttribute("data-raw-total");
     const boostPct = Number(rewardEl.getAttribute("data-boost-pct")) || 0;
-    rewardEl.textContent = formatTclRewardDayValue(rawTotal, 18, rewardsPayload, priceUsd, boostPct);
+    const lines = formatTclRewardDayLines(rawTotal, 18, rewardsPayload, priceUsd, boostPct);
+    const tclEl = rewardEl.querySelector(".staking-address-reward-tcl");
+    const usdEl = rewardEl.querySelector(".staking-address-reward-usd");
+    if (tclEl) tclEl.textContent = lines?.line1 || "";
+    if (usdEl) usdEl.textContent = lines?.line2 || "";
   });
 }
 
@@ -5294,6 +5313,22 @@ function openAprCalculator() {
 
 function closeAprCalculator() {
   document.getElementById("aprModal").style.display = "none";
+}
+
+function openPnlCheckModal(address, event) {
+  if (event) event.preventDefault();
+  const modal = document.getElementById("pnlCheckModal");
+  const frame = document.getElementById("pnlCheckModalFrame");
+  if (!modal || !frame || !address) return;
+  frame.src = "pnlCheck.html?wallet=" + encodeURIComponent(address);
+  modal.style.display = "flex";
+}
+
+function closePnlCheckModal() {
+  const modal = document.getElementById("pnlCheckModal");
+  const frame = document.getElementById("pnlCheckModalFrame");
+  if (modal) modal.style.display = "none";
+  if (frame) frame.src = "about:blank";
 }
 
 function openFlowPage() {
