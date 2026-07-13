@@ -406,12 +406,134 @@ async function syncBuyCoins(log) {
   return stored;
 }
 
+// ── Phase 5: Sync withdrawBalancePrivateShop transactions ────────────────────
+// The root tx for this call carries no TCL payload itself (only its SCR
+// children do), so it never surfaces via /tokens/{id}/transfers — the
+// endpoint syncIncremental/syncBackfill rely on. Poll the game contract's
+// own transaction list directly instead, same approach as syncBuyCoins.
+const WITHDRAW_FUNCTION  = "withdrawBalancePrivateShop";
+const WITHDRAW_NEWEST_TS = "withdraw_bps_newest_ts";
+const WITHDRAW_PAGE_SIZE = 50; // MVX complexity cap when withOperations=true
+const WITHDRAW_MAX_PAGES = 20;
+
+async function syncWithdrawals(log) {
+  let newestTs = parseInt(await getState(WITHDRAW_NEWEST_TS) || "0", 10) || 0;
+
+  if (!newestTs) {
+    // First run after deploying this phase: seed from whatever is already
+    // indexed (a one-off full backfill was run manually) instead of
+    // re-pulling the entire history through this endpoint.
+    const row = await db.one(
+      "SELECT COALESCE(MAX(ts),0) AS max_ts FROM tcl_transfers WHERE function=$1",
+      [WITHDRAW_FUNCTION]
+    );
+    newestTs = Number(row?.max_ts) || 0;
+  }
+
+  const after = newestTs > 0 ? Math.max(0, newestTs - 2) : undefined;
+  let latestTs = newestTs, fetched = 0, stored = 0;
+
+  for (let page = 0; page < WITHDRAW_MAX_PAGES; page++) {
+    const txs = await mvxFetch(`/accounts/${TCL_GAME}/transactions`, {
+      from: page * WITHDRAW_PAGE_SIZE,
+      size: WITHDRAW_PAGE_SIZE,
+      function: WITHDRAW_FUNCTION,
+      status: "success",
+      withOperations: "true",
+      after,
+    });
+    if (!Array.isArray(txs) || !txs.length) break;
+    fetched += txs.length;
+
+    const fresh = txs.filter(t => Number(t.timestamp) > newestTs);
+    if (fresh.length) {
+      await upsertRows(fresh.map(txToRow).filter(r => validTxHash(r.tx_hash)));
+      stored += fresh.length;
+      for (const t of fresh) latestTs = Math.max(latestTs, Number(t.timestamp) || 0);
+    }
+
+    if (txs.length < WITHDRAW_PAGE_SIZE) break;
+    await sleep(250);
+  }
+
+  if (latestTs > newestTs) await setState(WITHDRAW_NEWEST_TS, latestTs);
+  log(`[withdrawals] fetched=${fetched} stored=${stored} newest_ts=${latestTs}`);
+  return stored;
+}
+
+// ── Phase 6: Sync reward-claim function calls ────────────────────────────────
+// Same problem as withdrawBalancePrivateShop above: the root call carries no
+// TCL payload (only its SCR does, tagged generically as "ESDTTransfer" with
+// no originalTxHash link back to a root row), so computeWalletEarned in
+// pnl-compute.mjs can never resolve the real function name for these and
+// silently drops them from "Earned TCL $". Poll each function's calls on the
+// game contract directly, same approach as syncWithdrawals.
+const REWARD_CLAIM_FUNCTIONS = [
+  "claimRewards", "claimBorrowingRewards", "claimLendingRewards", "claimInfinityRewards",
+  "claimReferralRewards", "claimManagerRewards", "referral", "addDaysAutoClaim",
+];
+const REWARD_CLAIM_PAGE_SIZE = 50; // MVX complexity cap when withOperations=true
+const REWARD_CLAIM_MAX_PAGES = 8;  // spread the backfill over more cron cycles — 8 functions/run adds up
+
+async function syncFunctionCalls(functionName, log) {
+  // Unlike syncWithdrawals, don't bootstrap from MAX(ts) of already-indexed
+  // rows: some of these functions already have thousands of rows whose SCR
+  // happened to retain the parent function name, but that coverage is
+  // partial (that's the bug this phase exists to fix) — trusting it as
+  // "already backfilled" would skip the real gaps. Always crawl from the
+  // true start; re-upserting already-correct rows is a harmless no-op.
+  const stateKey = `fncall_${functionName}_newest_ts`;
+  const newestTs = parseInt(await getState(stateKey) || "0", 10) || 0;
+  const after = newestTs > 0 ? Math.max(0, newestTs - 2) : undefined;
+  let latestTs = newestTs, fetched = 0, stored = 0;
+
+  for (let page = 0; page < REWARD_CLAIM_MAX_PAGES; page++) {
+    const txs = await mvxFetch(`/accounts/${TCL_GAME}/transactions`, {
+      from: page * REWARD_CLAIM_PAGE_SIZE,
+      size: REWARD_CLAIM_PAGE_SIZE,
+      function: functionName,
+      status: "success",
+      withOperations: "true",
+      after,
+    });
+    if (!Array.isArray(txs) || !txs.length) break;
+    fetched += txs.length;
+
+    const fresh = txs.filter(t => Number(t.timestamp) > newestTs);
+    if (fresh.length) {
+      await upsertRows(fresh.map(txToRow).filter(r => validTxHash(r.tx_hash)));
+      stored += fresh.length;
+      for (const t of fresh) latestTs = Math.max(latestTs, Number(t.timestamp) || 0);
+    }
+
+    if (txs.length < REWARD_CLAIM_PAGE_SIZE) break;
+    await sleep(250);
+  }
+
+  if (latestTs > newestTs) await setState(stateKey, latestTs);
+  log(`[${functionName}] fetched=${fetched} stored=${stored} newest_ts=${latestTs}`);
+  return stored;
+}
+
+async function syncRewardClaims(log) {
+  let total = 0;
+  for (const fn of REWARD_CLAIM_FUNCTIONS) {
+    try {
+      total += await syncFunctionCalls(fn, log);
+    } catch (e) {
+      log(`[${fn}] ERROR:`, e.message);
+    }
+    await sleep(250);
+  }
+  return total;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   const log = (...args) => console.log(new Date().toISOString(), ...args);
   log("=== TCL PNL Sync START ===");
 
-  let newCount = 0, backfillCount = 0, backlogCount = 0, buyCoinsCount = 0;
+  let newCount = 0, backfillCount = 0, backlogCount = 0, buyCoinsCount = 0, withdrawCount = 0, rewardClaimCount = 0;
 
   try { newCount      = await syncIncremental(log); }
   catch (e) { log("[incremental] ERROR:", e.message); }
@@ -425,7 +547,13 @@ async function main() {
   try { buyCoinsCount = await syncBuyCoins(log); }
   catch (e) { log("[buyCoins] ERROR:", e.message); }
 
-  log(`=== DONE: +${newCount} new, +${backfillCount} backfill, +${backlogCount} enriched, +${buyCoinsCount} buyCoins ===`);
+  try { withdrawCount = await syncWithdrawals(log); }
+  catch (e) { log("[withdrawals] ERROR:", e.message); }
+
+  try { rewardClaimCount = await syncRewardClaims(log); }
+  catch (e) { log("[rewardClaims] ERROR:", e.message); }
+
+  log(`=== DONE: +${newCount} new, +${backfillCount} backfill, +${backlogCount} enriched, +${buyCoinsCount} buyCoins, +${withdrawCount} withdrawals, +${rewardClaimCount} rewardClaims ===`);
   await pool.end();
 }
 
