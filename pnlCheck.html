@@ -4038,6 +4038,13 @@
         renderEmptyPnl();
 
         if (state.embedMode) {
+          // Needed before runPnlCheck: "at current price" values (staking,
+          // earned TCL, holdings, and the final PNL $ figure) all read
+          // state.prices.tcl, which is otherwise only populated by
+          // loadBalances() — skipped entirely in embed mode since there's no
+          // connected wallet. Without this the embed silently priced
+          // everything at 0 and produced a wrong PNL $ total.
+          await fetchPrices().catch((e) => console.warn("Price fetch failed", e));
           runPnlCheck({ preventDefault() {} });
           notifyParentReady();
           return;
