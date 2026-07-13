@@ -1553,7 +1553,8 @@
         balanceLoading: false,
         pnlLoading: false,
         loading: false,
-        embedMode: false
+        embedMode: false,
+        embedSecondaryWallet: ""
       };
 
       const dom = {
@@ -3628,14 +3629,17 @@
         // Show the current TCL price used for the "at current price" cards.
         const subtitleEl = document.getElementById("pnlSubtitle");
         if (subtitleEl) {
+          const walletPhrase = state.embedSecondaryWallet
+            ? "the 2 linked wallets (combined)"
+            : "the selected wallet";
           if (tclPrice > 0) {
             const priceStr = new Intl.NumberFormat(getLocale(), {
               style: "decimal", minimumFractionDigits: 2,
               maximumFractionDigits: tclPrice < 0.01 ? 8 : 4
             }).format(tclPrice);
-            subtitleEl.textContent = `TCL swaps valued in USDC for the selected wallet · Current TCL price: $${priceStr}`;
+            subtitleEl.textContent = `TCL swaps valued in USDC for ${walletPhrase} · Current TCL price: $${priceStr}`;
           } else {
-            subtitleEl.textContent = "TCL swaps valued in USDC for the selected wallet.";
+            subtitleEl.textContent = `TCL swaps valued in USDC for ${walletPhrase}.`;
           }
         }
         // Valoarea TCL earned + TCL staked (la pretul curent), plus costurile Presale si Infinity Offers.
@@ -3698,6 +3702,144 @@
         });
       }
 
+      // Fetches every PNL data source for a single wallet, normalizing failures
+      // to the same empty shapes runPnlCheck already fell back to. Pulled out
+      // of runPnlCheck so the embed popup can fetch two linked wallets in
+      // parallel and combine them (see combineWalletPnlBundles).
+      async function fetchWalletPnlBundle(walletAddress) {
+        // Enrichment-ul operations se face acum server-side de sync-pnl.js pe VPS
+        // (cron la 10 min). Nu mai apelam worker-ul de enrich pe Supabase-ul vechi —
+        // datele din DB-ul nostru sunt deja enrichuite. Zero dependenta de Supabase.
+        const [pnlResult, earnedResult, infinityResult, stakingResult, presaleResult, walletResult] = await Promise.allSettled([
+          fetchPnlFromSupabase(walletAddress),
+          fetchEarnedTcl(walletAddress),
+          fetchInfinityOffers(walletAddress),
+          fetchStaking(walletAddress),
+          fetchPresale(walletAddress),
+          fetchWalletBalance(walletAddress)
+        ]);
+
+        if (pnlResult.status === "rejected") {
+          console.warn("PNL buy/sell lookup failed", pnlResult.reason);
+        }
+        if (earnedResult.status === "rejected") {
+          console.warn("Earned TCL lookup failed", earnedResult.reason);
+        }
+        if (infinityResult.status === "rejected") {
+          console.warn("Infinity Offers lookup failed", infinityResult.reason);
+        }
+        if (stakingResult.status === "rejected") {
+          console.warn("Staking lookup failed", stakingResult.reason);
+        }
+        if (presaleResult.status === "rejected") {
+          console.warn("Presale lookup failed", presaleResult.reason);
+        }
+        if (walletResult.status === "rejected") {
+          console.warn("Wallet balance lookup failed", walletResult.reason);
+        }
+
+        const pnlAvailable = pnlResult.status === "fulfilled" && !!pnlResult.value;
+        const pnlData = pnlAvailable ? pnlResult.value : createEmptyPnlData();
+        const earnedTcl = (earnedResult.status === "fulfilled" && earnedResult.value)
+          ? earnedResult.value
+          : { total: 0, breakdown: {} };
+        const infinity = (infinityResult.status === "fulfilled" && infinityResult.value)
+          ? infinityResult.value
+          : { tcl: 0, usdc: 0, count: 0 };
+        const staking = (stakingResult.status === "fulfilled" && stakingResult.value)
+          ? stakingResult.value
+          : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
+        const presale = (presaleResult.status === "fulfilled" && presaleResult.value)
+          ? presaleResult.value
+          : createEmptyPresaleData();
+        const wallet = (walletResult.status === "fulfilled" && walletResult.value)
+          ? walletResult.value
+          : { tcl: 0 };
+
+        return { pnlData, earnedTcl, infinity, staking, presale, wallet, pnlAvailable };
+      }
+
+      // Sums two wallets' bundles field-by-field for the "linked wallets"
+      // staking-leaderboard popup, where Check should show the combined
+      // total instead of just the primary wallet.
+      function combineWalletPnlBundles(a, b) {
+        const pnlData = {
+          buyTcl:       readNumber(a.pnlData.buyTcl, 0) + readNumber(b.pnlData.buyTcl, 0),
+          buyCost:      readNumber(a.pnlData.buyCost, 0) + readNumber(b.pnlData.buyCost, 0),
+          sellTcl:      readNumber(a.pnlData.sellTcl, 0) + readNumber(b.pnlData.sellTcl, 0),
+          sellReceived: readNumber(a.pnlData.sellReceived, 0) + readNumber(b.pnlData.sellReceived, 0),
+          tradeCount:   readNumber(a.pnlData.tradeCount, 0) + readNumber(b.pnlData.tradeCount, 0),
+          buyCount:     readNumber(a.pnlData.buyCount, 0) + readNumber(b.pnlData.buyCount, 0),
+          sellCount:    readNumber(a.pnlData.sellCount, 0) + readNumber(b.pnlData.sellCount, 0),
+          reachedListingStart: !!a.pnlData.reachedListingStart && !!b.pnlData.reachedListingStart,
+          checkedSwaps: readNumber(a.pnlData.checkedSwaps, 0) + readNumber(b.pnlData.checkedSwaps, 0),
+          oldestTimestamp: [a.pnlData.oldestTimestamp, b.pnlData.oldestTimestamp]
+            .filter((v) => v)
+            .sort((x, y) => x - y)[0] || null,
+          source: "supabase"
+        };
+
+        const breakdown = {};
+        const categories = {};
+        for (const src of [a.earnedTcl, b.earnedTcl]) {
+          for (const [k, v] of Object.entries(src.breakdown || {})) {
+            breakdown[k] = readNumber(breakdown[k], 0) + readNumber(v, 0);
+          }
+          for (const [k, v] of Object.entries(src.categories || {})) {
+            categories[k] = readNumber(categories[k], 0) + readNumber(v, 0);
+          }
+        }
+        const earnedTcl = {
+          total: readEarnedTotal(a.earnedTcl) + readEarnedTotal(b.earnedTcl),
+          breakdown,
+          categories,
+          details: [...(a.earnedTcl.details || []), ...(b.earnedTcl.details || [])]
+        };
+
+        const infinity = {
+          tcl:   readNumber(a.infinity.tcl, 0) + readNumber(b.infinity.tcl, 0),
+          usdc:  readNumber(a.infinity.usdc, 0) + readNumber(b.infinity.usdc, 0),
+          count: readNumber(a.infinity.count, 0) + readNumber(b.infinity.count, 0)
+        };
+
+        const staking = {
+          nft:      readNumber(a.staking.nft, 0) + readNumber(b.staking.nft, 0),
+          loan:     readNumber(a.staking.loan, 0) + readNumber(b.staking.loan, 0),
+          infinity: readNumber(a.staking.infinity, 0) + readNumber(b.staking.infinity, 0),
+          total:    readNumber(a.staking.total, 0) + readNumber(b.staking.total, 0),
+          found:    !!a.staking.found || !!b.staking.found
+        };
+
+        const sourcesByKey = new Map();
+        for (const bundle of [a.presale, b.presale]) {
+          for (const src of (bundle.sources || [])) {
+            const existing = sourcesByKey.get(src.key);
+            if (existing) {
+              existing.tcl += readNumber(src.tcl, 0);
+              existing.cost += readNumber(src.cost, 0);
+              existing.count += readNumber(src.count, 0);
+            } else {
+              sourcesByKey.set(src.key, {
+                ...src,
+                tcl: readNumber(src.tcl, 0),
+                cost: readNumber(src.cost, 0),
+                count: readNumber(src.count, 0)
+              });
+            }
+          }
+        }
+        const presale = {
+          totalTcl:   readNumber(a.presale.totalTcl, 0) + readNumber(b.presale.totalTcl, 0),
+          totalCost:  readNumber(a.presale.totalCost, 0) + readNumber(b.presale.totalCost, 0),
+          totalCount: readNumber(a.presale.totalCount, 0) + readNumber(b.presale.totalCount, 0),
+          sources: [...sourcesByKey.values()]
+        };
+
+        const wallet = { tcl: readNumber(a.wallet.tcl, 0) + readNumber(b.wallet.tcl, 0) };
+
+        return { pnlData, earnedTcl, infinity, staking, presale, wallet, pnlAvailable: a.pnlAvailable || b.pnlAvailable };
+      }
+
       async function runPnlCheck(event) {
         event.preventDefault();
         const walletAddress = dom.pnlAddressInput.value.trim();
@@ -3714,56 +3856,18 @@
         setPnlStatus("Loading transaction history...");
 
         try {
-          // Enrichment-ul operations se face acum server-side de sync-pnl.js pe VPS
-          // (cron la 10 min). Nu mai apelam worker-ul de enrich pe Supabase-ul vechi —
-          // datele din DB-ul nostru sunt deja enrichuite. Zero dependenta de Supabase.
+          const secondaryWallet = (state.embedMode && isAddress(state.embedSecondaryWallet || ""))
+            ? state.embedSecondaryWallet
+            : null;
 
-          const [pnlResult, earnedResult, infinityResult, stakingResult, presaleResult, walletResult] = await Promise.allSettled([
-            fetchPnlFromSupabase(walletAddress),
-            fetchEarnedTcl(walletAddress),
-            fetchInfinityOffers(walletAddress),
-            fetchStaking(walletAddress),
-            fetchPresale(walletAddress),
-            fetchWalletBalance(walletAddress)
-          ]);
-
-          if (pnlResult.status === "rejected") {
-            console.warn("PNL buy/sell lookup failed", pnlResult.reason);
-          }
-          if (earnedResult.status === "rejected") {
-            console.warn("Earned TCL lookup failed", earnedResult.reason);
-          }
-          if (infinityResult.status === "rejected") {
-            console.warn("Infinity Offers lookup failed", infinityResult.reason);
-          }
-          if (stakingResult.status === "rejected") {
-            console.warn("Staking lookup failed", stakingResult.reason);
-          }
-          if (presaleResult.status === "rejected") {
-            console.warn("Presale lookup failed", presaleResult.reason);
-          }
-          if (walletResult.status === "rejected") {
-            console.warn("Wallet balance lookup failed", walletResult.reason);
-          }
-
-          const pnlData = (pnlResult.status === "fulfilled" && pnlResult.value)
-            ? pnlResult.value
-            : createEmptyPnlData();
-          const earnedTcl = (earnedResult.status === "fulfilled" && earnedResult.value)
-            ? earnedResult.value
-            : { total: 0, breakdown: {} };
-          const infinity = (infinityResult.status === "fulfilled" && infinityResult.value)
-            ? infinityResult.value
-            : { tcl: 0, usdc: 0, count: 0 };
-          const staking = (stakingResult.status === "fulfilled" && stakingResult.value)
-            ? stakingResult.value
-            : { nft: 0, loan: 0, infinity: 0, total: 0, found: false };
-          const presale = (presaleResult.status === "fulfilled" && presaleResult.value)
-            ? presaleResult.value
-            : createEmptyPresaleData();
-          const wallet = (walletResult.status === "fulfilled" && walletResult.value)
-            ? walletResult.value
-            : { tcl: 0 };
+          const bundles = await Promise.all(
+            secondaryWallet
+              ? [fetchWalletPnlBundle(walletAddress), fetchWalletPnlBundle(secondaryWallet)]
+              : [fetchWalletPnlBundle(walletAddress)]
+          );
+          const { pnlData, earnedTcl, infinity, staking, presale, wallet, pnlAvailable } = secondaryWallet
+            ? combineWalletPnlBundles(bundles[0], bundles[1])
+            : bundles[0];
 
           // Construieste totals in formatul asteptat de renderPnlResult
           const totals = {
@@ -3794,7 +3898,7 @@
           const earnedAmount = readEarnedTotal(earnedTcl);
           const infinityCount = readNumber(infinity.count, 0);
           const presaleAmount = readNumber(presale.totalTcl, 0);
-          const pnlUnavailable = pnlResult.status !== "fulfilled" || !pnlResult.value;
+          const pnlUnavailable = !pnlAvailable;
           if (pnlUnavailable && earnedAmount > 0) {
             setPnlStatus("Could not load buy/sell swaps. Earned TCL was still checked.");
           } else if (pnlUnavailable) {
@@ -4053,13 +4157,20 @@
 
         // Standalone embed (?wallet=erd1...): show just the PNL Check card for
         // a given address, no xPortal connection needed — used by the popup
-        // opened from the staking leaderboard's "Check" button.
-        const embedWallet = new URLSearchParams(location.search).get("wallet") || "";
+        // opened from the staking leaderboard's "Check" button. An optional
+        // ?wallet2=erd1... combines a second linked wallet's results into the
+        // same card (used for the leaderboard's merged primary+secondary rows).
+        const embedParams = new URLSearchParams(location.search);
+        const embedWallet = embedParams.get("wallet") || "";
+        const embedWallet2 = embedParams.get("wallet2") || "";
         if (isAddress(embedWallet)) {
           state.embedMode = true;
           document.body.classList.add("pnl-embed-simple");
           dom.pnlAddressInput.value = embedWallet;
           dom.pnlAddressInput.dataset.mode = "manual";
+          if (isAddress(embedWallet2) && embedWallet2 !== embedWallet) {
+            state.embedSecondaryWallet = embedWallet2;
+          }
         }
 
         state.address = getInitialAddress();
