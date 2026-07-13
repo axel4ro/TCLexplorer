@@ -759,7 +759,7 @@
   <div id="stakingSearchResult" style="margin-bottom:12px; font-size:14px;"></div>
 
   <div class="staking-reward-note muted" data-i18n="staking_reward_note">
-    ℹ️ Reward/day is a base estimate at current APR and price and does not include TCLBoost bonuses (+5% / +7% / +10%)
+    ℹ️ Reward/day is a base estimate at current APR and price. TCLBoost bonuses (+5% / +7% / +10%) are now included for holders of the Boost NFT.
   </div>
 
   <div class="staking-scale-shell" id="stakingScaleShell">
@@ -2242,30 +2242,32 @@ function formatTclUsdValue(val, decimals = 18, preferredPriceUsd = null) {
   return "≈ " + formatNumber(usdValue) + " $";
 }
 
-function formatTclRewardDayValue(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null) {
+function formatTclRewardDayValue(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null, boostPct = 0) {
   const rewardsPayload = getCurrentRewardsStats(preferredRewardsPayload);
   if (!rewardsPayload) return "";
 
   const wholeAmount = getWholeTclAmount(val, decimals);
   if (!wholeAmount) return "";
 
-  const rewardTclPerDay = (wholeAmount / rewardsPayload.totalStaked) * rewardsPayload.emission;
+  const boostMultiplier = 1 + (Number(boostPct) || 0) / 100;
+  const rewardTclPerDay = (wholeAmount / rewardsPayload.totalStaked) * rewardsPayload.emission * boostMultiplier;
   if (!Number.isFinite(rewardTclPerDay) || rewardTclPerDay <= 0) return "";
 
   const priceUsd = preferredPriceUsd || getCurrentTclPriceUsd();
   const rewardUsdPerDay = priceUsd ? rewardTclPerDay * priceUsd : 0;
   const rewardTclText = formatNumber(rewardTclPerDay);
+  const boostSuffix = boostPct > 0 ? ` (+${boostPct}% boost)` : "";
 
   if (rewardUsdPerDay > 0) {
     return t("staking_reward_day_with_usd", {
       tcl: rewardTclText,
       usd: formatNumber(rewardUsdPerDay)
-    });
+    }) + boostSuffix;
   }
 
   return t("staking_reward_day", {
     tcl: rewardTclText
-  });
+  }) + boostSuffix;
 }
 
 function formatShortAddress(address) {
@@ -2294,7 +2296,8 @@ function buildMergedLeaderboardEntry(primaryEntry, secondaryEntry = null) {
     nft: sumStakingRawValues(primaryEntry?.nft ?? 0, secondaryEntry?.nft ?? 0),
     loan: sumStakingRawValues(primaryEntry?.loan ?? 0, secondaryEntry?.loan ?? 0),
     infinity: sumStakingRawValues(primaryEntry?.infinity ?? 0, secondaryEntry?.infinity ?? 0),
-    total: sumStakingRawValues(primaryEntry?.total ?? 0, secondaryEntry?.total ?? 0)
+    total: sumStakingRawValues(primaryEntry?.total ?? 0, secondaryEntry?.total ?? 0),
+    boostPct: Math.max(Number(primaryEntry?.boostPct) || 0, Number(secondaryEntry?.boostPct) || 0)
   };
 }
 
@@ -2334,8 +2337,9 @@ function buildLeaderboardRankHtml(rankDisplay, address = "") {
 function buildLeaderboardRowHtml(entry, options = {}) {
   const address = String(entry?.addr || "");
   const totalRaw = normalizeIntegerLikeValue(entry?.total ?? 0);
+  const boostPct = Number(entry?.boostPct) || 0;
   const totalUsd = formatTclUsdValue(totalRaw);
-  const rewardDay = formatTclRewardDayValue(totalRaw);
+  const rewardDay = formatTclRewardDayValue(totalRaw, 18, null, null, boostPct);
   const copyLabel = t("common_copy", "Copy");
   const hasCustomRankDisplay = Object.prototype.hasOwnProperty.call(options, "rankDisplay");
   const rankDisplay = hasCustomRankDisplay
@@ -2365,7 +2369,7 @@ function buildLeaderboardRowHtml(entry, options = {}) {
           "style='padding:2px 6px; font-size:12px; border:none; border-radius:4px; cursor:pointer; background:#28a745; color:white;'>" + copyLabel + "</button>" +
       "</div>" +
       subtitleHtml +
-      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "'>" + (rewardDay || "") + "</div>" +
+      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "' data-boost-pct='" + boostPct + "'>" + (rewardDay || "") + "</div>" +
     "</div>";
   const rowClass = options.rowClass ? " class='" + options.rowClass + "'" : "";
   const groupPrimaryAttr = groupPrimary ? " data-staking-group-primary='" + groupPrimary + "'" : "";
@@ -2467,7 +2471,8 @@ function refreshLeaderboardMetaValues(options = {}) {
 
   document.querySelectorAll(".staking-address-reward[data-raw-total]").forEach((rewardEl) => {
     const rawTotal = rewardEl.getAttribute("data-raw-total");
-    rewardEl.textContent = formatTclRewardDayValue(rawTotal, 18, rewardsPayload, priceUsd);
+    const boostPct = Number(rewardEl.getAttribute("data-boost-pct")) || 0;
+    rewardEl.textContent = formatTclRewardDayValue(rawTotal, 18, rewardsPayload, priceUsd, boostPct);
   });
 }
 
@@ -2492,7 +2497,8 @@ function renderLeaderboardRows(data) {
     nft: normalizeIntegerLikeValue(v?.nft ?? 0),
     loan: normalizeIntegerLikeValue(v?.loan ?? 0),
     infinity: normalizeIntegerLikeValue(v?.infinity ?? 0),
-    total: normalizeIntegerLikeValue(v?.total ?? 0)
+    total: normalizeIntegerLikeValue(v?.total ?? 0),
+    boostPct: Number(v?.boostPct) || 0
   }));
 
   results.sort((a, b) => a.rank - b.rank);
@@ -2520,7 +2526,8 @@ function renderLeaderboardRows(data) {
         nft: "0",
         loan: "0",
         infinity: "0",
-        total: "0"
+        total: "0",
+        boostPct: 0
       };
 
       displayEntries.push({
