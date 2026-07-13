@@ -1,9 +1,0 @@
-name = "tcl-wheel"
-main = "worker.js"
-compatibility_date = "2026-05-27"
-compatibility_flags = ["global_fetch_strictly_public"]
-workers_dev = true
-
-[vars]
-SUPABASE_URL = "https://phhzrfzhwwooeqsdztee.supabase.co"
-ALLOWED_ORIGIN = "https://tclexplorer.com,https://axel4ro.github.io"
