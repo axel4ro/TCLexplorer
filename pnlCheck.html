@@ -4109,8 +4109,14 @@
         if (!window.parent || window.parent === window || typeof ResizeObserver !== "function") return;
         const postHeight = () => {
           try {
+            // document.documentElement.scrollHeight is inflated by the
+            // fixed, inset:0 #balanceOverlay (still in the DOM even while
+            // hidden) — it always reports at least the iframe's own current
+            // viewport height, which locks the popup at its largest-ever
+            // size instead of shrinking back down. body.scrollHeight isn't
+            // affected by fixed descendants and reflects the real content.
             window.parent.postMessage(
-              { type: "tcl:pnlEmbedResize", height: document.documentElement.scrollHeight },
+              { type: "tcl:pnlEmbedResize", height: document.body.scrollHeight },
               "*"
             );
           } catch (_) {}
