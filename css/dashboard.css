@@ -2223,7 +2223,7 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   border-radius: 14px;
   padding: 10px 12px 12px;
   width: min(96vw, 1000px);
-  height: min(96dvh, 1000px);
+  max-height: min(96dvh, 1000px);
   color: var(--text);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
   position: relative;
@@ -2252,7 +2252,7 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 
 .pnl-check-modal-frame-wrap {
   width: 100%;
-  flex: 1;
+  height: min(70vh, 700px);
   min-height: 0;
   border-radius: 10px;
   overflow: hidden;
@@ -2378,7 +2378,7 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 
   #pnlCheckModal .modal-content {
     width: 100vw;
-    height: 100dvh;
+    max-height: 100dvh;
     padding: calc(env(safe-area-inset-top, 0px) + 6px) 6px calc(env(safe-area-inset-bottom, 0px) + 6px);
     border-radius: 0;
     border: none;

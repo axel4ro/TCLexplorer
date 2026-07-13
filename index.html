@@ -4050,6 +4050,20 @@ window.addEventListener("message", (event) => {
     return;
   }
 
+  if (data.type === "tcl:pnlEmbedResize") {
+    const modalContent = document.querySelector("#pnlCheckModal .modal-content");
+    const wrap = document.querySelector("#pnlCheckModal .pnl-check-modal-frame-wrap");
+    if (modalContent && wrap && typeof data.height === "number" && data.height > 0) {
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      const cs = getComputedStyle(modalContent);
+      const paddingV = parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0);
+      const viewportCap = isMobile ? window.innerHeight : Math.min(window.innerHeight * 0.96, 1000);
+      const available = Math.max(240, viewportCap - paddingV);
+      wrap.style.height = Math.round(Math.min(data.height + 4, available)) + "px";
+    }
+    return;
+  }
+
   // Marketplace iframe requesting wallet connect/disconnect (xPortal removed)
   if (data.type === "tcl:requestConnect") {
     return;
@@ -5322,6 +5336,8 @@ function openPnlCheckModal(address, event) {
   const modal = document.getElementById("pnlCheckModal");
   const frame = document.getElementById("pnlCheckModalFrame");
   if (!modal || !frame || !address) return;
+  const wrap = modal.querySelector(".pnl-check-modal-frame-wrap");
+  if (wrap) wrap.style.removeProperty("height");
   frame.src = "pnlCheck.html?wallet=" + encodeURIComponent(address);
   modal.style.display = "flex";
 }

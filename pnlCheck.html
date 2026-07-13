@@ -4077,6 +4077,7 @@
           await fetchPrices().catch((e) => console.warn("Price fetch failed", e));
           runPnlCheck({ preventDefault() {} });
           notifyParentReady();
+          startEmbedAutoResize();
           return;
         }
 
@@ -4100,6 +4101,21 @@
           try { window.parent.postMessage({ type: "tcl:page-ready" }, "*"); }
           catch (_) {}
         }
+      }
+
+      // Embed popup: report the real content height to the parent so the modal
+      // can shrink-wrap instead of leaving empty space below a short card grid.
+      function startEmbedAutoResize() {
+        if (!window.parent || window.parent === window || typeof ResizeObserver !== "function") return;
+        const postHeight = () => {
+          try {
+            window.parent.postMessage(
+              { type: "tcl:pnlEmbedResize", height: document.documentElement.scrollHeight },
+              "*"
+            );
+          } catch (_) {}
+        };
+        new ResizeObserver(postHeight).observe(document.body);
       }
 
       // Brand "TCL Explorer": cand pagina e embed in index.html (iframe), nu incarca
