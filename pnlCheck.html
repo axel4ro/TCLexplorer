@@ -1087,6 +1087,36 @@
     body.pnl-embed-simple #pnlPanel {
       margin: 0;
     }
+    /* The address is fixed by the popup caller — the manual entry form just
+       eats vertical space that's needed to fit all cards without scrolling. */
+    body.pnl-embed-simple .pnl-form,
+    body.pnl-embed-simple .page-disclaimer {
+      display: none !important;
+    }
+    @media (max-width: 640px) {
+      body.pnl-embed-simple .pnl-card {
+        flex: 1 1 calc(50% - 6px);
+        min-height: 0;
+        padding: 10px;
+      }
+      body.pnl-embed-simple .pnl-card-header {
+        margin-bottom: 4px;
+      }
+      body.pnl-embed-simple .pnl-results {
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      body.pnl-embed-simple #pnlPanel {
+        padding: 10px;
+      }
+      body.pnl-embed-simple .panel-head {
+        margin-bottom: 8px;
+      }
+      body.pnl-embed-simple .pnl-limit-note {
+        margin: 0 0 8px;
+        padding: 8px 10px;
+      }
+    }
   </style>
 </head>
 <body data-state="idle">

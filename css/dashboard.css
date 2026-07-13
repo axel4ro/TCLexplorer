@@ -2221,22 +2221,21 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
   background: var(--bg-panel);
   border: 1px solid rgba(0, 232, 204, 0.35);
   border-radius: 14px;
-  padding: 22px 24px;
-  width: 100%;
-  max-width: 760px;
+  padding: 10px 12px 12px;
+  width: min(96vw, 1000px);
+  height: min(96dvh, 1000px);
   color: var(--text);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
   position: relative;
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 #pnlCheckModal .close {
-  position: sticky;
-  top: 0;
-  right: 0;
-  margin-left: auto;
+  position: absolute;
+  top: 10px;
+  right: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2253,8 +2252,8 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 
 .pnl-check-modal-frame-wrap {
   width: 100%;
-  height: min(75vh, 820px);
-  min-height: 480px;
+  flex: 1;
+  min-height: 0;
   border-radius: 10px;
   overflow: hidden;
   background: #070d17;
@@ -2359,18 +2358,30 @@ button:not(.nav-item):not(.sidebar-toggle):not(.lang-btn):not(.lang-option):not(
 
 @media (max-width: 767px) {
   #aprModal,
-  #transactionCalcModal,
-  #pnlCheckModal {
+  #transactionCalcModal {
     align-items: flex-start;
     padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
   }
 
   #aprModal .modal-content,
-  #transactionCalcModal .modal-content,
-  #pnlCheckModal .modal-content {
+  #transactionCalcModal .modal-content {
     max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 20px);
     padding: 14px 14px 18px;
     border-radius: 12px;
+  }
+
+  /* Full-screen on mobile so the PNL card grid has room to fit without an
+     inner scrollbar. */
+  #pnlCheckModal {
+    padding: 0;
+  }
+
+  #pnlCheckModal .modal-content {
+    width: 100vw;
+    height: 100dvh;
+    padding: calc(env(safe-area-inset-top, 0px) + 6px) 6px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    border-radius: 0;
+    border: none;
   }
 
   .trade-simulator-frame-wrap {
