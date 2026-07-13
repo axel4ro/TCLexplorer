@@ -2251,15 +2251,29 @@ function formatTclUsdValue(val, decimals = 18, preferredPriceUsd = null) {
   return "≈ " + formatNumber(usdValue) + " $";
 }
 
-function formatTclRewardDayLines(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null, boostPct = 0) {
+function formatTclRewardDayLines(val, decimals = 18, preferredRewardsPayload = null, preferredPriceUsd = null, boostPct = 0, rewardComponents = null) {
   const rewardsPayload = getCurrentRewardsStats(preferredRewardsPayload);
   if (!rewardsPayload) return null;
 
-  const wholeAmount = getWholeTclAmount(val, decimals);
-  if (!wholeAmount) return null;
-
-  const boostMultiplier = 1 + (Number(boostPct) || 0) / 100;
-  const rewardTclPerDay = (wholeAmount / rewardsPayload.totalStaked) * rewardsPayload.emission * boostMultiplier;
+  let rewardTclPerDay;
+  if (Array.isArray(rewardComponents) && rewardComponents.length) {
+    // A merged (linked-wallet) row: each wallet's own boost applies only to
+    // its own stake. Summing the totals first and applying a single (e.g.
+    // max) boost to the combined amount would give the smaller-boosted
+    // wallet's stake the larger wallet's boost rate, overstating the reward.
+    // Compute each wallet's share separately, then sum.
+    rewardTclPerDay = rewardComponents.reduce((sum, component) => {
+      const amount = getWholeTclAmount(component?.total ?? 0, decimals);
+      if (!amount) return sum;
+      const mult = 1 + (Number(component?.boostPct) || 0) / 100;
+      return sum + (amount / rewardsPayload.totalStaked) * rewardsPayload.emission * mult;
+    }, 0);
+  } else {
+    const wholeAmount = getWholeTclAmount(val, decimals);
+    if (!wholeAmount) return null;
+    const boostMultiplier = 1 + (Number(boostPct) || 0) / 100;
+    rewardTclPerDay = (wholeAmount / rewardsPayload.totalStaked) * rewardsPayload.emission * boostMultiplier;
+  }
   if (!Number.isFinite(rewardTclPerDay) || rewardTclPerDay <= 0) return null;
 
   const priceUsd = preferredPriceUsd || getCurrentTclPriceUsd();
@@ -2303,7 +2317,16 @@ function buildMergedLeaderboardEntry(primaryEntry, secondaryEntry = null) {
     loan: sumStakingRawValues(primaryEntry?.loan ?? 0, secondaryEntry?.loan ?? 0),
     infinity: sumStakingRawValues(primaryEntry?.infinity ?? 0, secondaryEntry?.infinity ?? 0),
     total: sumStakingRawValues(primaryEntry?.total ?? 0, secondaryEntry?.total ?? 0),
-    boostPct: Math.max(Number(primaryEntry?.boostPct) || 0, Number(secondaryEntry?.boostPct) || 0)
+    boostPct: Math.max(Number(primaryEntry?.boostPct) || 0, Number(secondaryEntry?.boostPct) || 0),
+    // Kept per-wallet so the reward/day estimate can apply each wallet's own
+    // boost to its own stake instead of the combined total (see
+    // formatTclRewardDayLines) — a single primaryEntry with no secondary
+    // still gets a one-item list so the "single wallet" math path isn't hit
+    // by accident here.
+    rewardComponents: [
+      { total: primaryEntry?.total ?? 0, boostPct: Number(primaryEntry?.boostPct) || 0 },
+      { total: secondaryEntry?.total ?? 0, boostPct: Number(secondaryEntry?.boostPct) || 0 }
+    ]
   };
 }
 
@@ -2345,7 +2368,8 @@ function buildLeaderboardRowHtml(entry, options = {}) {
   const totalRaw = normalizeIntegerLikeValue(entry?.total ?? 0);
   const boostPct = Number(entry?.boostPct) || 0;
   const totalUsd = formatTclUsdValue(totalRaw);
-  const rewardLines = formatTclRewardDayLines(totalRaw, 18, null, null, boostPct);
+  const rewardComponents = Array.isArray(entry?.rewardComponents) ? entry.rewardComponents : null;
+  const rewardLines = formatTclRewardDayLines(totalRaw, 18, null, null, boostPct, rewardComponents);
   const copyLabel = t("common_copy", "Copy");
   const checkLabel = t("staking_check_btn", "Check");
   const hasCustomRankDisplay = Object.prototype.hasOwnProperty.call(options, "rankDisplay");
@@ -2390,7 +2414,9 @@ function buildLeaderboardRowHtml(entry, options = {}) {
         checkBtnHtml +
       "</div>" +
       subtitleHtml +
-      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "' data-boost-pct='" + boostPct + "'>" + rewardHtml + "</div>" +
+      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "' data-boost-pct='" + boostPct + "'" +
+        (rewardComponents ? " data-reward-components='" + encodeURIComponent(JSON.stringify(rewardComponents)) + "'" : "") +
+        ">" + rewardHtml + "</div>" +
     "</div>";
   const rowClass = options.rowClass ? " class='" + options.rowClass + "'" : "";
   const groupPrimaryAttr = groupPrimary ? " data-staking-group-primary='" + groupPrimary + "'" : "";
@@ -2493,7 +2519,12 @@ function refreshLeaderboardMetaValues(options = {}) {
   document.querySelectorAll(".staking-address-reward[data-raw-total]").forEach((rewardEl) => {
     const rawTotal = rewardEl.getAttribute("data-raw-total");
     const boostPct = Number(rewardEl.getAttribute("data-boost-pct")) || 0;
-    const lines = formatTclRewardDayLines(rawTotal, 18, rewardsPayload, priceUsd, boostPct);
+    const rewardComponentsRaw = rewardEl.getAttribute("data-reward-components");
+    let rewardComponents = null;
+    if (rewardComponentsRaw) {
+      try { rewardComponents = JSON.parse(decodeURIComponent(rewardComponentsRaw)); } catch (_) { rewardComponents = null; }
+    }
+    const lines = formatTclRewardDayLines(rawTotal, 18, rewardsPayload, priceUsd, boostPct, rewardComponents);
     const tclEl = rewardEl.querySelector(".staking-address-reward-tcl");
     const usdEl = rewardEl.querySelector(".staking-address-reward-usd");
     if (tclEl) tclEl.textContent = lines?.line1 || "";
