@@ -2322,10 +2322,14 @@ function buildMergedLeaderboardEntry(primaryEntry, secondaryEntry = null) {
     // boost to its own stake instead of the combined total (see
     // formatTclRewardDayLines) — a single primaryEntry with no secondary
     // still gets a one-item list so the "single wallet" math path isn't hit
-    // by accident here.
+    // by accident here. Uses rewardTotal (not total): a wallet's loan
+    // portion earns rewards on its raw contract value, but "total" shows
+    // that loan grossed up 1.25x to match the full principal the game's own
+    // UI displays under "Loaned" — using "total" here would overstate the
+    // reward the same way the un-merged single-wallet path would.
     rewardComponents: [
-      { total: primaryEntry?.total ?? 0, boostPct: Number(primaryEntry?.boostPct) || 0 },
-      { total: secondaryEntry?.total ?? 0, boostPct: Number(secondaryEntry?.boostPct) || 0 }
+      { total: primaryEntry?.rewardTotal ?? primaryEntry?.total ?? 0, boostPct: Number(primaryEntry?.boostPct) || 0 },
+      { total: secondaryEntry?.rewardTotal ?? secondaryEntry?.total ?? 0, boostPct: Number(secondaryEntry?.boostPct) || 0 }
     ]
   };
 }
@@ -2366,10 +2370,16 @@ function buildLeaderboardRankHtml(rankDisplay, address = "") {
 function buildLeaderboardRowHtml(entry, options = {}) {
   const address = String(entry?.addr || "");
   const totalRaw = normalizeIntegerLikeValue(entry?.total ?? 0);
+  // Loan stake earns rewards on its raw contract value, but "total" shows
+  // that loan grossed up 1.25x to match the full principal the game's own
+  // UI displays under "Loaned" — rewardTotal (falls back to total for
+  // entries without a loan component) is the un-grossed figure the
+  // reward/day estimate must use instead.
+  const rewardTotalRaw = normalizeIntegerLikeValue(entry?.rewardTotal ?? entry?.total ?? 0);
   const boostPct = Number(entry?.boostPct) || 0;
   const totalUsd = formatTclUsdValue(totalRaw);
   const rewardComponents = Array.isArray(entry?.rewardComponents) ? entry.rewardComponents : null;
-  const rewardLines = formatTclRewardDayLines(totalRaw, 18, null, null, boostPct, rewardComponents);
+  const rewardLines = formatTclRewardDayLines(rewardTotalRaw, 18, null, null, boostPct, rewardComponents);
   const copyLabel = t("common_copy", "Copy");
   const checkLabel = t("staking_check_btn", "Check");
   const hasCustomRankDisplay = Object.prototype.hasOwnProperty.call(options, "rankDisplay");
@@ -2414,7 +2424,7 @@ function buildLeaderboardRowHtml(entry, options = {}) {
         checkBtnHtml +
       "</div>" +
       subtitleHtml +
-      "<div class='staking-address-reward' data-raw-total='" + totalRaw + "' data-boost-pct='" + boostPct + "'" +
+      "<div class='staking-address-reward' data-raw-total='" + rewardTotalRaw + "' data-boost-pct='" + boostPct + "'" +
         (rewardComponents ? " data-reward-components='" + encodeURIComponent(JSON.stringify(rewardComponents)) + "'" : "") +
         ">" + rewardHtml + "</div>" +
     "</div>";
