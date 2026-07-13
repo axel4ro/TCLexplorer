@@ -2564,6 +2564,7 @@ function renderLeaderboardRows(data) {
     loan: normalizeIntegerLikeValue(v?.loan ?? 0),
     infinity: normalizeIntegerLikeValue(v?.infinity ?? 0),
     total: normalizeIntegerLikeValue(v?.total ?? 0),
+    rewardTotal: normalizeIntegerLikeValue(v?.rewardTotal ?? v?.total ?? 0),
     boostPct: Number(v?.boostPct) || 0
   }));
 
