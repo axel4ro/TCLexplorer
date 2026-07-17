@@ -791,6 +791,14 @@
       .field-grid {
         display: grid;
       }
+
+      .hero-copy {
+        order: 2;
+      }
+
+      .support-stack {
+        order: 1;
+      }
     }
   </style>
 </head>
@@ -801,7 +809,6 @@
         <img src="images/tcl_icon.png" alt="">
         <span>TCL Explorer</span>
       </a>
-      <a class="top-link" href="pnlCheck.html" data-i18n="xPortal Balance">TCL PNL Check</a>
     </header>
 
     <section class="hero" aria-labelledby="pageTitle">
@@ -885,10 +892,16 @@
           </div>
 
           <div id="connectedView" hidden>
-            <!-- balance display kept for JS compat; popup holds the wallet icon -->
-            <span id="userBalanceEgld" hidden>-- EGLD</span>
-            <span id="userBalanceUsd" hidden>$--</span>
-            <a id="balanceExplorerLink" href="https://explorer.multiversx.com/" hidden></a>
+            <div class="wallet-balance-card connected-balance-card" aria-live="polite">
+              <div class="wallet-balance-header">
+                <div class="eyebrow" data-i18n="Your Wallet Balance">Your Wallet Balance</div>
+                <a class="btn-explorer-sm" id="balanceExplorerLink" href="https://explorer.multiversx.com/" target="_blank" rel="noreferrer" data-i18n="Explorer">Explorer</a>
+              </div>
+              <div class="wallet-balance-values">
+                <span class="wallet-balance-egld" id="userBalanceEgld">-- EGLD</span>
+                <span class="wallet-balance-usd" id="userBalanceUsd">$--</span>
+              </div>
+            </div>
           </div>
 
           <div class="status-line connect-help" role="status" aria-live="polite">
