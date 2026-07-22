@@ -1577,7 +1577,11 @@ const TCL_DENOMINATOR = BigInt("1000000000000000000"); // 10^18
 const MVX_API = "https://api.multiversx.com";
 const MVX_GATEWAY = "https://gateway.multiversx.com";
 const TCL_API = "https://api.tclexplorer.com";
-const SC_STORAGE_PRICE = 0.001;
+// Contract's internal $TCL price used for the storage-capacity formula
+// (STORAGE_NEW = STORAGE / (TCL_PRICE * 200)) — halved from $0.001 to
+// $0.0005 starting at MultiversX epoch 2,182 per the game's own
+// announcement; storage displays are twice as large from that epoch on.
+const SC_STORAGE_PRICE = 0.0005;
 const GAME_CONTRACT = "erd1qqqqqqqqqqqqqpgqm77vv5dcqs6kuzhj540vf67f90xemypd0ufsygvnvk";
 const TX_CONFIRM_TIMEOUT_MS = 120_000;
 const TX_CONFIRM_POLL_MS = 2_500;
