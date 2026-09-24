@@ -89,15 +89,16 @@
     return hex;
   }
 
-  async function getTclMax(collection, nonceDec) {
+  async function getTclValue(funcName, collection, nonceDec) {
     try {
       const nonceHex = Number(nonceDec).toString(16).padStart(16, "0");
-      const [ret] = await MultiversXAPI.queryContract(SC, "getTclMax", [asciiToHex(collection), nonceHex]);
+      const [ret] = await MultiversXAPI.queryContract(SC, funcName, [asciiToHex(collection), nonceHex]);
       return toTcl(ret ? MultiversXAPI.base64BigInt(ret).toString() : "0");
     } catch (_) {
       return 0;
     }
   }
+  const getTclMax = (collection, nonceDec) => getTclValue("getTclMax", collection, nonceDec);
 
   async function withTclMax(entries) {
     const maxes = await Promise.all(entries.map((e) => getTclMax(e.collection, e.nonce)));
@@ -109,18 +110,95 @@
       const hex = MultiversXAPI.bech32ToHex(address);
       const [ret] = await MultiversXAPI.queryContract(SC, "getEquippedNfts", [hex]);
       return withTclMax(parseNftBlob(ret ? decodeReturnData(ret) : ""));
-    } catch (_) {
-      return [];
+    } catch (err) {
+      throw err;
     }
   }
 
-  async function getLoanedNftEntries(address) {
+  // The contract has NO view for a wallet's loaned NFTs (getLoanedNfts answers "function not
+  // found" — an earlier version of this file mistook that for an empty list). The equip/loan
+  // NFTs all sit in the contract, so the loaned set is rebuilt from the wallet's own history:
+  // the LAST of loanNft / unloanNft / equipNft / unequipNft per NFT decides where it is, and it
+  // must still be held by the contract. Verified on real wallets against the owner of each NFT.
+  const LOAN_OPS = ["loanNft", "unloanNft", "equipNft", "unequipNft"];
+  const LOAN_CACHE_KEY = "lander:loanedCache:v1";
+  const LOAN_CACHE_MS = 10 * 60 * 1000;
+  function readLoanCache(address) {
     try {
-      const hex = MultiversXAPI.bech32ToHex(address);
-      const [ret] = await MultiversXAPI.queryContract(SC, "getLoanedNfts", [hex]);
-      return withTclMax(parseNftBlob(ret ? decodeReturnData(ret) : ""));
-    } catch (_) {
-      return [];
+      const hit = JSON.parse(localStorage.getItem(LOAN_CACHE_KEY) || "{}")[address];
+      return hit && Date.now() - hit.t < LOAN_CACHE_MS ? hit.v : null;
+    } catch (_) { return null; }
+  }
+  function writeLoanCache(address, value) {
+    try {
+      const all = JSON.parse(localStorage.getItem(LOAN_CACHE_KEY) || "{}");
+      all[address] = { t: Date.now(), v: value };
+      const keys = Object.keys(all);
+      if (keys.length > 10) delete all[keys[0]];
+      localStorage.setItem(LOAN_CACHE_KEY, JSON.stringify(all));
+    } catch (_) {}
+  }
+
+  async function fetchOpHistory(address, funcName) {
+    let out = [];
+    for (let from = 0; out.length < 1000; from += 50) {
+      const rows = await MultiversXAPI.getJSON(
+        `${MultiversXAPI.API}/accounts/${address}/transactions?function=${funcName}&status=success&size=50&from=${from}&order=desc&fields=timestamp,function,action`,
+        { ttl: 60000 }
+      );
+      if (!Array.isArray(rows)) break;
+      out = out.concat(rows);
+      if (rows.length < 50) break;
+    }
+    return out;
+  }
+
+  async function getLoanedNftEntries(address) {
+    const cached = readLoanCache(address);
+    if (cached) return cached;
+    {
+      const histories = await Promise.all(LOAN_OPS.map((fn) => fetchOpHistory(address, fn)));
+      const ops = histories.flat().sort((a, b) => a.timestamp - b.timestamp);
+      const last = {};
+      for (const tx of ops) {
+        for (const t of tx.action?.arguments?.transfers || []) {
+          if (t.type === "FungibleESDT" || !t.identifier) continue;
+          last[t.identifier] = tx.function;
+        }
+      }
+      const candidates = Object.keys(last).filter((id) => last[id] === "loanNft");
+      const held = [];
+      for (let i = 0; i < candidates.length; i += 40) {
+        const chunk = candidates.slice(i, i + 40);
+        const rows = await MultiversXAPI.getJSON(
+          `${MultiversXAPI.API}/nfts?identifiers=${chunk.join(",")}&withOwner=true&size=100&fields=identifier,owner`,
+          { ttl: 30000 }
+        );
+        (rows || []).forEach((n) => { if (n.owner === SC) held.push(n.identifier); });
+      }
+      // An NFT can be sold/transferred after this wallet loaned it and then loaned again by its
+      // new owner (seen on a real wallet: 23,287 TCL of difference vs the contract's Loaned
+      // total was exactly one such item), so the latest loanNft on the NFT must be ours.
+      const mine = [];
+      for (const identifier of held) {
+        const rows = await MultiversXAPI.getJSON(
+          `${MultiversXAPI.API}/nfts/${identifier}/transactions?function=loanNft&status=success&size=1&order=desc&fields=sender`,
+          { ttl: 60000 }
+        ).catch(() => null);
+        if (!rows || !rows[0] || rows[0].sender === address) mine.push(identifier);
+      }
+      const entries = await Promise.all(mine.map(async (identifier) => {
+        const cut = identifier.lastIndexOf("-");
+        const collection = identifier.slice(0, cut);
+        const nonce = parseInt(identifier.slice(cut + 1), 16);
+        const [staked, max] = await Promise.all([
+          getTclValue("getTclCount", collection, nonce),
+          getTclValue("getTclMax", collection, nonce)
+        ]);
+        return { identifier, collection, nonce: String(nonce), staked, max, flag: 0 };
+      }));
+      writeLoanCache(address, entries);
+      return entries;
     }
   }
 

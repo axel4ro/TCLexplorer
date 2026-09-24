@@ -28,6 +28,8 @@
     const staked=entry?.staked||0,max=entry?.max||0;
     return {...item,quantity:Number(item.balance||1),image:item.media?.[0]?.url||item.url||item.uris?.[0]||'',kind:(item.type||'NFT').replace('NonFungibleESDT','NFT').replace('SemiFungibleESDT','SFT'),gameType:typeOf(item),staked,usd:max&&price?`$${number(staked*price,2)}`:'',tcl:max?`${number(staked)}/${number(max)} TCL`:'Not stakable'};
   };
+  // Metadata lookup failed (API busy): still list the item, without image, instead of hiding it.
+  const fallbackMeta=e=>({identifier:e.identifier,collection:e.collection,name:e.collection.split('-')[0].replace(/^TCL/,''),type:'NonFungibleESDT'});
   const fallbackToken={circulating:'736.002.419',maxSupply:'918.939.087',price:'0,0006 USD',marketCap:'437.218 USD',burnt:'81.060.912',holders:'1.361',transactions:'363.914',source:'cached fallback'};
   const fallbackStats={players:'144.147',web3:'4.368',subscribers:'125.270',staked:'121,155,453 TCL',apr:'45%',emission:'152,388 TCL',rewards:'97,780,010 TCL',referralCodes:'24.918',source:'last observed Lander values'};
   const number=(v,d=0)=>Number(v||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -66,18 +68,20 @@
       if(!state.connected)return {owned:0,equipped:0,loaned:0,ownedItems:[],equippedItems:[],loanedItems:[],source:'connect wallet'};
       const wallet=await MultiversXAPI.getAccountNFTs(state.address);
       const ownedItems=wallet.filter(x=>gameCollections.test(x.identifier||'')).map(x=>normalize(x));
-      let equippedItems=[],loanedItems=[],price=0;
+      let equippedItems=[],loanedItems=[],price=0,equippedFailed=false,loanedFailed=false;
       try{
-        const [equippedEntries,loanedEntries,priceInfo]=await Promise.all([LanderLive.getEquippedNftEntries(state.address),LanderLive.getLoanedNftEntries(state.address),MultiversXAPI.getToken().catch(()=>null)]);
+        const settle=p=>p.then(v=>({v}),()=>({failed:true}));
+        const [eqR,loR,priceInfo]=await Promise.all([settle(LanderLive.getEquippedNftEntries(state.address)),settle(LanderLive.getLoanedNftEntries(state.address)),MultiversXAPI.getToken().catch(()=>null)]);
+        const equippedEntries=eqR.v||[],loanedEntries=loR.v||[];equippedFailed=!!eqR.failed;loanedFailed=!!loR.failed;
         price=priceInfo?Number(priceInfo.price)||0:0;
         const [equippedMeta,loanedMeta]=await Promise.all([
-          Promise.all(equippedEntries.map(e=>MultiversXAPI.getNFT(e.identifier).catch(()=>null))),
-          Promise.all(loanedEntries.map(e=>MultiversXAPI.getNFT(e.identifier).catch(()=>null)))
+          Promise.all(equippedEntries.map(e=>MultiversXAPI.getNFT(e.identifier).catch(()=>fallbackMeta(e)))),
+          Promise.all(loanedEntries.map(e=>MultiversXAPI.getNFT(e.identifier).catch(()=>fallbackMeta(e))))
         ]);
         equippedItems=equippedMeta.map((meta,i)=>meta?normalize(meta,equippedEntries[i],price):null).filter(Boolean);
         loanedItems=loanedMeta.map((meta,i)=>meta?{...normalize(meta,loanedEntries[i],price),borrowed:!!loanedEntries[i].flag}:null).filter(Boolean);
       }catch(e){console.warn('Lander NFT equip/loan data unavailable — showing owned items only',e)}
-      return {owned:ownedItems.reduce((n,x)=>n+x.quantity,0),equipped:equippedItems.length,loaned:loanedItems.length,ownedItems,equippedItems,loanedItems,source:'MultiversX mainnet · live'}
+      return {owned:ownedItems.reduce((n,x)=>n+x.quantity,0),equipped:equippedItems.length,loaned:loanedItems.length,ownedItems,equippedItems,loanedItems,equippedFailed,loanedFailed,source:'MultiversX mainnet · live'}
     },
     getStakingPositions:async()=>{
       if(!state.connected)return {stake:0,stakeUSD:0,apr:0,daily:0,dailyUSD:0,earned:0,earnedUSD:0,totalStaked:0,totalStakedUSD:0,balanceUSDC:0,balanceTCL:0,autoClaim:0,reinvest:state.reinvest,claimLoan:false,nextClaim:'—',source:'connect wallet'};

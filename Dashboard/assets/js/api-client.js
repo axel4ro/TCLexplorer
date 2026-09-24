@@ -39,7 +39,7 @@
   }
   const base64BigInt=value=>{if(!value)return 0n;const bytes=Uint8Array.from(atob(value),c=>c.charCodeAt(0));return bytes.reduce((n,b)=>(n<<8n)+BigInt(b),0n)};
   window.MultiversXAPI={
-    API,GATEWAY,TOKEN,validAddress,bech32ToHex,queryContract,base64BigInt,
+    API,GATEWAY,TOKEN,validAddress,bech32ToHex,queryContract,base64BigInt,getJSON,
     getToken:()=>getJSON(`${API}/tokens/${TOKEN}`,{ttl:20000}),
     getSupply:async()=>{const r=await getJSON(`${GATEWAY}/network/esdt/supply/${TOKEN}`,{ttl:60000});return r.data},
     getTokenAccountsCount:()=>getJSON(`${API}/tokens/${TOKEN}/accounts/count`,{ttl:30000}),
