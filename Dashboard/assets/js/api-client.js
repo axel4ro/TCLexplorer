@@ -45,13 +45,18 @@
     getTokenAccountsCount:()=>getJSON(`${API}/tokens/${TOKEN}/accounts/count`,{ttl:30000}),
     getTokenTransactionsCount:()=>getJSON(`${API}/transactions/count?token=${TOKEN}`,{ttl:30000}),
     getEpochStatus:async()=>{
-      const response=await getJSON(`${GATEWAY}/network/status/4294967295`,{ttl:5000});
+      const [response,stats]=await Promise.all([getJSON(`${GATEWAY}/network/status/4294967295`,{ttl:5000}),getJSON(`${API}/stats`,{ttl:60000}).catch(()=>null)]);
       const status=response?.data?.status||{};
       const roundsPerEpoch=Number(status.erd_rounds_per_epoch);
       const roundsPassed=Number(status.erd_rounds_passed_in_current_epoch);
       const blockTimestamp=Number(status.erd_block_timestamp_ms||Number(status.erd_block_timestamp)*1000);
       if(!Number.isFinite(roundsPerEpoch)||!Number.isFinite(roundsPassed)||!Number.isFinite(blockTimestamp))throw new Error('Invalid MultiversX epoch status');
-      return {epoch:Number(status.erd_epoch_number),startsAt:blockTimestamp-roundsPassed*6000,endsAt:blockTimestamp+Math.max(0,roundsPerEpoch-roundsPassed)*6000};
+      // Round length is no longer a constant: Supernova (epoch 2233) cut it from 6s to 0.6s and
+      // rounds/epoch from 14,400 to 144,000 while the epoch stayed 24h. Read it instead of assuming:
+      // /stats refreshRate (ms), else 24h / roundsPerEpoch, else 600ms.
+      const refreshRate=Number(stats?.refreshRate);
+      const roundMs=refreshRate>0?refreshRate:(roundsPerEpoch>0?86400000/roundsPerEpoch:600);
+      return {epoch:Number(status.erd_epoch_number),startsAt:blockTimestamp-roundsPassed*roundMs,endsAt:blockTimestamp+Math.max(0,roundsPerEpoch-roundsPassed)*roundMs};
     },
     getAccount:address=>{if(!validAddress(address))throw new Error('Invalid MultiversX address');return getJSON(`${API}/accounts/${address}`,{ttl:15000})},
     getTCLBalance:async address=>{if(!validAddress(address))throw new Error('Invalid MultiversX address');const list=await getJSON(`${API}/accounts/${address}/tokens?identifier=${TOKEN}&size=1`,{ttl:15000});const row=Array.isArray(list)?list[0]:null;return row?Number(row.balance)/10**(row.decimals||18):0},
