@@ -1,6 +1,11 @@
 (function(){
   const delay=(value,ms=180,fail=false)=>new Promise((resolve,reject)=>setTimeout(()=>fail?reject(new Error('Mock request failed')):resolve(structuredClone(value)),ms));
-  const savedAddress=localStorage.getItem('lander:walletAddress')||'';
+  // The xPortal session (shared with TCL Explorer's Swap/Support/Marketplace pages through the
+  // same localStorage keys) is the ONLY persisted connection; it is restored at startup. Only a
+  // read-only preview address is kept here, under its own key, so a stale copy of a real
+  // connection can never outlive a disconnect made on another page.
+  localStorage.removeItem('lander:walletAddress');
+  const savedAddress=localStorage.getItem('lander:previewAddress')||'';
   // Tracks epochs we've confirmed (via an on-chain rejection, see
   // markClaimedThisEpoch below) are already claimed through a mechanism we
   // can't see in transaction history (e.g. Auto Claim) — the
@@ -85,10 +90,13 @@
     },
     getTransactions:()=>state.connected?fetch(`${MultiversXAPI.API}/accounts/${state.address}/transactions?from=0&size=25&token=${MultiversXAPI.TOKEN}`).then(r=>r.json()):delay([]),
     getRewards:()=>delay({daily:0,earned:0,source:'staking service unavailable'}),
-    connectWallet:async onUri=>{const approved=await LanderWallet.pair(onUri);state.connected=true;state.address=approved.address;localStorage.setItem('lander:walletAddress',approved.address);return state},
-    connectWalletReadOnly:async address=>{await delay(null,250);if(!MultiversXAPI.validAddress(address))throw new Error('Invalid MultiversX address');await MultiversXAPI.getAccount(address);state.connected=true;state.address=address;localStorage.setItem('lander:walletAddress',address);return state},
-    restoreWallet:async()=>{const restored=await LanderWallet.restoreSession().catch(()=>null);if(restored){state.connected=true;state.address=restored.address;localStorage.setItem('lander:walletAddress',restored.address)}return state},
-    disconnectWallet:async()=>{await LanderWallet.disconnect().catch(()=>{});state.connected=false;state.address='';localStorage.removeItem('lander:walletAddress');return state},
+    connectWallet:async onUri=>{const approved=await LanderWallet.pair(onUri);state.connected=true;state.address=approved.address;localStorage.removeItem('lander:previewAddress');return state},
+    connectWalletReadOnly:async address=>{await delay(null,250);if(!MultiversXAPI.validAddress(address))throw new Error('Invalid MultiversX address');await MultiversXAPI.getAccount(address);state.connected=true;state.address=address;localStorage.setItem('lander:previewAddress',address);return state},
+    restoreWallet:async()=>{const restored=await LanderWallet.restoreSession().catch(()=>null);if(restored){state.connected=true;state.address=restored.address;localStorage.removeItem('lander:previewAddress')}return state},
+    // Another page (Swap, Support, ...) closed the shared xPortal session: mirror it here without
+    // calling WalletConnect's disconnect again (the session is already gone).
+    forgetWallet:()=>{LanderWallet.forget();state.connected=false;state.address='';localStorage.removeItem('lander:previewAddress');return state},
+    disconnectWallet:async()=>{await LanderWallet.disconnect().catch(()=>{});state.connected=false;state.address='';localStorage.removeItem('lander:previewAddress');return state},
     stake:async()=>{throw new Error('Staking a new amount is not wired up yet — only claiming Infinity/Lending rewards is enabled.')},
     claimInfinityRewards:async()=>{const hash=await LanderWallet.callContract('claimInfinityRewards');return hash},
     claimLendingRewards:async()=>{const hash=await LanderWallet.callContract('claimLendingRewards');return hash},

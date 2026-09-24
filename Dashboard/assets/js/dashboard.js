@@ -48,6 +48,7 @@ function walletModal(){
 function walletConnectModal(){
   $('#modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal">
     <h2>Connect xPortal</h2>
+    ${TCLXPortal.isMobile()?'<a class="primary wallet-deeplink is-disabled" id="walletDeepLink" href="#" target="_top" rel="noreferrer">Open xPortal app</a>':''}
     <div id="walletQr" style="display:flex;justify-content:center;margin:10px 0"><div class="loader" style="height:220px;min-height:0"><span></span></div></div>
     <p style="font-size:12px;color:#888">Scan with the xPortal app to connect and enable real Claim transactions.</p>
     <button class="secondary" id="walletPreviewToggle" style="width:100%;margin-top:8px">Or preview a public address (read-only, no claiming)</button>
@@ -65,6 +66,8 @@ function walletConnectModal(){
   };
   LanderAPI.connectWallet(uri=>{
     if(closed)return;
+    const dl=$('#walletDeepLink');
+    if(dl){dl.href=TCLXPortal.getDeepLink(uri);dl.classList.remove('is-disabled')}
     const qrEl=$('#walletQr');
     if(!qrEl)return;
     try{TCLXPortal.renderQr(qrEl,uri,220)}catch(err){qrEl.innerHTML=`<a href="${uri}" target="_blank" rel="noopener" style="font-size:12px;word-break:break-all">${uri}</a>`}
@@ -75,7 +78,7 @@ function stakeModal(){modal('Stake TCL','<p>The Lander build loads protocol conf
 function syncWallet(){const s=LanderAPI.state,b=$('#walletButton');b.textContent=s.connected?`${s.address.slice(0,8)}…${s.address.slice(-6)}`:'Connect wallet';b.classList.toggle('connected',s.connected)}syncWallet();
 // The main TCL Explorer page shares this origin (and the same xPortal storage keys), so pick up a
 // connection made there while this page is already open instead of asking to connect again.
-addEventListener('storage',e=>{if(!e.key||!e.key.startsWith('tclExplorer.xportal.'))return;if(LanderAPI.state.connected&&LanderWallet.state.sessionTopic)return;LanderAPI.restoreWallet().then(()=>{if(LanderAPI.state.connected){syncWallet();render(LanderRouter.current())}}).catch(()=>{})});
+addEventListener('storage',e=>{if(!e.key||!e.key.startsWith('tclExplorer.xportal.'))return;const stored=localStorage.getItem('tclExplorer.xportal.address.v1')&&localStorage.getItem('tclExplorer.xportal.sessionTopic.v1');if(!stored){if(LanderWallet.state.sessionTopic){LanderAPI.forgetWallet();syncWallet();toast('Wallet disconnected');render(LanderRouter.current())}return}if(LanderAPI.state.connected&&LanderWallet.state.sessionTopic)return;LanderAPI.restoreWallet().then(()=>{if(LanderAPI.state.connected){syncWallet();render(LanderRouter.current())}}).catch(()=>{})});
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;$('#toastRoot').append(t);setTimeout(()=>t.remove(),3000)}
 page.addEventListener('click',async e=>{const c=e.target.closest('[data-copy]');if(c){await navigator.clipboard.writeText(c.dataset.copy);toast('Copied')}const nt=e.target.closest('[data-nfttab]');if(nt&&window.__nftData){document.querySelectorAll('[data-nfttab]').forEach(x=>x.classList.toggle('active',x===nt));const tab=nt.dataset.nfttab,key=`${tab}Items`;$('#nftSummary').innerHTML=renderNFTSummary(tab);$('#nftResults').innerHTML=renderNFTItems(window.__nftData[key],tab);fitViewport()}if(e.target.id==='stakeButton'||e.target.id==='stakePlus')stakeModal();if(e.target.id==='claimInfinityBtn'||e.target.id==='claimLendingBtn')await runClaim(e.target,e.target.id==='claimInfinityBtn'?'claimInfinityRewards':'claimLendingRewards',e.target.id==='claimInfinityBtn'?'staking':'nft');if(e.target.id==='mintNft')modal('Mint NFT','<p>Real mint is disabled until the active collection contract, endpoint and price are verified from Lander configuration.</p>','OK');if(e.target.matches('[data-pref]')){const key=e.target.dataset.pref,val=!LanderAPI.state[key];await LanderAPI.setPreference(key,val);e.target.classList.toggle('on',val);toast('Preference saved locally')}});
 async function runClaim(btn,method,refreshRoute){

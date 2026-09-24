@@ -82,6 +82,13 @@
     }
   }
 
+  // Drop the in-memory session only (used when another page already ended the shared one).
+  function forget() {
+    S.sessionTopic = "";
+    S.address = "";
+    emitChange();
+  }
+
   async function disconnect() {
     await XPORTAL.disconnect({ client: S.signClient, topic: S.sessionTopic });
     S.sessionTopic = "";
@@ -223,6 +230,7 @@
     getSignClient,
     restoreSession,
     pair,
+    forget,
     disconnect,
     signTx,
     broadcastTx,
