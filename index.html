@@ -325,6 +325,7 @@
       <button type="button" class="nav-item" onclick="showPage('xexchangeIframe')" id="btn-xexchangeIframe">
         <img src="images/exchange.png" alt=""> xExchange
       </button>
+      <button type="button" class="nav-item" onclick="openDashboardPage()" id="btn-Dashboard">🖥️ Dashboard</button>
       <button type="button" class="nav-item nav-item--external" onclick="openLanderSmart()" id="btn-Lander">
         <img src="images/lander.png" alt=""> <span class="nav-label">Lander</span> <span class="nav-ext-arrow">↗</span>
       </button>
@@ -2971,6 +2972,15 @@ const INTERNAL_PAGE_ROUTES = {
     loadingSubtitle: "Preparing TCL NFT listings, buy & sell with TCL token.",
     waitForReadyMessage: false
   },
+  dashboard: {
+    src: "Dashboard/dashboard.html?v=20260924-1",
+    title: "Dashboard",
+    navId: "btn-Dashboard",
+    routeKey: "dashboard",
+    loadingTitle: "Loading Dashboard...",
+    loadingSubtitle: "Preparing Infinity Staking, NFTs and claims.",
+    waitForReadyMessage: false
+  },
   lander: {
     src: "https://popugames.github.io/Lander/",
     title: "Lander",
@@ -3455,7 +3465,7 @@ function loadNonCriticalServices() {
   nonCriticalServicesStarted = true;
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(new URL("sw.js?v=20260610-1", window.location.href))
+    navigator.serviceWorker.register(new URL("sw.js?v=20260924-1", window.location.href))
       .then((reg) => console.log("✅ SW registered", reg))
       .catch((err) => console.error("❌ SW error", err));
   }
@@ -5425,6 +5435,11 @@ function openTopSpendersPage() {
 
 function openTopHoldersPage() {
   const route = INTERNAL_PAGE_ROUTES.TopHolders;
+  openInternalPage(route.src, route.title, route);
+}
+
+function openDashboardPage() {
+  const route = INTERNAL_PAGE_ROUTES.dashboard;
   openInternalPage(route.src, route.title, route);
 }
 
