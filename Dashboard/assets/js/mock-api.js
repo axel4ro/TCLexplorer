@@ -77,7 +77,7 @@
     getStakingPositions:async()=>{
       if(!state.connected)return {stake:0,stakeUSD:0,apr:0,daily:0,dailyUSD:0,earned:0,earnedUSD:0,totalStaked:0,totalStakedUSD:0,balanceUSDC:0,balanceTCL:0,autoClaim:0,reinvest:state.reinvest,claimLoan:false,nextClaim:'—',source:'connect wallet'};
       const [live,glob,balanceTCL]=await Promise.all([LanderLive.getInfinityStakingLive(state.address),LanderLive.getGlobalStats().catch(()=>({totalStaked:0,totalStakedUSD:0})),MultiversXAPI.getTCLBalance(state.address)]);
-      return {...live,totalStaked:glob.totalStaked,totalStakedUSD:glob.totalStakedUSD,balanceUSDC:0,balanceTCL,autoClaim:0,reinvest:state.reinvest,claimLoan:state.claimLoan,nextClaim:'4h 41m 22s',source:'MultiversX getRewardsData · live'};
+      return {...live,totalStaked:glob.totalStaked,totalStakedUSD:glob.totalStakedUSD,balanceUSDC:0,balanceTCL,autoClaim:live.autoClaimDays,reinvest:state.reinvest,claimLoan:state.claimLoan,nextClaim:'4h 41m 22s',source:'MultiversX getRewardsData · live'};
     },
     getLendingPositions:async()=>{
       if(!state.connected)return {loanDisplay:0,loanDisplayUSD:0,pending:0,pendingUSD:0,source:'connect wallet'};

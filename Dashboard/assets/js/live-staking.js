@@ -20,8 +20,12 @@
   //        contract; matched "Daily reward: 4,041 TCL" almost exactly
   //   [20] Cumulative infinity rewards earned (wei) — exact match to
   //        "Earned: 1,714,625 TCL"
+  //   [6]  Current epoch as the contract sees it
+  //   [23] Epoch until which Auto Claim is paid for (0 = no Auto Claim). Days remaining =
+  //        [23] - [6]; matched a real Lander screenshot (915 days at epoch 2175, expiry 3090) and
+  //        checked on 5 wallets (0 for a wallet with no Auto Claim).
   // All other fields are unidentified; do not rely on them.
-  const FIELD = { apr: 2, nft: 4, loanRaw: 5, lendingPending: 10, infinityStake: 17, infinityDaily: 18, infinityEarned: 20 };
+  const FIELD = { apr: 2, epoch: 6, nft: 4, loanRaw: 5, lendingPending: 10, infinityStake: 17, infinityDaily: 18, infinityEarned: 20, autoClaimEndEpoch: 23 };
 
   function decodeReturnData(b64) {
     return atob(b64);
@@ -197,7 +201,9 @@
     const daily = toTcl(parts[FIELD.infinityDaily]);
     const earned = toTcl(parts[FIELD.infinityEarned]);
     const apr = Number(parseFloat(parts[FIELD.apr]).toFixed(2)) || 0;
+    const autoClaimDays = Math.max(0, (Number(parts[FIELD.autoClaimEndEpoch]) || 0) - (Number(parts[FIELD.epoch]) || 0));
     return {
+      autoClaimDays,
       stake,
       stakeUSD: stake * price,
       apr,
