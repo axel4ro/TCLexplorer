@@ -54,6 +54,12 @@
       backdrop-filter: blur(12px);
       padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
     }
+    /* On short screens (laptops with 125-150% Windows scaling, zoomed pages) the sticky
+       header can take half the viewport and the listings scroll underneath it, so only a
+       thin strip of each card stays visible. Let it scroll away there instead. */
+    @media (max-height: 820px) {
+      #sticky-top { position: static; }
+    }
     header {
       background: transparent;
       padding: 14px 24px 10px;
@@ -3580,11 +3586,28 @@ function updateListingsValueStat() {
   }
 }
 
+// Several sources so one blocked/unreachable host (e.g. *.workers.dev blocked by an ad-blocker
+// or ISP) doesn't leave every "$" on the page empty.
+async function fetchTCLPriceUSD() {
+  const sources = [
+    ["https://tcl-event-push.axel4ro.workers.dev/api/prices", d => d?.pair?.priceUsd || d?.pairs?.[0]?.priceUsd],
+    [`${TCL_API}/api/prices`, d => d?.tcl?.priceUsd],
+    [`${MVX_API}/tokens/TCL-fe459d?fields=price`, d => d?.price]
+  ];
+  for (const [url, pick] of sources) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const price = parseFloat(pick(await resp.json()) || 0);
+      if (price > 0) return price;
+    } catch (_) { /* try the next source */ }
+  }
+  return 0;
+}
+
 async function loadTCLPrice() {
   try {
-    const resp = await fetch("https://tcl-event-push.axel4ro.workers.dev/api/prices");
-    const data = await resp.json();
-    tclPriceUSD = parseFloat(data?.pair?.priceUsd || data?.pairs?.[0]?.priceUsd || 0);
+    tclPriceUSD = await fetchTCLPriceUSD();
     if (tclPriceUSD) {
       const priceText = `$${tclPriceUSD.toFixed(6)}`;
       const wtp = document.getElementById("walletTclPrice");
