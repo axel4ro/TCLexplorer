@@ -55,6 +55,63 @@
     return String(text).replace(regex, '<span class="wiki-highlight">$1</span>');
   }
 
+  // Deep links: #wiki/<section> or #wiki/<section>/<card>. Card slugs come from the English name at
+  // the same position, so a shared link opens the same card in every language.
+  function wikiSlug(value) {
+    return String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
+  function wikiChildRoute(sectionName, name) {
+    const names = function (section) {
+      if (!section) return [];
+      return section.categories ? Object.keys(section.categories) : (section.list || []).map(function (i) { return i.name; });
+    };
+    const index = names(window.wikiData?.[sectionName]).indexOf(name);
+    const enName = index >= 0 ? names(window.TCL_WIKI_DATA?.en?.[sectionName])[index] : null;
+    return "wiki/" + sectionName + "/" + wikiSlug(enName || name);
+  }
+
+  function setWikiRoute(route) {
+    if (!route) return;
+    const hash = "#" + route;
+    if (window.location.hash === hash) return;
+    lastHandledRouteHash = hash;
+    history.replaceState(null, "", window.location.pathname + window.location.search + hash);
+  }
+
+  window.openWikiDeepLink = function (path) {
+    const parts = String(path || "").split("/").filter(Boolean).map(wikiSlug);
+    if (!parts.length) return;
+    const sectionToggle = document.querySelector('#wikiContent [data-wiki-route="wiki/' + parts[0] + '"]');
+    if (!sectionToggle) return;
+    if (!sectionToggle.classList.contains("open")) sectionToggle.click();
+    let target = sectionToggle;
+    const child = parts[1] && document.querySelector('#wikiContent [data-wiki-route="wiki/' + parts[0] + "/" + parts[1] + '"]');
+    if (child) {
+      target = child;
+      if (child.classList.contains("wiki-toggle") && !child.classList.contains("open")) child.click();
+    }
+    setWikiRoute(target.dataset.wikiRoute);
+    // run after showPage(), whose scroll-to-top happens in rAF + setTimeout(0)
+    setTimeout(function () {
+      target.scrollIntoView({ block: "start" });
+      target.classList.add("wiki-deeplink-flash");
+      setTimeout(function () { target.classList.remove("wiki-deeplink-flash"); }, 2200);
+    }, 150);
+  };
+
+  window.wikiSelectItem = function (el, event) {
+    if (event && event.target.closest("button, a")) return;
+    setWikiRoute(el.dataset.wikiRoute);
+  };
+
+  function applyPendingWikiDeepLink() {
+    const path = window.__wikiPendingDeepLink;
+    window.__wikiPendingDeepLink = null;
+    if (path) window.openWikiDeepLink(path);
+  }
+
   function escapeJsString(value) {
     return String(value || "")
       .replace(/\\/g, "\\\\")
@@ -70,6 +127,7 @@
     if (bundledWiki) {
       window.wikiData = bundledWiki;
       window.renderWiki(window.wikiData, false);
+      applyPendingWikiDeepLink();
       return;
     }
 
@@ -77,6 +135,7 @@
     if (fallback && lang !== "en" && englishWiki) {
       window.wikiData = englishWiki;
       window.renderWiki(window.wikiData, false);
+      applyPendingWikiDeepLink();
       return;
     }
 
@@ -97,7 +156,7 @@
 
       container.innerHTML += `
       <div class="wiki-grid-item ${forceOpen && sectionHasResults ? "is-expanded" : ""}">
-        <div class="card wiki-toggle ${forceOpen && sectionHasResults ? "open" : ""}" 
+        <div class="card wiki-toggle ${forceOpen && sectionHasResults ? "open" : ""}" data-wiki-route="wiki/${sectionName}"
              onclick="toggleWikiSection('${sectionName}List', this)">
           <div class="wiki-toggle-header">
             <h2>📂 ${wikiSectionTitle(sectionName)}</h2>
@@ -193,7 +252,7 @@
           }
 
           secDiv.innerHTML += `
-        <div class="card">
+        <div class="card" data-wiki-route="${wikiChildRoute(sectionName, item.name)}" onclick="wikiSelectItem(this, event)">
           <h2>${highlightText(item.name, wikiSearchQuery)}</h2>
           ${descHtml}
           ${item.link ? (String(item.link).toLowerCase().endsWith(".html")
@@ -210,7 +269,7 @@
           const catHasResults = catData.list && Object.keys(catData.list).length > 0;
 
           secDiv.innerHTML += `
-          <div class="card wiki-toggle ${forceOpen && catHasResults ? "open" : ""}" 
+          <div class="card wiki-toggle ${forceOpen && catHasResults ? "open" : ""}" data-wiki-route="${wikiChildRoute(sectionName, catName)}"
                onclick="toggleWikiCategory('${sectionName}-${catName}', this)">
             <div class="wiki-toggle-header">
               <h3>${highlightText(catName, wikiSearchQuery)}</h3>
@@ -248,7 +307,9 @@
     if (section.style.display === "block") {
       section.style.display = "none";
       el.classList.remove("open");
+      if (el.dataset.wikiRoute) setWikiRoute("wiki");
     } else {
+      if (el.dataset.wikiRoute) setWikiRoute(el.dataset.wikiRoute);
       document.querySelectorAll("#wikiContent .wiki-grid-item .wiki-toggle.open").forEach((otherToggle) => {
         if (otherToggle === el) return;
         otherToggle.classList.remove("open");
@@ -273,12 +334,15 @@
   window.toggleWikiCategory = function (cat, el) {
     const section = document.getElementById("cat-" + cat);
     if (!section) return;
+    const route = el.dataset.wikiRoute;
     if (section.style.display === "block") {
       section.style.display = "none";
       el.classList.remove("open");
+      if (route) setWikiRoute(route.split("/").slice(0, 2).join("/"));
     } else {
       section.style.display = "block";
       el.classList.add("open");
+      if (route) setWikiRoute(route);
     }
   };
 

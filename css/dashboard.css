@@ -2541,6 +2541,11 @@ a {
   align-items: stretch;
 }
 
+.wiki-deeplink-flash {
+  box-shadow: 0 0 0 2px #2ff6de, 0 0 18px rgba(47, 246, 222, 0.45) !important;
+  transition: box-shadow 0.4s ease;
+}
+
 .wiki-grid-item {
   min-width: 0;
   display: flex;
