@@ -2541,9 +2541,28 @@ a {
   align-items: stretch;
 }
 
-.wiki-deeplink-flash {
-  box-shadow: 0 0 0 2px #2ff6de, 0 0 18px rgba(47, 246, 222, 0.45) !important;
-  transition: box-shadow 0.4s ease;
+.wiki-breadcrumb {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--text-muted, #9aa4b2);
+}
+
+.wiki-breadcrumb a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.wiki-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.wiki-breadcrumb__sep {
+  opacity: 0.6;
 }
 
 .wiki-grid-item {

@@ -55,8 +55,11 @@
     return String(text).replace(regex, '<span class="wiki-highlight">$1</span>');
   }
 
-  // Deep links: #wiki/<section> or #wiki/<section>/<card>. Card slugs come from the English name at
-  // the same position, so a shared link opens the same card in every language.
+  // Each section and card has its own page: #wiki/<section> or #wiki/<section>/<card>. Card slugs
+  // come from the English name at the same position, so a shared link opens the same page in every
+  // language. window.wikiFocus holds the page being shown: [section], [section, card] or null.
+  window.wikiFocus = null;
+
   function wikiSlug(value) {
     return String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
       .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -72,45 +75,88 @@
     return "wiki/" + sectionName + "/" + wikiSlug(enName || name);
   }
 
+  function parseWikiFocus(path) {
+    const parts = String(path || "").split("/").filter(Boolean).map(wikiSlug).slice(0, 2);
+    return parts.length ? parts : null;
+  }
+
+  function currentWikiRoute() {
+    return window.wikiFocus ? "wiki/" + window.wikiFocus.join("/") : "wiki";
+  }
+
   function setWikiRoute(route) {
-    if (!route) return;
     const hash = "#" + route;
     if (window.location.hash === hash) return;
     lastHandledRouteHash = hash;
     history.replaceState(null, "", window.location.pathname + window.location.search + hash);
   }
 
-  window.openWikiDeepLink = function (path) {
-    const parts = String(path || "").split("/").filter(Boolean).map(wikiSlug);
-    if (!parts.length) return;
-    const sectionToggle = document.querySelector('#wikiContent [data-wiki-route="wiki/' + parts[0] + '"]');
-    if (!sectionToggle) return;
-    if (!sectionToggle.classList.contains("open")) sectionToggle.click();
-    let target = sectionToggle;
-    const child = parts[1] && document.querySelector('#wikiContent [data-wiki-route="wiki/' + parts[0] + "/" + parts[1] + '"]');
-    if (child) {
-      target = child;
-      if (child.classList.contains("wiki-toggle") && !child.classList.contains("open")) child.click();
+  function takePendingWikiFocus() {
+    window.wikiFocus = parseWikiFocus(window.__wikiPendingDeepLink);
+    window.__wikiPendingDeepLink = null;
+  }
+
+  function navigateWiki(route) {
+    const hash = "#" + route;
+    if (window.location.hash !== hash) {
+      lastHandledRouteHash = hash;
+      history.pushState(null, "", window.location.pathname + window.location.search + hash);
     }
-    setWikiRoute(target.dataset.wikiRoute);
-    // run after showPage(), whose scroll-to-top happens in rAF + setTimeout(0)
-    setTimeout(function () {
-      target.scrollIntoView({ block: "start" });
-      target.classList.add("wiki-deeplink-flash");
-      setTimeout(function () { target.classList.remove("wiki-deeplink-flash"); }, 2200);
-    }, 150);
-  };
+    window.wikiFocus = parseWikiFocus(route.replace(/^wiki\/?/, ""));
+    window.renderWiki(window.wikiData, false);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+  window.navigateWiki = navigateWiki;
+
+  // Show only the focused section (or the focused card inside it) with a breadcrumb back.
+  function applyWikiFocus() {
+    const container = document.getElementById("wikiContent");
+    const focus = window.wikiFocus;
+    container.classList.toggle("wiki-focus-mode", !!focus);
+    if (!focus) return;
+    const find = function (route) { return container.querySelector('[data-wiki-route="' + route + '"]'); };
+    const sectionToggle = find("wiki/" + focus[0]);
+    if (!sectionToggle) {
+      window.wikiFocus = null;
+      container.classList.remove("wiki-focus-mode");
+      return;
+    }
+    const sectionItem = sectionToggle.closest(".wiki-grid-item");
+    const sectionContent = sectionItem.querySelector(".wiki-section-content");
+    const child = focus[1] ? find("wiki/" + focus[0] + "/" + focus[1]) : null;
+    Array.from(container.children).forEach(function (el) {
+      const keepLinkCards = !child && focus[0] === "bonuses" && el.querySelector(".wiki-link-card");
+      if (el !== sectionItem && !keepLinkCards) el.style.display = "none";
+    });
+    sectionItem.classList.add("is-expanded");
+    sectionToggle.classList.add("open");
+    sectionContent.style.display = "block";
+
+    const sectionTitle = wikiSectionTitle(focus[0]);
+    const crumbs = ['<a href="#wiki">📖 Wiki</a>'];
+    if (child) {
+      sectionToggle.style.display = "none";
+      Array.from(sectionContent.children).forEach(function (el) { if (el !== child) el.style.display = "none"; });
+      if (child.classList.contains("wiki-toggle")) {
+        child.classList.add("open");
+        const body = child.querySelector(".wiki-section-content");
+        if (body) body.style.display = "block";
+      }
+      const childTitle = (child.querySelector("h2, h3") || {}).textContent || "";
+      crumbs.push('<a href="#wiki/' + focus[0] + '">' + sectionTitle + "</a>", "<span>" + childTitle + "</span>");
+    } else {
+      crumbs.push("<span>" + sectionTitle + "</span>");
+    }
+    container.insertAdjacentHTML("afterbegin",
+      '<nav class="wiki-breadcrumb">' + crumbs.join('<span class="wiki-breadcrumb__sep">›</span>') + "</nav>");
+  }
 
   window.wikiSelectItem = function (el, event) {
     if (event && event.target.closest("button, a")) return;
-    setWikiRoute(el.dataset.wikiRoute);
+    const route = el.dataset.wikiRoute;
+    if (wikiSearchQuery || !route || route === currentWikiRoute()) return;
+    navigateWiki(route);
   };
-
-  function applyPendingWikiDeepLink() {
-    const path = window.__wikiPendingDeepLink;
-    window.__wikiPendingDeepLink = null;
-    if (path) window.openWikiDeepLink(path);
-  }
 
   function escapeJsString(value) {
     return String(value || "")
@@ -126,16 +172,16 @@
     const bundledWiki = getBundledWikiData(lang);
     if (bundledWiki) {
       window.wikiData = bundledWiki;
+      takePendingWikiFocus();
       window.renderWiki(window.wikiData, false);
-      applyPendingWikiDeepLink();
       return;
     }
 
     const englishWiki = getBundledWikiData("en");
     if (fallback && lang !== "en" && englishWiki) {
       window.wikiData = englishWiki;
+      takePendingWikiFocus();
       window.renderWiki(window.wikiData, false);
-      applyPendingWikiDeepLink();
       return;
     }
 
@@ -295,11 +341,16 @@
         }
       }
     }
+    if (!forceOpen) applyWikiFocus();
   };
 
   window.toggleWikiSection = function (id, el) {
     const section = document.getElementById(id);
     if (!section) return;
+    if (!wikiSearchQuery && el.dataset.wikiRoute) {
+      navigateWiki(el.dataset.wikiRoute === currentWikiRoute() ? "wiki" : el.dataset.wikiRoute);
+      return;
+    }
     const gridItem = el.closest(".wiki-grid-item");
     const hasContent = !!(section.children.length || section.textContent.trim());
     const allGridItems = Array.from(document.querySelectorAll("#wikiContent > .wiki-grid-item"));
@@ -307,9 +358,7 @@
     if (section.style.display === "block") {
       section.style.display = "none";
       el.classList.remove("open");
-      if (el.dataset.wikiRoute) setWikiRoute("wiki");
     } else {
-      if (el.dataset.wikiRoute) setWikiRoute(el.dataset.wikiRoute);
       document.querySelectorAll("#wikiContent .wiki-grid-item .wiki-toggle.open").forEach((otherToggle) => {
         if (otherToggle === el) return;
         otherToggle.classList.remove("open");
@@ -335,14 +384,16 @@
     const section = document.getElementById("cat-" + cat);
     if (!section) return;
     const route = el.dataset.wikiRoute;
+    if (!wikiSearchQuery && route) {
+      navigateWiki(route === currentWikiRoute() ? route.split("/").slice(0, 2).join("/") : route);
+      return;
+    }
     if (section.style.display === "block") {
       section.style.display = "none";
       el.classList.remove("open");
-      if (route) setWikiRoute(route.split("/").slice(0, 2).join("/"));
     } else {
       section.style.display = "block";
       el.classList.add("open");
-      if (route) setWikiRoute(route);
     }
   };
 
@@ -350,6 +401,10 @@
     const input = document.getElementById("wikiSearchInput");
     const query = (input && input.value ? input.value : "").toLowerCase();
     wikiSearchQuery = query;
+    if (query && window.wikiFocus) {
+      window.wikiFocus = null;
+      setWikiRoute("wiki");
+    }
 
     if (!query) {
       window.renderWiki(window.wikiData, false);
