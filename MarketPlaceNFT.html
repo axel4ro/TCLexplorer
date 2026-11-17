@@ -57,8 +57,10 @@
     /* On short screens (laptops with 125-150% Windows scaling, zoomed pages) the sticky
        header can take half the viewport and the listings scroll underneath it, so only a
        thin strip of each card stays visible. Let it scroll away there instead. */
-    @media (max-height: 820px) {
-      #sticky-top { position: static; }
+    /* Phones keep the sticky header (their layout is built for it). position: relative, not
+       static, so z-index still lifts the header's dropdowns and the xPortal QR above the cards. */
+    @media (max-height: 820px) and (min-width: 641px) {
+      #sticky-top { position: relative; }
     }
     header {
       background: transparent;
